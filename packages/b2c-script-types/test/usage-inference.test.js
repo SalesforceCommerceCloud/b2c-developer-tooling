@@ -1108,7 +1108,7 @@ module.exports = getLineItems;
   describe('module.superModule overlays', () => {
     // The SFRA plugin-cartridge pattern: an overlay module at the same path
     // as a base-cartridge module reaches the base via `module.superModule`.
-    // The engine resolves it through ctx.resolveSuperModulePath (supplied by
+    // The engine resolves it through ctx.host.resolveSuperModulePath (supplied by
     // the plugin host, which owns the cartridge order).
     const SUPER_RESOLVER = (containingFile) =>
       containingFile === '/custom/cartridge/scripts/helpers/x.js' ? '/base/cartridge/scripts/helpers/x.js' : undefined;
@@ -1149,7 +1149,7 @@ module.exports = getLineItems;
 
     it("resolves `module.superModule` to the overridden module's export type", () => {
       const languageService = createFixtureLanguageService(OVERLAY_FILES);
-      const ctx = createInferenceContext(ts, languageService, SUPER_RESOLVER);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: SUPER_RESOLVER});
       const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
       // `base` in `base.getThing(...)` — an identifier whose declaration is
       // the `var base = module.superModule` initializer.
@@ -1169,7 +1169,7 @@ module.exports = getLineItems;
       // member lookup alone isn't enough — the engine must recurse into the
       // base function's declaration and infer its return from usage.
       const languageService = createFixtureLanguageService(OVERLAY_FILES);
-      const ctx = createInferenceContext(ts, languageService, SUPER_RESOLVER);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: SUPER_RESOLVER});
       const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
       const wrapped = findFunctionDeclaration(overlay, 'wrapped');
 
@@ -1180,7 +1180,7 @@ module.exports = getLineItems;
 
     it('returns no candidates when no lower cartridge provides the module', () => {
       const languageService = createFixtureLanguageService(OVERLAY_FILES);
-      const ctx = createInferenceContext(ts, languageService, () => undefined);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: () => undefined});
       const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/x.js');
       const baseUse = findIdentifier(overlay, 'base', (n) => ts.isPropertyAccessExpression(n.parent));
 
@@ -1227,7 +1227,7 @@ module.exports = getLineItems;
         '/mid/cartridge/scripts/helpers/x.js': '/base/cartridge/scripts/helpers/x.js',
       };
       const languageService = createFixtureLanguageService(files);
-      const ctx = createInferenceContext(ts, languageService, (f) => order[f]);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: (f) => order[f]});
       const top = ctx.program.getSourceFile('/top/cartridge/scripts/helpers/x.js');
       const baseUse = findIdentifier(top, 'base', (n) => ts.isReturnStatement(n.parent));
 
@@ -1482,7 +1482,7 @@ module.exports = getLineItems;
 
     it("resolves a member augmented at an intermediate overlay level (mid's getMemberPrice from top)", () => {
       const languageService = createFixtureLanguageService(STACK_FILES);
-      const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: (f) => STACK_ORDER[f]});
       const top = ctx.program.getSourceFile('/top/x.js');
 
       const types = inferTypeForNode(ctx, findVarUse(top, 'memberPrice'));
@@ -1492,7 +1492,7 @@ module.exports = getLineItems;
 
     it('still resolves a deep base member through the pass-through levels (base getSalePrice from top)', () => {
       const languageService = createFixtureLanguageService(STACK_FILES);
-      const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: (f) => STACK_ORDER[f]});
       const top = ctx.program.getSourceFile('/top/x.js');
 
       const types = inferTypeForNode(ctx, findVarUse(top, 'salePrice'));
@@ -1503,7 +1503,7 @@ module.exports = getLineItems;
     it('lists augmented members from every pass-through level for completions', () => {
       const {collectSuperModuleAugmentedMembers} = require('../src/usage-inference');
       const languageService = createFixtureLanguageService(STACK_FILES);
-      const ctx = createInferenceContext(ts, languageService, (f) => STACK_ORDER[f]);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: (f) => STACK_ORDER[f]});
       const top = ctx.program.getSourceFile('/top/x.js');
       let baseUse;
       const visit = (node) => {

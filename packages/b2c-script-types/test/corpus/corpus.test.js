@@ -78,7 +78,9 @@ describe('usage-inference golden corpus (real-storefront shapes)', () => {
   for (const corpusCase of cases) {
     it(`${corpusCase.id}: ${corpusCase.description}`, () => {
       const languageService = createFixtureLanguageService(buildFiles(corpusCase));
-      const ctx = createInferenceContext(ts, languageService);
+      // A case's `hooks` stand in for the hooks.json registrations the plugin reads from disk.
+      const host = corpusCase.hooks ? {hookRegistrations: () => corpusCase.hooks} : undefined;
+      const ctx = createInferenceContext(ts, languageService, host);
       assert.ok(ctx, 'expected an inference context');
       const target = resolveTarget(ctx, corpusCase);
 

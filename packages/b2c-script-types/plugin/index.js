@@ -11,6 +11,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const usage_inference_1 = require("./usage-inference");
 const constants_1 = require("./resolver/constants");
 const cartridge_discovery_1 = require("./resolver/cartridge-discovery");
+const hook_registry_1 = require("./resolver/hook-registry");
 const module_resolution_1 = require("./resolver/module-resolution");
 const TYPES_DIR = node_path_1.default.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // Ambient declarations for SFCC globals (`session`, `request`, `response`,
@@ -215,6 +216,16 @@ function init({ typescript: ts }) {
             }
             return undefined;
         };
+        // Which scripts the cartridges' hooks.json files register for which
+        // extension points, so usage inference can follow
+        // `HookMgr.callHook(extensionPoint, functionName, ...args)` into them.
+        // Read through the language-service host, like require() resolution; a
+        // read that throws declares nothing.
+        const hookRegistrations = () => (0, hook_registry_1.readHookRegistrations)(cartridges, {
+            readFile: (p) => (host.readFile ? host.readFile(p) : ts.sys.readFile(p)),
+            fileExists: hostFileExists,
+            isWithinRoot,
+        });
         // Inject the ambient declarations into the TS program when the project
         // contains at least one cartridge file (isCartridgeFile is false while the
         // plugin is disabled or no cartridge is known). Projects that already
@@ -348,6 +359,7 @@ function init({ typescript: ts }) {
             ts,
             languageService: info.languageService,
             resolveSuperModulePath,
+            hookRegistrations,
             log,
         });
         usageInferenceResets.add(usageInference.reset);

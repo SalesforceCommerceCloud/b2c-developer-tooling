@@ -14,10 +14,11 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
+import {isExportsObject, isModuleExports, memberAssignmentOf} from './ast-helpers';
 import {MAX_SUPERMODULE_HOPS} from './constants';
 import {withCycleGuard} from './context';
 import type {InferenceContext} from './context';
-import {dedupeTypes, isAnyType} from './type-helpers';
+import {dedupeKnownTypes, dedupeTypes, isAnyType} from './type-helpers';
 
 /** The recursive engine's resolver for a value one hop further along the expression being resolved. */
 export type ExpressionResolver = (value: tsserver.Expression) => tsserver.Type[];
@@ -35,15 +36,14 @@ function isSuperModuleAccess(expr: tsserver.PropertyAccessExpression, ts: typeof
 /**
  * Locates the source file `module.superModule` refers to for `fromFileName`
  * — the same-subpath module in the next cartridge down the path, per the
- * host-supplied ctx.resolveSuperModulePath. Only works when that file is
+ * host-supplied ctx.host.resolveSuperModulePath. Only works when that file is
  * part of the current program (true under the recommended jsconfig setup
  * that includes all cartridge files, but not in a bare inferred project
  * where nothing require()s the base file).
  */
 function findSuperModuleFile(ctx: InferenceContext, fromFileName: string): tsserver.SourceFile | undefined {
   const {program} = ctx;
-  if (!ctx.resolveSuperModulePath) return undefined;
-  const superPath = ctx.resolveSuperModulePath(fromFileName);
+  const superPath = ctx.host.resolveSuperModulePath?.(fromFileName);
   if (!superPath) return undefined;
   // The resolver returns host-normalized (possibly case-folded) paths;
   // program keys may differ in case on case-insensitive filesystems.
@@ -77,33 +77,6 @@ function collectExportAssignments(sf: tsserver.SourceFile, ts: typeof tsserver):
     else if (isModuleExports(target, ts)) full.push(binary);
   }
   return {full, members};
-}
-
-/** The `x.name = value` assignment a statement is, if any. */
-function memberAssignmentOf(
-  stmt: tsserver.Statement,
-  ts: typeof tsserver,
-): {binary: tsserver.BinaryExpression; target: tsserver.PropertyAccessExpression} | undefined {
-  const binary = ts.isExpressionStatement(stmt) ? stmt.expression : undefined;
-  if (!binary || !ts.isBinaryExpression(binary) || binary.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
-    return undefined;
-  }
-  return ts.isPropertyAccessExpression(binary.left) ? {binary, target: binary.left} : undefined;
-}
-
-/** `module.exports` or the `exports` shorthand: the object a module's members are added to. */
-function isExportsObject(expr: tsserver.Expression, ts: typeof tsserver): boolean {
-  return isModuleExports(expr, ts) || (ts.isIdentifier(expr) && expr.text === 'exports');
-}
-
-/** `module.exports`, identified structurally. */
-function isModuleExports(expr: tsserver.Expression, ts: typeof tsserver): boolean {
-  return (
-    ts.isPropertyAccessExpression(expr) &&
-    ts.isIdentifier(expr.expression) &&
-    expr.expression.text === 'module' &&
-    expr.name.text === 'exports'
-  );
 }
 
 /**
@@ -245,10 +218,9 @@ export function resolveSuperModuleMemberTypes(
   for (const {members} of superModuleLevels(ctx, superAccess)) {
     const matches = members.filter((member) => member.name === memberName);
     if (matches.length === 0) continue;
-    const types = matches.flatMap((member) => resolve(member.expr));
-    return dedupeTypes(
+    return dedupeKnownTypes(
       ctx,
-      types.filter((type) => !isAnyType(ctx.ts, type)),
+      matches.flatMap((member) => resolve(member.expr)),
     );
   }
   return [];

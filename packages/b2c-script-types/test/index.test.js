@@ -817,3 +817,53 @@ describe('create() proxy — usage inference wiring', () => {
     assert.throws(() => proxy.getCompletionsAtPosition('/helper.js', 0, undefined), ts.OperationCanceledException);
   });
 });
+
+describe('create() proxy — hook registrations', () => {
+  // A hook script's exports are only invoked through HookMgr.callHook(). The
+  // plugin reads which scripts implement which extension points from each
+  // configured cartridge's package.json -> hooks.json, through the host.
+  const ROOT = '/ws/app_custom';
+  const HOOK_FILES = {
+    [`${ROOT}/package.json`]: JSON.stringify({hooks: './hooks.json'}),
+    [`${ROOT}/hooks.json`]: JSON.stringify({
+      hooks: [{name: 'app.payment.processor.basic_credit', script: './cartridge/scripts/hooks/payment/basic_credit'}],
+    }),
+    [`${ROOT}/cartridge/scripts/hooks/payment/basic_credit.js`]: `
+      function Handle(basket, paymentInformation) {
+        return {error: false};
+      }
+      exports.Handle = Handle;
+    `,
+    [`${ROOT}/cartridge/controllers/Checkout.js`]: `
+      var BasketMgr = require('dw/order/BasketMgr');
+      var HookMgr = require('dw/system/HookMgr');
+      function submitPayment(processor) {
+        var currentBasket = BasketMgr.getCurrentBasket();
+        return HookMgr.callHook('app.payment.processor.' + processor.ID.toLowerCase(), 'Handle', currentBasket, {});
+      }
+      module.exports = {submitPayment: submitPayment};
+    `,
+  };
+  const HOOK_SCRIPT = `${ROOT}/cartridge/scripts/hooks/payment/basic_credit.js`;
+
+  function hoverOnHandleBasket(files, inferUsage = true) {
+    const {proxy} = createPluginProxy({
+      files,
+      config: {enabled: true, autoDiscover: false, cartridges: [{name: 'app_custom', src: ROOT}], inferUsage},
+    });
+    const position = files[HOOK_SCRIPT].indexOf('Handle(basket') + 'Handle('.length;
+    const hover = proxy.getQuickInfoAtPosition(HOOK_SCRIPT, position);
+    return (hover?.documentation ?? []).map((p) => p.text).join('');
+  }
+
+  it('infers a hook function parameter from the callHook calls dispatched to it', () => {
+    const hoverText = hoverOnHandleBasket(HOOK_FILES);
+    assert.ok(hoverText.includes('Inferred from usage: Basket'), `got: ${hoverText || '(no inferred note)'}`);
+  });
+
+  it('infers nothing for a hook script hooks.json does not register', () => {
+    const files = {...HOOK_FILES, [`${ROOT}/hooks.json`]: JSON.stringify({hooks: []})};
+    const hoverText = hoverOnHandleBasket(files);
+    assert.ok(!hoverText.includes('Inferred from usage'), `got: ${hoverText}`);
+  });
+});

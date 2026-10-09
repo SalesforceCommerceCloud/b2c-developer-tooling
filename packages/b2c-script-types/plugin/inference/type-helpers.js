@@ -10,6 +10,7 @@ exports.isOpenForUsageInference = isOpenForUsageInference;
 exports.informativeParts = informativeParts;
 exports.typeDisplayString = typeDisplayString;
 exports.dedupeTypes = dedupeTypes;
+exports.dedupeKnownTypes = dedupeKnownTypes;
 exports.getMemberOfType = getMemberOfType;
 exports.hasAllMembers = hasAllMembers;
 exports.elementTypeOf = elementTypeOf;
@@ -184,6 +185,10 @@ function dedupeTypes(ctx, types) {
         seen.add(key);
         return true;
     });
+}
+/** The distinct types among `types` that say something: {@link dedupeTypes} without `any`. */
+function dedupeKnownTypes(ctx, types) {
+    return dedupeTypes(ctx, types.filter((type) => !isAnyType(ctx.ts, type)));
 }
 /**
  * Strips any nullable part from `type` and computes its apparent type before

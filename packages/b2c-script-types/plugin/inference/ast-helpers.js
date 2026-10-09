@@ -11,6 +11,10 @@ exports.memberCompletionAccess = memberCompletionAccess;
 exports.hasExplicitParameterType = hasExplicitParameterType;
 exports.hasExplicitReturnType = hasExplicitReturnType;
 exports.hasExplicitVariableType = hasExplicitVariableType;
+exports.memberAssignmentOf = memberAssignmentOf;
+exports.isExportsObject = isExportsObject;
+exports.isModuleExports = isModuleExports;
+exports.exportsObjectWrittenBy = exportsObjectWrittenBy;
 exports.collectReturnExpressions = collectReturnExpressions;
 /**
  * Finds the most specific node whose span contains `pos`. Standard technique
@@ -138,6 +142,34 @@ function hasExplicitReturnType(fn, ts) {
 /** Same idea as {@link hasExplicitParameterType}, but for a variable declaration (`var x = ...`). */
 function hasExplicitVariableType(decl, ts) {
     return isStrongTypeNode(decl.type, ts) || isStrongTypeNode(ts.getJSDocType(decl), ts);
+}
+/** The `x.name = value` assignment a statement is, if any. */
+function memberAssignmentOf(stmt, ts) {
+    const binary = ts.isExpressionStatement(stmt) ? stmt.expression : undefined;
+    if (!binary || !ts.isBinaryExpression(binary) || binary.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+        return undefined;
+    }
+    return ts.isPropertyAccessExpression(binary.left) ? { binary, target: binary.left } : undefined;
+}
+/** `module.exports` or the `exports` shorthand: the object a module's members are added to. */
+function isExportsObject(expr, ts) {
+    return isModuleExports(expr, ts) || (ts.isIdentifier(expr) && expr.text === 'exports');
+}
+/** `module.exports`, identified structurally. */
+function isModuleExports(expr, ts) {
+    return (ts.isPropertyAccessExpression(expr) &&
+        ts.isIdentifier(expr.expression) &&
+        expr.expression.text === 'module' &&
+        expr.name.text === 'exports');
+}
+/** The `exports` / `module.exports` object a top-level statement assigns to or adds a member to. */
+function exportsObjectWrittenBy(stmt, ts) {
+    const target = memberAssignmentOf(stmt, ts)?.target;
+    if (!target)
+        return undefined;
+    if (isExportsObject(target.expression, ts))
+        return target.expression;
+    return isModuleExports(target, ts) ? target : undefined;
 }
 /**
  * Recursively walks a function body collecting `return` expressions, without

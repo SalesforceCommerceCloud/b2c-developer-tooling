@@ -240,7 +240,7 @@ function checkableMembers(ctx, required, candidates) {
  * use. On for parameters, whose call sites are independent samples that may
  * pass a look-alike; off for a variable's own assigned values.
  */
-function decideType(ctx, evidence, profile, identifierName, fitUsage) {
+function decideType(ctx, evidence, profile, name, fitUsage) {
     const guards = normalizeCandidates(ctx, profile.guardTypes);
     const guardKeys = new Set(guards.map((type) => (0, type_helpers_1.typeDisplayString)(ctx, type)));
     const candidates = normalizeCandidates(ctx, [...evidence, ...guards]);
@@ -259,5 +259,5 @@ function decideType(ctx, evidence, profile, identifierName, fitUsage) {
     const used = mostSpecificUse(ctx, profile, required);
     if (used.length > 0)
         return used;
-    return matchAmbientTypesByUsage(ctx, profile.memberNames, identifierName);
+    return matchAmbientTypesByUsage(ctx, profile.memberNames, ctx.ts.isIdentifier(name) ? name.text : undefined);
 }

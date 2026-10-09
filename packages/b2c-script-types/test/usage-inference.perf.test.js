@@ -98,6 +98,10 @@ const BASELINE = {
   // a request after an edit to a cartridge .js file (a new Program) must add
   // zero getPropertiesOfType calls, not re-index the Script API.
   ambientClassIndexRebuildAfterJsEdit: 0,
+  // A hook function's parameters: its own name and its export binding, plus
+  // ONE project-wide search for every HookMgr.callHook call, shared by all
+  // the hook parameters a request infers.
+  hookParameters: 3,
 };
 
 /**
@@ -647,6 +651,51 @@ describe('usage-inference — performance baselines', () => {
       BASELINE.ambientClassIndexRebuildAfterJsEdit,
       `expected the warm ambient-class index to add ${BASELINE.ambientClassIndexRebuildAfterJsEdit} getPropertiesOfType calls, got ${counter.count()}`,
     );
+    assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
+  });
+
+  it(`searches for HookMgr.callHook calls once per request, whichever hook parameters it infers (<= ${BASELINE.hookParameters} searches)`, () => {
+    const files = {
+      '/types.d.ts': realTypesPrelude(
+        ['Basket', 'HookMgr', 'Customer'],
+        'var HookManager: typeof HookMgr; function getBasket(): Basket; function getCustomer(): Customer;',
+      ),
+      '/hooks/payment.js': `
+        function Handle(basket, customer) {
+          return {error: false};
+        }
+        exports.Handle = Handle;
+      `,
+      '/checkout.js': Array.from(
+        {length: 20},
+        (_, i) => `HookManager.callHook('app.payment.processor.p${i}', 'Handle', getBasket(), getCustomer());`,
+      ).join('\n'),
+    };
+    const registrations = Array.from({length: 20}, (_, i) => ({
+      extensionPoint: `app.payment.processor.p${i}`,
+      script: '/hooks/payment.js',
+    }));
+    const counter = withReferenceCounter(createFixtureLanguageService(files));
+    let hostCalls = 0;
+    const ctx = createInferenceContext(ts, counter.languageService, {
+      hookRegistrations: () => {
+        hostCalls++;
+        return registrations;
+      },
+    });
+    const fn = findFunctionDeclaration(ctx.program.getSourceFile('/hooks/payment.js'), 'Handle');
+
+    const {result, elapsedMs} = timed(() => fn.parameters.map((parameter) => inferParameterType(ctx, parameter)));
+
+    assert.deepEqual(
+      result.map((types) => describeTypes(ctx, types)),
+      ['Basket', 'Customer'],
+    );
+    assert.ok(
+      counter.referenceSearches() <= BASELINE.hookParameters,
+      `expected <= ${BASELINE.hookParameters} reference searches, got ${counter.referenceSearches()}`,
+    );
+    assert.equal(hostCalls, 1, 'the host is asked for its registrations once per request');
     assert.ok(elapsedMs < WALL_CLOCK_CEILING_MS, `catastrophic slowdown: ${Math.round(elapsedMs)}ms`);
   });
 });

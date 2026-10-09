@@ -335,7 +335,7 @@ export function decideType(
   ctx: InferenceContext,
   evidence: readonly tsserver.Type[],
   profile: UsageProfile,
-  identifierName: string | undefined,
+  name: tsserver.BindingName,
   fitUsage: boolean,
 ): tsserver.Type[] {
   const guards = normalizeCandidates(ctx, profile.guardTypes);
@@ -353,5 +353,5 @@ export function decideType(
   if (fitting.length > 0) return limitUnion(ctx, fitting, checkable);
   const used = mostSpecificUse(ctx, profile, required);
   if (used.length > 0) return used;
-  return matchAmbientTypesByUsage(ctx, profile.memberNames, identifierName);
+  return matchAmbientTypesByUsage(ctx, profile.memberNames, ctx.ts.isIdentifier(name) ? name.text : undefined);
 }

@@ -156,6 +156,41 @@ export function hasExplicitVariableType(decl: tsserver.VariableDeclaration, ts: 
   return isStrongTypeNode(decl.type, ts) || isStrongTypeNode(ts.getJSDocType(decl), ts);
 }
 
+/** The `x.name = value` assignment a statement is, if any. */
+export function memberAssignmentOf(
+  stmt: tsserver.Statement,
+  ts: typeof tsserver,
+): {binary: tsserver.BinaryExpression; target: tsserver.PropertyAccessExpression} | undefined {
+  const binary = ts.isExpressionStatement(stmt) ? stmt.expression : undefined;
+  if (!binary || !ts.isBinaryExpression(binary) || binary.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+    return undefined;
+  }
+  return ts.isPropertyAccessExpression(binary.left) ? {binary, target: binary.left} : undefined;
+}
+
+/** `module.exports` or the `exports` shorthand: the object a module's members are added to. */
+export function isExportsObject(expr: tsserver.Expression, ts: typeof tsserver): boolean {
+  return isModuleExports(expr, ts) || (ts.isIdentifier(expr) && expr.text === 'exports');
+}
+
+/** `module.exports`, identified structurally. */
+export function isModuleExports(expr: tsserver.Expression, ts: typeof tsserver): boolean {
+  return (
+    ts.isPropertyAccessExpression(expr) &&
+    ts.isIdentifier(expr.expression) &&
+    expr.expression.text === 'module' &&
+    expr.name.text === 'exports'
+  );
+}
+
+/** The `exports` / `module.exports` object a top-level statement assigns to or adds a member to. */
+export function exportsObjectWrittenBy(stmt: tsserver.Statement, ts: typeof tsserver): tsserver.Expression | undefined {
+  const target = memberAssignmentOf(stmt, ts)?.target;
+  if (!target) return undefined;
+  if (isExportsObject(target.expression, ts)) return target.expression;
+  return isModuleExports(target, ts) ? target : undefined;
+}
+
 /**
  * Recursively walks a function body collecting `return` expressions, without
  * descending into nested function-like boundaries (their returns belong to

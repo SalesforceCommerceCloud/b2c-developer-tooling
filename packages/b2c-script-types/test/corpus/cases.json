@@ -7,7 +7,11 @@
     "files": {
       "/helpers.js": "function getAddressBookAddressByForm(addressBook, form) {\n  return addressBook.addresses;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "getAddressBookAddressByForm", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "getAddressBookAddressByForm",
+      "param": 0
+    },
     "expect": "AddressBook"
   },
   {
@@ -18,7 +22,11 @@
     "files": {
       "/helpers.js": "function getPasswordResetToken(customer) {\n  return customer.profile.credentials.createResetPasswordToken();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "getPasswordResetToken", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "getPasswordResetToken",
+      "param": 0
+    },
     "expect": "Customer"
   },
   {
@@ -29,7 +37,11 @@
     "files": {
       "/helpers.js": "/**\n * @param {Object} resettingCustomer\n */\nfunction sendPasswordResetEmail(email, resettingCustomer) {\n  return resettingCustomer.profile.firstName;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "sendPasswordResetEmail", "param": 1},
+    "target": {
+      "file": "/helpers.js",
+      "function": "sendPasswordResetEmail",
+      "param": 1
+    },
     "expect": "Customer"
   },
   {
@@ -40,7 +52,11 @@
     "files": {
       "/helpers.js": "function priceOf(apiProduct) {\n  return apiProduct.getPriceModel();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "priceOf", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "priceOf",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -51,7 +67,11 @@
     "files": {
       "/helpers.js": "function billingOf(currentBasket) {\n  return currentBasket.billingAddress;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "billingOf", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "billingOf",
+      "param": 0
+    },
     "expect": "Basket"
   },
   {
@@ -62,7 +82,11 @@
     "files": {
       "/helpers.js": "function amountOf(paymentInstrument) {\n  return paymentInstrument.capturedAmount;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "amountOf", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "amountOf",
+      "param": 0
+    },
     "expect": "OrderPaymentInstrument"
   },
   {
@@ -73,7 +97,11 @@
     "files": {
       "/helpers.js": "function greet(registeredCustomerProfile) {\n  return registeredCustomerProfile.firstName + registeredCustomerProfile.email;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "greet", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "greet",
+      "param": 0
+    },
     "expect": "Profile"
   },
   {
@@ -84,7 +112,11 @@
     "files": {
       "/helpers.js": "/**\n * @param {Object} customer\n */\nfunction getPasswordResetToken(customer) {\n  return customer.profile.credentials.createResetPasswordToken();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "getPasswordResetToken", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "getPasswordResetToken",
+      "param": 0
+    },
     "expect": "Customer"
   },
   {
@@ -95,7 +127,11 @@
     "files": {
       "/helpers.js": "function markShipmentForShipping(shipment) {\n  doInTransaction(function () {\n    var items = shipment.productLineItems;\n    var c = shipment.custom;\n    return items || c;\n  });\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "markShipmentForShipping", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "markShipmentForShipping",
+      "param": 0
+    },
     "expect": "Shipment"
   },
   {
@@ -106,7 +142,11 @@
     "files": {
       "/helpers.js": "function buildContactPayload(resettingCustomer) {\n  var profile = resettingCustomer.profile;\n  return {\n    email: profile.email,\n    firstName: profile.firstName,\n    lastName: profile.lastName,\n    flag: profile.custom\n  };\n}\n"
     },
-    "target": {"file": "/helpers.js", "kind": "variable", "name": "profile"},
+    "target": {
+      "file": "/helpers.js",
+      "kind": "variable",
+      "name": "profile"
+    },
     "expect": "Profile"
   },
   {
@@ -117,7 +157,11 @@
     "files": {
       "/helpers.js": "function copyBillingAddressToBasket(address, basket) {\n  var billingAddress = basket.billingAddress;\n  if (!billingAddress) {\n    billingAddress = basket.createBillingAddress();\n  }\n  return billingAddress;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "copyBillingAddressToBasket", "param": 1},
+    "target": {
+      "file": "/helpers.js",
+      "function": "copyBillingAddressToBasket",
+      "param": 1
+    },
     "expect": "Basket"
   },
   {
@@ -128,7 +172,11 @@
     "files": {
       "/helpers.js": "function collectLineItems(order) {\n  return order.productLineItems;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "collectLineItems", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "collectLineItems",
+      "param": 0
+    },
     "expect": "Order"
   },
   {
@@ -140,7 +188,11 @@
       "/helpers.js": "function checkPrice(product) {\n  var price = product.getPriceModel().getPrice();\n  if (price && price.getValue() <= 0) {\n    product.setSearchableFlag(false);\n    return product.getID();\n  }\n  return null;\n}\ncheckPrice(getSomeProduct());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "checkPrice", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "checkPrice",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -152,7 +204,11 @@
       "/helpers.js": "function isSpecialCategoryProduct(product) {\n  return product.getCategories();\n}\nisSpecialCategoryProduct(getSomeProduct());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "isSpecialCategoryProduct", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "isSpecialCategoryProduct",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -163,7 +219,11 @@
     "files": {
       "/helpers.js": "function isSpecialCategoryProduct(product) {\n  return product.getCategories();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "isSpecialCategoryProduct", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "isSpecialCategoryProduct",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -174,7 +234,11 @@
     "files": {
       "/helpers.js": "function isSpecialCategoryProduct(obj) {\n  return obj.getCategories();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "isSpecialCategoryProduct", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "isSpecialCategoryProduct",
+      "param": 0
+    },
     "expect": null
   },
   {
@@ -185,7 +249,11 @@
     "files": {
       "/helpers.js": "function findSegmentCategory(category) {\n  while (category) {\n    if (category.ID === 'root') return null;\n    if (category.displayName) return category;\n    category = category.parent;\n  }\n  return null;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "findSegmentCategory", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "findSegmentCategory",
+      "param": 0
+    },
     "expect": "Category"
   },
   {
@@ -196,7 +264,11 @@
     "files": {
       "/helpers.js": "function escapeAddress(address) {\n  address.setFirstName(address.firstName);\n  address.setLastName(address.lastName);\n  address.setAddress1(address.address1);\n  address.setAddress2(address.address2);\n  address.setCity(address.city);\n  address.setPostalCode(address.postalCode);\n  address.setCompanyName(address.companyName);\n  return address.suite;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "escapeAddress", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "escapeAddress",
+      "param": 0
+    },
     "expect": "OrderAddress | CustomerAddress"
   },
   {
@@ -207,7 +279,11 @@
     "files": {
       "/helpers.js": "function getInfo(profile) {\n  return {\n    email: profile.getEmail(),\n    firstName: profile.getFirstName(),\n    lastName: profile.getLastName()\n  };\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "getInfo", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "getInfo",
+      "param": 0
+    },
     "expect": "Profile"
   },
   {
@@ -218,7 +294,11 @@
     "files": {
       "/helpers.js": "function syncAddressesIfRequired(customer) {\n  var book = customer.addressBook;\n  return book;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "syncAddressesIfRequired", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "syncAddressesIfRequired",
+      "param": 0
+    },
     "expect": "Customer"
   },
   {
@@ -229,7 +309,11 @@
       "/types.d.ts": "interface FixtureIterator { hasNext(): boolean; next(): { optionID: string; optionValueID: string }; }\ninterface FixtureCollection { iterator(): FixtureIterator; }\ndeclare function getOptionItems(): FixtureCollection;\ndeclare function map(collection: FixtureCollection, callback: (item: any) => any): any[];\n",
       "/helpers.js": "function getLineItemOptionNames(optionProductLineItems) {\n  return map(optionProductLineItems, function (item) {\n    return item.optionID;\n  });\n}\ngetLineItemOptionNames(getOptionItems());\n"
     },
-    "target": {"file": "/helpers.js", "kind": "callbackParam", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "kind": "callbackParam",
+      "param": 0
+    },
     "expect": "{ optionID: string; optionValueID: string; }"
   },
   {
@@ -241,7 +325,11 @@
       "/helpers.js": "function LineItemModel(product) {\n  this.product = product;\n}\nnew LineItemModel(getSomeProduct());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "LineItemModel", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "LineItemModel",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -252,7 +340,12 @@
     "files": {
       "/helpers.js": "function describeShipment(shipment) {\n  return 'ATTR' in shipment.custom;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "describeShipment", "param": 0, "collectMembers": true},
+    "target": {
+      "file": "/helpers.js",
+      "function": "describeShipment",
+      "param": 0,
+      "collectMembers": true
+    },
     "expectMembers": ["custom"]
   },
   {
@@ -264,7 +357,11 @@
       "/helpers.js": "function describeThing(thing) {\n  return thing;\n}\ndescribeThing(getSomeProduct());\ndescribeThing(getSomeOrder());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;\n  function getSomeOrder(): Order;",
-    "target": {"file": "/helpers.js", "function": "describeThing", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "describeThing",
+      "param": 0
+    },
     "expect": "Product | Order"
   },
   {
@@ -275,7 +372,11 @@
     "files": {
       "/helpers.js": "function touch(obj) {\n  var c = obj.custom;\n  var u = obj.UUID;\n  return c || u;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "touch", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "touch",
+      "param": 0
+    },
     "expect": null
   },
   {
@@ -290,7 +391,11 @@
       "/controllers/Checkout.js": "var COHelpers = require('../checkout/checkoutHelpers');\nvar storeHelpers = require('../helpers/storeHelpers');\nvar preferredAddress;\npreferredAddress = req.currentCustomer.addressBook.preferredAddress;\nCOHelpers.copyCustomerAddressToShipment(preferredAddress);\nCOHelpers.copyCustomerAddressToShipment(storeHelpers.getDeliveryStore());\n"
     },
     "globals": "  declare function getApiStore(): Store;\n  declare const req: any;",
-    "target": {"file": "/checkout/checkoutHelpers.js", "function": "copyCustomerAddressToShipment", "param": 0},
+    "target": {
+      "file": "/checkout/checkoutHelpers.js",
+      "function": "copyCustomerAddressToShipment",
+      "param": 0
+    },
     "expect": null
   },
   {
@@ -301,7 +406,11 @@
     "files": {
       "/helpers.js": "function saveAddress(form, customer) {\n  return customer.raw.getProfile();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "saveAddress", "param": 1},
+    "target": {
+      "file": "/helpers.js",
+      "function": "saveAddress",
+      "param": 1
+    },
     "expect": null
   },
   {
@@ -313,7 +422,11 @@
       "/helpers.js": "function resolveProductKey(product) {\n  if (typeof product === 'string') return product;\n  return product.ID;\n}\nresolveProductKey('sku-1');\nresolveProductKey(getSomeProduct());\n"
     },
     "globals": "  function getSomeProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "resolveProductKey", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "resolveProductKey",
+      "param": 0
+    },
     "expect": "string | Product"
   },
   {
@@ -324,7 +437,11 @@
     "files": {
       "/helpers.js": "function readProfile(obj) {\n  return obj.profile;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "readProfile", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "readProfile",
+      "param": 0
+    },
     "expect": null
   },
   {
@@ -335,7 +452,11 @@
     "files": {
       "/helpers.js": "function hasPreorderableLineItem(items) {\n  return items && items.length > 0;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "hasPreorderableLineItem", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "hasPreorderableLineItem",
+      "param": 0
+    },
     "expect": null
   },
   {
@@ -346,7 +467,11 @@
     "files": {
       "/helpers.js": "function getTotalPrice(lineItem) {\n  return lineItem.priceAdjustments.getLength();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "getTotalPrice", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "getTotalPrice",
+      "param": 0
+    },
     "expect": "ProductLineItem"
   },
   {
@@ -357,7 +482,11 @@
     "files": {
       "/helpers.js": "function handlePliAttributes(pli) {\n  pli.setPriceValue(0);\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "handlePliAttributes", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "handlePliAttributes",
+      "param": 0
+    },
     "expect": "ProductLineItem"
   },
   {
@@ -368,7 +497,11 @@
     "files": {
       "/helpers.js": "function DefaultPrice(priceModel) {\n  this.price = priceModel.price;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "DefaultPrice", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "DefaultPrice",
+      "param": 0
+    },
     "expect": "ProductPriceModel"
   },
   {
@@ -380,7 +513,11 @@
       "/helpers.js": "function isProductLine(lineItem) {\n  return lineItem instanceof ProductLineItem;\n}\n"
     },
     "globals": "  const ProductLineItem: { new (): ProductLineItem };\n  const ShippingLineItem: { new (): ShippingLineItem };\n  const PriceAdjustment: { new (): PriceAdjustment };",
-    "target": {"file": "/helpers.js", "function": "isProductLine", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "isProductLine",
+      "param": 0
+    },
     "expect": "ProductLineItem"
   },
   {
@@ -393,7 +530,11 @@
       "/helpers.js": "function firstVariant(product) {\n  var variant = first(product.getVariants());\n  return variant;\n}\nfirstVariant(getProduct());\n"
     },
     "globals": "  function getProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "kind": "variable", "name": "variant"},
+    "target": {
+      "file": "/helpers.js",
+      "kind": "variable",
+      "name": "variant"
+    },
     "expect": "Variant"
   },
   {
@@ -404,7 +545,11 @@
       "/types.d.ts": "interface FixtureAdj { promotionID: string; }\ninterface FixtureIterator { hasNext(): boolean; next(): FixtureAdj; }\ninterface FixtureCollection { iterator(): FixtureIterator; }\ndeclare function getAdjustments(): FixtureCollection;\ndeclare function first(collection: FixtureCollection, callback: (item: any) => boolean): FixtureAdj | null;\n",
       "/helpers.js": "function hasOrderLevelAdjustment() {\n  return first(getAdjustments(), function (priceAdjustment) {\n    return priceAdjustment.promotionID === 'x';\n  });\n}\n"
     },
-    "target": {"file": "/helpers.js", "kind": "callbackParam", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "kind": "callbackParam",
+      "param": 0
+    },
     "expect": "FixtureAdj"
   },
   {
@@ -415,7 +560,11 @@
     "files": {
       "/helpers.js": "function countBonusChoices(bonusDiscountLineItem) {\n  var max = bonusDiscountLineItem.maxBonusItems;\n  return bonusDiscountLineItem.getBonusProducts().length + max;\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "countBonusChoices", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "countBonusChoices",
+      "param": 0
+    },
     "expect": "BonusDiscountLineItem"
   },
   {
@@ -426,7 +575,11 @@
     "files": {
       "/helpers.js": "function bonusQty(bonusDiscountLineItem) {\n  return bonusDiscountLineItem.getQuantity();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "bonusQty", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "bonusQty",
+      "param": 0
+    },
     "expect": null
   },
   {
@@ -437,7 +590,11 @@
     "files": {
       "/helpers.js": "function surcharge(productShippingLineItem) {\n  var q = productShippingLineItem.getQuantity();\n  return productShippingLineItem.getProductLineItem();\n}\n"
     },
-    "target": {"file": "/helpers.js", "function": "surcharge", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "surcharge",
+      "param": 0
+    },
     "expect": "ProductShippingLineItem"
   },
   {
@@ -450,7 +607,11 @@
       "/full.js": "var BaseModel = require('./base');\nfunction FullModel(product) {\n  BaseModel.call(this, product, 1);\n}\nnew FullModel(getProduct());\n"
     },
     "globals": "  function getProduct(): Product<any>;",
-    "target": {"file": "/base.js", "function": "BaseModel", "param": 0},
+    "target": {
+      "file": "/base.js",
+      "function": "BaseModel",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -462,7 +623,11 @@
       "/helpers.js": "function helper(product) {\n  return product.ID;\n}\nfunction logged(product) {\n  return helper.apply(this, arguments);\n}\nlogged(getProduct());\n"
     },
     "globals": "  function getProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "helper", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "helper",
+      "param": 0
+    },
     "expect": "Product"
   },
   {
@@ -474,7 +639,11 @@
       "/helpers.js": "function lookup(pid) {\n  return findProduct(pid);\n}\nmodule.exports = {lookup: lookup};\n"
     },
     "globals": "  function findProduct(productID: string): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "lookup", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "lookup",
+      "param": 0
+    },
     "expect": "string"
   },
   {
@@ -486,7 +655,11 @@
       "/helpers.js": "function totals(lineItemContainer) {\n  var container = lineItemContainer || {};\n  return container;\n}\ntotals(getBasket());\n"
     },
     "globals": "  function getBasket(): Basket;",
-    "target": {"file": "/helpers.js", "kind": "variable", "name": "container"},
+    "target": {
+      "file": "/helpers.js",
+      "kind": "variable",
+      "name": "container"
+    },
     "expect": "Basket"
   },
   {
@@ -498,7 +671,11 @@
       "/helpers.js": "function pick(useCategory) {\n  var target;\n  if (useCategory) {\n    target = getCategory();\n  } else {\n    target = getProduct();\n  }\n  return target;\n}\n"
     },
     "globals": "  function getProduct(): Product<any>;\n  function getCategory(): Category;",
-    "target": {"file": "/helpers.js", "kind": "variable", "name": "target"},
+    "target": {
+      "file": "/helpers.js",
+      "kind": "variable",
+      "name": "target"
+    },
     "expect": "Category | Product"
   },
   {
@@ -511,7 +688,11 @@
       "/helpers.js": "var collections = require('./collections');\nfunction handleVariant(variant) {\n  return variant.ID;\n}\nfunction allVariants(product) {\n  collections.forEach(product.getVariants(), handleVariant);\n}\nallVariants(getProduct());\n"
     },
     "globals": "  function getProduct(): Product<any>;",
-    "target": {"file": "/helpers.js", "function": "handleVariant", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "handleVariant",
+      "param": 0
+    },
     "expect": "Variant"
   },
   {
@@ -523,7 +704,11 @@
       "/helpers.js": "function recalculate(currentBasket) {\n  applyShippingCost(currentBasket);\n}\nmodule.exports = {recalculate: recalculate};\n"
     },
     "globals": "  function applyShippingCost(basket: Basket): void;",
-    "target": {"file": "/helpers.js", "function": "recalculate", "param": 0},
+    "target": {
+      "file": "/helpers.js",
+      "function": "recalculate",
+      "param": 0
+    },
     "expect": "Basket"
   },
   {
@@ -535,7 +720,11 @@
     "files": {
       "/collections.js": "function forEach(collection, callback, scope) {\n  var iterator = Object.hasOwnProperty.call(collection, 'iterator') ? collection.iterator() : collection;\n  var index = 0;\n  while (iterator.hasNext()) {\n    var item = iterator.next();\n    if (scope) callback.call(scope, item, index++, collection);\n    else callback(item, index++, collection);\n  }\n}\nforEach(getProducts(), function () {});\nforEach(getCategories(), function () {});\nforEach(getShipments(), function () {});\nforEach(getLineItems(), function () {});\nmodule.exports = {forEach: forEach};\n"
     },
-    "target": {"file": "/collections.js", "function": "forEach", "param": 0},
+    "target": {
+      "file": "/collections.js",
+      "function": "forEach",
+      "param": 0
+    },
     "expect": "Collection"
   },
   {
@@ -593,5 +782,28 @@
       "name": "shipment"
     },
     "expect": "Shipment"
+  },
+  {
+    "id": "payment-hook-callhook-prefixed",
+    "source": "SFRA hooks.json app.payment.processor.* + CheckoutServices SubmitPayment shape",
+    "description": "nothing calls a payment hook's Handle export by name: the controller dispatches through HookMgr.callHook with an extension point built from the processor ID, which reaches the script hooks.json registers for app.payment.processor.basic_credit, so its basket parameter is the Basket the controller passes as the hook's first argument",
+    "dwTypes": ["Basket", "HookMgr", "PaymentMgr"],
+    "globals": "var HookManager: typeof HookMgr;\nvar PaymentManager: typeof PaymentMgr;\nfunction getCurrentBasket(): Basket;",
+    "hooks": [
+      {
+        "extensionPoint": "app.payment.processor.basic_credit",
+        "script": "/scripts/hooks/payment/processor/basic_credit.js"
+      }
+    ],
+    "files": {
+      "/scripts/hooks/payment/processor/basic_credit.js": "var Transaction = require('dw/system/Transaction');\n\nfunction Handle(basket, paymentInformation, paymentMethodID) {\n  var currentBasket = basket;\n  var error = false;\n  Transaction.wrap(function () {\n    var existing = currentBasket.getPaymentInstruments(paymentMethodID);\n    for (var i = 0; i < existing.length; i++) {\n      currentBasket.removePaymentInstrument(existing[i]);\n    }\n    var paymentInstrument = currentBasket.createPaymentInstrument(paymentMethodID, currentBasket.totalGrossPrice);\n    paymentInstrument.setCreditCardHolder(paymentInformation.cardOwner);\n  });\n  return {fieldErrors: {}, serverErrors: [], error: error};\n}\n\nfunction Authorize(orderNumber, paymentInstrument, paymentProcessor) {\n  paymentInstrument.paymentTransaction.setTransactionID(orderNumber);\n  paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);\n  return {fieldErrors: {}, serverErrors: [], error: false};\n}\n\nexports.Handle = Handle;\nexports.Authorize = Authorize;\n",
+      "/controllers/CheckoutServices.js": "function submitPayment(req, paymentForm) {\n  var currentBasket = getCurrentBasket();\n  var paymentMethodID = paymentForm.paymentMethod.value;\n  var processor = PaymentManager.getPaymentMethod(paymentMethodID).getPaymentProcessor();\n  var hookName = 'app.payment.processor.' + processor.ID.toLowerCase();\n  if (!HookManager.hasHook(hookName)) return {error: true};\n  return HookManager.callHook('app.payment.processor.' + processor.ID.toLowerCase(), 'Handle', currentBasket, paymentForm.paymentInformation, paymentMethodID);\n}\n\nmodule.exports = {submitPayment: submitPayment};\n"
+    },
+    "target": {
+      "file": "/scripts/hooks/payment/processor/basic_credit.js",
+      "function": "Handle",
+      "param": 0
+    },
+    "expect": "Basket"
   }
 ]

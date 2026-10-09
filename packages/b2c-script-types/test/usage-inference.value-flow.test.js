@@ -85,12 +85,12 @@ function findTarget(ctx, fileName, kind, name) {
 /**
  * Infers `kind` (`return`, `param`, `var`) for the first node called `name`
  * in `file` (default `/helper.js`), with `source` as `/helper.js` and any
- * further `files` beside it.
+ * further `files` beside it, and what the plugin `host` supplies.
  */
-function infer({types = CART_TYPES, source, files = {}, file = '/helper.js', kind, name}) {
+function infer({types = CART_TYPES, source, files = {}, file = '/helper.js', kind, name, host}) {
   const sources = source === undefined ? files : {'/helper.js': source, ...files};
   const languageService = createFixtureLanguageService({'/types.d.ts': types, ...sources});
-  const ctx = createInferenceContext(ts, languageService);
+  const ctx = createInferenceContext(ts, languageService, host);
   return describeTypes(ctx, INFER[kind](ctx, findTarget(ctx, file, kind, name)));
 }
 
@@ -774,6 +774,114 @@ describe('usage-inference — values handed down a chain of helpers', () => {
       kind: 'param',
       name: 'product',
       expected: 'Product',
+    },
+  ]);
+});
+
+describe('usage-inference — hooks', () => {
+  // Hook scripts are only ever invoked through HookMgr.callHook(extensionPoint,
+  // functionName, ...args), dispatched by the hooks.json registrations the
+  // plugin host reads (see test/hook-registry.test.js).
+  const HOOK_TYPES = realTypesPrelude(
+    ['Basket', 'HookMgr'],
+    `
+    var HookManager: typeof HookMgr;
+    function getBasket(): Basket;
+  `,
+  );
+  const PAYMENT_HOOK = `
+    function Handle(basket, paymentInformation) {
+      return {error: false};
+    }
+    function Authorize(orderNumber, paymentInstrument) {
+      return {authorized: true};
+    }
+    exports.Handle = Handle;
+    exports.Authorize = Authorize;
+  `;
+  const PAYMENT_HOST = {
+    hookRegistrations: () => [{extensionPoint: 'app.payment.processor.basic_credit', script: '/hooks/basic_credit.js'}],
+  };
+
+  /** The `basket` parameter of the payment hook's Handle, with `/checkout.js` calling it as `checkout`. */
+  function handleBasket(checkout, host = PAYMENT_HOST) {
+    return {
+      types: HOOK_TYPES,
+      files: {'/hooks/basic_credit.js': PAYMENT_HOOK, '/checkout.js': checkout},
+      file: '/hooks/basic_credit.js',
+      kind: 'param',
+      name: 'basket',
+      host,
+    };
+  }
+
+  runCases([
+    {
+      title: "a hook function's parameter is what callHook passes after the extension point and function name",
+      ...handleBasket(`HookManager.callHook('app.payment.processor.basic_credit', 'Handle', getBasket(), {});`),
+      expected: 'Basket',
+    },
+    {
+      title: 'an extension point built from a literal prefix reaches every registered point it starts',
+      ...handleBasket(`
+        function handlePayment(processorId) {
+          return HookManager.callHook('app.payment.processor.' + processorId.toLowerCase(), 'Handle', getBasket());
+        }
+      `),
+      expected: 'Basket',
+    },
+    {
+      title: 'a template literal extension point reaches the points its head starts',
+      ...handleBasket(
+        'function pay(id) { HookManager.callHook(`app.payment.processor.${id}`, "Handle", getBasket()); }',
+      ),
+      expected: 'Basket',
+    },
+    {
+      title: 'a call naming another function of the same hook passes this one nothing',
+      ...handleBasket(`HookManager.callHook('app.payment.processor.basic_credit', 'Authorize', getBasket());`),
+      expected: '',
+    },
+    {
+      title: 'a call to an extension point the script is not registered for passes it nothing',
+      ...handleBasket(`HookManager.callHook('app.payment.processor.paypal', 'Handle', getBasket());`),
+      expected: '',
+    },
+    {
+      title: 'a prefix no registered point starts with reaches nothing',
+      ...handleBasket(`function pay(id) { HookManager.callHook('app.order.' + id, 'Handle', getBasket()); }`),
+      expected: '',
+    },
+    {
+      title: 'without registrations from the host, callHook reaches nothing',
+      ...handleBasket(`HookManager.callHook('app.payment.processor.basic_credit', 'Handle', getBasket());`, {}),
+      expected: '',
+    },
+    {
+      title: 'a hook function exported under another name is reached by its export name',
+      types: HOOK_TYPES,
+      files: {
+        '/hooks/default.js': 'function handle(basket) { return {}; } module.exports = {Handle: handle};',
+        '/checkout.js': `HookManager.callHook('app.payment.processor.default', 'Handle', getBasket());`,
+      },
+      file: '/hooks/default.js',
+      kind: 'param',
+      name: 'basket',
+      host: {hookRegistrations: () => [{extensionPoint: 'app.payment.processor.default', script: '/hooks/default.js'}]},
+      expected: 'Basket',
+    },
+    {
+      title: 'a callHook call returns what the hook functions it dispatches to return',
+      types: HOOK_TYPES,
+      files: {
+        '/hooks/calculate.js': 'exports.calculate = function (basket) { return basket.getTotalGrossPrice(); };',
+        '/cart.js': `function recalculate() { return HookManager.callHook('dw.order.calculate', 'calculate', getBasket()); }`,
+      },
+      file: '/cart.js',
+      kind: 'return',
+      name: 'recalculate',
+      host: {hookRegistrations: () => [{extensionPoint: 'dw.order.calculate', script: '/hooks/calculate.js'}]},
+      expected: 'Money',
     },
   ]);
 });

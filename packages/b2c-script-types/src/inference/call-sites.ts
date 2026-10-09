@@ -39,7 +39,8 @@ const referencesByProgram = new WeakMap<
   Map<tsserver.Identifier, readonly tsserver.ReferenceEntry[]>
 >();
 
-function findReferences(ctx: InferenceContext, name: tsserver.Identifier): readonly tsserver.ReferenceEntry[] {
+/** Every reference to `name` across the project, from the per-Program cache. Spends no budget: callers do. */
+export function findReferences(ctx: InferenceContext, name: tsserver.Identifier): readonly tsserver.ReferenceEntry[] {
   let cache = referencesByProgram.get(ctx.program);
   if (!cache) {
     cache = new Map();

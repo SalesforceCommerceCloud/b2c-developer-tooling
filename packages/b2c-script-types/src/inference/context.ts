@@ -17,6 +17,27 @@ import type {Bindings} from './bindings';
 import type {CallSite} from './value-flow';
 import {MAX_INFERENCE_DEPTH, MAX_REFERENCES_PER_REQUEST, MAX_SEARCHES_PER_REQUEST} from './constants';
 import type {UsageProfile} from './usage-profile';
+import type {HookRegistration} from '../resolver/hook-registry';
+
+/**
+ * What the plugin host knows about the project beyond its Program: the
+ * cartridge path and the cartridges' hook registrations. Without it, the
+ * evidence that depends on them is simply not gathered.
+ */
+export interface InferenceHost {
+  /**
+   * Maps a cartridge file to the same-subpath file in the next cartridge
+   * down the cartridge path — the module `module.superModule` refers to at
+   * runtime. Without it, `module.superModule` expressions stay uninferred.
+   */
+  readonly resolveSuperModulePath?: (containingFile: string) => string | undefined;
+  /**
+   * The extension points the cartridges' hooks.json files register scripts
+   * for (see ./hook-calls). Asked at most once per request; a host may cache
+   * the answer per Program.
+   */
+  readonly hookRegistrations?: (program: tsserver.Program) => readonly HookRegistration[];
+}
 
 interface MemoEntry {
   /**
@@ -104,13 +125,8 @@ export interface InferenceContext {
    * as calls nest, never shared between them.
    */
   bindings: Bindings;
-  /**
-   * Maps a cartridge file to the same-subpath file in the next cartridge
-   * down the cartridge path — the module `module.superModule` refers to at
-   * runtime. Supplied by the plugin host (which owns the cartridge order);
-   * without it, `module.superModule` expressions stay uninferred.
-   */
-  readonly resolveSuperModulePath?: (containingFile: string) => string | undefined;
+  /** What the plugin host supplies about the project (cartridge path, hook registrations). */
+  readonly host: InferenceHost;
   /**
    * A completion request's cursor position. Exists so usage profiling (see
    * ./usage-profile) can exclude the property access the completion is
@@ -135,7 +151,7 @@ export interface InferenceContext {
 export function createInferenceContext(
   ts: typeof tsserver,
   languageService: tsserver.LanguageService,
-  resolveSuperModulePath?: (containingFile: string) => string | undefined,
+  host: InferenceHost = {},
   triggerPosition?: number,
 ): InferenceContext | undefined {
   const program = languageService.getProgram();
@@ -154,7 +170,7 @@ export function createInferenceContext(
     profiles: new Map(),
     cycleHits: 0,
     bindings: NO_BINDINGS,
-    resolveSuperModulePath,
+    host,
     triggerPosition,
   };
 }

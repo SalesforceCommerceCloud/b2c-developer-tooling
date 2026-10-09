@@ -48,6 +48,8 @@ const REAL_DW_TYPES = {
   ShippingLineItem: dtsPath('dw', 'order', 'ShippingLineItem'),
   PriceAdjustment: dtsPath('dw', 'order', 'PriceAdjustment'),
   Transaction: dtsPath('dw', 'system', 'Transaction'),
+  HookMgr: dtsPath('dw', 'system', 'HookMgr'),
+  PaymentMgr: dtsPath('dw', 'order', 'PaymentMgr'),
   PaymentInstrument: dtsPath('dw', 'order', 'PaymentInstrument'),
   CustomerPaymentInstrument: dtsPath('dw', 'customer', 'CustomerPaymentInstrument'),
 };

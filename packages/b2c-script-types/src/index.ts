@@ -16,6 +16,7 @@ import {
   parseDeclareModuleRanges,
   readDwJsonCartridges,
 } from './resolver/cartridge-discovery';
+import {readHookRegistrations} from './resolver/hook-registry';
 import {
   createPathContainment,
   ownerCartridge as ownerCartridgeImpl,
@@ -243,6 +244,18 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return undefined;
     };
 
+    // Which scripts the cartridges' hooks.json files register for which
+    // extension points, so usage inference can follow
+    // `HookMgr.callHook(extensionPoint, functionName, ...args)` into them.
+    // Read through the language-service host, like require() resolution; a
+    // read that throws declares nothing.
+    const hookRegistrations = () =>
+      readHookRegistrations(cartridges, {
+        readFile: (p) => (host.readFile ? host.readFile(p) : ts.sys.readFile(p)),
+        fileExists: hostFileExists,
+        isWithinRoot,
+      });
+
     // Inject the ambient declarations into the TS program when the project
     // contains at least one cartridge file (isCartridgeFile is false while the
     // plugin is disabled or no cartridge is known). Projects that already
@@ -403,6 +416,7 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       ts,
       languageService: info.languageService,
       resolveSuperModulePath,
+      hookRegistrations,
       log,
     });
     usageInferenceResets.add(usageInference.reset);

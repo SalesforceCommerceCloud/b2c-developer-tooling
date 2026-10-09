@@ -31,17 +31,22 @@ import {collectCallSites, forwardedParameter} from './call-sites';
 import {getReferenceNameNode} from './value-flow';
 import {frameworkParameterTypes} from './framework-contracts';
 import {genericResultSource} from './generic-calls';
+import {hookCallSites, hookImplementations} from './hook-calls';
 import {localMemberValues, memberValueExpressions, valueDeclarationOf} from './member-values';
 import {decideType, limitUnion, normalizeCandidates} from './policy';
 import {callbackParameterTypes, isElementFirstCallbackCall, resolveCalleeDeclaration} from './signatures';
 import type {ExpressionResolver} from './super-module';
 import {resolveSuperModuleMemberTypes, resolveSuperModuleTypes, traceSuperModuleAccess} from './super-module';
-import {arrayTypeOf, dedupeTypes, elementTypeOf, getMemberOfType, informativeParts, isAnyType} from './type-helpers';
+import {
+  arrayTypeOf,
+  dedupeKnownTypes,
+  dedupeTypes,
+  elementTypeOf,
+  getMemberOfType,
+  informativeParts,
+  isAnyType,
+} from './type-helpers';
 import {usageProfileOf} from './usage-profile';
-
-function identifierText(ctx: InferenceContext, name: tsserver.BindingName): string | undefined {
-  return ctx.ts.isIdentifier(name) ? name.text : undefined;
-}
 
 /**
  * Everything a local variable can hold: its initializer plus every later
@@ -68,7 +73,7 @@ function resolveVariableTypes(
       ? resolveInitializerTypes(ctx, decl.initializer, profile.pushedValues, depth, chainHops)
       : [];
     const evidence = [...initial, ...resolveValues(ctx, profile.assignedValues, depth, chainHops)];
-    return decideType(ctx, evidence, profile, identifierText(ctx, decl.name), false);
+    return decideType(ctx, evidence, profile, decl.name, false);
   });
 }
 
@@ -248,7 +253,7 @@ function resolveElementAccessTypes(
 ): tsserver.Type[] {
   const index = expr.argumentExpression;
   if (ctx.ts.isStringLiteralLike(index)) {
-    return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, index, depth, chainHops));
+    return dedupeKnownTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, index, depth, chainHops));
   }
   return dedupeTypes(ctx, resolveElementTypes(ctx, expr.expression, depth, chainHops));
 }
@@ -404,6 +409,8 @@ function resolveCallResultTypes(
   const calleeFn = resolveCalleeDeclaration(ctx, expr);
   const inferred = calleeFn ? calleeReturnTypes(ctx, calleeFn, expr, depth) : [];
   if (inferred.length > 0) return inferred;
+  const hookResults = hookImplementations(ctx, expr).flatMap((hook) => inferReturnType(ctx, hook, depth + 1));
+  if (hookResults.length > 0) return dedupeTypes(ctx, hookResults);
   const generic = genericResultSource(ctx, expr);
   if (generic) {
     return generic.kind === 'return'
@@ -427,15 +434,7 @@ function resolvePropertyTypes(
   depth: number,
   chainHops: number,
 ): tsserver.Type[] {
-  return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, expr.name, depth, chainHops));
-}
-
-/** The member types worth keeping as a property's value. */
-function resolveMemberValueTypes(ctx: InferenceContext, types: readonly tsserver.Type[]): tsserver.Type[] {
-  return dedupeTypes(
-    ctx,
-    types.filter((type) => !isAnyType(ctx.ts, type)),
-  );
+  return dedupeKnownTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, expr.name, depth, chainHops));
 }
 
 /** Resolves an `any` identifier through what it names: a parameter's call sites or a variable's values. */
@@ -459,8 +458,9 @@ function resolveIdentifierTypes(
 /**
  * The argument types a parameter receives: at every call site of its
  * function across the project (`helper(x)`, `new Helper(x)`,
- * `Helper.call(this, x)`), or — for an anonymous callback with no name to
- * search for — from the collection it iterates.
+ * `Helper.call(this, x)`, and for a hook script's export, the
+ * `HookMgr.callHook(...)` calls dispatched to it), or — for an anonymous
+ * callback with no name to search for — from the collection it iterates.
  */
 function parameterEvidence(
   ctx: InferenceContext,
@@ -470,7 +470,7 @@ function parameterEvidence(
 ): tsserver.Type[] {
   const nameNode = getReferenceNameNode(fn, ctx.ts);
   if (!nameNode) return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
-  return collectCallSites(ctx, nameNode).flatMap((site) => {
+  return [...collectCallSites(ctx, nameNode), ...hookCallSites(ctx, fn)].flatMap((site) => {
     const arg = site.args[paramIndex];
     return arg ? argumentEvidence(ctx, arg, depth) : [];
   });
@@ -512,7 +512,7 @@ export function inferParameterType(
     const contract = frameworkParameterTypes(ctx, fn, paramIndex);
     if (contract.length > 0) return contract;
     const evidence = parameterEvidence(ctx, fn, paramIndex, depth);
-    return decideType(ctx, evidence, usageProfileOf(ctx, param), identifierText(ctx, param.name), true);
+    return decideType(ctx, evidence, usageProfileOf(ctx, param), param.name, true);
   });
 }
 

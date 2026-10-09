@@ -15,8 +15,9 @@ import type tsserver from 'typescript/lib/tsserverlibrary';
 
 import {getNodeAtPosition, memberCompletionAccess, propertyAccessNamedBy} from './ast-helpers';
 import {MAX_DISPLAY_CACHE_ENTRIES} from './constants';
+import type {HookRegistration} from '../resolver/hook-registry';
 import {createInferenceContext} from './context';
-import type {InferenceContext} from './context';
+import type {InferenceContext, InferenceHost} from './context';
 import {inferTypeForExpression, inferTypeForNode} from './core';
 import {collectSuperModuleAugmentedMembers, traceSuperModuleAccess} from './super-module';
 import {
@@ -27,10 +28,9 @@ import {
   typesToCompletionEntries,
 } from './type-helpers';
 
-interface HookEnvironment {
+interface HookEnvironment extends InferenceHost {
   readonly ts: typeof tsserver;
   readonly languageService: tsserver.LanguageService;
-  readonly resolveSuperModulePath?: (containingFile: string) => string | undefined;
 }
 
 interface HookOptions extends HookEnvironment {
@@ -127,7 +127,7 @@ function isInferenceTarget(ts: typeof tsserver, checker: tsserver.TypeChecker, e
 }
 
 function newContext(env: HookEnvironment, triggerPosition?: number): InferenceContext | undefined {
-  return createInferenceContext(env.ts, env.languageService, env.resolveSuperModulePath, triggerPosition);
+  return createInferenceContext(env.ts, env.languageService, env, triggerPosition);
 }
 
 /**
@@ -296,11 +296,20 @@ function decorateCompletions(
  * Creates the hover and completion decorators for one language service. Each
  * request builds one inference context; finished results are cached per
  * Program, and `reset()` drops them (the plugin calls it when its
- * configuration changes).
+ * configuration changes). The host's hook registrations are read once per
+ * Program too: hooks.json is no part of the Program, so the next edit is
+ * what picks up a change to it.
  */
-export function createUsageInferenceHooks(options: HookOptions) {
+export function createUsageInferenceHooks(host: HookOptions) {
   const hoverCache = createDisplayCache<HoverInference | undefined>();
   const completionCache = createDisplayCache<tsserver.CompletionEntry[]>();
+  const registrationCache = createDisplayCache<readonly HookRegistration[]>();
+  const readRegistrations = host.hookRegistrations;
+  const options: HookOptions = {
+    ...host,
+    hookRegistrations:
+      readRegistrations && ((program) => registrationCache.get('hooks', program, () => readRegistrations(program))),
+  };
   return {
     decorateQuickInfo(fileName: string, position: number, original: tsserver.QuickInfo | undefined) {
       if (!original) return original;
@@ -316,6 +325,7 @@ export function createUsageInferenceHooks(options: HookOptions) {
     reset() {
       hoverCache.clear();
       completionCache.clear();
+      registrationCache.clear();
     },
   };
 }

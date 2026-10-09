@@ -5,6 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.findReferences = findReferences;
 exports.collectCallSites = collectCallSites;
 exports.forwardedParameter = forwardedParameter;
 const constants_1 = require("./constants");
@@ -21,6 +22,7 @@ const value_flow_1 = require("./value-flow");
 // search budget, so a request reaches the same call sites, and the same
 // answer, whether or not an earlier request warmed the cache.
 const referencesByProgram = new WeakMap();
+/** Every reference to `name` across the project, from the per-Program cache. Spends no budget: callers do. */
 function findReferences(ctx, name) {
     let cache = referencesByProgram.get(ctx.program);
     if (!cache) {

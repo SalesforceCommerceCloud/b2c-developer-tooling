@@ -67,7 +67,7 @@ function isInferenceTarget(ts, checker, expr) {
     return (0, type_helpers_1.isOpenForUsageInference)(ts, checker.getTypeAtLocation(expr)) || !!(0, super_module_1.traceSuperModuleAccess)(ts, checker, expr);
 }
 function newContext(env, triggerPosition) {
-    return (0, context_1.createInferenceContext)(env.ts, env.languageService, env.resolveSuperModulePath, triggerPosition);
+    return (0, context_1.createInferenceContext)(env.ts, env.languageService, env, triggerPosition);
 }
 /**
  * The declaration a member-name hover documents: the member every inferred
@@ -202,11 +202,19 @@ function decorateCompletions(env, cache, fileName, position, original) {
  * Creates the hover and completion decorators for one language service. Each
  * request builds one inference context; finished results are cached per
  * Program, and `reset()` drops them (the plugin calls it when its
- * configuration changes).
+ * configuration changes). The host's hook registrations are read once per
+ * Program too: hooks.json is no part of the Program, so the next edit is
+ * what picks up a change to it.
  */
-function createUsageInferenceHooks(options) {
+function createUsageInferenceHooks(host) {
     const hoverCache = createDisplayCache();
     const completionCache = createDisplayCache();
+    const registrationCache = createDisplayCache();
+    const readRegistrations = host.hookRegistrations;
+    const options = {
+        ...host,
+        hookRegistrations: readRegistrations && ((program) => registrationCache.get('hooks', program, () => readRegistrations(program))),
+    };
     return {
         decorateQuickInfo(fileName, position, original) {
             if (!original)
@@ -219,6 +227,7 @@ function createUsageInferenceHooks(options) {
         reset() {
             hoverCache.clear();
             completionCache.clear();
+            registrationCache.clear();
         },
     };
 }

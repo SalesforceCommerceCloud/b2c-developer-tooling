@@ -385,7 +385,7 @@ describe('usage-inference — real dw.* Script API types (Product, Order)', () =
           ? '/base/cartridge/scripts/helpers/productHelpers.js'
           : undefined;
       const languageService = createFixtureLanguageService(files, {strict: true});
-      const ctx = createInferenceContext(ts, languageService, resolver);
+      const ctx = createInferenceContext(ts, languageService, {resolveSuperModulePath: resolver});
       const overlay = ctx.program.getSourceFile('/custom/cartridge/scripts/helpers/productHelpers.js');
       const fn = findFunctionDeclaration(overlay, 'getMemberPrice');
 

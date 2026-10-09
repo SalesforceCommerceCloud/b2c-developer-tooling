@@ -188,6 +188,14 @@ export function dedupeTypes(ctx: InferenceContext, types: readonly tsserver.Type
   });
 }
 
+/** The distinct types among `types` that say something: {@link dedupeTypes} without `any`. */
+export function dedupeKnownTypes(ctx: InferenceContext, types: readonly tsserver.Type[]): tsserver.Type[] {
+  return dedupeTypes(
+    ctx,
+    types.filter((type) => !isAnyType(ctx.ts, type)),
+  );
+}
+
 /**
  * Strips any nullable part from `type` and computes its apparent type before
  * a member lookup. `getPropertyOfType` on a union only returns members common

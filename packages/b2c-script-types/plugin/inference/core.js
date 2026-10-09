@@ -17,15 +17,13 @@ const call_sites_1 = require("./call-sites");
 const value_flow_1 = require("./value-flow");
 const framework_contracts_1 = require("./framework-contracts");
 const generic_calls_1 = require("./generic-calls");
+const hook_calls_1 = require("./hook-calls");
 const member_values_1 = require("./member-values");
 const policy_1 = require("./policy");
 const signatures_1 = require("./signatures");
 const super_module_1 = require("./super-module");
 const type_helpers_1 = require("./type-helpers");
 const usage_profile_1 = require("./usage-profile");
-function identifierText(ctx, name) {
-    return ctx.ts.isIdentifier(name) ? name.text : undefined;
-}
 /**
  * Everything a local variable can hold: its initializer plus every later
  * `x = value` assignment (`var result = null; if (a) result = x; else result
@@ -47,7 +45,7 @@ function resolveVariableTypes(ctx, decl, depth, chainHops) {
             ? resolveInitializerTypes(ctx, decl.initializer, profile.pushedValues, depth, chainHops)
             : [];
         const evidence = [...initial, ...resolveValues(ctx, profile.assignedValues, depth, chainHops)];
-        return (0, policy_1.decideType)(ctx, evidence, profile, identifierText(ctx, decl.name), false);
+        return (0, policy_1.decideType)(ctx, evidence, profile, decl.name, false);
     });
 }
 /** A variable's initializer; an array literal later filled by `items.push(x)` is an array of what it holds. */
@@ -178,7 +176,7 @@ function resolveElementTypes(ctx, collection, depth, chainHops) {
 function resolveElementAccessTypes(ctx, expr, depth, chainHops) {
     const index = expr.argumentExpression;
     if (ctx.ts.isStringLiteralLike(index)) {
-        return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, index, depth, chainHops));
+        return (0, type_helpers_1.dedupeKnownTypes)(ctx, memberTypesOfReceiver(ctx, expr.expression, index, depth, chainHops));
     }
     return (0, type_helpers_1.dedupeTypes)(ctx, resolveElementTypes(ctx, expr.expression, depth, chainHops));
 }
@@ -288,6 +286,9 @@ function resolveCallResultTypes(ctx, expr, depth, chainHops) {
     const inferred = calleeFn ? calleeReturnTypes(ctx, calleeFn, expr, depth) : [];
     if (inferred.length > 0)
         return inferred;
+    const hookResults = (0, hook_calls_1.hookImplementations)(ctx, expr).flatMap((hook) => inferReturnType(ctx, hook, depth + 1));
+    if (hookResults.length > 0)
+        return (0, type_helpers_1.dedupeTypes)(ctx, hookResults);
     const generic = (0, generic_calls_1.genericResultSource)(ctx, expr);
     if (generic) {
         return generic.kind === 'return'
@@ -301,11 +302,7 @@ function resolveCallResultTypes(ctx, expr, depth, chainHops) {
 }
 /** Resolves an `any` property access (`x.ID`) on an undocumented receiver from the receiver's inferred type(s). */
 function resolvePropertyTypes(ctx, expr, depth, chainHops) {
-    return resolveMemberValueTypes(ctx, memberTypesOfReceiver(ctx, expr.expression, expr.name, depth, chainHops));
-}
-/** The member types worth keeping as a property's value. */
-function resolveMemberValueTypes(ctx, types) {
-    return (0, type_helpers_1.dedupeTypes)(ctx, types.filter((type) => !(0, type_helpers_1.isAnyType)(ctx.ts, type)));
+    return (0, type_helpers_1.dedupeKnownTypes)(ctx, memberTypesOfReceiver(ctx, expr.expression, expr.name, depth, chainHops));
 }
 /** Resolves an `any` identifier through what it names: a parameter's call sites or a variable's values. */
 function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
@@ -323,14 +320,15 @@ function resolveIdentifierTypes(ctx, expr, depth, chainHops) {
 /**
  * The argument types a parameter receives: at every call site of its
  * function across the project (`helper(x)`, `new Helper(x)`,
- * `Helper.call(this, x)`), or — for an anonymous callback with no name to
- * search for — from the collection it iterates.
+ * `Helper.call(this, x)`, and for a hook script's export, the
+ * `HookMgr.callHook(...)` calls dispatched to it), or — for an anonymous
+ * callback with no name to search for — from the collection it iterates.
  */
 function parameterEvidence(ctx, fn, paramIndex, depth) {
     const nameNode = (0, value_flow_1.getReferenceNameNode)(fn, ctx.ts);
     if (!nameNode)
         return inferCallbackParameterTypes(ctx, fn, paramIndex, depth);
-    return (0, call_sites_1.collectCallSites)(ctx, nameNode).flatMap((site) => {
+    return [...(0, call_sites_1.collectCallSites)(ctx, nameNode), ...(0, hook_calls_1.hookCallSites)(ctx, fn)].flatMap((site) => {
         const arg = site.args[paramIndex];
         return arg ? argumentEvidence(ctx, arg, depth) : [];
     });
@@ -368,7 +366,7 @@ function inferParameterType(ctx, param, depth = 0) {
         if (contract.length > 0)
             return contract;
         const evidence = parameterEvidence(ctx, fn, paramIndex, depth);
-        return (0, policy_1.decideType)(ctx, evidence, (0, usage_profile_1.usageProfileOf)(ctx, param), identifierText(ctx, param.name), true);
+        return (0, policy_1.decideType)(ctx, evidence, (0, usage_profile_1.usageProfileOf)(ctx, param), param.name, true);
     });
 }
 /**

@@ -9,6 +9,7 @@ exports.traceSuperModuleAccess = traceSuperModuleAccess;
 exports.resolveSuperModuleTypes = resolveSuperModuleTypes;
 exports.resolveSuperModuleMemberTypes = resolveSuperModuleMemberTypes;
 exports.collectSuperModuleAugmentedMembers = collectSuperModuleAugmentedMembers;
+const ast_helpers_1 = require("./ast-helpers");
 const constants_1 = require("./constants");
 const context_1 = require("./context");
 const type_helpers_1 = require("./type-helpers");
@@ -24,16 +25,14 @@ function isSuperModuleAccess(expr, ts) {
 /**
  * Locates the source file `module.superModule` refers to for `fromFileName`
  * — the same-subpath module in the next cartridge down the path, per the
- * host-supplied ctx.resolveSuperModulePath. Only works when that file is
+ * host-supplied ctx.host.resolveSuperModulePath. Only works when that file is
  * part of the current program (true under the recommended jsconfig setup
  * that includes all cartridge files, but not in a bare inferred project
  * where nothing require()s the base file).
  */
 function findSuperModuleFile(ctx, fromFileName) {
     const { program } = ctx;
-    if (!ctx.resolveSuperModulePath)
-        return undefined;
-    const superPath = ctx.resolveSuperModulePath(fromFileName);
+    const superPath = ctx.host.resolveSuperModulePath?.(fromFileName);
     if (!superPath)
         return undefined;
     // The resolver returns host-normalized (possibly case-folded) paths;
@@ -55,35 +54,16 @@ function collectExportAssignments(sf, ts) {
     const full = [];
     const members = [];
     for (const stmt of sf.statements) {
-        const assignment = memberAssignmentOf(stmt, ts);
+        const assignment = (0, ast_helpers_1.memberAssignmentOf)(stmt, ts);
         if (!assignment)
             continue;
         const { binary, target } = assignment;
-        if (isExportsObject(target.expression, ts))
+        if ((0, ast_helpers_1.isExportsObject)(target.expression, ts))
             members.push({ name: target.name.text, expr: binary.right });
-        else if (isModuleExports(target, ts))
+        else if ((0, ast_helpers_1.isModuleExports)(target, ts))
             full.push(binary);
     }
     return { full, members };
-}
-/** The `x.name = value` assignment a statement is, if any. */
-function memberAssignmentOf(stmt, ts) {
-    const binary = ts.isExpressionStatement(stmt) ? stmt.expression : undefined;
-    if (!binary || !ts.isBinaryExpression(binary) || binary.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
-        return undefined;
-    }
-    return ts.isPropertyAccessExpression(binary.left) ? { binary, target: binary.left } : undefined;
-}
-/** `module.exports` or the `exports` shorthand: the object a module's members are added to. */
-function isExportsObject(expr, ts) {
-    return isModuleExports(expr, ts) || (ts.isIdentifier(expr) && expr.text === 'exports');
-}
-/** `module.exports`, identified structurally. */
-function isModuleExports(expr, ts) {
-    return (ts.isPropertyAccessExpression(expr) &&
-        ts.isIdentifier(expr.expression) &&
-        expr.expression.text === 'module' &&
-        expr.name.text === 'exports');
 }
 /**
  * True when a `module.exports = X` assignment gives the checker a genuinely
@@ -194,8 +174,7 @@ function resolveSuperModuleMemberTypes(ctx, superAccess, memberName, resolve) {
         const matches = members.filter((member) => member.name === memberName);
         if (matches.length === 0)
             continue;
-        const types = matches.flatMap((member) => resolve(member.expr));
-        return (0, type_helpers_1.dedupeTypes)(ctx, types.filter((type) => !(0, type_helpers_1.isAnyType)(ctx.ts, type)));
+        return (0, type_helpers_1.dedupeKnownTypes)(ctx, matches.flatMap((member) => resolve(member.expr)));
     }
     return [];
 }
