@@ -184,7 +184,7 @@ async function build() {
   // An ESM entry named .js needs "type": "module"; .mjs is always ESM on its own.
   const pkg = JSON.parse(await fs.readFile(path.join(pkgRoot, 'package.json'), 'utf8'));
   delete pkg.type;
-  if (format === 'esm' && extension === 'js') pkg.type = 'module';
+  // if (format === 'esm' && extension === 'js') pkg.type = 'module';
   await fs.writeFile(path.join(buildDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 
   console.log(`Total build size: ${formatSize(await dirSize(buildDir))}`);
