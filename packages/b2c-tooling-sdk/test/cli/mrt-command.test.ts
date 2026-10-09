@@ -77,6 +77,10 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
     return this.getScapiMrtConfig();
   }
 
+  public testResolvedScopes() {
+    return this.resolvedConfig.values.scopes;
+  }
+
   public testGetMrtBackendContext() {
     return this.getMrtBackendContext();
   }
@@ -412,7 +416,7 @@ describe('cli/mrt-command', () => {
       await command.init();
 
       expect(command.testGetScapiMrtConfig()).to.not.equal(undefined);
-      expect(command.resolvedConfig.values.scopes).to.deep.equal(['a', 'b']);
+      expect(command.testResolvedScopes()).to.deep.equal(['a', 'b']);
     });
 
     describe('returns undefined (not SCAPI eligible)', () => {
