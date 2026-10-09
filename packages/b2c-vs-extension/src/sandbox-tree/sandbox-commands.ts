@@ -189,6 +189,7 @@ export function registerSandboxCommands(
           `Upgrade sandbox "${node.sandbox.id}" to the latest platform version? The sandbox will restart as part of the upgrade.`,
           {modal: true},
           'Upgrade',
+          'Cancel',
         );
         if (choice !== 'Upgrade') return;
       }
