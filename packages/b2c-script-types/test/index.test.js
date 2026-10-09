@@ -6,6 +6,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const path = require('node:path');
 
 const ts = require('typescript');
 
@@ -935,6 +936,50 @@ describe('create() proxy — usage inference wiring', () => {
 
     assert.throws(() => proxy.getQuickInfoAtPosition('/helper.js', 0), ts.OperationCanceledException);
     assert.throws(() => proxy.getCompletionsAtPosition('/helper.js', 0, undefined), ts.OperationCanceledException);
+  });
+});
+
+describe('create() proxy — ambient declarations', () => {
+  // The plugin adds the bundled SFCC globals (and, with a `modules`
+  // cartridge, the SFRA typings) to a cartridge project's file list.
+  const TYPES_DIR = path.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
+  const GLOBAL_DTS = `${TYPES_DIR}/global.d.ts`;
+  const SFRA_SERVER_DTS = `${TYPES_DIR}/sfra/server.d.ts`;
+  const ambientIn = (list) => list.filter((f) => f.startsWith(TYPES_DIR));
+
+  function pluginOver(files, cartridges) {
+    const host = createFixtureHost(files);
+    const {plugin} = createPluginProxy({host, config: {enabled: true, autoDiscover: false, cartridges}});
+    return {host, plugin};
+  }
+
+  it('adds the SFCC globals to a cartridge project once, and the SFRA typings only with a modules cartridge', () => {
+    const files = {'/app/cartridge/a.js': 'module.exports = 1;'};
+    assert.deepEqual(ambientIn(pluginOver(files, [{name: 'app', src: '/app'}]).host.getScriptFileNames()), [
+      GLOBAL_DTS,
+    ]);
+    const withModules = pluginOver({...files, '/modules/server.js': ''}, [
+      {name: 'app', src: '/app'},
+      {name: 'modules', src: '/modules'},
+    ]);
+    assert.deepEqual(ambientIn(withModules.host.getScriptFileNames()), [GLOBAL_DTS, SFRA_SERVER_DTS]);
+    const included = pluginOver({...files, [GLOBAL_DTS]: ''}, [{name: 'app', src: '/app'}]);
+    assert.deepEqual(ambientIn(included.host.getScriptFileNames()), [GLOBAL_DTS]);
+  });
+
+  it('answers repeated requests from an unchanged file list and recomputes when the files or configuration change', () => {
+    const files = {'/other/a.js': ''};
+    const {host, plugin} = pluginOver(files, [{name: 'app', src: '/app'}]);
+    assert.deepEqual(ambientIn(host.getScriptFileNames()), []);
+    assert.equal(host.getScriptFileNames(), host.getScriptFileNames());
+
+    files['/app/cartridge/a.js'] = 'module.exports = 1;';
+    assert.deepEqual(ambientIn(host.getScriptFileNames()), [GLOBAL_DTS]);
+
+    plugin.onConfigurationChanged({enabled: false});
+    assert.deepEqual(ambientIn(host.getScriptFileNames()), []);
+    plugin.onConfigurationChanged({enabled: true, cartridges: [{name: 'other', src: '/other'}]});
+    assert.deepEqual(ambientIn(host.getScriptFileNames()), [GLOBAL_DTS]);
   });
 });
 

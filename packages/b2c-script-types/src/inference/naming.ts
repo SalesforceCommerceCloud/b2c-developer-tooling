@@ -30,6 +30,25 @@ interface Named {
   readonly name: string;
 }
 
+// Candidates by lowercased name, per candidate list. Every request on a
+// Program picks among the same ambient class list (see ./ambient-index), so
+// its table is built once per Program instead of once per pick.
+const tablesByCandidates = new WeakMap<readonly Named[], ReadonlyMap<string, readonly Named[]>>();
+
+function byLowercaseName<T extends Named>(candidates: readonly T[]): ReadonlyMap<string, readonly T[]> {
+  const cached = tablesByCandidates.get(candidates) as ReadonlyMap<string, readonly T[]> | undefined;
+  if (cached) return cached;
+  const table = new Map<string, T[]>();
+  for (const candidate of candidates) {
+    const key = candidate.name.toLowerCase();
+    const named = table.get(key);
+    if (named) named.push(candidate);
+    else table.set(key, [candidate]);
+  }
+  tablesByCandidates.set(candidates, table);
+  return table;
+}
+
 // The expansion goes first: SFRA's `lineItem` parameters hold a
 // ProductLineItem, even where the usage would also fit the LineItem base.
 function withAbbreviation(key: string): string[] {
@@ -65,19 +84,13 @@ function conventionalClassNames(identifier: string): string[] {
  * `ProductPriceModel`, `availabilityModel` → `ProductAvailabilityModel`).
  */
 export function pickByName<T extends Named>(identifier: string, candidates: readonly T[]): T | undefined {
-  const byName = new Map<string, T[]>();
-  for (const candidate of candidates) {
-    const key = candidate.name.toLowerCase();
-    const named = byName.get(key);
-    if (named) named.push(candidate);
-    else byName.set(key, [candidate]);
-  }
+  const byName = byLowercaseName(candidates);
   for (const key of conventionalClassNames(identifier)) {
     const named = byName.get(key);
     if (named?.length === 1) return named[0];
   }
-  if (identifier === identifier.toLowerCase()) return undefined;
   const lower = identifier.toLowerCase();
-  const tails = candidates.filter((candidate) => candidate.name.toLowerCase().endsWith(lower));
+  if (identifier === lower) return undefined;
+  const tails = [...byName].filter(([name]) => name.endsWith(lower)).flatMap(([, named]) => named);
   return tails.length === 1 ? tails[0] : undefined;
 }

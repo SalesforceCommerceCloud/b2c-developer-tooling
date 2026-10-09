@@ -35,6 +35,11 @@ const GLOBAL_DTS = path.join(TYPES_DIR, 'global.d.ts').replace(/\\/g, '/');
 // property assignments in modules/server.js that TS can't infer.
 const SFRA_SERVER_DTS = path.join(TYPES_DIR, 'sfra', 'server.d.ts').replace(/\\/g, '/');
 
+/** True when two file lists name the same files in the same order. */
+function sameFileNames(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((name, i) => name === b[i]);
+}
+
 function init({typescript: ts}: {typescript: typeof tsserver}) {
   // tsserver calls this factory function fresh for every project that loads
   // the plugin (once per tsconfig/jsconfig root), so these variables are a
@@ -260,12 +265,31 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     // contains at least one cartridge file (isCartridgeFile is false while the
     // plugin is disabled or no cartridge is known). Projects that already
     // include them via a jsconfig include glob are unaffected.
+    //
+    // tsserver asks for this list on every language-service request (each
+    // hover, completion and diagnostics pass), building a new array each time
+    // from the same names while the project's files stay put. The answer is
+    // kept until a name or the configuration changes, so a request costs one
+    // name-by-name comparison rather than normalizing every path in the
+    // project and probing the disk.
     const origGetScriptFileNames = host.getScriptFileNames.bind(host);
-    host.getScriptFileNames = () => {
-      const list = origGetScriptFileNames();
+    const withAmbientDeclarations = (list: string[]): string[] => {
       if (!list.some((f) => isCartridgeFile(f))) return list;
       const additions = missingAmbientDeclarations(list);
       return additions.length > 0 ? [...list, ...additions] : list;
+    };
+    let lastFileNames:
+      | {list: string[]; cartridges: NormalizedCartridge[]; enabled: boolean; result: string[]}
+      | undefined;
+    host.getScriptFileNames = () => {
+      const list = origGetScriptFileNames();
+      const last = lastFileNames;
+      if (last?.cartridges === cartridges && last.enabled === enabled && sameFileNames(last.list, list)) {
+        return last.result;
+      }
+      const result = withAmbientDeclarations(list);
+      lastFileNames = {list, cartridges, enabled, result};
+      return result;
     };
 
     // Shared by both host resolution hooks below (the modern

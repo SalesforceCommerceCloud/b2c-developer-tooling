@@ -6,6 +6,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAmbientClasses = getAmbientClasses;
+exports.ambientClassesWithMembers = ambientClassesWithMembers;
 exports.ambientClassType = ambientClassType;
 exports.findAmbientClassType = findAmbientClassType;
 exports.builtinValueTypes = builtinValueTypes;
@@ -48,6 +49,11 @@ function getAmbientClasses(ctx) {
         .flatMap((sourceFile) => indexFile(ctx, sourceFile));
     classesByProgram.set(program, classes);
     return classes;
+}
+/** The indexed classes that have every member in `memberNames`, in index order. */
+function ambientClassesWithMembers(ctx, memberNames) {
+    const names = [...memberNames];
+    return getAmbientClasses(ctx).filter((ambientClass) => names.every((name) => ambientClass.memberNames.has(name)));
 }
 /** The class's declared (uninstantiated) type, resolved with the current checker. */
 function ambientClassType(ctx, ambientClass) {

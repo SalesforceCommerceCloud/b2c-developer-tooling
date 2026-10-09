@@ -37,7 +37,7 @@
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {ambientClassType, builtinValueTypes, getAmbientClasses} from './ambient-index';
+import {ambientClassesWithMembers, ambientClassType, builtinValueTypes, getAmbientClasses} from './ambient-index';
 import type {AmbientClass} from './ambient-index';
 import {
   GLOBAL_OBJECT_CLASSES,
@@ -284,10 +284,8 @@ export function matchAmbientTypesByUsage(
 ): tsserver.Type[] {
   if (memberNames.size === 0) return [];
   const classes = getAmbientClasses(ctx);
-  const fitting = classes.filter(
-    (ambientClass) =>
-      !GLOBAL_OBJECT_CLASSES.has(ambientClass.name) &&
-      [...memberNames].every((name) => ambientClass.memberNames.has(name)),
+  const fitting = ambientClassesWithMembers(ctx, memberNames).filter(
+    (ambientClass) => !GLOBAL_OBJECT_CLASSES.has(ambientClass.name),
   );
   const onlyWeakMembers = [...memberNames].every((name) => WEAK_USAGE_MEMBERS.has(name));
   if (fitting.length === 0 || (onlyWeakMembers && fitting.length > 1)) return [];
@@ -318,9 +316,7 @@ export function matchAmbientTypesByUsage(
 function downcastOf(ctx: InferenceContext, type: tsserver.Type, memberNames: ReadonlySet<string>): tsserver.Type[] {
   const own = classOf(ctx, type);
   if (!own || UNINFORMATIVE_ANCESTORS.has(own.symbol?.name ?? '')) return [];
-  const fitting = getAmbientClasses(ctx).filter((ambientClass) =>
-    [...memberNames].every((name) => ambientClass.memberNames.has(name)),
-  );
+  const fitting = ambientClassesWithMembers(ctx, memberNames);
   const subclasses = mostGeneral(
     ctx,
     resolveMatches(ctx, fitting)

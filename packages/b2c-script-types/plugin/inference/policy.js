@@ -207,8 +207,7 @@ function matchAmbientTypesByUsage(ctx, memberNames, identifierName) {
     if (memberNames.size === 0)
         return [];
     const classes = (0, ambient_index_1.getAmbientClasses)(ctx);
-    const fitting = classes.filter((ambientClass) => !constants_1.GLOBAL_OBJECT_CLASSES.has(ambientClass.name) &&
-        [...memberNames].every((name) => ambientClass.memberNames.has(name)));
+    const fitting = (0, ambient_index_1.ambientClassesWithMembers)(ctx, memberNames).filter((ambientClass) => !constants_1.GLOBAL_OBJECT_CLASSES.has(ambientClass.name));
     const onlyWeakMembers = [...memberNames].every((name) => constants_1.WEAK_USAGE_MEMBERS.has(name));
     if (fitting.length === 0 || (onlyWeakMembers && fitting.length > 1))
         return [];
@@ -237,7 +236,7 @@ function downcastOf(ctx, type, memberNames) {
     const own = classOf(ctx, type);
     if (!own || constants_1.UNINFORMATIVE_ANCESTORS.has(own.symbol?.name ?? ''))
         return [];
-    const fitting = (0, ambient_index_1.getAmbientClasses)(ctx).filter((ambientClass) => [...memberNames].every((name) => ambientClass.memberNames.has(name)));
+    const fitting = (0, ambient_index_1.ambientClassesWithMembers)(ctx, memberNames);
     const subclasses = mostGeneral(ctx, resolveMatches(ctx, fitting)
         .map((match) => match.type)
         .filter((subclass) => isAncestorOf(ctx, type, subclass)));

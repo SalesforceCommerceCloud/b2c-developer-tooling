@@ -69,6 +69,12 @@ export function getAmbientClasses(ctx: InferenceContext): readonly AmbientClass[
   return classes;
 }
 
+/** The indexed classes that have every member in `memberNames`, in index order. */
+export function ambientClassesWithMembers(ctx: InferenceContext, memberNames: ReadonlySet<string>): AmbientClass[] {
+  const names = [...memberNames];
+  return getAmbientClasses(ctx).filter((ambientClass) => names.every((name) => ambientClass.memberNames.has(name)));
+}
+
 /** The class's declared (uninstantiated) type, resolved with the current checker. */
 export function ambientClassType(ctx: InferenceContext, ambientClass: AmbientClass): tsserver.Type | undefined {
   const {checker} = ctx;
