@@ -1,5 +1,14 @@
 # @salesforce/b2c-cli
 
+## 2.5.2
+
+### Patch Changes
+
+- [#754](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/754) [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8) - Fix comma-separated values in `SFCC_OAUTH_SCOPES`, `SFCC_AUTH_METHODS`, and `SFCC_IMPORT_SET_EXCLUDE`. Previously, multiple scopes made SCAPI-backed MRT commands report missing SCAPI auth, and multiple auth methods failed every OAuth command. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8), [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8)]:
+  - @salesforce/b2c-tooling-sdk@2.6.1
+
 ## 2.5.1
 
 ### Patch Changes

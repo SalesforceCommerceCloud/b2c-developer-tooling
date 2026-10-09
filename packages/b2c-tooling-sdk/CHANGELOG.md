@@ -1,5 +1,13 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.6.1
+
+### Patch Changes
+
+- [#754](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/754) [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8) - Config mismatch warnings (client ID, SLAS client ID, server) now say where both values came from (a flag, an environment variable, or a `.env` file, plus the config source it conflicts with) instead of "override" and "config file". (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#754](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/754) [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8) - Fix comma-separated values in `SFCC_OAUTH_SCOPES`, `SFCC_AUTH_METHODS`, and `SFCC_IMPORT_SET_EXCLUDE`. Previously, multiple scopes made SCAPI-backed MRT commands report missing SCAPI auth, and multiple auth methods failed every OAuth command. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.6.0
 
 ### Minor Changes
