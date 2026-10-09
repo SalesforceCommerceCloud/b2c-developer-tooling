@@ -23,6 +23,10 @@ const constants_1 = require("./constants");
 function isAnyType(ts, type) {
     return (type.flags & ts.TypeFlags.Any) !== 0;
 }
+/** True when `type` can be called or constructed: a function type, whatever members it lacks. */
+function isCallable(type) {
+    return type.getCallSignatures().length > 0 || type.getConstructSignatures().length > 0;
+}
 /**
  * True when the checker's type is too uninformative to prefer over usage
  * inference: `any`, the `object` non-primitive, an empty `{}` type literal, or
@@ -46,7 +50,7 @@ function isOpenForUsageInference(ts, type) {
     if (type.flags & ts.TypeFlags.NonPrimitive)
         return true;
     const symbol = type.getSymbol();
-    if (symbol?.getName() === '__type' && type.getProperties().length === 0)
+    if (symbol?.getName() === '__type' && type.getProperties().length === 0 && !isCallable(type))
         return true;
     return symbol?.getName() === 'Object' && (type.flags & ts.TypeFlags.Object) !== 0;
 }

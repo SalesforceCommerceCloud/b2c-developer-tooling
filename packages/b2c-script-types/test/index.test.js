@@ -770,6 +770,45 @@ describe('create() proxy — usage inference wiring', () => {
     const hoverText = [...(hover?.displayParts ?? []), ...(hover?.documentation ?? [])].map((p) => p.text).join('');
     assert.match(hoverText, /res: Response/);
     assert.match(hoverText, /Inferred from usage: Response/);
+
+    // `next` is typed by the declared callback's function type alias.
+    const nextHover = proxy.getQuickInfoAtPosition(middlewareFile, source.indexOf('next)'));
+    const nextText = (nextHover?.documentation ?? []).map((p) => p.text).join('');
+    assert.match(nextText, /Inferred from usage: NextFunction/);
+  });
+
+  it('leaves a parameter the checker types as a function to the checker', () => {
+    // A function type has no properties, like the empty `{}` the gate treats
+    // as open, but its call signature is real type information: hovering the
+    // contextually typed `next` must not run inference or repeat its type.
+    const files = {
+      '/c/cartridge/controllers/Home.js': `
+        var server = require('server');
+        server.get('Show', function (req, res, next) {
+          next();
+        });
+        module.exports = server.exports();
+      `,
+    };
+    const {proxy} = createPluginProxy({
+      files,
+      config: {
+        enabled: true,
+        autoDiscover: false,
+        cartridges: [
+          {name: 'c', src: '/c/'},
+          {name: 'modules', src: '/modules/'},
+        ],
+        inferUsage: true,
+      },
+    });
+    const controller = '/c/cartridge/controllers/Home.js';
+
+    const hover = proxy.getQuickInfoAtPosition(controller, files[controller].indexOf('next)'));
+    const header = (hover?.displayParts ?? []).map((p) => p.text).join('');
+    const docText = (hover?.documentation ?? []).map((p) => p.text).join('');
+    assert.equal(header, '(parameter) next: NextFunction');
+    assert.ok(!docText.includes('Inferred from usage'), `got: ${docText}`);
   });
 
   it("types a route event listener's parameters through the route a middleware step runs on", () => {
