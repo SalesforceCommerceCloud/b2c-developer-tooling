@@ -1007,7 +1007,7 @@ export interface components {
         SandboxResourceProfile: "medium" | "large" | "xlarge" | "xxlarge";
         SandboxOperationRequestModel: {
             /** @enum {string} */
-            operation: "start" | "stop" | "restart" | "reset" | "upgrade";
+            operation: "start" | "stop" | "restart" | "reset";
         };
         SandboxAliasResponse: components["schemas"]["StatusResponse"] & {
             data?: components["schemas"]["SandboxAliasModel"];
