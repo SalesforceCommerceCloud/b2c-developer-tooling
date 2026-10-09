@@ -139,7 +139,7 @@ suite('sandbox menu contributions (package.json)', () => {
     });
   });
 
-  suite('Start/Stop/Restart/Upgrade still match -cloned variants', () => {
+  suite('Start/Stop/Restart still match -cloned variants', () => {
     test('Start matches both sandbox-stopped and sandbox-stopped-cloned', () => {
       const when = menu['b2c-dx.sandbox.start']?.when;
       assert.ok(whenClauseMatches(when, 'sandbox-stopped'));
@@ -158,13 +158,6 @@ suite('sandbox menu contributions (package.json)', () => {
       const when = menu['b2c-dx.sandbox.restart']?.when;
       assert.ok(whenClauseMatches(when, 'sandbox-started'));
       assert.ok(whenClauseMatches(when, 'sandbox-started-cloned'));
-    });
-
-    test('Upgrade matches both sandbox-started and sandbox-started-cloned', () => {
-      const when = menu['b2c-dx.sandbox.upgrade']?.when;
-      assert.ok(whenClauseMatches(when, 'sandbox-started'));
-      assert.ok(whenClauseMatches(when, 'sandbox-started-cloned'));
-      assert.ok(!whenClauseMatches(when, 'sandbox-stopped'));
     });
   });
 

@@ -718,12 +718,6 @@
         "category": "B2C DX - Sandboxes"
       },
       {
-        "command": "b2c-dx.sandbox.upgrade",
-        "title": "Upgrade Sandbox",
-        "icon": "$(arrow-up)",
-        "category": "B2C DX - Sandboxes"
-      },
-      {
         "command": "b2c-dx.sandbox.viewDetails",
         "title": "View Details",
         "icon": "$(info)",
@@ -1729,19 +1723,14 @@
           "group": "2_lifecycle@3"
         },
         {
-          "command": "b2c-dx.sandbox.upgrade",
-          "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-started(-cloned)?$/",
-          "group": "2_lifecycle@4"
-        },
-        {
           "command": "b2c-dx.sandbox.extendExpiration",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(?!cloning|settingup)/",
-          "group": "2_lifecycle@5"
+          "group": "2_lifecycle@4"
         },
         {
           "command": "b2c-dx.sandbox.clone",
           "when": "view == b2cSandboxExplorer && viewItem =~ /^sandbox-(started|stopped)(-cloned)?$/",
-          "group": "2_lifecycle@6"
+          "group": "2_lifecycle@5"
         },
         {
           "command": "b2c-dx.sandbox.viewCloneDetails",
@@ -2113,10 +2102,6 @@
         },
         {
           "command": "b2c-dx.sandbox.restart",
-          "when": "false"
-        },
-        {
-          "command": "b2c-dx.sandbox.upgrade",
           "when": "false"
         },
         {
