@@ -22,7 +22,7 @@ const path = require('node:path');
 
 const ts = require('typescript');
 
-const init = require('../src/index');
+const {createPluginProxy} = require('./helpers/plugin-proxy');
 
 const TYPES_DIR = path.resolve(__dirname, '..', 'types');
 
@@ -82,15 +82,10 @@ function makeResolver({appRoot, modRoot, containingFile, tmp}) {
     resolveModuleNameLiterals: (lits) => lits.map(() => ({resolvedModule: undefined})),
   };
   const languageService = ts.createLanguageService(host, ts.createDocumentRegistry());
-  const {create} = init({typescript: ts});
-  create({
+  createPluginProxy({
+    host,
     languageService,
-    languageServiceHost: host,
-    project: {
-      projectService: {logger: {info: () => {}}},
-      getCurrentDirectory: () => tmp,
-      getProjectVersion: () => '1',
-    },
+    currentDirectory: tmp,
     config: {
       enabled: true,
       autoDiscover: false,

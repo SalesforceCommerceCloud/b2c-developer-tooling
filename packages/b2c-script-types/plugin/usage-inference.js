@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.matchAmbientTypesByUsage = exports.usageProfileOf = exports.inferTypeForNode = exports.inferTypeForExpression = exports.inferReturnType = exports.inferParameterType = exports.traceSuperModuleAccess = exports.collectSuperModuleAugmentedMembers = exports.typesToCompletionEntries = exports.isOpenForUsageInference = exports.inferredCompletionEntry = exports.getMemberOfType = exports.describeTypes = exports.findEnclosingPropertyAccess = exports.getNodeAtPosition = exports.createInferenceContext = exports.INFERRED_COMPLETION_SOURCE = void 0;
+exports.createUsageInferenceHooks = exports.matchAmbientTypesByUsage = exports.usageProfileOf = exports.inferTypeForNode = exports.inferReturnType = exports.inferParameterType = exports.collectSuperModuleAugmentedMembers = exports.typesToCompletionEntries = exports.describeTypes = exports.memberCompletionAccess = exports.createInferenceContext = exports.INFERRED_COMPLETION_SOURCE = void 0;
 // Public entry point for the usage-inference engine. The implementation is
 // split across the ./inference/ modules by responsibility; this barrel just
 // re-exports the pieces the tsserver plugin (and the test suite) consume, so
@@ -25,28 +25,25 @@ exports.matchAmbientTypesByUsage = exports.usageProfileOf = exports.inferTypeFor
 //   inference/framework-contracts - parameters the platform itself passes (Page Designer)
 //   inference/policy              - turning evidence into the type(s) shown
 //   inference/core                - the recursive evidence-gathering engine
+//   inference/editor-hooks        - hover and completion decoration for the plugin
 var constants_1 = require("./inference/constants");
 Object.defineProperty(exports, "INFERRED_COMPLETION_SOURCE", { enumerable: true, get: function () { return constants_1.INFERRED_COMPLETION_SOURCE; } });
 var context_1 = require("./inference/context");
 Object.defineProperty(exports, "createInferenceContext", { enumerable: true, get: function () { return context_1.createInferenceContext; } });
 var ast_helpers_1 = require("./inference/ast-helpers");
-Object.defineProperty(exports, "getNodeAtPosition", { enumerable: true, get: function () { return ast_helpers_1.getNodeAtPosition; } });
-Object.defineProperty(exports, "findEnclosingPropertyAccess", { enumerable: true, get: function () { return ast_helpers_1.findEnclosingPropertyAccess; } });
+Object.defineProperty(exports, "memberCompletionAccess", { enumerable: true, get: function () { return ast_helpers_1.memberCompletionAccess; } });
 var type_helpers_1 = require("./inference/type-helpers");
 Object.defineProperty(exports, "describeTypes", { enumerable: true, get: function () { return type_helpers_1.describeTypes; } });
-Object.defineProperty(exports, "getMemberOfType", { enumerable: true, get: function () { return type_helpers_1.getMemberOfType; } });
-Object.defineProperty(exports, "inferredCompletionEntry", { enumerable: true, get: function () { return type_helpers_1.inferredCompletionEntry; } });
-Object.defineProperty(exports, "isOpenForUsageInference", { enumerable: true, get: function () { return type_helpers_1.isOpenForUsageInference; } });
 Object.defineProperty(exports, "typesToCompletionEntries", { enumerable: true, get: function () { return type_helpers_1.typesToCompletionEntries; } });
 var super_module_1 = require("./inference/super-module");
 Object.defineProperty(exports, "collectSuperModuleAugmentedMembers", { enumerable: true, get: function () { return super_module_1.collectSuperModuleAugmentedMembers; } });
-Object.defineProperty(exports, "traceSuperModuleAccess", { enumerable: true, get: function () { return super_module_1.traceSuperModuleAccess; } });
 var core_1 = require("./inference/core");
 Object.defineProperty(exports, "inferParameterType", { enumerable: true, get: function () { return core_1.inferParameterType; } });
 Object.defineProperty(exports, "inferReturnType", { enumerable: true, get: function () { return core_1.inferReturnType; } });
-Object.defineProperty(exports, "inferTypeForExpression", { enumerable: true, get: function () { return core_1.inferTypeForExpression; } });
 Object.defineProperty(exports, "inferTypeForNode", { enumerable: true, get: function () { return core_1.inferTypeForNode; } });
 var usage_profile_1 = require("./inference/usage-profile");
 Object.defineProperty(exports, "usageProfileOf", { enumerable: true, get: function () { return usage_profile_1.usageProfileOf; } });
 var policy_1 = require("./inference/policy");
 Object.defineProperty(exports, "matchAmbientTypesByUsage", { enumerable: true, get: function () { return policy_1.matchAmbientTypesByUsage; } });
+var editor_hooks_1 = require("./inference/editor-hooks");
+Object.defineProperty(exports, "createUsageInferenceHooks", { enumerable: true, get: function () { return editor_hooks_1.createUsageInferenceHooks; } });

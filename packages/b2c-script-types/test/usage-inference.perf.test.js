@@ -10,13 +10,13 @@ const assert = require('node:assert/strict');
 const ts = require('typescript');
 
 const {createInferenceContext, describeTypes, inferParameterType, inferReturnType} = require('../src/usage-inference');
-const init = require('../src/index');
 const {
   createFixtureHost,
   createFixtureLanguageService,
   findFunctionDeclaration,
   sharedDocumentRegistry,
 } = require('./helpers/fixture-language-service');
+const {createPluginProxy} = require('./helpers/plugin-proxy');
 const {realTypesPrelude} = require('./helpers/real-dw-types');
 
 // ---------------------------------------------------------------------------
@@ -324,15 +324,9 @@ describe('usage-inference — performance baselines', () => {
     const host = createFixtureHost(files);
     const baseLs = ts.createLanguageService(host, sharedDocumentRegistry);
     const counter = withReferenceCounter(baseLs);
-    const {create} = init({typescript: ts});
-    const proxy = create({
+    const {proxy} = createPluginProxy({
+      host,
       languageService: counter.languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
       config: {enabled: true, autoDiscover: false, cartridges: [{name: 'c', src: '/'}], inferUsage: true},
     });
     const paramPos = files['/helper.js'].indexOf('product)');
@@ -514,16 +508,11 @@ describe('usage-inference — performance baselines', () => {
     const host = createFixtureHost(files);
     const baseLs = ts.createLanguageService(host, sharedDocumentRegistry);
     const counter = withReferenceCounter(baseLs);
-    const {create} = init({typescript: ts});
     let projectVersion = 1;
-    const proxy = create({
+    const {proxy} = createPluginProxy({
+      host,
       languageService: counter.languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => String(projectVersion),
-      },
+      projectVersion: () => String(projectVersion),
       config: {enabled: true, autoDiscover: false, cartridges: [{name: 'c', src: '/'}], inferUsage: true},
     });
     const paramPos = files['/helper.js'].indexOf('product)');

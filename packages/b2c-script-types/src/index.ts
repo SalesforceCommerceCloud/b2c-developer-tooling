@@ -7,20 +7,7 @@ import path from 'node:path';
 
 import type tsserver from 'typescript/lib/tsserverlibrary';
 
-import {
-  collectSuperModuleAugmentedMembers,
-  traceSuperModuleAccess,
-  createInferenceContext,
-  describeTypes,
-  findEnclosingPropertyAccess,
-  getMemberOfType,
-  getNodeAtPosition,
-  inferredCompletionEntry,
-  inferTypeForExpression,
-  inferTypeForNode,
-  isOpenForUsageInference,
-  typesToCompletionEntries,
-} from './usage-inference';
+import {createUsageInferenceHooks} from './usage-inference';
 import {PLUGIN_NAME} from './resolver/constants';
 import type {ConfiguredCartridge, NormalizedCartridge, PluginConfig} from './resolver/constants';
 import {
@@ -35,35 +22,6 @@ import {
   resolveCartridgeModule as resolveCartridgeModuleImpl,
   resolveModulesCartridge as resolveModulesCartridgeImpl,
 } from './resolver/module-resolution';
-
-// Rich hover data borrowed from a real ambient declaration (e.g. the `custom`
-// property on `dw.object.ExtensibleObject`) once usage inference has resolved
-// which one an undocumented value's usage matches. Plain data only — see the
-// caching note where this is produced for why.
-interface HoverInferenceResult {
-  readonly description: string;
-  readonly documentation?: readonly tsserver.SymbolDisplayPart[];
-  readonly tags?: readonly tsserver.JSDocTagInfo[];
-}
-
-/**
- * Swaps the trailing `any` keyword part of a QuickInfo's display parts (the
- * shape TS renders for an undocumented parameter/property, e.g. `(parameter)
- * shipment: any`) for the inferred type's description, so the bolded hover
- * header reads `(parameter) shipment: Shipment` instead of `... : any` —
- * while leaving everything else (the `(parameter) shipment: ` prefix TS
- * already rendered) untouched. Only ever touches a display exactly ending in
- * that keyword; any other shape is returned as-is rather than guessed at.
- */
-function replaceTrailingAnyDisplayPart(
-  displayParts: tsserver.SymbolDisplayPart[] | undefined,
-  description: string,
-): tsserver.SymbolDisplayPart[] | undefined {
-  if (!displayParts || displayParts.length === 0) return displayParts;
-  const last = displayParts[displayParts.length - 1];
-  if (last.kind !== 'keyword' || last.text !== 'any') return displayParts;
-  return [...displayParts.slice(0, -1), {kind: 'text', text: description}];
-}
 
 const TYPES_DIR = path.resolve(__dirname, '..', 'types').replace(/\\/g, '/');
 // Ambient declarations for SFCC globals (`session`, `request`, `response`,
@@ -90,6 +48,8 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   // Whether the most recent applyConfig() received an explicit cartridges list.
   // When true, we skip auto-discovery; when false, create() may auto-populate.
   let cartridgesFromHost = false;
+  // The cache resets of every language service create() decorated.
+  const usageInferenceResets = new Set<() => void>();
 
   // tsserver internally canonicalizes file paths to forward slashes regardless of
   // platform (so containingFile is "C:/proj/..." on Windows). The cartridge roots
@@ -445,226 +405,26 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return result?.map(remapDefinition);
     };
 
-    // Usage-based inference (opt-in, `inferUsage`): when hover/completion hits
-    // a type the checker has already given up on (`any` — typically an
-    // undocumented helper function), infer a better answer from call sites
-    // elsewhere in the project instead of leaving the editor with nothing.
-    //
-    // Cached per (file, node position). Entries are finished DISPLAY products
-    // (the hover note string, the synthesized completion entries) rather than
-    // checker Type objects: a Type pins its checker and, through it, the whole
-    // program it came from, so caching types would keep an entire stale
-    // program graph alive from the last edit until the next inference-eligible
-    // request — potentially forever if the user stops hovering. Strings and
-    // plain completion entries retain nothing.
-    //
-    // HoverInferenceResult is likewise plain data only: `documentation` and
-    // `tags` are copied out of a real Symbol's own getDocumentationComment()/
-    // getJsDocTags() (SymbolDisplayPart[] / JSDocTagInfo[] are just text —
-    // they don't reference the Symbol, Type, or Node they came from), never
-    // the Symbol/Type/Node itself.
-    //
-    // The whole cache is invalidated when the language service hands back a
-    // different Program instance (TS builds a new Program object for any
-    // semantic change, and reuses the same instance otherwise), rather than
-    // tracking per-entry validity. Program identity is more precise than the
-    // previously-used project version string, which also bumps on events that
-    // don't produce a new program — each such bump needlessly re-ran a full
-    // inference (measured ~13ms per hover on an SFRA-sized project) that the
-    // cache should have answered.
-    let inferenceCacheProgram: tsserver.Program | undefined;
-    const inferenceCache = new Map<string, string | tsserver.CompletionEntry[] | HoverInferenceResult | undefined>();
-    // Bounds the cache during a long no-edit session (e.g. hours of hovering
-    // around at the same program): entries are small (strings / plain entry
-    // arrays), so this is belt-and-braces, and a wholesale clear is honest —
-    // no LRU bookkeeping for a cache this cheap to refill.
-    const MAX_INFERENCE_CACHE_ENTRIES = 512;
-    const getCachedInference = <T extends string | tsserver.CompletionEntry[] | HoverInferenceResult | undefined>(
-      cacheKey: string,
-      program: tsserver.Program,
-      compute: () => T,
-    ): T => {
-      if (program !== inferenceCacheProgram) {
-        inferenceCache.clear();
-        inferenceCacheProgram = program;
-      }
-      if (inferenceCache.has(cacheKey)) return inferenceCache.get(cacheKey) as T;
-      const result = compute();
-      if (inferenceCache.size >= MAX_INFERENCE_CACHE_ENTRIES) inferenceCache.clear();
-      inferenceCache.set(cacheKey, result);
-      return result;
-    };
-
-    // Runs our own inference logic and degrades to `fallback` (the untouched
-    // underlying result) if it throws, so a bug in this plugin's additions
-    // can't take the whole tsserver request down with it. Deliberately wraps
-    // ONLY the inference augmentation, never the underlying language-service
-    // call itself: an exception from vanilla TS must keep propagating to
-    // tsserver's own error reporting exactly as it would without this plugin
-    // installed — swallowing it here would turn a real TS crash into a
-    // silent "hover stopped working" for every file in the project.
-    // `ts.OperationCanceledException` is exempted and always rethrown: TS
-    // throws it cooperatively whenever the host's CancellationToken fires
-    // (e.g. the user kept typing while this hover or completion request was
-    // still in flight), which is ordinary, frequent behavior, not a real
-    // failure — tsserver's request pipeline handles a propagated
-    // cancellation very differently from a completed-but-empty response, so
-    // swallowing it here would misreport "cancelled" as "resolved to
-    // nothing" every time.
-    const guarded = <T>(label: string, fn: () => T, fallback: T): T => {
-      try {
-        return fn();
-      } catch (e) {
-        if (e instanceof ts.OperationCanceledException) throw e;
-        log(`usage-inference ${label} failed: ${(e as Error).message}`);
-        return fallback;
-      }
-    };
+    // Usage-based inference (opt-in, `inferUsage`): when hover or member
+    // completion hits a value the checker has given up on (typically a
+    // parameter of an undocumented helper), add what call sites and the
+    // value's own usage say about it. See inference/editor-hooks.
+    const usageInference = createUsageInferenceHooks({
+      ts,
+      languageService: info.languageService,
+      resolveSuperModulePath,
+      log,
+    });
+    usageInferenceResets.add(usageInference.reset);
+    const inferenceActive = (fileName: string) => inferUsageEnabled && isCartridgeFile(fileName);
 
     proxy.getQuickInfoAtPosition = (fileName, position, maximumLength) => {
       const original = info.languageService.getQuickInfoAtPosition(fileName, position, maximumLength);
-      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName) || !original) return original;
-      return guarded(
-        'hover',
-        () => {
-          const program = info.languageService.getProgram();
-          const sourceFile = program?.getSourceFile(fileName);
-          if (!program || !sourceFile) return original;
-          const node = getNodeAtPosition(sourceFile, ts, position);
-          if (!node || !ts.isIdentifier(node)) return original;
-          const checker = program.getTypeChecker();
-          // superModule-derived expressions get past the open-type gate: the
-          // checker's type for them is garbage either way (any or an opaque
-          // circular typeof), never something worth leaving untouched. Weak
-          // placeholder types (`object` / `{}`) are open too — see
-          // isOpenForUsageInference.
-          if (
-            !isOpenForUsageInference(ts, checker.getTypeAtLocation(node)) &&
-            !traceSuperModuleAccess(ts, checker, node)
-          ) {
-            return original;
-          }
-          // `undefined` (inference found nothing) is a cached answer too —
-          // re-deriving "nothing" costs the same reference searches as
-          // re-deriving something.
-          const inferred = getCachedInference(`hover:${fileName}:${node.getStart(sourceFile)}`, program, () => {
-            const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
-            if (!ctx) return undefined;
-            // Hovering the member name of a property access
-            // (`shipment.productLineItems`, cursor on `productLineItems`) has
-            // no declaration of its own to look up — `productLineItems` isn't
-            // a symbol anywhere until the receiver's type is known. Resolve
-            // the whole access expression the same way completions do,
-            // rather than restricting to inferTypeForNode's bare-identifier
-            // (parameter/variable/function) cases.
-            const propAccess = findEnclosingPropertyAccess(node, ts);
-            const isMemberName = !!propAccess && propAccess.name === node;
-            const types = isMemberName ? inferTypeForExpression(ctx, propAccess) : inferTypeForNode(ctx, node);
-            if (types.length === 0) return undefined;
-            const description = describeTypes(ctx, types);
-            // The receiver's type was undocumented, but the *member itself*
-            // (or the inferred type's own declaration) is real and usually
-            // documented — borrow its doc comment/tags so hover reads like a
-            // native, fully-resolved hover instead of just a bare type name.
-            let symbol: tsserver.Symbol | undefined;
-            if (isMemberName && propAccess) {
-              for (const baseType of inferTypeForExpression(ctx, propAccess.expression)) {
-                symbol = getMemberOfType(checker, baseType, node.text);
-                if (symbol) break;
-              }
-            } else {
-              symbol = types[0].getSymbol();
-            }
-            const documentation = symbol?.getDocumentationComment(checker);
-            const tags = symbol?.getJsDocTags(checker);
-            return {
-              description,
-              documentation: documentation && documentation.length > 0 ? documentation : undefined,
-              tags: tags && tags.length > 0 ? tags : undefined,
-            };
-          });
-          if (!inferred) return original;
-          const note: tsserver.SymbolDisplayPart = {
-            text: `\n\nInferred from usage: ${inferred.description}`,
-            kind: 'text',
-          };
-          return {
-            ...original,
-            displayParts: replaceTrailingAnyDisplayPart(original.displayParts, inferred.description),
-            documentation: [...(inferred.documentation ?? []), ...(original.documentation ?? []), note],
-            tags: inferred.tags && inferred.tags.length > 0 ? [...inferred.tags] : original.tags,
-          };
-        },
-        original,
-      );
+      return inferenceActive(fileName) ? usageInference.decorateQuickInfo(fileName, position, original) : original;
     };
-
     proxy.getCompletionsAtPosition = (fileName, position, options, formattingSettings) => {
       const original = info.languageService.getCompletionsAtPosition(fileName, position, options, formattingSettings);
-      if (!enabled || !inferUsageEnabled || !isCartridgeFile(fileName)) return original;
-      return guarded(
-        'completions',
-        () => {
-          const program = info.languageService.getProgram();
-          const sourceFile = program?.getSourceFile(fileName);
-          if (!program || !sourceFile) return original;
-          const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
-          if (!node) return original;
-          const propAccess = findEnclosingPropertyAccess(node, ts);
-          if (!propAccess) return original;
-          const checker = program.getTypeChecker();
-          // See the hover gate above for the superModule / weak-type exception.
-          if (
-            !isOpenForUsageInference(ts, checker.getTypeAtLocation(propAccess.expression)) &&
-            !traceSuperModuleAccess(ts, checker, propAccess.expression)
-          ) {
-            return original;
-          }
-          // The receiver can be any expression, not just a plain identifier:
-          // `product.getPriceModel().|` needs the chain resolved the same way
-          // hover-driven return inference already resolves it.
-          const baseNode = propAccess.expression;
-          const typeEntries = getCachedInference(
-            `completions:${fileName}:${baseNode.getStart(sourceFile)}`,
-            program,
-            () => {
-              const ctx = createInferenceContext(ts, info.languageService, resolveSuperModulePath, position);
-              const types = ctx ? inferTypeForExpression(ctx, baseNode) : [];
-              return typesToCompletionEntries(ts, checker, types);
-            },
-          );
-          // Members added by pass-through superModule overlay levels
-          // (`module.exports = base; module.exports.extra = fn;`) can't be
-          // carried by any candidate type — collect them separately. Cheap
-          // (statement scans only, no reference search), so uncached.
-          const augmentedCtx = createInferenceContext(ts, info.languageService, resolveSuperModulePath);
-          const augmentedEntries: tsserver.CompletionEntry[] = (
-            augmentedCtx ? collectSuperModuleAugmentedMembers(augmentedCtx, baseNode) : []
-          ).map((m) => inferredCompletionEntry(ts, m.name, m.isMethod));
-          const inferredEntries = [...typeEntries, ...augmentedEntries];
-          if (inferredEntries.length === 0) return original;
-          // Dedupe against the original entries AND within the inferred set
-          // (a name can come from both a candidate type and an overlay
-          // augmentation).
-          const seenNames = new Set((original?.entries ?? []).map((e) => e.name));
-          const merged = [
-            ...(original?.entries ?? []),
-            ...inferredEntries.filter((e) => !seenNames.has(e.name) && (seenNames.add(e.name), true)),
-          ];
-          // Preserve every other field TS set on the original result (isIncomplete,
-          // optionalReplacementSpan, metadata, defaultCommitCharacters, flags) —
-          // only entries actually changed. Only synthesize a fresh CompletionInfo
-          // in the rare case TS returned nothing at all for this position.
-          if (original) return {...original, entries: merged};
-          return {
-            isGlobalCompletion: false,
-            isMemberCompletion: true,
-            isNewIdentifierLocation: false,
-            entries: merged,
-          };
-        },
-        original,
-      );
+      return inferenceActive(fileName) ? usageInference.decorateCompletions(fileName, position, original) : original;
     };
 
     log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);
@@ -673,6 +433,9 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
 
   function onConfigurationChanged(config: unknown) {
     applyConfig(config);
+    // A new configuration can change what inference sees (cartridge order
+    // decides `module.superModule`), so drop every cached hover and list.
+    for (const reset of usageInferenceResets) reset();
   }
 
   return {create, onConfigurationChanged};

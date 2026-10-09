@@ -65,6 +65,13 @@ export const MAX_SUPERMODULE_HOPS = 8;
 // that headroom while keeping the worst case at ~12 scans per request.
 export const MAX_SEARCHES_PER_REQUEST = 12;
 
+// Bounds the editor's per-Program cache of finished hovers and completion
+// lists during a long session without edits (hours of hovering around one
+// Program). Entries are small plain data, so this is belt-and-braces, and a
+// wholesale clear is honest: no LRU bookkeeping for a cache this cheap to
+// refill.
+export const MAX_DISPLAY_CACHE_ENTRIES = 512;
+
 // Marks the completion entries this plugin synthesizes (as opposed to ones the
 // TypeScript language service produced itself), so the editor can tell them
 // apart. Purely a label — it carries no path or other data.

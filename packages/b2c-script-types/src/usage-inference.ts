@@ -23,20 +23,14 @@
 //   inference/framework-contracts - parameters the platform itself passes (Page Designer)
 //   inference/policy              - turning evidence into the type(s) shown
 //   inference/core                - the recursive evidence-gathering engine
+//   inference/editor-hooks        - hover and completion decoration for the plugin
 
 export {INFERRED_COMPLETION_SOURCE} from './inference/constants';
 export {createInferenceContext} from './inference/context';
-export {getNodeAtPosition, findEnclosingPropertyAccess} from './inference/ast-helpers';
-export {
-  describeTypes,
-  getMemberOfType,
-  inferredCompletionEntry,
-  isOpenForUsageInference,
-  typesToCompletionEntries,
-} from './inference/type-helpers';
-export {collectSuperModuleAugmentedMembers, traceSuperModuleAccess} from './inference/super-module';
-export {inferParameterType, inferReturnType, inferTypeForExpression, inferTypeForNode} from './inference/core';
+export {memberCompletionAccess} from './inference/ast-helpers';
+export {describeTypes, typesToCompletionEntries} from './inference/type-helpers';
+export {collectSuperModuleAugmentedMembers} from './inference/super-module';
+export {inferParameterType, inferReturnType, inferTypeForNode} from './inference/core';
 export {usageProfileOf} from './inference/usage-profile';
 export {matchAmbientTypesByUsage} from './inference/policy';
-
-export type {InferenceContext} from './inference/context';
+export {createUsageInferenceHooks} from './inference/editor-hooks';

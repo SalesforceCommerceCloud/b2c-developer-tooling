@@ -9,7 +9,6 @@ const assert = require('node:assert/strict');
 
 const ts = require('typescript');
 
-const init = require('../src/index');
 const {
   createInferenceContext,
   describeTypes,
@@ -24,6 +23,7 @@ const {
   findFunctionDeclaration,
   sharedDocumentRegistry,
 } = require('./helpers/fixture-language-service');
+const {createPluginProxy} = require('./helpers/plugin-proxy');
 const {realTypesPrelude} = require('./helpers/real-dw-types');
 
 describe('usage-inference hardening', () => {
@@ -68,7 +68,6 @@ describe('usage-inference hardening', () => {
           module.exports = {helper: helper};
         `,
       };
-      const {create} = init({typescript: ts});
       const host = createFixtureHost(files);
       const base = ts.createLanguageService(host, sharedDocumentRegistry);
       let searches = 0;
@@ -85,14 +84,9 @@ describe('usage-inference hardening', () => {
           return typeof value === 'function' ? value.bind(target) : value;
         },
       });
-      const proxy = create({
+      const {proxy} = createPluginProxy({
+        host,
         languageService,
-        languageServiceHost: host,
-        project: {
-          projectService: {logger: {info: () => {}}},
-          getCurrentDirectory: () => '/',
-          getProjectVersion: () => '1',
-        },
         config: {
           enabled: true,
           inferUsage: true,
@@ -235,7 +229,6 @@ describe('usage-inference hardening', () => {
         ],
       });
 
-      const {create} = init({typescript: ts});
       const host = createFixtureHost(fixture.files);
       // Real tsserver installs the plugin before the first program build. Our
       // test creates the LanguageService first, then create() wraps the host's
@@ -246,14 +239,10 @@ describe('usage-inference hardening', () => {
       const origGetScriptVersion = host.getScriptVersion;
       host.getScriptVersion = (f) => `${versions[f] ?? 0}:${origGetScriptVersion(f)}`;
       const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-      const proxy = create({
+      const {proxy} = createPluginProxy({
+        host,
         languageService,
-        languageServiceHost: host,
-        project: {
-          projectService: {logger: {info: () => {}}},
-          getCurrentDirectory: () => '/',
-          getProjectVersion: () => String(projectVersion),
-        },
+        projectVersion: () => String(projectVersion),
         config: {
           enabled: true,
           inferUsage: true,
@@ -280,17 +269,8 @@ describe('usage-inference hardening', () => {
           module.exports = {helper: helper};
         `,
       };
-      const {create} = init({typescript: ts});
-      const host = createFixtureHost(files);
-      const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-      const proxy = create({
-        languageService,
-        languageServiceHost: host,
-        project: {
-          projectService: {logger: {info: () => {}}},
-          getCurrentDirectory: () => '/',
-          getProjectVersion: () => '1',
-        },
+      const {proxy} = createPluginProxy({
+        files,
         config: {enabled: true, inferUsage: false, cartridges: [{name: 'c', src: '/'}]},
       });
       assertNoInferredHover(proxy, '/helper.js', positionOf(files['/helper.js'], 'product)'));

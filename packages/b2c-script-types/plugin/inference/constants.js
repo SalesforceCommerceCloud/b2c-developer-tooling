@@ -5,7 +5,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.UNINFORMATIVE_ANCESTORS = exports.MAX_UNION_TYPES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
+exports.ELEMENT_FIRST_CALLBACK_CALLEES = exports.WEAK_USAGE_MEMBERS = exports.UNINFORMATIVE_ANCESTORS = exports.MAX_UNION_TYPES = exports.MIN_USAGE_SIGNATURE_MEMBERS = exports.INFERRED_COMPLETION_SOURCE = exports.MAX_DISPLAY_CACHE_ENTRIES = exports.MAX_SEARCHES_PER_REQUEST = exports.MAX_SUPERMODULE_HOPS = exports.MAX_CHAIN_HOPS = exports.MAX_REFERENCES_PER_CALL = exports.MAX_REFERENCES_PER_REQUEST = exports.MAX_REFERENCE_HOPS = exports.MAX_INFERENCE_DEPTH = void 0;
 // Tunable limits for the usage-inference engine. They exist so a crafted (or
 // merely huge) cartridge can't make a single hover/completion do unbounded
 // work — every recursive walk and reference search is capped by one of these.
@@ -59,6 +59,12 @@ exports.MAX_SUPERMODULE_HOPS = 8;
 // scenarios in the perf baseline suite need at most 6 searches; 12 doubles
 // that headroom while keeping the worst case at ~12 scans per request.
 exports.MAX_SEARCHES_PER_REQUEST = 12;
+// Bounds the editor's per-Program cache of finished hovers and completion
+// lists during a long session without edits (hours of hovering around one
+// Program). Entries are small plain data, so this is belt-and-braces, and a
+// wholesale clear is honest: no LRU bookkeeping for a cache this cheap to
+// refill.
+exports.MAX_DISPLAY_CACHE_ENTRIES = 512;
 // Marks the completion entries this plugin synthesizes (as opposed to ones the
 // TypeScript language service produced itself), so the editor can tell them
 // apart. Purely a label — it carries no path or other data.

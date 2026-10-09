@@ -12,11 +12,10 @@ const ts = require('typescript');
 const {
   createInferenceContext,
   describeTypes,
-  findEnclosingPropertyAccess,
-  getNodeAtPosition,
   inferParameterType,
   inferReturnType,
   inferTypeForNode,
+  memberCompletionAccess,
   typesToCompletionEntries,
 } = require('../src/usage-inference');
 const {createFixtureLanguageService, findFunctionDeclaration} = require('./helpers/fixture-language-service');
@@ -1649,22 +1648,29 @@ describe('usage-inference', () => {
     });
   });
 
-  describe('getNodeAtPosition / findEnclosingPropertyAccess', () => {
-    it('locates the property access expression enclosing a dotted completion position', () => {
-      const files = {
-        '/dotted.js': `var product = {}; product.ID;`,
-      };
-      const languageService = createFixtureLanguageService(files);
-      const program = languageService.getProgram();
-      const sourceFile = program.getSourceFile('/dotted.js');
-      // Position of the `.` right after `product` in `product.ID`.
-      const dotPos = files['/dotted.js'].indexOf('product.ID') + 'product'.length;
+  describe('memberCompletionAccess', () => {
+    const source = `var label = helper(product).name; product.ID; basket.getShipment(shipment).ID;`;
+    const completionAccess = (marker, offset) => {
+      const sourceFile = ts.createSourceFile('/dotted.js', source, ts.ScriptTarget.ES2020, true);
+      const access = memberCompletionAccess(sourceFile, ts, source.indexOf(marker) + offset);
+      return access && access.getText(sourceFile);
+    };
 
-      const node = getNodeAtPosition(sourceFile, ts, dotPos - 1);
-      const propAccess = findEnclosingPropertyAccess(node, ts);
+    it('finds the access whose dot the cursor follows', () => {
+      assert.equal(completionAccess('product.ID', 'product.'.length), 'product.ID');
+    });
 
-      assert.ok(propAccess);
-      assert.equal(propAccess.name.text, 'ID');
+    it('finds the access whose member name is being typed', () => {
+      assert.equal(completionAccess('product.ID', 'product.I'.length), 'product.ID');
+    });
+
+    it('ignores a cursor inside the receiver', () => {
+      assert.equal(completionAccess('product.ID', 'prod'.length), undefined);
+    });
+
+    it('ignores a cursor inside an argument list further along the chain', () => {
+      assert.equal(completionAccess('getShipment(shipment)', 'getShipment('.length), undefined);
+      assert.equal(completionAccess('helper(product)', 'helper(prod'.length), undefined);
     });
   });
 });

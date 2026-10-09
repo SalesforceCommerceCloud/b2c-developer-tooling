@@ -9,9 +9,9 @@ const assert = require('node:assert/strict');
 
 const ts = require('typescript');
 
-const init = require('../src/index');
 const {INFERRED_COMPLETION_SOURCE} = require('../src/usage-inference');
 const {createFixtureHost, sharedDocumentRegistry} = require('./helpers/fixture-language-service');
+const {createPluginProxy} = require('./helpers/plugin-proxy');
 const {REAL_DW_TYPES, realTypesPrelude} = require('./helpers/real-dw-types');
 
 const AMBIENT_TYPES = `
@@ -29,24 +29,9 @@ const FIXTURE_FILES = {
   `,
 };
 
-// Builds a plugin instance wired against an in-memory LanguageService, using
-// only the subset of tsserver's PluginCreateInfo surface the plugin actually
-// touches (logger, project version, config, host, language service).
-function createPluginProxy(config) {
-  const {create} = init({typescript: ts});
-  const host = createFixtureHost(FIXTURE_FILES);
-  const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-  const info = {
-    languageService,
-    languageServiceHost: host,
-    project: {
-      projectService: {logger: {info: () => {}}},
-      getCurrentDirectory: () => '/',
-      getProjectVersion: () => '1',
-    },
-    config,
-  };
-  return create(info);
+// The plugin installed over FIXTURE_FILES with the given configuration.
+function fixtureProxy(config) {
+  return createPluginProxy({files: FIXTURE_FILES, config}).proxy;
 }
 
 // Parses the fixture source once to locate exact AST offsets, rather than
@@ -78,14 +63,14 @@ describe('create() proxy — usage inference wiring', () => {
   const {paramPos, dotPos} = fixtureOffsets();
 
   it('leaves hover untouched when inferUsage is off (default)', () => {
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
+    const proxy = fixtureProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
     const info = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
     const docText = (info?.documentation ?? []).map((p) => p.text).join('');
     assert.ok(!docText.includes('Inferred from usage'));
   });
 
   it('appends an inferred-usage hover note when inferUsage is on', () => {
-    const proxy = createPluginProxy({
+    const proxy = fixtureProxy({
       enabled: true,
       autoDiscover: false,
       cartridges: CARTRIDGE_CONFIG,
@@ -97,14 +82,14 @@ describe('create() proxy — usage inference wiring', () => {
   });
 
   it('leaves completions untouched when inferUsage is off (default)', () => {
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
+    const proxy = fixtureProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
     const completions = proxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
     const names = (completions?.entries ?? []).map((e) => e.name);
     assert.ok(!names.includes('ID'));
   });
 
   it('synthesizes member completions from inferred usage when inferUsage is on', () => {
-    const proxy = createPluginProxy({
+    const proxy = fixtureProxy({
       enabled: true,
       autoDiscover: false,
       cartridges: CARTRIDGE_CONFIG,
@@ -117,10 +102,10 @@ describe('create() proxy — usage inference wiring', () => {
   });
 
   it('preserves every other CompletionInfo field from the original result when merging in inferred entries', () => {
-    const plainProxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
+    const plainProxy = fixtureProxy({enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG});
     const original = plainProxy.getCompletionsAtPosition('/helper.js', dotPos, undefined);
 
-    const inferProxy = createPluginProxy({
+    const inferProxy = fixtureProxy({
       enabled: true,
       autoDiscover: false,
       cartridges: CARTRIDGE_CONFIG,
@@ -139,7 +124,7 @@ describe('create() proxy — usage inference wiring', () => {
     // No cartridges configured -> /helper.js isn't recognized as a cartridge
     // file, matching every other feature in this plugin (require resolution,
     // ambient globals) that only applies inside known cartridge roots.
-    const proxy = createPluginProxy({enabled: true, autoDiscover: false, cartridges: [], inferUsage: true});
+    const proxy = fixtureProxy({enabled: true, autoDiscover: false, cartridges: [], inferUsage: true});
     const info = proxy.getQuickInfoAtPosition('/helper.js', paramPos);
     const docText = (info?.documentation ?? []).map((p) => p.text).join('');
     assert.ok(!docText.includes('Inferred from usage'));
@@ -150,7 +135,7 @@ describe('create() proxy — usage inference wiring', () => {
   });
 
   it('does not run inference when the parent scriptTypes feature is disabled, even when inferUsage is on', () => {
-    const proxy = createPluginProxy({
+    const proxy = fixtureProxy({
       enabled: false,
       autoDiscover: false,
       cartridges: CARTRIDGE_CONFIG,
@@ -173,17 +158,8 @@ describe('create() proxy — usage inference wiring', () => {
     const files = {
       '/typed.ts': `function helper(x: {aVeryLongPropertyNameHere: string; anotherVeryLongPropertyName: number; yetAnotherLongOne: boolean}) { return x; }`,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {enabled: true, autoDiscover: false, cartridges: []},
     });
     const pos = files['/typed.ts'].indexOf('x:');
@@ -217,15 +193,10 @@ describe('create() proxy — usage inference wiring', () => {
     const origGetScriptVersion = host.getScriptVersion;
     host.getScriptVersion = (fileName) => `${versions[fileName] ?? 0}:${origGetScriptVersion(fileName)}`;
     const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
+    const {proxy} = createPluginProxy({
+      host,
       languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => String(projectVersion),
-      },
+      projectVersion: () => String(projectVersion),
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
     const paramPos = files['/helper.js'].indexOf('product)'); // start of the `product` identifier
@@ -272,21 +243,10 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports = {getDisplayName};
       `,
     };
-    const proxy = (() => {
-      const {create} = init({typescript: ts});
-      const host = createFixtureHost(files);
-      const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-      return create({
-        languageService,
-        languageServiceHost: host,
-        project: {
-          projectService: {logger: {info: () => {}}},
-          getCurrentDirectory: () => '/',
-          getProjectVersion: () => '1',
-        },
-        config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
-      });
-    })();
+    const {proxy} = createPluginProxy({
+      files,
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
     const paramPos = files['/priceHelper.js'].indexOf('product)');
     const dotPos = files['/priceHelper.js'].indexOf('product.getName()') + 'product.'.length;
 
@@ -319,17 +279,8 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports = {resolveProductPrice};
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
     const dotPos = files['/priceHelper.js'].indexOf('.getPrice()') + 1;
@@ -363,17 +314,8 @@ describe('create() proxy — usage inference wiring', () => {
         }
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
 
@@ -421,17 +363,8 @@ describe('create() proxy — usage inference wiring', () => {
         }
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
 
@@ -484,17 +417,8 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports = {sendPasswordResetEmail};
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
 
@@ -515,6 +439,91 @@ describe('create() proxy — usage inference wiring', () => {
       names.includes('getProfile'),
       `expected Customer members after the {Object} receiver, got: ${names.join(', ')}`,
     );
+  });
+
+  it('rewrites a weak `{Object}` hover header, not only a trailing `any`', () => {
+    // Under strict checkJs TypeScript renders `@param {Object}` as the
+    // `Object` interface in the bold hover header rather than as `any`.
+    const files = {
+      '/types.d.ts': realTypesPrelude(['Customer', 'Profile'], ''),
+      '/accountHelpers.js': `
+        /** @param {Object} resettingCustomer */
+        function sendPasswordResetEmail(resettingCustomer) {
+          return resettingCustomer.profile.firstName + resettingCustomer.profile.lastName;
+        }
+        module.exports = {sendPasswordResetEmail};
+      `,
+    };
+    const {proxy} = createPluginProxy({
+      files,
+      compilerOptions: {checkJs: true, strict: true},
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+
+    const paramPos = files['/accountHelpers.js'].indexOf('resettingCustomer)');
+    const hover = proxy.getQuickInfoAtPosition('/accountHelpers.js', paramPos);
+    const header = (hover?.displayParts ?? []).map((p) => p.text).join('');
+    assert.equal(header, '(parameter) resettingCustomer: Customer');
+  });
+
+  it('offers no inferred members inside an argument list further along a chain', () => {
+    // At `helper(|).name` the cursor completes an argument, not a member of
+    // `helper(...)`, even though that call is the receiver of the enclosing
+    // `.name` access.
+    const files = {
+      '/types.d.ts': AMBIENT_TYPES,
+      '/helper.js': `
+        function helper(product) {
+          return product;
+        }
+        var label = helper(getProduct()).name;
+        module.exports = {helper};
+      `,
+    };
+    const {proxy} = createPluginProxy({
+      files,
+      config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
+    });
+    const source = files['/helper.js'];
+    const inferredNames = (position) =>
+      (proxy.getCompletionsAtPosition('/helper.js', position, undefined)?.entries ?? [])
+        .filter((entry) => entry.source === INFERRED_COMPLETION_SOURCE)
+        .map((entry) => entry.name);
+
+    assert.deepEqual(inferredNames(source.indexOf('helper(getProduct())') + 'helper('.length), []);
+    assert.ok(inferredNames(source.indexOf('.name') + 1).includes('ID'));
+  });
+
+  it('drops cached hovers when the configuration changes, so a new cartridge path takes effect', () => {
+    // Same Program before and after: only the cartridge path, and with it
+    // the module `module.superModule` refers to, changes.
+    const files = {
+      '/types.d.ts': AMBIENT_TYPES,
+      '/a/cartridge/scripts/price.js': `module.exports = {fromA: getProduct()};`,
+      '/b/cartridge/scripts/price.js': `module.exports = {fromB: getProduct()};`,
+      '/top/cartridge/scripts/price.js': `
+        var base = module.superModule;
+        module.exports = base;
+      `,
+    };
+    const configOver = (below) => ({
+      enabled: true,
+      autoDiscover: false,
+      cartridges: [
+        {name: 'top', src: '/top/'},
+        {name: below, src: `/${below}/`},
+      ],
+      inferUsage: true,
+    });
+    const {proxy, plugin} = createPluginProxy({files, config: configOver('a')});
+    const topFile = '/top/cartridge/scripts/price.js';
+    const basePos = files[topFile].indexOf('base =');
+    const hoverText = () =>
+      (proxy.getQuickInfoAtPosition(topFile, basePos)?.documentation ?? []).map((p) => p.text).join('');
+
+    assert.match(hoverText(), /fromA/);
+    plugin.onConfigurationChanged(configOver('b'));
+    assert.match(hoverText(), /fromB/);
   });
 
   it('offers completions for a dangling mid-edit `shipment.` immediately followed by more code on later lines', () => {
@@ -544,17 +553,8 @@ describe('create() proxy — usage inference wiring', () => {
         }
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
 
@@ -606,17 +606,8 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports.getMemberPrice = getMemberPrice;
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {
         enabled: true,
         autoDiscover: false,
@@ -664,17 +655,8 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports = server.exports();
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {
         enabled: true,
         autoDiscover: false,
@@ -735,17 +717,8 @@ describe('create() proxy — usage inference wiring', () => {
         module.exports.getPromoPrice = getPromoPrice;
       `,
     };
-    const host = createFixtureHost(files);
-    const languageService = ts.createLanguageService(host, sharedDocumentRegistry);
-    const {create} = init({typescript: ts});
-    const proxy = create({
-      languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
+    const {proxy} = createPluginProxy({
+      files,
       config: {
         enabled: true,
         autoDiscover: false,
@@ -796,15 +769,9 @@ describe('create() proxy — usage inference wiring', () => {
         return target[prop];
       },
     });
-    const {create} = init({typescript: ts});
-    const proxy = create({
+    const {proxy} = createPluginProxy({
+      host,
       languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
 
@@ -840,15 +807,9 @@ describe('create() proxy — usage inference wiring', () => {
         return target[prop];
       },
     });
-    const {create} = init({typescript: ts});
-    const proxy = create({
+    const {proxy} = createPluginProxy({
+      host,
       languageService,
-      languageServiceHost: host,
-      project: {
-        projectService: {logger: {info: () => {}}},
-        getCurrentDirectory: () => '/',
-        getProjectVersion: () => '1',
-      },
       config: {enabled: true, autoDiscover: false, cartridges: CARTRIDGE_CONFIG, inferUsage: true},
     });
 

@@ -5,9 +5,10 @@
  */
 
 // Small, self-contained helpers for walking the TypeScript AST: finding the
-// node under the cursor, walking up to an enclosing property access, checking
-// whether a parameter/return/variable already has an explicit type, and
-// collecting a function's return expressions. Everything here depends only on
+// node under the cursor, the property access a member name or completion
+// belongs to, checking whether a parameter/return/variable already has an
+// explicit type, and collecting a function's return expressions. Everything
+// here depends only on
 // the `ts` namespace — no checker, no inference context — so it's the safest,
 // most reusable layer to read first.
 
@@ -43,17 +44,34 @@ export function getNodeAtPosition(
   return result;
 }
 
-/** Walks up from `node` to the nearest enclosing PropertyAccessExpression, or `undefined` if there isn't one. */
-export function findEnclosingPropertyAccess(
+/** The property access whose member name `node` is (`productLineItems` in `shipment.productLineItems`), if any. */
+export function propertyAccessNamedBy(
   node: tsserver.Node,
   ts: typeof tsserver,
 ): tsserver.PropertyAccessExpression | undefined {
-  let current: tsserver.Node | undefined = node;
-  while (current) {
-    if (ts.isPropertyAccessExpression(current)) return current;
-    current = current.parent;
-  }
-  return undefined;
+  const {parent} = node;
+  return parent && ts.isPropertyAccessExpression(parent) && parent.name === node ? parent : undefined;
+}
+
+/**
+ * The property access a member completion at `position` is completing: the
+ * cursor sits right after its dot (`shipment.|`) or inside its member name
+ * (`shipment.pro|`). Anywhere else — inside the receiver, or inside an
+ * argument list further along the chain (`basket.getShipment(|).ID`) — the
+ * enclosing access's members are not what is being typed, so this returns
+ * `undefined`.
+ */
+export function memberCompletionAccess(
+  sourceFile: tsserver.SourceFile,
+  ts: typeof tsserver,
+  position: number,
+): tsserver.PropertyAccessExpression | undefined {
+  const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
+  if (!node) return undefined;
+  // The node is the access itself only when position - 1 falls on a token it
+  // owns directly (its dot), never inside the receiver or the name.
+  if (ts.isPropertyAccessExpression(node)) return position >= node.name.pos ? node : undefined;
+  return propertyAccessNamedBy(node, ts);
 }
 
 /**

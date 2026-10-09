@@ -6,7 +6,8 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getNodeAtPosition = getNodeAtPosition;
-exports.findEnclosingPropertyAccess = findEnclosingPropertyAccess;
+exports.propertyAccessNamedBy = propertyAccessNamedBy;
+exports.memberCompletionAccess = memberCompletionAccess;
 exports.hasExplicitParameterType = hasExplicitParameterType;
 exports.hasExplicitReturnType = hasExplicitReturnType;
 exports.hasExplicitVariableType = hasExplicitVariableType;
@@ -38,15 +39,28 @@ function getNodeAtPosition(sourceFile, ts, pos) {
     visit(sourceFile);
     return result;
 }
-/** Walks up from `node` to the nearest enclosing PropertyAccessExpression, or `undefined` if there isn't one. */
-function findEnclosingPropertyAccess(node, ts) {
-    let current = node;
-    while (current) {
-        if (ts.isPropertyAccessExpression(current))
-            return current;
-        current = current.parent;
-    }
-    return undefined;
+/** The property access whose member name `node` is (`productLineItems` in `shipment.productLineItems`), if any. */
+function propertyAccessNamedBy(node, ts) {
+    const { parent } = node;
+    return parent && ts.isPropertyAccessExpression(parent) && parent.name === node ? parent : undefined;
+}
+/**
+ * The property access a member completion at `position` is completing: the
+ * cursor sits right after its dot (`shipment.|`) or inside its member name
+ * (`shipment.pro|`). Anywhere else — inside the receiver, or inside an
+ * argument list further along the chain (`basket.getShipment(|).ID`) — the
+ * enclosing access's members are not what is being typed, so this returns
+ * `undefined`.
+ */
+function memberCompletionAccess(sourceFile, ts, position) {
+    const node = getNodeAtPosition(sourceFile, ts, Math.max(position - 1, 0));
+    if (!node)
+        return undefined;
+    // The node is the access itself only when position - 1 falls on a token it
+    // owns directly (its dot), never inside the receiver or the name.
+    if (ts.isPropertyAccessExpression(node))
+        return position >= node.name.pos ? node : undefined;
+    return propertyAccessNamedBy(node, ts);
 }
 /**
  * SFRA helpers are often "documented" with a placeholder type that carries no

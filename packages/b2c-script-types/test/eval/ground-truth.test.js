@@ -43,9 +43,9 @@ const path = require('node:path');
 
 const ts = require('typescript');
 
-const init = require('../../src/index');
 const {discoverCartridgesOnDisk, orderCartridges} = require('../../src/resolver/cartridge-discovery');
 const {createInferenceContext, describeTypes, inferReturnType} = require('../../src/usage-inference');
+const {createPluginProxy} = require('../helpers/plugin-proxy');
 
 const CORPUS = process.env.B2C_INFERENCE_CORPUS;
 const INFERRED_NOTE = 'Inferred from usage: ';
@@ -126,14 +126,10 @@ function createCorpusPlugin(cartridges, fileNames) {
     searches.count++;
     return getReferencesAtPosition(fileName, position);
   };
-  const proxy = init({typescript: ts}).create({
+  const {proxy} = createPluginProxy({
+    host,
     languageService,
-    languageServiceHost: host,
-    project: {
-      projectService: {logger: {info: () => {}}},
-      getCurrentDirectory: () => cartridges[0]?.src ?? '/',
-      getProjectVersion: () => '1',
-    },
+    currentDirectory: cartridges[0]?.src ?? '/',
     config: {enabled: true, autoDiscover: false, inferUsage: true, cartridges},
   });
   return {languageService, proxy, setOverride, searches};
