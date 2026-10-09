@@ -33,4 +33,13 @@ export default [
     files: ['test/**/*.ts'],
     rules: chaiTestRules,
   },
+  {
+    // The usage-inference suites are plain CommonJS .js files that exercise
+    // the compiled plugin/ output directly, so they use require() rather than
+    // the src/ package's ESM-style import syntax.
+    files: ['test/**/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 ];

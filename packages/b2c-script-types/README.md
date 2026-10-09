@@ -56,4 +56,46 @@ in by the host extension via `tsApi.configurePlugin(...)`. Files outside the
 cartridge layout fall straight through to the unwrapped service — non-cartridge
 JavaScript and TypeScript in the same workspace see no behavior change.
 
-See [plugin/index.ts](./plugin/index.ts) for the implementation.
+See [src/index.ts](./src/index.ts) for the implementation.
+
+### Usage-based type inference (experimental, opt-in)
+
+An undocumented helper function (no JSDoc) gets its parameters and return
+value widened to `any` by plain TypeScript inference, and that `any`
+propagates to every caller. Passing `inferUsage: true` in the plugin config
+(off by default) makes the plugin infer a plausible type for these cases the
+way IntelliJ does: from call-site arguments (including `new`, `.call`/`.apply`
+and callbacks), the callback types of the declared APIs a function, or a
+factory's result, is handed to (`server.get('Show', cache.applyDefaultCache)`),
+return values, the typed Script API calls a value is passed to, and the members
+and `instanceof`/`typeof` checks in the helper's own body.
+Values are followed where they go — into object members, `this.x`, pushed
+arrays, factory returns and `module.exports` — and a generic helper such as
+`collections.find(basket.shipments, ...)` is inferred again for the call at
+hand, together with the callback it is passed
+(`collections.map(basket.shipments, fn)` is an array of what `fn` returns,
+and `fn`'s parameter is what `collections.map` calls it with: a `Shipment`).
+Hook scripts registered in a cartridge's `hooks.json` take the arguments of
+the `HookMgr.callHook(...)` calls that reach them, literal or prefixed
+(`'app.payment.processor.' + id`), and those calls return what the hooks return
+([src/resolver/hook-registry.ts](./src/resolver/hook-registry.ts) reads the
+registrations, as JSON only).
+The result is surfaced as an "Inferred from usage" hover note plus synthesized
+member completions; call sites that disagree show a union of up to three
+types, not counting object literals that only stand in for one of them (a
+unit test's `{httpHeaders: ...}` passed where production code passes a
+`Request`). It only kicks in where the checker has already given up (`any`, or a
+placeholder SFRA JSDoc such as `@param {Object}`), never overriding a real
+type from TypeScript or JSDoc.
+
+The engine gathers evidence ([src/inference/core.ts](./src/inference/core.ts))
+and applies one decision policy ([src/inference/policy.ts](./src/inference/policy.ts))
+everywhere, so parameter, member and chain hovers and completions always
+agree. [src/usage-inference.ts](./src/usage-inference.ts) is the barrel and
+lists the modules in reading order.
+
+A request reads only the files that can name the value it follows
+([src/inference/reference-search.ts](./src/inference/reference-search.ts)):
+the declaring file for a file-local helper, and the module plus the files that
+`require()` it for an export. It runs a bounded number of searches and stops
+when the editor cancels it.

@@ -30,8 +30,12 @@ declare module 'server' {
 }
 
 declare module 'server/server' {
-  /** Middleware function executed within a route chain. */
-  export type Middleware = (req: Request, res: Response, next: NextFunction) => void;
+  /**
+   * Middleware function executed within a route chain. The route calls each
+   * step with itself as `this`, so a step can register route event listeners
+   * (`this.on('route:BeforeComplete', ...)`).
+   */
+  export type Middleware = (this: Route, req: Request, res: Response, next: NextFunction) => void;
 
   /** Continuation passed to middleware. Pass an Error to abort the chain. */
   export type NextFunction = (err?: Error) => void;

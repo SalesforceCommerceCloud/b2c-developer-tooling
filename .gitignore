@@ -8,6 +8,7 @@ dist-deploy
 /tmp
 node_modules
 /coverage
+coverage/
 oclif.manifest.json
 *.tsbuildinfo
 

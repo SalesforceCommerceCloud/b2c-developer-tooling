@@ -4,3 +4,7 @@ src/template/
 # Intentionally malformed dw.json fixture (trailing comma) used by the activation
 # regression test; Prettier would "fix" it into valid JSON and defeat the test.
 src/test/fixtures/malformed-workspace/dw.json
+
+# Deliberately ends a line on a dangling `shipment.` (a mid-edit shape the
+# completion regression test types into); Prettier would join it onto the next line.
+src/test/fixtures/infer-usage-workspace/cartridges/test_cartridge/cartridge/scripts/helpers/shippingHelpers.js
