@@ -49,6 +49,16 @@ const LINE_ITEM_HELPERS = `
   }
 `;
 
+// An array filled with two unrelated Script API classes.
+const MIXED_ITEMS = `
+  function mixedItems() {
+    var items = [];
+    items.push(getProduct());
+    items.push(getBasket());
+    return items;
+  }
+`;
+
 /** The function a case targets: a declaration, or a function expression assigned to `x.name` / `name:`. */
 function isFunctionNamed(node, name) {
   if (ts.isFunctionDeclaration(node)) return node.name?.text === name;
@@ -183,11 +193,39 @@ describe('usage-inference — arrays and element access', () => {
       expected: 'ProductLineItem[]',
     },
     {
-      title: 'an array literal mixing unrelated types names no array',
+      title: 'an array literal mixing unrelated types is an array of their union',
       source: 'function pair(product, basket) { return [product, basket]; } pair(getProduct(), getBasket());',
       kind: 'return',
       name: 'pair',
+      expected: '(Product | Basket)[]',
+    },
+    {
+      title: 'an array filled by push() with unrelated types is an array of their union',
+      source: MIXED_ITEMS,
+      kind: 'return',
+      name: 'mixedItems',
+      expected: '(Product | Basket)[]',
+    },
+    {
+      title: "a native array method's callback parameter on a mixed array is either element",
+      source: `${MIXED_ITEMS} function ids() { return mixedItems().map(function (entry) { return entry.UUID; }); }`,
+      kind: 'param',
+      name: 'entry',
+      expected: 'Product | Basket',
+    },
+    {
+      title: 'an array literal of more unrelated types than a union shows names no array',
+      source: "function row(product, basket) { return [product, basket, 'x', 1]; } row(getProduct(), getBasket());",
+      kind: 'return',
+      name: 'row',
       expected: '',
+    },
+    {
+      title: 'an array of booleans reads as boolean[]',
+      source: 'function flags(product) { return [product.online, product.searchable]; } flags(getProduct());',
+      kind: 'return',
+      name: 'flags',
+      expected: 'boolean[]',
     },
   ]);
 });

@@ -266,7 +266,7 @@ function resolveElementAccessTypes(
   return dedupeTypes(ctx, resolveElementTypes(ctx, expr.expression, depth, chainHops));
 }
 
-/** `[a, ...rest]`: an array of the one type its elements share; elements of unrelated types name no array. */
+/** `[a, ...rest]`: an array of what its elements are, decided like any other choice of types (see ./policy). */
 function resolveArrayTypes(
   ctx: InferenceContext,
   elements: readonly tsserver.Expression[],
@@ -279,8 +279,7 @@ function resolveArrayTypes(
       ? resolveElementTypes(ctx, element.expression, depth, chainHops)
       : resolveExpressionTypes(ctx, element, depth, chainHops + 1),
   );
-  const [element, ...others] = limitUnion(ctx, normalizeCandidates(ctx, elementTypes));
-  const array = element && others.length === 0 ? arrayTypeOf(ctx, element) : undefined;
+  const array = arrayTypeOf(ctx, limitUnion(ctx, normalizeCandidates(ctx, elementTypes)));
   return array ? [array] : [];
 }
 

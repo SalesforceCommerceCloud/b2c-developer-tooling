@@ -136,20 +136,37 @@ function classDisplayName(checker, symbol) {
         .replace(/^"[^"]*"\./, '');
 }
 /**
+ * True for a union shown as its members. The checker reads `true | false`
+ * back as `boolean` (an enum's members as the enum), so it renders those.
+ */
+function isDisplayedAsUnion(ts, type) {
+    const collapsed = ts.TypeFlags.BooleanLiteral | ts.TypeFlags.EnumLiteral;
+    return type.isUnion() && !type.types.some((member) => member.flags & collapsed);
+}
+/** `Product[]`, or `(Product | Basket)[]` for an array of a union. */
+function arrayDisplayString(ts, checker, array) {
+    const [element] = checker.getTypeArguments(array);
+    if (!element)
+        return 'any[]';
+    const display = computeTypeDisplayString(ts, checker, element);
+    return element.isUnion() && !(element.flags & ts.TypeFlags.Boolean) ? `(${display})[]` : `${display}[]`;
+}
+/**
  * Renders a candidate type for hover text and dedupe keys. A class or
  * interface instantiated only with default type arguments reads as the bare
  * class name (`Product`, `LineItemCtnr`); one with real type arguments
  * renders them the same way (`Collection<Product>`, not the checker's
- * `Collection<Product<Product>>`), and an array reads as its element's
- * display (`Product[]`). Everything else — primitives, object literals, lib
- * types — is rendered by the checker as TypeScript itself would.
+ * `Collection<Product<Product>>`), an array reads as its element's display
+ * (`Product[]`) and a union as its members' (`(Product | Basket)[]`).
+ * Everything else — primitives, object literals, lib types — is rendered by
+ * the checker as TypeScript itself would.
  */
 function computeTypeDisplayString(ts, checker, type) {
-    if (checker.isArrayType(type)) {
-        const [element] = checker.getTypeArguments(type);
-        const display = element ? computeTypeDisplayString(ts, checker, element) : 'any';
-        return element?.isUnion() ? `(${display})[]` : `${display}[]`;
+    if (isDisplayedAsUnion(ts, type)) {
+        return type.types.map((member) => computeTypeDisplayString(ts, checker, member)).join(' | ');
     }
+    if (checker.isArrayType(type))
+        return arrayDisplayString(ts, checker, type);
     const symbol = type.getSymbol();
     const isClassOrInterface = symbol !== undefined && (symbol.flags & (ts.SymbolFlags.Class | ts.SymbolFlags.Interface)) !== 0;
     if (!isClassOrInterface)
@@ -251,14 +268,22 @@ function elementTypeOf(ctx, type, location) {
     return collectionElementType(ctx, type, location);
 }
 /**
- * `element[]`, built by the checker itself so an inferred array reads, and
- * resolves members (`filter`, `[0]`, `forEach`), exactly like a declared one.
- * The factory is internal to TypeScript, so it is feature-detected: a
- * TypeScript without it leaves inferred arrays silent rather than wrong.
+ * An array of `elements` (`ProductLineItem[]`, or `(OrderAddress | Shipment)[]`
+ * for an array filled with either), built by the checker itself so an
+ * inferred array reads, and resolves members (`filter`, `[0]`, `forEach`),
+ * exactly like a declared one. The factories are internal to TypeScript, so
+ * they are feature-detected: a TypeScript without them leaves inferred
+ * arrays silent rather than wrong.
  */
-function arrayTypeOf(ctx, element) {
-    const factory = ctx.checker;
-    return typeof factory.createArrayType === 'function' ? factory.createArrayType(element) : undefined;
+function arrayTypeOf(ctx, elements) {
+    const factories = ctx.checker;
+    if (typeof factories.createArrayType !== 'function')
+        return undefined;
+    if (elements.length === 1)
+        return factories.createArrayType(elements[0]);
+    if (elements.length === 0 || typeof factories.getUnionType !== 'function')
+        return undefined;
+    return factories.createArrayType(factories.getUnionType([...elements]));
 }
 /** Renders candidate types as hover text, e.g. `"Product | Category"`. */
 function describeTypes(ctx, types) {

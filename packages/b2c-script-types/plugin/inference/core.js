@@ -180,14 +180,13 @@ function resolveElementAccessTypes(ctx, expr, depth, chainHops) {
     }
     return (0, type_helpers_1.dedupeTypes)(ctx, resolveElementTypes(ctx, expr.expression, depth, chainHops));
 }
-/** `[a, ...rest]`: an array of the one type its elements share; elements of unrelated types name no array. */
+/** `[a, ...rest]`: an array of what its elements are, decided like any other choice of types (see ./policy). */
 function resolveArrayTypes(ctx, elements, depth, chainHops) {
     const { ts } = ctx;
     const elementTypes = elements.flatMap((element) => ts.isSpreadElement(element)
         ? resolveElementTypes(ctx, element.expression, depth, chainHops)
         : resolveExpressionTypes(ctx, element, depth, chainHops + 1));
-    const [element, ...others] = (0, policy_1.limitUnion)(ctx, (0, policy_1.normalizeCandidates)(ctx, elementTypes));
-    const array = element && others.length === 0 ? (0, type_helpers_1.arrayTypeOf)(ctx, element) : undefined;
+    const array = (0, type_helpers_1.arrayTypeOf)(ctx, (0, policy_1.limitUnion)(ctx, (0, policy_1.normalizeCandidates)(ctx, elementTypes)));
     return array ? [array] : [];
 }
 function resolveAlternatives(ctx, alternatives, depth, chainHops) {
