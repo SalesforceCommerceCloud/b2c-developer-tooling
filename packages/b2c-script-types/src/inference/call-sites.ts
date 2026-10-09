@@ -59,9 +59,12 @@ function findReferences(ctx: InferenceContext, name: tsserver.Identifier): reado
   return references;
 }
 
-/** The name a function declaration or method declares itself by. */
-function ownName(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): tsserver.Identifier | undefined {
-  const declaresName = ts.isFunctionDeclaration(fn) || ts.isMethodDeclaration(fn);
+/** A function-like declaration, or the class a constructor is invoked through. */
+type Callable = tsserver.SignatureDeclaration | tsserver.ClassLikeDeclaration;
+
+/** The name a function declaration, method or class declares itself by. */
+function ownName(fn: Callable, ts: typeof tsserver): tsserver.Identifier | undefined {
+  const declaresName = ts.isFunctionDeclaration(fn) || ts.isMethodDeclaration(fn) || ts.isClassDeclaration(fn);
   return declaresName && fn.name && ts.isIdentifier(fn.name) ? fn.name : undefined;
 }
 
@@ -73,7 +76,7 @@ function ownName(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): tsserv
  * reach it through collectCallSites()'s require() indirection rather than a
  * direct property-access call.
  */
-function assignedName(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): tsserver.Identifier | undefined {
+function assignedName(fn: Callable, ts: typeof tsserver): tsserver.Identifier | undefined {
   const assignment = fn.parent;
   if (!ts.isBinaryExpression(assignment) || assignment.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
     return undefined;
@@ -88,14 +91,16 @@ function assignedName(fn: tsserver.SignatureDeclaration, ts: typeof tsserver): t
  * declaration: its own name, or for one that has none, the name it is bound
  * to (the common CommonJS shapes: `const foo = function(){}`,
  * `{foo: function(){}}`, `{foo(){}}`, `exports.foo = function(){}`,
- * `module.exports = function(){}`).
+ * `module.exports = function(){}`). A class constructor is searched through
+ * its class, since that is what `new Model(x)` names.
  */
 export function getReferenceNameNode(
   fn: tsserver.SignatureDeclaration,
   ts: typeof tsserver,
 ): tsserver.Identifier | undefined {
-  const boundName = ts.isExpression(fn) ? bindingNameOf(fn, ts) : undefined;
-  return ownName(fn, ts) ?? boundName ?? assignedName(fn, ts);
+  const callable: Callable = ts.isConstructorDeclaration(fn) ? fn.parent : fn;
+  const boundName = ts.isExpression(callable) ? bindingNameOf(callable, ts) : undefined;
+  return ownName(callable, ts) ?? boundName ?? assignedName(callable, ts);
 }
 
 /** The function enclosing `node`, if any. */

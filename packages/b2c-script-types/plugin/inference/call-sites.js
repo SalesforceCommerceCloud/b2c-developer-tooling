@@ -31,9 +31,9 @@ function findReferences(ctx, name) {
     }
     return references;
 }
-/** The name a function declaration or method declares itself by. */
+/** The name a function declaration, method or class declares itself by. */
 function ownName(fn, ts) {
-    const declaresName = ts.isFunctionDeclaration(fn) || ts.isMethodDeclaration(fn);
+    const declaresName = ts.isFunctionDeclaration(fn) || ts.isMethodDeclaration(fn) || ts.isClassDeclaration(fn);
     return declaresName && fn.name && ts.isIdentifier(fn.name) ? fn.name : undefined;
 }
 /**
@@ -59,11 +59,13 @@ function assignedName(fn, ts) {
  * declaration: its own name, or for one that has none, the name it is bound
  * to (the common CommonJS shapes: `const foo = function(){}`,
  * `{foo: function(){}}`, `{foo(){}}`, `exports.foo = function(){}`,
- * `module.exports = function(){}`).
+ * `module.exports = function(){}`). A class constructor is searched through
+ * its class, since that is what `new Model(x)` names.
  */
 function getReferenceNameNode(fn, ts) {
-    const boundName = ts.isExpression(fn) ? bindingNameOf(fn, ts) : undefined;
-    return ownName(fn, ts) ?? boundName ?? assignedName(fn, ts);
+    const callable = ts.isConstructorDeclaration(fn) ? fn.parent : fn;
+    const boundName = ts.isExpression(callable) ? bindingNameOf(callable, ts) : undefined;
+    return ownName(callable, ts) ?? boundName ?? assignedName(callable, ts);
 }
 /** The function enclosing `node`, if any. */
 function enclosingFunction(node, ts) {

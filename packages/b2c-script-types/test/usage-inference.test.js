@@ -280,31 +280,19 @@ module.exports = getLineItems;
   });
 
   describe('inferParameterType — cross-file export patterns', () => {
-    function findFunctionExpressionParam(sourceFile) {
+    /** The first parameter of the first function-like node `isTarget` accepts. */
+    function findFirstParam(sourceFile, isTarget) {
       let param;
       const visit = (node) => {
-        if (ts.isFunctionExpression(node)) {
-          param = node.parameters[0];
-          return;
-        }
-        ts.forEachChild(node, visit);
+        if (param) return;
+        if (isTarget(node)) param = node.parameters[0];
+        else ts.forEachChild(node, visit);
       };
       visit(sourceFile);
       return param;
     }
 
-    function findMethodDeclarationParam(sourceFile) {
-      let param;
-      const visit = (node) => {
-        if (ts.isMethodDeclaration(node)) {
-          param = node.parameters[0];
-          return;
-        }
-        ts.forEachChild(node, visit);
-      };
-      visit(sourceFile);
-      return param;
-    }
+    const findFunctionExpressionParam = (sourceFile) => findFirstParam(sourceFile, ts.isFunctionExpression);
 
     it('resolves a bare `module.exports = function(){}` called via `require(...)` in another file', () => {
       const files = {
@@ -438,12 +426,55 @@ module.exports = getLineItems;
       };
       const languageService = createFixtureLanguageService(files);
       const ctx = createInferenceContext(ts, languageService);
-      const param = findMethodDeclarationParam(ctx.program.getSourceFile('/helper.js'));
+      const param = findFirstParam(ctx.program.getSourceFile('/helper.js'), ts.isMethodDeclaration);
 
       const types = inferParameterType(ctx, param);
 
       assert.equal(describeTypes(ctx, types), '{ ID: string; name: string; }');
     });
+
+    const ES6_EXPORT_SHAPES = [
+      {
+        shape: 'an arrow-function module export (`module.exports = (product) => ...`)',
+        helper: `module.exports = (product) => product.ID;`,
+        consumer: `var helper = require('./helper'); helper(getProduct());`,
+        isTarget: ts.isArrowFunction,
+      },
+      {
+        shape: 'an arrow function inside an export map',
+        helper: `module.exports = { helper: (product) => product.ID };`,
+        consumer: `var helpers = require('./helper'); helpers.helper(getProduct());`,
+        isTarget: ts.isArrowFunction,
+      },
+      {
+        shape: 'an ES6 class constructor reached through `new`',
+        helper: `class Model { constructor(product) { this.id = product.ID; } } module.exports = Model;`,
+        consumer: `var Model = require('./helper'); new Model(getProduct());`,
+        isTarget: ts.isConstructorDeclaration,
+      },
+      {
+        shape: 'an anonymous class expression export reached through `new`',
+        helper: `module.exports = class { constructor(product) { this.id = product.ID; } };`,
+        consumer: `var Model = require('./helper'); new Model(getProduct());`,
+        isTarget: ts.isConstructorDeclaration,
+      },
+      {
+        shape: 'an ES6 class method called on an instance',
+        helper: `class Formatter { format(product) { return product.ID; } } module.exports = Formatter;`,
+        consumer: `var Formatter = require('./helper'); new Formatter().format(getProduct());`,
+        isTarget: ts.isMethodDeclaration,
+      },
+    ];
+
+    for (const {shape, helper, consumer, isTarget} of ES6_EXPORT_SHAPES) {
+      it(`resolves ${shape} called from another file`, () => {
+        const files = {'/types.d.ts': AMBIENT_TYPES, '/helper.js': helper, '/consumer.js': consumer};
+        const ctx = createInferenceContext(ts, createFixtureLanguageService(files));
+        const param = findFirstParam(ctx.program.getSourceFile('/helper.js'), isTarget);
+
+        assert.equal(describeTypes(ctx, inferParameterType(ctx, param)), '{ ID: string; name: string; }');
+      });
+    }
   });
 
   describe('inferParameterType — fitting call sites to how the body uses the value', () => {
