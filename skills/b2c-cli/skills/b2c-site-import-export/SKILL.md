@@ -39,6 +39,8 @@ b2c job export --site MySite --site-data campaigns_and_promotions --output ./ver
 ```
 
 `--site` alone exports all site data; specify `--site-data` for focused work.
+For a full instance export use `--all`; `--site all`, `--catalog all`, etc. select
+every object of one type. Prefer these flags over hand-written `--data-units` JSON.
 Directory output retains the platform's generated `*_export` root. Do not overwrite
 an existing/applied migration. Exports may contain secrets or unrelated defaults;
 review and trim before committing, preserving XSD-required fields.
