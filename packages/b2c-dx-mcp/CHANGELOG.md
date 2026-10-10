@@ -1,5 +1,12 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.5.2
+
+### Patch Changes
+
+- Updated dependencies [[`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96)]:
+  - @salesforce/b2c-agent-plugins@1.12.1
+
 ## 3.5.1
 
 ### Patch Changes
