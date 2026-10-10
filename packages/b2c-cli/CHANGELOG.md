@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 2.6.0
+
+### Minor Changes
+
+- [#759](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/759) [`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96) - Add `b2c job export --all` to export every data unit (global data, sites, catalogs, libraries, static resources, inventory lists, price books, customer lists) without writing `--data-units` JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.5.2
 
 ### Patch Changes
