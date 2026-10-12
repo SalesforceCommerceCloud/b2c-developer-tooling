@@ -1,9 +1,9 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-02T13:34:04.021Z",
+  "generatedAt": "2026-10-12T17:29:48.091Z",
   "source": {
-    "sha": "33e6721c89b2e7c63ad2d99e9ad2a55cb7e8c9cd",
-    "committedAt": "2026-10-01T13:34:07-07:00",
+    "sha": "350d99e7d16728a4e7ddcab9e586fb938cc3330b",
+    "committedAt": "2026-10-12T10:55:29+05:30",
     "ref": "main"
   },
   "entries": [
@@ -7720,29 +7720,31 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones.md",
-      "headings": "General Usage Guidelines • Storefront Zone Creation • Access Control Usage Guidelines • CDN Stacking • Create a CDN Stacking Rule • Update a CDN Stacking Rule • IP Access Control • Create an Access Control Rule • Update an Access Control Rule • Region Access Control • Create a Region Access Control Rule • Update a Region Access Control Rule • Site Testing • Application Firewall Rule Enhancements • Turn a WAF Group On in Monitor Mode • Check WAF Rule Settings • Set a WAF Group to Default Mode • Modify a WAF Rule • Brotli Compression • HTTP/2 Prioritization • Rule Firing Investigation • Glossary of Terms",
-      "summary": "Configure CDN security, access control, firewall rules, WAF, and performance settings for B2C Commerce storefronts using the CDN Zones API.",
+      "headings": "General Usage Guidelines • Storefront Zone Creation • Validate the Hostname and Cut Over DNS • Pre-validate the hostname • Update DNS • Stack a third-party CDN • Delete the TXT validation records • After cutover • Access Control Usage Guidelines • CDN Stacking • Create a CDN Stacking Rule • Update a CDN Stacking Rule • IP Access Control • Create an Access Control Rule • Update an Access Control Rule • Region Access Control • Create a Region Access Control Rule • Update a Region Access Control Rule • Site Testing • Application Firewall Rule Enhancements • Turn a WAF Group On in Monitor Mode • Check WAF Rule Settings • Set a WAF Group to Default Mode • Modify a WAF Rule • Brotli Compression • HTTP/2 Prioritization • Rule Firing Investigation • Glossary of Terms",
+      "summary": "Configure content delivery security zones using the CDN Zones API for automated, repeatable setup of eCDN zones across B2C Commerce instances.",
       "keywords": [
         "CDN Zones API",
-        "eCDN",
-        "Web Application Firewall",
-        "WAF",
-        "firewall rules",
-        "access control",
-        "IP blocklist",
-        "regional access",
-        "custom rules",
-        "zone configuration",
-        "security",
-        "Brotli compression"
+        "eCDN zones",
+        "content delivery",
+        "security zones",
+        "SCAPI zone",
+        "proxy zones",
+        "vanity hostnames",
+        "custom certificates",
+        "Business Manager",
+        "storefront zone",
+        "embedded CDN",
+        "zone configuration"
       ],
       "relatedEntries": [
         "commerce-api/use-admin-api",
+        "commerce-api/cdn-zones-scapi",
         "commerce-api/cdn-zones-cipher-suite-types",
         "commerce-api/cdn-zones-logpush",
         "commerce-api/cdn-zones-logpush-filter",
         "commerce-api/cdn-zones-logpush-log-field",
         "commerce-api/cdn-zones-automatic-certs",
+        "commerce-api/cdn-zones-custom-certs",
         "commerce-api/cdn-pci-4-compliance",
         "commerce-api/cdn-zones-wafv2",
         "commerce-api/cdn-zones-custom-rules",
@@ -7797,6 +7799,32 @@
         "PCI DSS",
         "forward secrecy",
         "AEAD"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
+      ]
+    },
+    {
+      "id": "commerce-api/cdn-zones-custom-certs",
+      "title": "eCDN Custom Certificates",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-certs.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-custom-certs.md",
+      "headings": "Format a Self-Managed Certificate • Upload a Custom Certificate • Renew a Custom Certificate",
+      "summary": "Upload and format self-managed SSL certificates for eCDN zones using the CDN Zones API with proper PEM formatting.",
+      "keywords": [
+        "eCDN custom certificates",
+        "SSL certificate upload",
+        "CDN Zones API",
+        "self-managed certificate",
+        "PEM format",
+        "certificate formatting",
+        "wildcard certificate",
+        "hostname certification",
+        "custom SSL",
+        "certificate deployment",
+        "line endings conversion",
+        "eCDN zones"
       ],
       "relatedEntries": [
         "commerce-api/cdn-zones"
@@ -7898,6 +7926,32 @@
         "logpush job",
         "log fields reference",
         "automated traffic detection"
+      ],
+      "relatedEntries": [
+        "commerce-api/cdn-zones"
+      ]
+    },
+    {
+      "id": "commerce-api/cdn-zones-scapi",
+      "title": "SCAPI Zone",
+      "category": "commerce-api",
+      "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-scapi.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/cdn-zones-scapi.md",
+      "headings": "What Is a SCAPI Zone? • Controls Available on SCAPI Zones • Managed Runtime SCAPI Request Identification",
+      "summary": "Configure Salesforce-managed eCDN security controls and analytics for SCAPI traffic to mitigate abusive API requests like credential stuffing.",
+      "keywords": [
+        "SCAPI zone",
+        "embedded CDN",
+        "eCDN",
+        "API security",
+        "credential stuffing",
+        "Commerce API",
+        "CDN configuration",
+        "Business Manager",
+        "API traffic",
+        "security controls",
+        "SCAPI hostname",
+        "commerce cloud"
       ],
       "relatedEntries": [
         "commerce-api/cdn-zones"
@@ -8081,19 +8135,18 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-caching.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/custom-api-caching.md",
-      "headings": "CDN Caching",
-      "summary": "Enable and configure caching for Custom API responses using Page Caching, setExpires, and setVary methods to improve performance.",
+      "summary": "Enable caching for Custom API endpoints using setExpires() and setVaryBy() methods to improve response performance.",
       "keywords": [
-        "Custom API caching",
-        "Page Caching",
+        "caching",
+        "custom API",
         "setExpires",
         "setVaryBy",
-        "dw.system.Response",
-        "CDN caching",
-        "cache control",
+        "page caching",
         "response caching",
+        "cache strategies",
         "performance optimization",
-        "SCAPI caching"
+        "personalized responses",
+        "dw.system.Response"
       ],
       "relatedEntries": [
         "commerce-api/custom-apis"
@@ -8982,19 +9035,20 @@
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.md",
       "headings": "What Is Cached • Categories • Products • Availability • Product Search • Search Suggestions • Promotions • Campaigns • SEO URL Mapping • Stores • Preferences • Site Custom Preferences • Global Custom Preferences • Shopper Experience (Page Designer) • Shopper Configurations • Caching Summary by API • Enable Caching • Default Cache Expiration and Personalization Settings • \"expand\" Parameter Impact on Cache Hit Rates • Improve the Cache Hit Ratio • Personalized Caching • The `personalized=none` Query Parameter • Personalization and Custom Code • Personalization Changes in Hooks • Response Body Customization • Cache Expiration for Objects with a Validity Period • Change Cache Settings Programmatically • Change Cache Time-to-Live • Constraints • Apply Personalization • Cache Invalidation • Manual Invalidation • Automated Invalidation (Replication) • Cache Tags • Cache-Control HTTP Header • Cache Status Response Headers • sfdc_cache_status (Web Tier) • Applicability • Header Values • Understand the [N/M] Notation • cf-cache-status (CDN Edge) • Example: How a Request Travels Through Both Cache Tiers • View Cache Statistics • Troubleshoot Personalized Caching • Logout and Cached Responses • Alter Cache Key",
-      "summary": "Configure and optimize SCAPI's two-tier caching (web-tier and CDN) for GET requests across Shopper APIs to reduce latency and origin load.",
+      "summary": "Implement two-tier caching (web-tier and CDN edge) for SCAPI GET requests to reduce latency and origin load.",
       "keywords": [
         "SCAPI caching",
         "CDN cache",
         "web-tier cache",
+        "edge cache",
+        "API response caching",
+        "cache layers",
+        "GET request caching",
         "cache TTL",
-        "personalized caching",
-        "expand parameter",
-        "cache hit rate",
-        "Shopper APIs",
-        "cache key",
-        "cf-cache-status",
-        "sfdc_cache_status"
+        "cache invalidation",
+        "content delivery network",
+        "storefront performance",
+        "SCAPI optimization"
       ],
       "relatedEntries": [
         "commerce-api/performance"
@@ -10017,20 +10071,20 @@
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/troubleshoot.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/troubleshoot.md",
       "headings": "Quick Triage: Find Your Solution • Troubleshooting Resources • Step-by-Step Troubleshooting Process • 1. Identify the Request • 2. Check the Response • 3. Review Logs",
-      "summary": "Troubleshoot B2C Commerce API issues using quick triage, error codes, logs, and performance analysis.",
+      "summary": "Navigate API troubleshooting resources to diagnose and resolve issues by HTTP error code, symptoms, and performance problems.",
       "keywords": [
         "API troubleshooting",
         "error codes",
-        "gateway timeout",
-        "throttle rates",
-        "authorization errors",
-        "SCAPI logs",
-        "correlationID",
-        "request tracking",
-        "response handling",
-        "caching issues",
-        "rate limits",
-        "code profiler"
+        "504 timeout",
+        "429 throttling",
+        "401 403 authorization",
+        "400 validation",
+        "500 internal error",
+        "API debugging",
+        "request issues",
+        "API errors",
+        "commerce API errors",
+        "error resolution"
       ],
       "relatedEntries": [
         "commerce-api/scapi-get-started",
@@ -10259,19 +10313,20 @@
       "category": "commerce-solutions",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-management.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-solutions/guide/bot-management.md",
-      "headings": "Product Offering • Bot Management Strategy • Implementation Best Practices",
-      "summary": "Understand Salesforce B2C Commerce bot management approach, shared responsibilities, and configuration options for protecting storefronts.",
+      "headings": "Product Offering • Bot Management Strategy • Implementation Best Practices • How do I restrict SCAPI to Managed Runtime traffic?",
+      "summary": "Understand Salesforce B2C Commerce bot management approach, shared responsibilities, platform tools, and implementation strategies for protecting storefronts.",
       "keywords": [
         "bot management",
         "bot protection",
-        "storefront security",
+        "B2C Commerce bots",
         "eCDN",
         "bot detection",
-        "CDN configuration",
-        "platform availability",
-        "bot filtering",
+        "bot control",
+        "storefront security",
+        "CDN bot protection",
         "third-party bot solution",
-        "shared responsibility"
+        "bot mitigation",
+        "platform security"
       ],
       "relatedEntries": [
         "commerce-solutions/solutions-landing-overview"
@@ -11831,6 +11886,7 @@
         "pwa-kit-managed-runtime/one-click-checkout",
         "pwa-kit-managed-runtime/tracking-consent",
         "pwa-kit-managed-runtime/protect-storefront",
+        "pwa-kit-managed-runtime/scapi-request-identification",
         "pwa-kit-managed-runtime/maximizing-your-cache-hit-ratio",
         "pwa-kit-managed-runtime/create-a-sitemap"
       ]
@@ -13102,18 +13158,20 @@
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pushing-and-deploying-bundles.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/pushing-and-deploying-bundles.md",
       "headings": "Save Your Credentials • Push a Bundle • Verify Project Configuration • Configure Environment Proxies • Configure Environment Variables • Run the Push Script • Troubleshoot Bundle Push Errors • HTTP 404 Error • HTTP 401 Error • HTTP 413 Error • HTTPS Errors • Deploy a Bundle",
-      "summary": "Push and deploy code bundles to Managed Runtime environments using API keys and command-line scripts.",
+      "summary": "Deploy commerce applications to Managed Runtime by pushing code bundles using CLI commands, API keys, or the Runtime Admin web application.",
       "keywords": [
-        "bundle push",
-        "deploy",
-        "Managed Runtime",
-        "API key",
+        "deploy code",
+        "managed runtime",
+        "push bundle",
+        "B2C CLI",
+        "mrt bundle",
+        "SCAPI deployment",
         "Runtime Admin",
-        "PWA Kit",
-        "npm run push",
-        "environment deployment",
-        "bundle troubleshooting",
-        "production environment"
+        "API key",
+        "authorization",
+        "storefront deployment",
+        "PWA Kit deployment",
+        "bundle commands"
       ],
       "relatedEntries": [
         "pwa-kit-managed-runtime/pwa-developer-workflow"
@@ -13606,6 +13664,32 @@
       ],
       "relatedEntries": [
         "pwa-kit-managed-runtime/pwa-get-set-up"
+      ]
+    },
+    {
+      "id": "pwa-kit-managed-runtime/scapi-request-identification",
+      "title": "Restrict SCAPI Access to Managed Runtime Traffic",
+      "category": "pwa-kit-managed-runtime",
+      "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/scapi-request-identification.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/scapi-request-identification.md",
+      "headings": "How It Works • Considerations • Related Topics",
+      "summary": "Secure Shopper API requests by restricting them to Managed Runtime traffic only using SCAPI Identity Headers to block direct bot/scraper access.",
+      "keywords": [
+        "SCAPI access control",
+        "Managed Runtime security",
+        "Shopper API restriction",
+        "SCAPI Identity Header",
+        "SIH",
+        "bot protection",
+        "API lockdown",
+        "eCDN security",
+        "direct SCAPI traffic block",
+        "MRT request identification",
+        "API authentication headers",
+        "scraper prevention"
+      ],
+      "relatedEntries": [
+        "pwa-kit-managed-runtime/build-customize"
       ]
     },
     {
@@ -14262,21 +14346,21 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-api-integration.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-api-integration.md",
-      "headings": "What Is SCAPI? • Creating API Clients • Configuration Options • Public vs Private SLAS Client • Authentication • Guest Login • Registered User Login • Token Refresh • Logout • Social Login • Adding the Access Token to Requests • Fetching Data • Fetching a Product • Search Products • Fetching Categories • Mutations • Adding an Item to Basket • Updating a Basket Item • Available API Clients • TypeScript Types • Error Handling • ApiError Properties • Response Format • Middleware • Custom APIs • Generate a Typed Client (Recommended) • Call with `fetch` Directly • See Also",
-      "summary": "Type-safe API client for calling Salesforce B2C Commerce Shopper APIs with TypeScript support, authentication helpers, and custom API integration.",
+      "headings": "What Is SCAPI? • Creating API Clients • Configuration Options • Public vs Private SLAS Client • Replace the Template API Layer • Adding the Access Token to Requests • Authentication • Guest Login • Registered User Login • Token Refresh • Logout • Social Login • Fetching Data • Fetching a Product • Search Products • Fetching Categories • Mutations • Adding an Item to Basket • Updating a Basket Item • Classify Non-Personalized Responses • Prerequisites • How Classification Works • Review Response Safety • Customize the Policy • Verify Classification and Cache Status • Available API Clients • TypeScript Types • Error Handling • ApiError Properties • Response Format • Middleware • Custom APIs • Generate a Typed Client (Recommended) • Call with `fetch` Directly • See Also",
+      "summary": "Use SCAPI client in Storefront Next to call Salesforce B2C Commerce Shopper APIs with type-safe TypeScript, minimal bundle size, and built-in authentication helpers.",
       "keywords": [
-        "SCAPI",
+        "SCAPI client",
+        "Shoppers API",
         "B2C Commerce API",
-        "Shopper API",
-        "API client",
-        "TypeScript",
+        "Storefront Next",
+        "TypeScript API client",
+        "Commerce API",
+        "type-safe",
+        "createApiClients",
+        "REST API",
         "openapi-fetch",
-        "authentication",
-        "SLAS",
-        "custom APIs",
-        "storefront-next-runtime",
-        "middleware",
-        "REST API"
+        "authentication helpers",
+        "custom APIs"
       ],
       "relatedEntries": [
         "sfnext/sfnext-architecture"
@@ -14790,6 +14874,61 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-deployments",
+      "title": "Deploy Your Storefront from Business Manager (Beta)",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-deployments.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-deployments.md",
+      "headings": "Prerequisites • View and Manage Bundles • View Deployment History • Deployment Notifications • Next Steps",
+      "summary": "Deploy storefront bundles to Managed Runtime environments and manage deployments through Business Manager interface.",
+      "keywords": [
+        "storefront deployment",
+        "Business Manager",
+        "bundle deployment",
+        "Managed Runtime",
+        "deploy bundles",
+        "storefront bundles",
+        "deployment management",
+        "sfnext",
+        "environment deployment",
+        "bundle management",
+        "B2C Commerce deployment",
+        "storefront releases"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-developer-workspace"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-developer-workspace",
+      "title": "Manage the Storefront Development Workflow in Business Manager (Beta)",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-developer-workspace.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-developer-workspace.md",
+      "headings": "Manage Environments from the Storefront • Manage Deployments • Monitor Storefront Performance • User Roles and Permissions • Access to Runtime Admin • See Also",
+      "summary": "Manage storefront development resources including environments, variables, redirects, and deployments in Business Manager using the Developer Workspace beta.",
+      "keywords": [
+        "Developer Workspace",
+        "storefront management",
+        "Business Manager",
+        "environment variables",
+        "bundle deployment",
+        "Managed Runtime",
+        "storefront environments",
+        "runtime admin",
+        "Core Web Vitals",
+        "staging production",
+        "sfnext"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section",
+        "sfnext/sfnext-mrt-migration",
+        "sfnext/sfnext-users",
+        "sfnext/sfnext-environments",
+        "sfnext/sfnext-deployments"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-domain-cookie",
       "title": "Maintain Shopper Sessions Across Subdomains in Storefront Next",
       "category": "sfnext",
@@ -14865,6 +15004,32 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-shopper-identity-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-environments",
+      "title": "Manage Your Environments in Business Manager (Beta)",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-environments.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-environments.md",
+      "headings": "Prerequisites • Primary Environment • Change the Primary Environment • Create Environments • Clone or Delete an Environment • Edit Environment Settings • Environment Constraints • Access Control Headers • Header Value Requirements • Rotate Headers • Server-Side Cookies • Source Maps • Environment Variables • URL Redirects • Manage URL Redirects • Create a Redirect • Paths • Wildcards • HTTP Status Codes • Forwarding Query Parameters • Forwarding Wildcard Path • Edit, Delete, or Clone Redirects to Another Environment • Troubleshooting Redirects • Technical Limitations with Redirects",
+      "summary": "Manage isolated Storefront Next app environments (dev, staging, production) with separate URLs, bundles, and configurations in Business Manager.",
+      "keywords": [
+        "manage environments",
+        "Storefront Next",
+        "Business Manager",
+        "environment configuration",
+        "development environment",
+        "staging environment",
+        "production deployment",
+        "primary environment",
+        "eCDN configuration",
+        "environment variables",
+        "storefront environments permission",
+        "Managed Runtime"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-developer-workspace"
       ]
     },
     {
@@ -14960,7 +15125,6 @@
         "sfnext/sfnext-browser-comp",
         "sfnext/sfnext-template-compare",
         "sfnext/sfnext-quick-start-choice",
-        "sfnext/sfnext-mrt-create-environment",
         "sfnext/sfnext-link-storefront",
         "sfnext/sfnext-github-connect"
       ]
@@ -15358,19 +15522,21 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-manage-sites.md",
-      "headings": "Prerequisites • Assign or Remove Sites from a Storefront",
+      "headings": "Prerequisites • Assign or Remove Sites from a Storefront • Assign or Remove Sites from a Storefront in the Developer Workspace (Beta)",
       "summary": "Add or remove sites assigned to a Storefront Next instance in Business Manager to support new locales, brands, or markets.",
       "keywords": [
-        "Storefront Next",
-        "manage sites",
-        "site assignment",
-        "Business Manager",
-        "MRT Data Store",
-        "multisite",
-        "SLAS",
-        "Shopper Login",
+        "Storefront Next site management",
+        "manage sites Business Manager",
+        "assign sites storefront",
+        "remove sites storefront",
+        "site configuration sfnext",
+        "multisite setup",
+        "storefront sites administration",
         "site provisioning",
-        "storefront configuration"
+        "locale management",
+        "MRT Data Store sites",
+        "SLAS authentication",
+        "site assignment sync"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -15432,25 +15598,24 @@
     },
     {
       "id": "sfnext/sfnext-mrt-administration",
-      "title": "Managed Runtime Administration",
+      "title": "Managed Runtime Administration in Runtime Admin and Business Manager",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-administration.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-administration.md",
-      "headings": "Prerequisites • Organization • Add Organization Users • Edit Organization User Permissions • Remove Organization Users • Projects • Find a Project • View and Edit Project Settings • Deployment Notifications • Add a Notification • Edit a Notification • Remove a Notification • Environments • Prerequisites • Create an Environment in Business Manager • Supported Regions • Deploy a Bundle • Delete a Bundle • Edit Environment Settings • Server-Side Rendering Architecture • Environment Variables • Redirects • Create a Redirect • Paths • Wildcards • HTTP Status Codes • Forwarding Query Parameters • Forwarding Wildcard Path • Clone Redirects • Edit a Redirect • Delete a Redirect • Troubleshooting Redirects • Technical Limitations with Redirects • Users • Add a User • Change a User’s Role • Remove a User • Log Center Logs and Metrics • Usage",
-      "summary": "Manage Storefront Next organizations, projects, environments, bundles, users, and deployments through Runtime Admin console, Business Manager, and APIs.",
+      "headings": "Which Interface to Use • Permissions • Environments • Create an Environment in Business Manager • Supported Regions • Deploy a Bundle • Edit Environment Settings • Server-Side Rendering Architecture • Environment Variables • Redirects • Log Center Logs and Metrics",
+      "summary": "Manage Storefront Next and Composable storefronts using Runtime Admin, Business Manager, and the Managed Runtime API.",
       "keywords": [
         "Managed Runtime Administration",
-        "Runtime Admin",
-        "organizations",
-        "projects",
-        "environments",
-        "deployment",
-        "bundles",
-        "user permissions",
-        "URL redirects",
-        "environment settings",
-        "MRT",
-        "Storefront Next"
+        "Runtime Admin console",
+        "Business Manager Developer Workspace",
+        "Managed Runtime API",
+        "storefront management",
+        "environments deployments",
+        "organization projects",
+        "runtime permissions roles",
+        "Account Manager access",
+        "MRT admin",
+        "storefront configuration"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -15458,25 +15623,51 @@
     },
     {
       "id": "sfnext/sfnext-mrt-api",
-      "title": "Automate Environment Administration with the Managed Runtime API",
+      "title": "Automate Storefront Administration with APIs",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-api.md",
-      "headings": "Considerations for Using Managed Runtime API • Before You Begin • List Environments • Create an Environment • Modify Proxy Configuration • Troubleshoot the Managed Runtime API Requests • Set Up Automation Users • Managed Runtime API Rate Limits • Projects and Environments • Cache Invalidations • Default Rate Limits • Read-Only Mode During Maintenance • Next Steps • See Also",
-      "summary": "Automate environment administration tasks using the Managed Runtime API with authentication and rate limit considerations.",
+      "headings": "Administer Your Storefront with SCAPI • SCAPI Authorization • Example SCAPI Requests • Create a Storefront Next Store • Create an Environment • Create an Environment Variable • Upload a Bundle • Managed Runtime API • Read-Only Mode During Maintenance",
+      "summary": "Automate storefront administration tasks like creating, updating, and deploying storefronts using SCAPI or MRT APIs.",
       "keywords": [
-        "Managed Runtime API",
-        "environment administration",
-        "automation",
-        "API key authentication",
-        "Runtime Admin",
+        "storefront automation",
+        "SCAPI",
+        "MRT API",
+        "storefront administration",
+        "CI/CD",
+        "deployments",
+        "environment management",
+        "bot user",
+        "Storefront Next",
+        "storefront API",
+        "automated deployment",
+        "infrastructure as code"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-mrt-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-mrt-cli",
+      "title": "Automate Storefront Administration Tasks with the B2C CLI",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-cli.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-cli.md",
+      "headings": "Point the CLI to the API Backend • Set Up the B2C CLI • Manage Environment Variables with the B2C CLI • List All Environment Variables for an Environment • Set or Update an Environment Variable • Create Environment Variables from an `.env` File • Create and Deploy Bundles with the B2C CLI • See Also",
+      "summary": "Use B2C CLI to automate storefront administration tasks like creating environments, managing variables, and deploying bundles via MRT Commands.",
+      "keywords": [
+        "B2C CLI",
+        "storefront automation",
+        "MRT commands",
         "environment variables",
-        "redirects",
-        "sfnext",
-        "B2C Commerce API",
-        "administration endpoints",
-        "rate limits",
-        "bearer token"
+        "bundle deployment",
+        "Managed Runtime API",
+        "SCAPI",
+        "Business Manager CLI",
+        "environment setup",
+        "CLI backend configuration",
+        "b2c mrt",
+        "storefront development"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -15504,7 +15695,7 @@
         "sfnext"
       ],
       "relatedEntries": [
-        "sfnext/sfnext-get-started-section"
+        "sfnext/sfnext-mrt-section"
       ]
     },
     {
@@ -15559,52 +15750,26 @@
       ]
     },
     {
-      "id": "sfnext/sfnext-mrt-env-vars-api",
-      "title": "Automate Environment Variable Management with the CLI or API",
-      "category": "sfnext",
-      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-env-vars-api.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-env-vars-api.md",
-      "headings": "Manage Environment Variables with the B2C CLI • Set Up the B2C CLI • List All Environment Variables for an Environment • Set or Update an Environment Variable • Create Environment Variables from an `.env` File • Manage Environment Variables with the Managed Runtime API • Set up the Managed Runtime API • Get All Environment Variables • Set, Update, and Unset Environment Variables • See Also",
-      "summary": "Automate environment variable management using B2C CLI or Managed Runtime API instead of Runtime Admin UI.",
-      "keywords": [
-        "environment variables",
-        "B2C CLI",
-        "Managed Runtime API",
-        "automation",
-        "Runtime Admin",
-        "process.env",
-        "MRT commands",
-        "API key",
-        "environment management",
-        ".env file",
-        "projects_target_env_var_list",
-        "projects_target_env_var_partial_update"
-      ],
-      "relatedEntries": [
-        "sfnext/sfnext-mrt-section"
-      ]
-    },
-    {
       "id": "sfnext/sfnext-mrt-environment-vars",
       "title": "Environment Variables",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-environment-vars.md",
-      "headings": "Prerequisites • Environment Variable Types • The `PUBLIC__` Path Syntax • Manage Environment Variables in Runtime Admin • Use Runtime Admin • Best Practices • Constraints • See Also",
-      "summary": "Configure your Storefront Next storefront using environment variables for API keys, feature flags, and settings across development, staging, and production environments.",
+      "headings": "Prerequisites • Environment Variable Types • The `PUBLIC__` Path Syntax • Manage Environment Variables in Business Manager (Beta) • Manage Environment Variables in Runtime Admin • Use Runtime Admin • Manage Environment Variables in Business Manager (Beta) • View and Manage Environment Variables • Best Practices • Constraints • See Also",
+      "summary": "Configure Storefront Next storefronts using environment variables to manage API keys, secrets, and feature flags securely outside your codebase.",
       "keywords": [
         "environment variables",
-        "configuration management",
-        "PUBLIC__ prefix",
-        "server-only variables",
+        "config management",
         "API keys",
+        "secrets",
         "feature flags",
+        "PUBLIC__ prefix",
+        "process.env",
+        "server-side configuration",
+        "Managed Runtime",
         "getConfig",
         "useConfig",
-        "process.env",
-        "nested configuration",
-        "storefront configuration",
-        "secrets management"
+        "storefront configuration"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -15635,6 +15800,32 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-mrt-migration",
+      "title": "Migrate to the Storefront Developer Workspace (Beta)",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-migration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-migration.md",
+      "headings": "Step 1: Enroll in the Developer Workspace Beta • Step 2: Set Up Admin Permissions • Step 3: Choose an Admin User Interface and API • Step 4: Grant Storefront Permissions to Users • Step 5: Create a SCAPI Client and Update Automation • Frequently Asked Questions • See Also",
+      "summary": "Enroll in the Developer Workspace beta to manage storefront development lifecycle for Storefront Next and Composable Storefront projects in one interface.",
+      "keywords": [
+        "Developer Workspace beta",
+        "storefront migration",
+        "Managed Runtime",
+        "Business Manager",
+        "Storefront Next",
+        "Composable Storefront",
+        "Runtime Admin",
+        "SCAPI API",
+        "MRT API",
+        "admin permissions",
+        "feature switches",
+        "storefront development"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-developer-workspace"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-mrt-node-version",
       "title": "Node Version Support",
       "category": "sfnext",
@@ -15660,25 +15851,25 @@
     },
     {
       "id": "sfnext/sfnext-mrt-overview",
-      "title": "Managed Runtime Overview",
+      "title": "Managed Runtime Overview for Business Manager",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-overview.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-overview.md",
-      "headings": "App Server • Web Application Firewall (WAF) • Environments • Mark an Environment as Production for Prioritized Monitoring • Environment Variables • Bundles • Projects and Organizations • Users, Abilities, and Roles • Organization Roles and Permissions • Project Roles and Permissions • Administration Tools • Constraints • Environment Constraints • Rendering Constraints • Deployment Constraints • Cookies • Availability • See Also",
-      "summary": "Managed Runtime is cloud infrastructure for deploying, hosting, and monitoring Storefront Next applications with serverless hosting, WAF protection, and environment management.",
+      "headings": "App Server • Web Application Firewall (WAF) • Storefronts vs Projects • Environments • Production Environments • Environment Variables • Bundles • Administration Tools • Constraints • Rendering Constraints • Deployment Constraints • Environment Constraints • Cookies • Availability • See Also",
+      "summary": "Deploy and host Storefront Next applications with cloud infrastructure, serverless runtime, firewall protection, and environment management tools.",
       "keywords": [
         "Managed Runtime",
-        "Storefront Next",
-        "MRT",
-        "app server",
+        "Storefront Next deployment",
+        "serverless app server",
         "web application firewall",
-        "WAF",
-        "environments",
-        "bundles",
-        "projects",
-        "deployment",
-        "Runtime Admin",
-        "serverless Node.js"
+        "WAF protection",
+        "cloud infrastructure",
+        "environment management",
+        "bundle deployment",
+        "Node.js runtime",
+        "Composable Storefronts",
+        "sfnext hosting",
+        "storefront deployment"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -15690,20 +15881,21 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Release note title> • 10/1/2026 • Managed Runtime Read-Only APIs During Maintenance • 8/25/2026 • 20-Second Rendering Timeout Now Strictly Enforced • Non-Production Environments Now Have Lower Capacity Limits • Log Center Logs and Metrics No Longer Require the Production Flag • Coming September 29, 2026: Production Flag Will Require a Staging or Production B2C Commerce Instance • Access Control Headers Limit Raised to 4 for Storefront Next Environments • Protected Storefront Now Enabled by Default • On-Demand Sandbox Instances Now Get Default eCDN Security Rules for Storefront Next • 7/28/2026 • SSR Bundle Size Limit Lowered to 247 MB",
-      "summary": "Track Managed Runtime updates including rendering timeouts, capacity limits, environment settings, and security features.",
+      "headings": "<Date> - vx.y.z • <Release note title> • 10/6/2026 - B2C Commerce 26.10 • Manage the Storefront Development Workflow in Business Manager (Beta) • Automate Your Storefront Administration with the New B2C Commerce API (SCAPI) • Restrict SCAPI Access to Managed Runtime Traffic • 10/1/2026 • Managed Runtime Read-Only APIs During Maintenance • 8/25/2026 • 20-Second Rendering Timeout Now Strictly Enforced • Non-Production Environments Now Have Lower Capacity Limits • Log Center Logs and Metrics No Longer Require the Production Flag • Coming September 29, 2026: Production Flag Will Require a Staging or Production B2C Commerce Instance • Access Control Headers Limit Raised to 4 for Storefront Next Environments • Protected Storefront Now Enabled by Default • On-Demand Sandbox Instances Now Get Default eCDN Security Rules for Storefront Next • 7/28/2026 • SSR Bundle Size Limit Lowered to 247 MB",
+      "summary": "Track Managed Runtime features, updates, and changes across B2C Commerce versions with release notes.",
       "keywords": [
-        "Managed Runtime",
-        "MRT",
-        "release notes",
+        "Managed Runtime release notes",
+        "MRT updates",
+        "B2C Commerce releases",
         "Storefront Next",
-        "Composable Storefront",
-        "rendering timeout",
-        "environment capacity",
-        "production flag",
-        "Protected Storefront",
-        "SSR bundle",
-        "eCDN security"
+        "sfnext",
+        "version history",
+        "feature releases",
+        "changelog",
+        "Developer Workspace",
+        "environment management",
+        "deployment updates",
+        "runtime features"
       ],
       "relatedEntries": [
         "sfnext/sfnext-get-started-section"
@@ -15757,15 +15949,17 @@
         "sfnext/sfnext-get-started",
         "sfnext/sfnext-mrt-overview",
         "sfnext/sfnext-mrt-administration",
+        "sfnext/sfnext-mrt-create-environment",
         "sfnext/sfnext-push-mrt-auto",
         "sfnext/sfnext-mrt-node-version",
         "sfnext/sfnext-mrt-api",
         "sfnext/sfnext-mrt-environment-vars",
-        "sfnext/sfnext-mrt-env-vars-api",
+        "sfnext/sfnext-mrt-cli",
         "sfnext/sfnext-mrt-env-var-troubleshoot",
         "sfnext/sfnext-base-path",
         "sfnext/sfnext-mrt-data-store",
-        "sfnext/sfnext-manage-sites"
+        "sfnext/sfnext-manage-sites",
+        "sfnext/sfnext-developer-workspace"
       ]
     },
     {
@@ -16319,21 +16513,21 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.md",
-      "headings": "Prerequisites • Steps • See Also",
-      "summary": "Deploy a Storefront Next storefront to Managed Runtime using the CLI and MRT credentials after initial Business Manager setup.",
+      "headings": "Prerequisites • Steps • Deploy Bundles in Business Manager (Beta) • Create and Deploy Bundles via the B2C CLI • See Also",
+      "summary": "Deploy a Storefront Next application to Managed Runtime using the Storefront Next CLI with MRT project and environment credentials.",
       "keywords": [
-        "Storefront Next",
-        "MRT deployment",
-        "pnpm sfnext push",
-        "Managed Runtime",
+        "deploy storefront next MRT",
+        "managed runtime deployment",
+        "storefront next CLI",
+        "MRT project environment",
+        "B2C Commerce deployment",
+        "storefront redeployment",
         "MRT API key",
-        "Business Manager",
-        "CLI deployment",
-        "MRT_PROJECT",
-        "MRT_TARGET",
-        "Runtime Admin",
-        "bundle deployment",
-        "environment variables"
+        "runtime admin",
+        "Business Manager storefronts",
+        "pnpm install",
+        "sfnext CLI deploy",
+        "commerce cloud runtime"
       ],
       "relatedEntries": [
         "sfnext/sfnext-mrt-section"
@@ -16930,20 +17124,20 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • September 29, 2026 - B2C Commerce 26.10 • Start Faster with Footwear, Furniture, and Foundations Templates • September 1, 2026 - Storefront Next 1.3.0 • Show Estimated Delivery Dates on Your Storefront • Guest Shoppers Can Look Up Orders Quickly Without Registration • Get Delivery Estimates for a Product • August 18, 2026 - B2C Commerce 26.9 • Link Your Storefront to a GitHub Repository in Business Manager • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
-      "summary": "Track Storefront Next monthly release features including delivery dates, guest order lookup, passkeys, payments, and Order Management integration.",
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • October 13, 2026 - Storefront Next 1.4.0 • Cache Shared SCAPI Responses for Faster Storefront Pages • September 29, 2026 - B2C Commerce 26.10 • Start Faster with Footwear, Furniture, and Foundations Templates • September 1, 2026 - Storefront Next 1.3.0 • Show Estimated Delivery Dates on Your Storefront • Guest Shoppers Can Look Up Orders Quickly Without Registration • Show Delivery Estimates for a Product • August 18, 2026 - B2C Commerce 26.9 • Link Your Storefront to a GitHub Repository in Business Manager • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "summary": "Discover Storefront Next monthly release features, updates, and changes across versions.",
       "keywords": [
-        "Storefront Next",
-        "release notes",
-        "Commerce Delivery Service",
-        "guest order lookup",
-        "passkeys",
-        "Salesforce Payments",
-        "Order Management",
-        "B2C Commerce",
-        "React Router",
-        "load more pagination",
-        "Data 360"
+        "Storefront Next release notes",
+        "sfnext releases",
+        "Storefront Next features",
+        "version updates",
+        "monthly releases",
+        "changelog",
+        "GitHub releases",
+        "Managed Runtime",
+        "B2C Commerce releases",
+        "Storefront Next v1.0.0",
+        "release documentation"
       ],
       "relatedEntries": [
         "sfnext/sfnext-get-started-section"
@@ -16975,6 +17169,32 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-scapi-request-identification",
+      "title": "Restrict SCAPI Access to Managed Runtime Traffic for Storefront Next",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-scapi-request-identification.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-scapi-request-identification.md",
+      "headings": "How It Works • Considerations • Related Topics",
+      "summary": "Lock down Shopper API requests to only accept traffic from Managed Runtime environments using a shared secret header to block direct bot/scraper access.",
+      "keywords": [
+        "SCAPI access restriction",
+        "Managed Runtime traffic",
+        "Shopper API security",
+        "SCAPI Identity Header",
+        "SIH",
+        "block direct SCAPI traffic",
+        "MRT eCDN zone",
+        "bot prevention",
+        "Storefront Next",
+        "API security",
+        "rate limiting",
+        "WAF rules"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-secure-storefront-section"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-secure-storefront-section",
       "title": "Secure Your Storefront",
       "category": "sfnext",
@@ -16996,7 +17216,8 @@
       "relatedEntries": [
         "sfnext/sfnext-get-started",
         "sfnext/sfnext-protect-storefront",
-        "sfnext/sfnext-ods-security-rules"
+        "sfnext/sfnext-ods-security-rules",
+        "sfnext/sfnext-scapi-request-identification"
       ]
     },
     {
@@ -17522,6 +17743,32 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-present-content-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-users",
+      "title": "Manage Roles and Permissions for Your Storefront in Business Manager (Beta)",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-users.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-users.md",
+      "headings": "Prerequisites • Set Business Manager Permissions • Global • Runtime and Configuration • Deployment and Delivery • Admin and API Interface • How Business Manager Permissions Differ from Runtime Admin • Permission Considerations for the Developer Workspace Migration • Before You Begin • Step 1: Give Users Business Manager Access • Step 2: Add Storefront Permissions in Business Manager • Recommended Business Manager Storefront Roles • See Also",
+      "summary": "Configure storefront-scoped roles and permissions in Business Manager to control user access per storefront independently.",
+      "keywords": [
+        "storefront permissions",
+        "roles management",
+        "business manager",
+        "access control",
+        "role-based permissions",
+        "storefront-scoped",
+        "user permissions",
+        "B2C Commerce roles",
+        "permission grid",
+        "developer workspace",
+        "sfnext",
+        "organization roles"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-developer-workspace"
       ]
     },
     {

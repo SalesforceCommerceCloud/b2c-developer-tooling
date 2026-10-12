@@ -6357,20 +6357,20 @@
     ]
   },
   "commerce-api/cdn-zones": {
-    "summary": "Configure CDN security, access control, firewall rules, WAF, and performance settings for B2C Commerce storefronts using the CDN Zones API.",
+    "summary": "Configure content delivery security zones using the CDN Zones API for automated, repeatable setup of eCDN zones across B2C Commerce instances.",
     "keywords": [
       "CDN Zones API",
-      "eCDN",
-      "Web Application Firewall",
-      "WAF",
-      "firewall rules",
-      "access control",
-      "IP blocklist",
-      "regional access",
-      "custom rules",
-      "zone configuration",
-      "security",
-      "Brotli compression"
+      "eCDN zones",
+      "content delivery",
+      "security zones",
+      "SCAPI zone",
+      "proxy zones",
+      "vanity hostnames",
+      "custom certificates",
+      "Business Manager",
+      "storefront zone",
+      "embedded CDN",
+      "zone configuration"
     ]
   },
   "commerce-api/cdn-zones-automatic-certs": {
@@ -6403,6 +6403,23 @@
       "PCI DSS",
       "forward secrecy",
       "AEAD"
+    ]
+  },
+  "commerce-api/cdn-zones-custom-certs": {
+    "summary": "Upload and format self-managed SSL certificates for eCDN zones using the CDN Zones API with proper PEM formatting.",
+    "keywords": [
+      "eCDN custom certificates",
+      "SSL certificate upload",
+      "CDN Zones API",
+      "self-managed certificate",
+      "PEM format",
+      "certificate formatting",
+      "wildcard certificate",
+      "hostname certification",
+      "custom SSL",
+      "certificate deployment",
+      "line endings conversion",
+      "eCDN zones"
     ]
   },
   "commerce-api/cdn-zones-custom-rules": {
@@ -6468,6 +6485,23 @@
       "logpush job",
       "log fields reference",
       "automated traffic detection"
+    ]
+  },
+  "commerce-api/cdn-zones-scapi": {
+    "summary": "Configure Salesforce-managed eCDN security controls and analytics for SCAPI traffic to mitigate abusive API requests like credential stuffing.",
+    "keywords": [
+      "SCAPI zone",
+      "embedded CDN",
+      "eCDN",
+      "API security",
+      "credential stuffing",
+      "Commerce API",
+      "CDN configuration",
+      "Business Manager",
+      "API traffic",
+      "security controls",
+      "SCAPI hostname",
+      "commerce cloud"
     ]
   },
   "commerce-api/cdn-zones-turnstile": {
@@ -6584,18 +6618,18 @@
     ]
   },
   "commerce-api/custom-api-caching": {
-    "summary": "Enable and configure caching for Custom API responses using Page Caching, setExpires, and setVary methods to improve performance.",
+    "summary": "Enable caching for Custom API endpoints using setExpires() and setVaryBy() methods to improve response performance.",
     "keywords": [
-      "Custom API caching",
-      "Page Caching",
+      "caching",
+      "custom API",
       "setExpires",
       "setVaryBy",
-      "dw.system.Response",
-      "CDN caching",
-      "cache control",
+      "page caching",
       "response caching",
+      "cache strategies",
       "performance optimization",
-      "SCAPI caching"
+      "personalized responses",
+      "dw.system.Response"
     ]
   },
   "commerce-api/custom-api-circuit-breaker": {
@@ -7161,19 +7195,20 @@
     ]
   },
   "commerce-api/server-side-web-tier-caching": {
-    "summary": "Configure and optimize SCAPI's two-tier caching (web-tier and CDN) for GET requests across Shopper APIs to reduce latency and origin load.",
+    "summary": "Implement two-tier caching (web-tier and CDN edge) for SCAPI GET requests to reduce latency and origin load.",
     "keywords": [
       "SCAPI caching",
       "CDN cache",
       "web-tier cache",
+      "edge cache",
+      "API response caching",
+      "cache layers",
+      "GET request caching",
       "cache TTL",
-      "personalized caching",
-      "expand parameter",
-      "cache hit rate",
-      "Shopper APIs",
-      "cache key",
-      "cf-cache-status",
-      "sfdc_cache_status"
+      "cache invalidation",
+      "content delivery network",
+      "storefront performance",
+      "SCAPI optimization"
     ]
   },
   "commerce-api/shopper-context-api": {
@@ -7813,20 +7848,20 @@
     ]
   },
   "commerce-api/troubleshoot": {
-    "summary": "Troubleshoot B2C Commerce API issues using quick triage, error codes, logs, and performance analysis.",
+    "summary": "Navigate API troubleshooting resources to diagnose and resolve issues by HTTP error code, symptoms, and performance problems.",
     "keywords": [
       "API troubleshooting",
       "error codes",
-      "gateway timeout",
-      "throttle rates",
-      "authorization errors",
-      "SCAPI logs",
-      "correlationID",
-      "request tracking",
-      "response handling",
-      "caching issues",
-      "rate limits",
-      "code profiler"
+      "504 timeout",
+      "429 throttling",
+      "401 403 authorization",
+      "400 validation",
+      "500 internal error",
+      "API debugging",
+      "request issues",
+      "API errors",
+      "commerce API errors",
+      "error resolution"
     ]
   },
   "commerce-api/url-encode": {
@@ -7958,18 +7993,19 @@
     ]
   },
   "commerce-solutions/bot-management": {
-    "summary": "Understand Salesforce B2C Commerce bot management approach, shared responsibilities, and configuration options for protecting storefronts.",
+    "summary": "Understand Salesforce B2C Commerce bot management approach, shared responsibilities, platform tools, and implementation strategies for protecting storefronts.",
     "keywords": [
       "bot management",
       "bot protection",
-      "storefront security",
+      "B2C Commerce bots",
       "eCDN",
       "bot detection",
-      "CDN configuration",
-      "platform availability",
-      "bot filtering",
+      "bot control",
+      "storefront security",
+      "CDN bot protection",
       "third-party bot solution",
-      "shared responsibility"
+      "bot mitigation",
+      "platform security"
     ]
   },
   "commerce-solutions/bot-mitigation-sk": {
@@ -9923,18 +9959,20 @@
     ]
   },
   "pwa-kit-managed-runtime/pushing-and-deploying-bundles": {
-    "summary": "Push and deploy code bundles to Managed Runtime environments using API keys and command-line scripts.",
+    "summary": "Deploy commerce applications to Managed Runtime by pushing code bundles using CLI commands, API keys, or the Runtime Admin web application.",
     "keywords": [
-      "bundle push",
-      "deploy",
-      "Managed Runtime",
-      "API key",
+      "deploy code",
+      "managed runtime",
+      "push bundle",
+      "B2C CLI",
+      "mrt bundle",
+      "SCAPI deployment",
       "Runtime Admin",
-      "PWA Kit",
-      "npm run push",
-      "environment deployment",
-      "bundle troubleshooting",
-      "production environment"
+      "API key",
+      "authorization",
+      "storefront deployment",
+      "PWA Kit deployment",
+      "bundle commands"
     ]
   },
   "pwa-kit-managed-runtime/pwa-best-practices": {
@@ -10234,6 +10272,23 @@
       "eCDN routing",
       "payment setup",
       "Embedded CDN"
+    ]
+  },
+  "pwa-kit-managed-runtime/scapi-request-identification": {
+    "summary": "Secure Shopper API requests by restricting them to Managed Runtime traffic only using SCAPI Identity Headers to block direct bot/scraper access.",
+    "keywords": [
+      "SCAPI access control",
+      "Managed Runtime security",
+      "Shopper API restriction",
+      "SCAPI Identity Header",
+      "SIH",
+      "bot protection",
+      "API lockdown",
+      "eCDN security",
+      "direct SCAPI traffic block",
+      "MRT request identification",
+      "API authentication headers",
+      "scraper prevention"
     ]
   },
   "pwa-kit-managed-runtime/setting-up-api-access": {
@@ -10652,20 +10707,20 @@
     ]
   },
   "sfnext/sfnext-api-integration": {
-    "summary": "Type-safe API client for calling Salesforce B2C Commerce Shopper APIs with TypeScript support, authentication helpers, and custom API integration.",
+    "summary": "Use SCAPI client in Storefront Next to call Salesforce B2C Commerce Shopper APIs with type-safe TypeScript, minimal bundle size, and built-in authentication helpers.",
     "keywords": [
-      "SCAPI",
+      "SCAPI client",
+      "Shoppers API",
       "B2C Commerce API",
-      "Shopper API",
-      "API client",
-      "TypeScript",
+      "Storefront Next",
+      "TypeScript API client",
+      "Commerce API",
+      "type-safe",
+      "createApiClients",
+      "REST API",
       "openapi-fetch",
-      "authentication",
-      "SLAS",
-      "custom APIs",
-      "storefront-next-runtime",
-      "middleware",
-      "REST API"
+      "authentication helpers",
+      "custom APIs"
     ]
   },
   "sfnext/sfnext-architecture": {
@@ -11010,6 +11065,39 @@
       "Storefront Next errors"
     ]
   },
+  "sfnext/sfnext-deployments": {
+    "summary": "Deploy storefront bundles to Managed Runtime environments and manage deployments through Business Manager interface.",
+    "keywords": [
+      "storefront deployment",
+      "Business Manager",
+      "bundle deployment",
+      "Managed Runtime",
+      "deploy bundles",
+      "storefront bundles",
+      "deployment management",
+      "sfnext",
+      "environment deployment",
+      "bundle management",
+      "B2C Commerce deployment",
+      "storefront releases"
+    ]
+  },
+  "sfnext/sfnext-developer-workspace": {
+    "summary": "Manage storefront development resources including environments, variables, redirects, and deployments in Business Manager using the Developer Workspace beta.",
+    "keywords": [
+      "Developer Workspace",
+      "storefront management",
+      "Business Manager",
+      "environment variables",
+      "bundle deployment",
+      "Managed Runtime",
+      "storefront environments",
+      "runtime admin",
+      "Core Web Vitals",
+      "staging production",
+      "sfnext"
+    ]
+  },
   "sfnext/sfnext-domain-cookie": {
     "summary": "Configure shared parent cookie domains in Storefront Next to maintain shopper sessions and shopping carts across multiple subdomains.",
     "keywords": [
@@ -11059,6 +11147,23 @@
       "Storefront Next",
       "site preferences",
       "SCAPI"
+    ]
+  },
+  "sfnext/sfnext-environments": {
+    "summary": "Manage isolated Storefront Next app environments (dev, staging, production) with separate URLs, bundles, and configurations in Business Manager.",
+    "keywords": [
+      "manage environments",
+      "Storefront Next",
+      "Business Manager",
+      "environment configuration",
+      "development environment",
+      "staging environment",
+      "production deployment",
+      "primary environment",
+      "eCDN configuration",
+      "environment variables",
+      "storefront environments permission",
+      "Managed Runtime"
     ]
   },
   "sfnext/sfnext-extend": {
@@ -11378,16 +11483,18 @@
   "sfnext/sfnext-manage-sites": {
     "summary": "Add or remove sites assigned to a Storefront Next instance in Business Manager to support new locales, brands, or markets.",
     "keywords": [
-      "Storefront Next",
-      "manage sites",
-      "site assignment",
-      "Business Manager",
-      "MRT Data Store",
-      "multisite",
-      "SLAS",
-      "Shopper Login",
+      "Storefront Next site management",
+      "manage sites Business Manager",
+      "assign sites storefront",
+      "remove sites storefront",
+      "site configuration sfnext",
+      "multisite setup",
+      "storefront sites administration",
       "site provisioning",
-      "storefront configuration"
+      "locale management",
+      "MRT Data Store sites",
+      "SLAS authentication",
+      "site assignment sync"
     ]
   },
   "sfnext/sfnext-mcp-server": {
@@ -11425,37 +11532,53 @@
     ]
   },
   "sfnext/sfnext-mrt-administration": {
-    "summary": "Manage Storefront Next organizations, projects, environments, bundles, users, and deployments through Runtime Admin console, Business Manager, and APIs.",
+    "summary": "Manage Storefront Next and Composable storefronts using Runtime Admin, Business Manager, and the Managed Runtime API.",
     "keywords": [
       "Managed Runtime Administration",
-      "Runtime Admin",
-      "organizations",
-      "projects",
-      "environments",
-      "deployment",
-      "bundles",
-      "user permissions",
-      "URL redirects",
-      "environment settings",
-      "MRT",
-      "Storefront Next"
+      "Runtime Admin console",
+      "Business Manager Developer Workspace",
+      "Managed Runtime API",
+      "storefront management",
+      "environments deployments",
+      "organization projects",
+      "runtime permissions roles",
+      "Account Manager access",
+      "MRT admin",
+      "storefront configuration"
     ]
   },
   "sfnext/sfnext-mrt-api": {
-    "summary": "Automate environment administration tasks using the Managed Runtime API with authentication and rate limit considerations.",
+    "summary": "Automate storefront administration tasks like creating, updating, and deploying storefronts using SCAPI or MRT APIs.",
     "keywords": [
-      "Managed Runtime API",
-      "environment administration",
-      "automation",
-      "API key authentication",
-      "Runtime Admin",
+      "storefront automation",
+      "SCAPI",
+      "MRT API",
+      "storefront administration",
+      "CI/CD",
+      "deployments",
+      "environment management",
+      "bot user",
+      "Storefront Next",
+      "storefront API",
+      "automated deployment",
+      "infrastructure as code"
+    ]
+  },
+  "sfnext/sfnext-mrt-cli": {
+    "summary": "Use B2C CLI to automate storefront administration tasks like creating environments, managing variables, and deploying bundles via MRT Commands.",
+    "keywords": [
+      "B2C CLI",
+      "storefront automation",
+      "MRT commands",
       "environment variables",
-      "redirects",
-      "sfnext",
-      "B2C Commerce API",
-      "administration endpoints",
-      "rate limits",
-      "bearer token"
+      "bundle deployment",
+      "Managed Runtime API",
+      "SCAPI",
+      "Business Manager CLI",
+      "environment setup",
+      "CLI backend configuration",
+      "b2c mrt",
+      "storefront development"
     ]
   },
   "sfnext/sfnext-mrt-create-environment": {
@@ -11507,38 +11630,21 @@
       "client-side variables"
     ]
   },
-  "sfnext/sfnext-mrt-env-vars-api": {
-    "summary": "Automate environment variable management using B2C CLI or Managed Runtime API instead of Runtime Admin UI.",
-    "keywords": [
-      "environment variables",
-      "B2C CLI",
-      "Managed Runtime API",
-      "automation",
-      "Runtime Admin",
-      "process.env",
-      "MRT commands",
-      "API key",
-      "environment management",
-      ".env file",
-      "projects_target_env_var_list",
-      "projects_target_env_var_partial_update"
-    ]
-  },
   "sfnext/sfnext-mrt-environment-vars": {
-    "summary": "Configure your Storefront Next storefront using environment variables for API keys, feature flags, and settings across development, staging, and production environments.",
+    "summary": "Configure Storefront Next storefronts using environment variables to manage API keys, secrets, and feature flags securely outside your codebase.",
     "keywords": [
       "environment variables",
-      "configuration management",
-      "PUBLIC__ prefix",
-      "server-only variables",
+      "config management",
       "API keys",
+      "secrets",
       "feature flags",
+      "PUBLIC__ prefix",
+      "process.env",
+      "server-side configuration",
+      "Managed Runtime",
       "getConfig",
       "useConfig",
-      "process.env",
-      "nested configuration",
-      "storefront configuration",
-      "secrets management"
+      "storefront configuration"
     ]
   },
   "sfnext/sfnext-mrt-launch-storefront": {
@@ -11554,6 +11660,23 @@
       "access control headers",
       "B2C CLI",
       "production deployment"
+    ]
+  },
+  "sfnext/sfnext-mrt-migration": {
+    "summary": "Enroll in the Developer Workspace beta to manage storefront development lifecycle for Storefront Next and Composable Storefront projects in one interface.",
+    "keywords": [
+      "Developer Workspace beta",
+      "storefront migration",
+      "Managed Runtime",
+      "Business Manager",
+      "Storefront Next",
+      "Composable Storefront",
+      "Runtime Admin",
+      "SCAPI API",
+      "MRT API",
+      "admin permissions",
+      "feature switches",
+      "storefront development"
     ]
   },
   "sfnext/sfnext-mrt-node-version": {
@@ -11572,36 +11695,37 @@
     ]
   },
   "sfnext/sfnext-mrt-overview": {
-    "summary": "Managed Runtime is cloud infrastructure for deploying, hosting, and monitoring Storefront Next applications with serverless hosting, WAF protection, and environment management.",
+    "summary": "Deploy and host Storefront Next applications with cloud infrastructure, serverless runtime, firewall protection, and environment management tools.",
     "keywords": [
       "Managed Runtime",
-      "Storefront Next",
-      "MRT",
-      "app server",
+      "Storefront Next deployment",
+      "serverless app server",
       "web application firewall",
-      "WAF",
-      "environments",
-      "bundles",
-      "projects",
-      "deployment",
-      "Runtime Admin",
-      "serverless Node.js"
+      "WAF protection",
+      "cloud infrastructure",
+      "environment management",
+      "bundle deployment",
+      "Node.js runtime",
+      "Composable Storefronts",
+      "sfnext hosting",
+      "storefront deployment"
     ]
   },
   "sfnext/sfnext-mrt-release-notes": {
-    "summary": "Track Managed Runtime updates including rendering timeouts, capacity limits, environment settings, and security features.",
+    "summary": "Track Managed Runtime features, updates, and changes across B2C Commerce versions with release notes.",
     "keywords": [
-      "Managed Runtime",
-      "MRT",
-      "release notes",
+      "Managed Runtime release notes",
+      "MRT updates",
+      "B2C Commerce releases",
       "Storefront Next",
-      "Composable Storefront",
-      "rendering timeout",
-      "environment capacity",
-      "production flag",
-      "Protected Storefront",
-      "SSR bundle",
-      "eCDN security"
+      "sfnext",
+      "version history",
+      "feature releases",
+      "changelog",
+      "Developer Workspace",
+      "environment management",
+      "deployment updates",
+      "runtime features"
     ]
   },
   "sfnext/sfnext-mrt-routing-bm": {
@@ -11979,20 +12103,20 @@
     ]
   },
   "sfnext/sfnext-push-mrt-auto": {
-    "summary": "Deploy a Storefront Next storefront to Managed Runtime using the CLI and MRT credentials after initial Business Manager setup.",
+    "summary": "Deploy a Storefront Next application to Managed Runtime using the Storefront Next CLI with MRT project and environment credentials.",
     "keywords": [
-      "Storefront Next",
-      "MRT deployment",
-      "pnpm sfnext push",
-      "Managed Runtime",
+      "deploy storefront next MRT",
+      "managed runtime deployment",
+      "storefront next CLI",
+      "MRT project environment",
+      "B2C Commerce deployment",
+      "storefront redeployment",
       "MRT API key",
-      "Business Manager",
-      "CLI deployment",
-      "MRT_PROJECT",
-      "MRT_TARGET",
-      "Runtime Admin",
-      "bundle deployment",
-      "environment variables"
+      "runtime admin",
+      "Business Manager storefronts",
+      "pnpm install",
+      "sfnext CLI deploy",
+      "commerce cloud runtime"
     ]
   },
   "sfnext/sfnext-pwa-api-integration": {
@@ -12398,19 +12522,19 @@
     ]
   },
   "sfnext/sfnext-release-notes": {
-    "summary": "Track Storefront Next monthly release features including delivery dates, guest order lookup, passkeys, payments, and Order Management integration.",
+    "summary": "Discover Storefront Next monthly release features, updates, and changes across versions.",
     "keywords": [
-      "Storefront Next",
-      "release notes",
-      "Commerce Delivery Service",
-      "guest order lookup",
-      "passkeys",
-      "Salesforce Payments",
-      "Order Management",
-      "B2C Commerce",
-      "React Router",
-      "load more pagination",
-      "Data 360"
+      "Storefront Next release notes",
+      "sfnext releases",
+      "Storefront Next features",
+      "version updates",
+      "monthly releases",
+      "changelog",
+      "GitHub releases",
+      "Managed Runtime",
+      "B2C Commerce releases",
+      "Storefront Next v1.0.0",
+      "release documentation"
     ]
   },
   "sfnext/sfnext-salesforce-payments": {
@@ -12427,6 +12551,23 @@
       "config.server.ts",
       "CSP directives",
       "Business Manager"
+    ]
+  },
+  "sfnext/sfnext-scapi-request-identification": {
+    "summary": "Lock down Shopper API requests to only accept traffic from Managed Runtime environments using a shared secret header to block direct bot/scraper access.",
+    "keywords": [
+      "SCAPI access restriction",
+      "Managed Runtime traffic",
+      "Shopper API security",
+      "SCAPI Identity Header",
+      "SIH",
+      "block direct SCAPI traffic",
+      "MRT eCDN zone",
+      "bot prevention",
+      "Storefront Next",
+      "API security",
+      "rate limiting",
+      "WAF rules"
     ]
   },
   "sfnext/sfnext-secure-storefront-section": {
@@ -12791,6 +12932,23 @@
       "accessibility",
       "WCAG",
       "UI components"
+    ]
+  },
+  "sfnext/sfnext-users": {
+    "summary": "Configure storefront-scoped roles and permissions in Business Manager to control user access per storefront independently.",
+    "keywords": [
+      "storefront permissions",
+      "roles management",
+      "business manager",
+      "access control",
+      "role-based permissions",
+      "storefront-scoped",
+      "user permissions",
+      "B2C Commerce roles",
+      "permission grid",
+      "developer workspace",
+      "sfnext",
+      "organization roles"
     ]
   },
   "sfra/b2c-build-sfra": {
