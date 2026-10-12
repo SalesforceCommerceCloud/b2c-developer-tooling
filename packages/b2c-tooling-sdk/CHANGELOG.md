@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.6.2
+
+### Patch Changes
+
+- [#761](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/761) [`0497681`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04976817b080f6a7afe809ccd7177bcdb36e6340) - Refresh Developer Center and Salesforce Help content in `b2c docs` search. New guides cover Storefront Next environments, deployments, users, and the Developer Workspace, along with SCAPI request identification and SCAPI CDN zones. Help now includes the reorganized eCDN zone, WAF, and Logpush topics, Log Center anomaly detectors and Microsoft Teams alerts, and partial syncs for POS catalog unification. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.6.1
 
 ### Patch Changes

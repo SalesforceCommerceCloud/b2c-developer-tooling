@@ -1,5 +1,13 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.7
+
+### Patch Changes
+
+- [#759](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/759) [`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96) - Document `b2c job export --all` and the `all` ID for `--site`, `--catalog`, `--library`, `--inventory-list`, and `--price-book`, so agents choose these flags over hand-written data-units JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#761](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/761) [`0497681`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04976817b080f6a7afe809ccd7177bcdb36e6340) - Refresh Developer Center and Salesforce Help content in `b2c docs` search. New guides cover Storefront Next environments, deployments, users, and the Developer Workspace, along with SCAPI request identification and SCAPI CDN zones. Help now includes the reorganized eCDN zone, WAF, and Logpush topics, Log Center anomaly detectors and Microsoft Teams alerts, and partial syncs for POS catalog unification. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.6
 
 ### Patch Changes
