@@ -1,0 +1,6 @@
+{
+  "b2c-dx.features.scriptTypes": true,
+  "b2c-dx.features.scriptTypesInferUsage": true,
+  "b2c-dx.logLevel": "silent",
+  "b2c-dx.telemetry.enabled": false
+}
