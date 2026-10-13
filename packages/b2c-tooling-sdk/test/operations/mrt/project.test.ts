@@ -87,7 +87,7 @@ describe('operations/mrt/project', () => {
       const view = normalizeLegacyProject({
         slug: STOREFRONT_ID,
         name: 'My Storefront',
-        project_type: 'sfra',
+        project_type: 'SSR',
         ssr_region: 'us-east-1',
         organization: 'my-org',
         url: 'https://example.com',
@@ -98,7 +98,7 @@ describe('operations/mrt/project', () => {
       expect(view).to.deep.equal({
         id: STOREFRONT_ID,
         name: 'My Storefront',
-        type: 'sfra',
+        type: 'SSR',
         status: 'active',
         region: 'us-east-1',
         architecture: undefined,
