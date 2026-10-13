@@ -19,6 +19,7 @@ import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {buildTenantScope, toOrganizationId, normalizeTenantId} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
 
@@ -100,7 +101,7 @@ export function createGranularReplicationsClient(
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
   const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/operation/replications/v1`,
+    baseUrl: `${getScapiOrigin(config.shortCode)}/operation/replications/v1`,
   });
 
   // Build required scopes: domain scope + tenant-specific scope

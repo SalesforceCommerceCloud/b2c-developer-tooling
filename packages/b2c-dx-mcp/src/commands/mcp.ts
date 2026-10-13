@@ -146,6 +146,7 @@ import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
+import {setScapiBaseUrl} from '@salesforce/b2c-tooling-sdk/clients';
 import {
   isRemoteScapiSchema,
   loadScapiSchemaOverrides,
@@ -324,9 +325,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       ...mrt.config,
     };
 
-    return loadConfig(flagConfig, options, {
+    const config = await loadConfig(flagConfig, options, {
       before: projectEnvironment ? [new EnvSource(projectEnvironment)] : undefined,
     });
+    // Internal SCAPI origin override follows the project resolved for this call.
+    setScapiBaseUrl(config.values.scapiBaseUrl);
+    return config;
   }
 
   /**

@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {getScapiOrigin, setScapiBaseUrl} from '@salesforce/b2c-tooling-sdk/clients';
 import {globalConfigSourceRegistry, type ConfigSource} from '@salesforce/b2c-tooling-sdk/config';
 import {B2CExtensionConfig} from '../config-provider.js';
 import type {WorkspaceInstanceSelection} from '../instance-selection.js';
@@ -126,6 +127,31 @@ suite('B2CExtensionConfig workspace discovery', () => {
       assert.strictEqual(provider.getConfigError(), null);
     } finally {
       provider.dispose();
+      fs.rmSync(dir, {recursive: true, force: true});
+    }
+  });
+
+  test('applies the dw.json scapi-base-url override to SCAPI clients', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-scapi-base-url-'));
+    const dwJson = path.join(dir, 'dw.json');
+    fs.writeFileSync(
+      dwJson,
+      JSON.stringify({
+        hostname: 'local.invalid',
+        'short-code': 'kv7kzm78',
+        'scapi-base-url': 'https://localhost:25010',
+      }),
+    );
+
+    const provider = new B2CExtensionConfig(log, undefined, {...ambientEnvironment, SFCC_CONFIG: dwJson});
+
+    try {
+      await provider.ensureResolved();
+      assert.strictEqual(provider.getConfig()?.values.scapiBaseUrl, 'https://localhost:25010');
+      assert.strictEqual(getScapiOrigin('kv7kzm78'), 'https://localhost:25010');
+    } finally {
+      provider.dispose();
+      setScapiBaseUrl(undefined);
       fs.rmSync(dir, {recursive: true, force: true});
     }
   });

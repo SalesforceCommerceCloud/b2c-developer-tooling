@@ -27,6 +27,7 @@ import {
   unsupportedScapiTransfer,
   isScapiTextMediaType,
 } from './authentication.js';
+import {getScapiOrigin} from '../clients/scapi-origin.js';
 
 /** Exact, resolved request awaiting approval. Credentials are never included. */
 export interface ScapiConfirmation {
@@ -62,7 +63,7 @@ export function createScapiRequest(
   options: ScapiRequestOptions,
 ): (input: unknown, signal: AbortSignal) => Promise<unknown> {
   if (!/^[a-z0-9-]+$/i.test(options.shortCode)) throw new Error('Invalid SCAPI shortCode.');
-  const origin = `https://${options.shortCode}.api.commercecloud.salesforce.com`;
+  const origin = getScapiOrigin(options.shortCode);
   const organizationId = toOrganizationId(options.tenantId);
   const documents = [...options.documents];
   let totalBytes = 0;

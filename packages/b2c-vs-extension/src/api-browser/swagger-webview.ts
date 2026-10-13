@@ -4,7 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
-import {buildTenantScope, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  buildTenantScope,
+  createScapiSchemasClient,
+  getScapiOrigin,
+  toOrganizationId,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import type {SlasComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {getGuestToken} from '@salesforce/b2c-tooling-sdk/slas';
@@ -319,7 +324,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     // Override servers to point to the correct base URL. Without a short code (offline only) keep the contract's own.
     if (shortCode) {
-      const baseUrl = `https://${shortCode}.api.commercecloud.salesforce.com/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
+      const baseUrl = `${getScapiOrigin(shortCode)}/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
       spec.servers = [{url: baseUrl}];
     }
 

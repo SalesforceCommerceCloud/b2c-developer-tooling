@@ -17,6 +17,7 @@ import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './slas-admin.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 /**
  * Re-export generated types for external use.
@@ -142,7 +143,7 @@ export function createSlasClient(config: SlasClientConfig, auth: AuthStrategy): 
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
   const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1`,
+    baseUrl: `${getScapiOrigin(config.shortCode)}/shopper/auth-admin/v1`,
   });
 
   // Core middleware: auth first

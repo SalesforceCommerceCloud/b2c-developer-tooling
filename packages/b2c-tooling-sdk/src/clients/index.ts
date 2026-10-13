@@ -527,6 +527,7 @@ export {createFallbackBackend} from './scapi-fallback-backend.js';
 export {createDualBackend} from './dual-backend-factory.js';
 export type {DualBackendConfig, DualBackendCtors, ScapiBackendCtorConfig} from './dual-backend-factory.js';
 export {buildScapiClient} from './scapi-client-factory.js';
+export {getScapiOrigin, getScapiBaseUrl, setScapiBaseUrl, SCAPI_BASE_URL_ENV_VAR} from './scapi-origin.js';
 export type {BuildScapiClientOptions, ScapiClientConfig} from './scapi-client-factory.js';
 export {ScopeTierManager} from './scapi-scope-tier.js';
 export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';

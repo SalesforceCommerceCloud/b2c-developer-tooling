@@ -231,6 +231,22 @@ describe('config/mapping', () => {
     });
   });
 
+  describe('mapDwJsonToNormalizedConfig - scapiBaseUrl', () => {
+    it('maps the dw.json scapi-base-url key through and back', () => {
+      const result = mapDwJsonToNormalizedConfig(normalizeConfigKeys({'scapi-base-url': 'https://localhost:25010'}));
+      expect(result.scapiBaseUrl).to.equal('https://localhost:25010');
+      expect(mapNormalizedConfigToDwJson(result).scapiBaseUrl).to.equal('https://localhost:25010');
+    });
+
+    it('keeps an override scapiBaseUrl when merging', () => {
+      const {config} = mergeConfigsWithProtection(
+        {scapiBaseUrl: 'https://localhost:25010'},
+        {scapiBaseUrl: 'https://other:1'},
+      );
+      expect(config.scapiBaseUrl).to.equal('https://localhost:25010');
+    });
+  });
+
   describe('mapDwJsonToNormalizedConfig - userAuth shorthand', () => {
     it('collapses userAuth=true to authMethods=["user"]', () => {
       const result = mapDwJsonToNormalizedConfig({userAuth: true});

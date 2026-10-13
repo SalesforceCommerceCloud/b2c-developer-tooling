@@ -27,6 +27,7 @@ import {
   loadGlobalSafetyConfig,
 } from '../safety/index.js';
 import {SafetyGuard} from '../safety/safety-guard.js';
+import {SCAPI_BASE_URL_ENV_VAR, setScapiBaseUrl} from '../clients/scapi-origin.js';
 import type {SafetyEvaluation} from '../safety/types.js';
 import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {getAgentContext, isInteractive} from '../ux/agent-context.js';
@@ -241,6 +242,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       helpGroup: 'GLOBAL',
       hidden: true,
     }),
+    'scapi-base-url': Flags.string({
+      description: 'Override the SCAPI origin (e.g. https://localhost:25010 for a local SCAPI worker)',
+      env: SCAPI_BASE_URL_ENV_VAR,
+      helpGroup: 'GLOBAL',
+      hidden: true,
+    }),
   };
 
   protected flags!: Flags<T>;
@@ -330,6 +337,13 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     await this.initTelemetryFromConfig();
 
     this.resolvedConfig = await this.loadConfiguration();
+
+    // Internal SCAPI origin override (flag, SFCC_SCAPI_BASE_URL or dw.json scapi-base-url)
+    const scapiBaseUrl = this.resolvedConfig.values.scapiBaseUrl;
+    setScapiBaseUrl(scapiBaseUrl);
+    if (scapiBaseUrl) {
+      this.logger.warn(`Using SCAPI base URL override: ${scapiBaseUrl}`);
+    }
 
     // Update safety guard with config-provided safety settings (merges env + config)
     this.initializeSafetyGuard();
@@ -495,7 +509,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
-    return loadConfig({}, this.getBaseConfigOptions());
+    return loadConfig({scapiBaseUrl: this.flags['scapi-base-url']}, this.getBaseConfigOptions());
   }
 
   /**

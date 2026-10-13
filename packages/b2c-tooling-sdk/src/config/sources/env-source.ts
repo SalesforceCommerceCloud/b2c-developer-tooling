@@ -61,6 +61,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_SHORT_CODE: 'shortCode',
   SFCC_SHORTCODE: 'shortCode',
   SFCC_TENANT_ID: 'tenantId',
+  SFCC_SCAPI_BASE_URL: 'scapiBaseUrl',
   SFCC_SLAS_CLIENT_ID: 'slasClientId',
   SFCC_SLAS_CLIENT_SECRET: 'slasClientSecret',
   SFCC_SITE_ID: 'siteId',

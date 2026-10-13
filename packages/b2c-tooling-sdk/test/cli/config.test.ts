@@ -379,6 +379,7 @@ describe('cli/config', () => {
         'client-secret': 'my-client-secret',
         'short-code': 'abc123',
         'tenant-id': 'my-tenant_001',
+        'scapi-base-url': 'https://localhost:25010',
         'account-manager-host': 'account.demandware.com',
         'client-auth-method': 'body',
         'auth-scope': ['sfcc.products', 'sfcc.orders'],
@@ -390,6 +391,7 @@ describe('cli/config', () => {
       expect(result.clientSecret).to.equal('my-client-secret');
       expect(result.shortCode).to.equal('abc123');
       expect(result.tenantId).to.equal('my-tenant_001');
+      expect(result.scapiBaseUrl).to.equal('https://localhost:25010');
       expect(result.accountManagerHost).to.equal('account.demandware.com');
       expect(result.clientAuthMethod).to.equal('body');
       expect(result.scopes).to.deep.equal(['sfcc.products', 'sfcc.orders']);

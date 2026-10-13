@@ -169,6 +169,12 @@ describe('config/EnvSource', () => {
       const result = source.load({});
       expect(result!.config.cipHost).to.equal('cip.example.com');
     });
+
+    it('maps SFCC_SCAPI_BASE_URL to scapiBaseUrl', () => {
+      const source = new EnvSource({SFCC_SCAPI_BASE_URL: 'https://localhost:25010'});
+      const result = source.load({});
+      expect(result!.config.scapiBaseUrl).to.equal('https://localhost:25010');
+    });
   });
 
   describe('apiBackend (SFCC_API_BACKEND)', () => {

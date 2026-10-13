@@ -17,6 +17,7 @@ import {
   type ResolvedB2CConfig,
   type CreateOAuthOptions,
 } from '@salesforce/b2c-tooling-sdk/config';
+import {setScapiBaseUrl} from '@salesforce/b2c-tooling-sdk/clients';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {readdir, readFile} from 'fs/promises';
 import * as path from 'path';
@@ -512,6 +513,11 @@ export class B2CExtensionConfig implements vscode.Disposable {
         this.workspaceInstanceSelection = undefined;
         await this.workspaceState?.update(WORKSPACE_INSTANCE_KEY, undefined);
         this.refreshWorkspaceInstanceWatcher();
+      }
+      // Internal SCAPI origin override (SFCC_SCAPI_BASE_URL or dw.json scapi-base-url).
+      setScapiBaseUrl(config.values.scapiBaseUrl);
+      if (config.values.scapiBaseUrl) {
+        this.log.appendLine(`[Config] Using SCAPI base URL override: ${config.values.scapiBaseUrl}`);
       }
       this.config = config;
       this.resolvedEnvironment = environment;

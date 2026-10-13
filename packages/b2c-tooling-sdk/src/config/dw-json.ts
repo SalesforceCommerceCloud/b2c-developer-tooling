@@ -57,6 +57,8 @@ export interface DwJsonConfig {
   siteId?: string;
   /** SCAPI short code */
   shortCode?: string;
+  /** @internal SCAPI origin override for local SCAPI development */
+  scapiBaseUrl?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
   webdavHostname?: string;
   /** Allowed authentication methods in priority order */
