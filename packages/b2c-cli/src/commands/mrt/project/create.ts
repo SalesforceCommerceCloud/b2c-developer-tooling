@@ -56,7 +56,7 @@ type StorefrontCreateType = (typeof STOREFRONT_TYPES)[number];
  */
 function printProjectDetails(project: MrtProjectView): void {
   const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 16;
+  const labelWidth = 20;
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});
@@ -80,6 +80,10 @@ function printProjectDetails(project: MrtProjectView): void {
 
   if (project.url) {
     ui.div({text: 'URL:', width: labelWidth}, {text: project.url});
+  }
+
+  if (project.staticIpsDefault !== undefined) {
+    ui.div({text: 'Static IPs Default:', width: labelWidth}, {text: project.staticIpsDefault ? 'Enabled' : 'Disabled'});
   }
 
   if (project.sites && project.sites.length > 0) {
@@ -119,6 +123,7 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
     '<%= config.bin %> <%= command.id %> "My Storefront" --organization my-org',
     '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --storefront my-storefront',
     '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --region us-east-1',
+    '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --static-ips-default',
     '<%= config.bin %> <%= command.id %> "My Storefront" --site RefArch --mrt-backend scapi',
   ];
 
@@ -135,6 +140,10 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
       char: 'r',
       description: 'Default AWS region for new environments (legacy backend only)',
       options: SSR_REGIONS as unknown as string[],
+    }),
+    'static-ips-default': Flags.boolean({
+      description: 'Enable static outbound IPs by default for new environments in this project (legacy backend only)',
+      allowNo: true,
     }),
     type: Flags.string({
       description: 'Storefront type (SCAPI backend only)',
@@ -156,14 +165,20 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
   // --type/--site target the SCAPI Storefronts API.
   protected override mrtBackendOnlyFlags() {
     return {
-      legacy: [{name: '--organization', char: 'o'}, {name: '--url'}, {name: '--region', char: 'r'}],
+      legacy: [
+        {name: '--organization', char: 'o'},
+        {name: '--url'},
+        {name: '--region', char: 'r'},
+        {name: '--static-ips-default'},
+        {name: '--no-static-ips-default'},
+      ],
       scapi: [{name: '--type'}, {name: '--site'}],
     };
   }
 
   async run(): Promise<unknown> {
     const {name} = this.args;
-    const {organization, url, region, type, site} = this.flags;
+    const {organization, url, region, 'static-ips-default': staticIpsDefault, type, site} = this.flags;
     // The new project's slug comes from the shared --project / --storefront (-p / -s)
     // flag; when omitted the legacy MRT API auto-generates one from the name (SCAPI
     // always generates the storefront ID).
@@ -184,6 +199,7 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
       organization,
       url,
       ssrRegion: region as SsrRegion | undefined,
+      staticIpsDefault,
       type: type as StorefrontCreateType | undefined,
       sites: site,
       origin: this.resolvedConfig.values.mrtOrigin,

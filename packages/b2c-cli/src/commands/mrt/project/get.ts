@@ -14,7 +14,7 @@ import {t, withDocs} from '../../../i18n/index.js';
  */
 function printProjectDetails(project: MrtProjectView): void {
   const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 16;
+  const labelWidth = 20;
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});
@@ -38,6 +38,10 @@ function printProjectDetails(project: MrtProjectView): void {
 
   if (project.url) {
     ui.div({text: 'URL:', width: labelWidth}, {text: project.url});
+  }
+
+  if (project.staticIpsDefault !== undefined) {
+    ui.div({text: 'Static IPs Default:', width: labelWidth}, {text: project.staticIpsDefault ? 'Enabled' : 'Disabled'});
   }
 
   if (project.sites && project.sites.length > 0) {

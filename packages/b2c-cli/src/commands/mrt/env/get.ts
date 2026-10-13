@@ -7,6 +7,7 @@ import {ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {getEnvironmentWithBackend, type MrtEnvironmentView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {addStaticIpRows} from '../../../utils/mrt/static-ips.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
@@ -69,6 +70,9 @@ export function printEnvView(env: MrtEnvironmentView, project: string): void {
   if (env.logLevel) {
     ui.div({text: 'Log Level:', width: labelWidth}, {text: env.logLevel});
   }
+
+  // Static IPs (legacy only): Enabled/Disabled is always shown when reported; the outbound list only when non-empty.
+  addStaticIpRows(ui, {ssr_static_ips: env.staticIps, ssr_static_outbound_ips: env.staticOutboundIps}, labelWidth);
 
   if (env.proxies && env.proxies.length > 0) {
     ui.div({text: 'Proxies:', width: labelWidth}, {text: ''});
