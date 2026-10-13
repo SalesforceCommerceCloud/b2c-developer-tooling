@@ -11,33 +11,51 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {listRedirects, type ListRedirectsResult, type MrtRedirect} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {listRedirectsWithBackend, type MrtRedirectView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<MrtRedirect>> = {
-  fromPath: {
-    header: 'From',
-    get: (r) => r.from_path ?? '-',
+const COLUMNS: Record<string, ColumnDef<MrtRedirectView>> = {
+  id: {
+    header: 'ID',
+    get: (r) => r.id || '-',
   },
-  toUrl: {
+  source: {
+    header: 'From',
+    get: (r) => r.source || '-',
+  },
+  destination: {
     header: 'To',
-    get: (r) => r.to_url ?? '-',
+    get: (r) => r.destination || '-',
   },
   status: {
     header: 'HTTP',
-    get: (r) => r.http_status_code?.toString() ?? '301',
+    get: (r) => r.httpStatusCode?.toString() ?? '301',
   },
   publishingStatus: {
     header: 'Status',
-    get: (r) => r.publishing_status ?? '-',
+    get: (r) => r.status ?? '-',
   },
   forwardQs: {
     header: 'Fwd QS',
-    get: (r) => (r.forward_querystring ? 'Yes' : 'No'),
+    get: (r) => (r.forwardQuerystring ? 'Yes' : 'No'),
+  },
+  backend: {
+    header: 'Backend',
+    get: (r) => r.backend,
   },
 };
 
-const DEFAULT_COLUMNS = ['fromPath', 'toUrl', 'status', 'publishingStatus'];
+// The identifier differs by backend (from_path on legacy, UUID on SCAPI), so the
+// default view leads with the human-readable source/destination; `id` and
+// `backend` are opt-in columns.
+const DEFAULT_COLUMNS = ['source', 'destination', 'status', 'publishingStatus'];
+
+// Backward-compatible aliases for the pre-SCAPI column keys. `--columns
+// fromPath,toUrl` worked before the source/destination rename, so map them onto
+// the real column keys rather than defining duplicate column definitions —
+// which would otherwise surface duplicate From/To columns under `-x`/`--extended`
+// and in the `--columns` help list.
+const COLUMN_ALIASES: Record<string, string> = {fromPath: 'source', toUrl: 'destination'};
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
@@ -55,6 +73,7 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
   static examples = [
     '<%= config.bin %> <%= command.id %> --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --search "/old"',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --mrt-backend scapi',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --json',
   ];
 
@@ -67,14 +86,30 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
       description: 'Offset for pagination',
     }),
     search: Flags.string({
-      description: 'Search term for filtering',
+      description:
+        'Filter by a case-insensitive substring of the redirect source path (legacy backend only; ignored on SCAPI)',
     }),
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<ListRedirectsResult> {
-    this.requireMrtCredentials();
+  protected operations = {
+    listRedirectsWithBackend,
+  };
 
+  protected renderTable(redirects: MrtRedirectView[]): void {
+    // Translate any deprecated alias (fromPath/toUrl) in --columns to its real
+    // column key before selection, so the aliases keep working without appearing
+    // as separate columns.
+    const columns = this.flags.columns
+      ?.split(',')
+      .map((c) => c.trim())
+      .map((c) => COLUMN_ALIASES[c] ?? c)
+      .join(',');
+    const flags = {...this.flags, columns};
+    tableRenderer.render(redirects, selectColumns(flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
+  }
+
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -89,6 +124,7 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
     }
 
     const {limit, offset, search} = this.flags;
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     this.log(
       t('commands.mrt.redirect.list.fetching', 'Fetching redirects for {{project}}/{{environment}}...', {
@@ -97,30 +133,49 @@ export default class MrtRedirectList extends MrtCommand<typeof MrtRedirectList> 
       }),
     );
 
-    const result = await listRedirects(
-      {
-        projectSlug: project,
-        targetSlug: environment,
-        limit,
-        offset,
-        search,
-        origin: this.resolvedConfig.values.mrtOrigin,
+    const result = await this.operations.listRedirectsWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      limit,
+      offset,
+      search,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => {
+        this.logger.debug({backend}, '[MRT] Listing redirects via backend');
+        // The SCAPI gateway does not yet accept a `search` query parameter, so
+        // the filter is dropped there. Warn rather than silently returning the
+        // full, unfiltered list.
+        if (backend === 'scapi' && search) {
+          this.warn(
+            t(
+              'commands.mrt.redirect.list.searchUnsupportedScapi',
+              '--search is not supported on the SCAPI backend yet and was ignored; results are unfiltered.',
+            ),
+          );
+        }
       },
-      this.getMrtAuth(),
-    );
+    });
 
     if (!this.jsonEnabled()) {
       if (result.redirects.length === 0) {
         this.log(t('commands.mrt.redirect.list.empty', 'No redirects found.'));
       } else {
         this.log(t('commands.mrt.redirect.list.count', 'Found {{count}} redirect(s):', {count: result.count}));
-        tableRenderer.render(
-          result.redirects,
-          selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)),
-        );
+        this.renderTable(result.redirects);
       }
     }
 
-    return result;
+    // Under --json, emit the backend's native list response verbatim (legacy MRT
+    // Cloud API list shape, or the SCAPI paginated envelope) so the machine
+    // contract stays backend-specific. The normalized rows feed the human table only.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

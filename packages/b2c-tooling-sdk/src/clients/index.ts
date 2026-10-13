@@ -481,6 +481,24 @@ export type {
   components as StorefrontEnvironmentsComponents,
 } from './storefront-environments.js';
 
+export {createStorefrontStorefrontsClient, STOREFRONT_STOREFRONTS_CASCADE} from './storefront-storefronts.js';
+export type {
+  StorefrontStorefrontsClient,
+  StorefrontStorefrontsClientConfig,
+  StorefrontStorefrontsError,
+  StorefrontStorefrontsResponse,
+  Storefront,
+  StorefrontResult,
+  StorefrontCreateRequest,
+  StorefrontUpdateRequest,
+  StorefrontType,
+  StorefrontCreateType,
+  StorefrontSetupStatus,
+  SsrRegion as StorefrontSsrRegion,
+  paths as StorefrontStorefrontsPaths,
+  components as StorefrontStorefrontsComponents,
+} from './storefront-storefronts.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {
   createScapiRequestError,

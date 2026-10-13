@@ -3,64 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {Args, Flags, ux} from '@oclif/core';
-import cliui from 'cliui';
+import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createEnv, waitForEnv, type MrtEnvironment} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {createEnvironmentWithBackend, waitForEnv} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
-
-/**
- * Print environment details in a formatted table.
- */
-function printEnvDetails(env: MrtEnvironment, project: string): void {
-  const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 18;
-
-  ui.div('');
-  ui.div({text: 'Slug:', width: labelWidth}, {text: env.slug ?? ''});
-  ui.div({text: 'Name:', width: labelWidth}, {text: env.name});
-  ui.div({text: 'Project:', width: labelWidth}, {text: project});
-  ui.div({text: 'State:', width: labelWidth}, {text: env.state ?? 'unknown'});
-  ui.div({text: 'Production:', width: labelWidth}, {text: env.is_production ? 'Yes' : 'No'});
-
-  if (env.ssr_region) {
-    ui.div({text: 'Region:', width: labelWidth}, {text: env.ssr_region});
-  }
-
-  if (env.hostname) {
-    ui.div({text: 'Hostname:', width: labelWidth}, {text: env.hostname});
-  }
-
-  if (env.ssr_external_hostname) {
-    ui.div({text: 'External Host:', width: labelWidth}, {text: env.ssr_external_hostname});
-  }
-
-  if (env.ssr_external_domain) {
-    ui.div({text: 'External Domain:', width: labelWidth}, {text: env.ssr_external_domain});
-  }
-
-  if (env.allow_cookies) {
-    ui.div({text: 'Allow Cookies:', width: labelWidth}, {text: 'Yes'});
-  }
-
-  if (env.enable_source_maps) {
-    ui.div({text: 'Source Maps:', width: labelWidth}, {text: 'Yes'});
-  }
-
-  if (env.log_level) {
-    ui.div({text: 'Log Level:', width: labelWidth}, {text: env.log_level});
-  }
-
-  if (env.ssr_proxy_configs && env.ssr_proxy_configs.length > 0) {
-    ui.div({text: 'Proxies:', width: labelWidth}, {text: ''});
-    for (const proxy of env.ssr_proxy_configs) {
-      const proxyPath = (proxy as {path?: string}).path ?? '';
-      ui.div({text: '', width: labelWidth}, {text: `  ${proxyPath} → ${proxy.host}`});
-    }
-  }
-
-  ux.stdout(ui.toString());
-}
+import {printEnvView} from './get.js';
 
 /**
  * Proxy configuration for SSR.
@@ -94,7 +41,8 @@ function parseProxyString(proxyStr: string): SsrProxyConfig {
 }
 
 /**
- * Valid AWS regions for MRT environments.
+ * Valid AWS regions for MRT environments (hyphenated legacy form; the SCAPI
+ * backend only accepts the display name on create, so region is legacy-only).
  */
 const SSR_REGIONS = [
   'us-east-1',
@@ -149,49 +97,50 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     '<%= config.bin %> <%= command.id %> feature-test -p my-storefront --region eu-west-1',
     '<%= config.bin %> <%= command.id %> staging -p my-storefront --proxy api=api.example.com --proxy ocapi=ocapi.example.com',
     '<%= config.bin %> <%= command.id %> staging -p my-storefront --wait',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --name "Staging" --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
     name: Flags.string({
       char: 'n',
-      description: 'Display name for the environment (defaults to slug)',
+      description: 'Display name for the environment (defaults to slug on the legacy backend; required on SCAPI)',
     }),
     region: Flags.string({
       char: 'r',
-      description: 'AWS region for SSR deployment',
+      description: 'AWS region for SSR deployment (legacy backend only)',
       options: SSR_REGIONS as unknown as string[],
     }),
     production: Flags.boolean({
-      description: 'Mark as a production environment',
+      description: 'Mark as a production environment (legacy backend only)',
       default: false,
     }),
     hostname: Flags.string({
-      description: 'Hostname pattern for V8 Tag loading',
+      description: 'Hostname pattern for V8 Tag loading (legacy backend only)',
     }),
     'external-hostname': Flags.string({
-      description: 'Full external hostname (e.g., www.example.com)',
+      description: 'Full external hostname (e.g., www.example.com) (legacy backend only)',
     }),
     'external-domain': Flags.string({
-      description: 'External domain for Universal PWA SSR (e.g., example.com)',
+      description: 'External domain for Universal PWA SSR (e.g., example.com) (legacy backend only)',
     }),
     'allow-cookies': Flags.boolean({
-      description: 'Forward HTTP cookies to origin',
+      description: 'Forward HTTP cookies to origin (legacy backend only)',
       default: false,
       allowNo: true,
     }),
     'enable-source-maps': Flags.boolean({
-      description: 'Enable source map support in the environment',
+      description: 'Enable source map support in the environment (legacy backend only)',
       default: false,
       allowNo: true,
     }),
     proxy: Flags.string({
-      description: 'Proxy configuration in format path=host (can be specified multiple times)',
+      description: 'Proxy configuration in format path=host (can be specified multiple times) (legacy backend only)',
       multiple: true,
     }),
     wait: Flags.boolean({
       char: 'w',
-      description: 'Wait for the environment to be ready before returning',
+      description: 'Wait for the environment to be ready before returning (legacy backend only)',
       default: false,
     }),
     'poll-interval': Flags.integer({
@@ -207,14 +156,28 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
   };
 
   protected operations = {
-    createEnv,
+    createEnvironmentWithBackend,
     waitForEnv,
   };
 
-  async run(): Promise<MrtEnvironment> {
-    this.requireMrtCredentials();
+  // SCAPI only accepts a display name on create; these configure the legacy MRT
+  // Cloud API and are dropped on SCAPI. (--wait has its own SCAPI notice below.)
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [
+        {name: '--region', char: 'r'},
+        {name: '--production'},
+        {name: '--hostname'},
+        {name: '--external-hostname'},
+        {name: '--external-domain'},
+        {name: '--allow-cookies'},
+        {name: '--enable-source-maps'},
+        {name: '--proxy'},
+      ],
+    };
+  }
 
-    const slug = this.resolveEnvironmentSlug(this.args.slug);
+  async run(): Promise<unknown> {
     const {mrtProject: project} = this.resolvedConfig.values;
 
     if (!project) {
@@ -238,43 +201,63 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       timeout,
     } = this.flags;
 
-    // Default name to slug if not provided
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+
+    // The slug positional/flag is the legacy environment identifier (SCAPI
+    // generates the environment ID and only needs a display name). Resolve it
+    // without erroring; each backend branch validates what it actually needs —
+    // legacy requires the slug, SCAPI requires the display name.
+    const slug = this.args.slug ?? this.resolvedConfig.values.mrtEnvironment;
+
+    // Default name to slug on the legacy backend when not provided.
     const name = nameFlag ?? slug;
 
-    // Parse proxy configurations
+    // Parse proxy configurations (legacy backend only)
     const proxyConfigs = proxyStrings?.map((p) => parseProxyString(p));
 
     this.log(
-      t('commands.mrt.env.create.creating', 'Creating environment "{{slug}}" in {{project}}...', {slug, project}),
+      t('commands.mrt.env.create.creating', 'Creating environment "{{slug}}" in {{project}}...', {
+        slug: slug ?? name,
+        project,
+      }),
     );
 
-    try {
-      let result = await this.operations.createEnv(
-        {
-          projectSlug: project,
-          slug,
-          name,
-          region: region as SsrRegion | undefined,
-          isProduction,
-          hostname,
-          externalHostname,
-          externalDomain,
-          allowCookies: allowCookies || undefined,
-          enableSourceMaps: enableSourceMaps || undefined,
-          proxyConfigs,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.createEnvironmentWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      name,
+      slug,
+      region: region as SsrRegion | undefined,
+      isProduction,
+      hostname,
+      externalHostname,
+      externalDomain,
+      allowCookies: allowCookies || undefined,
+      enableSourceMaps: enableSourceMaps || undefined,
+      proxyConfigs,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Creating environment via backend'),
+    });
 
-      // Wait for environment to be ready if requested
-      if (wait) {
+    let env = result.environment;
+    // The native payload returned under --json. For legacy --wait we swap in the
+    // ready-state env (preserving the pre-SCAPI behavior); otherwise it is the
+    // backend's native create response.
+    let raw = result.raw;
+
+    // --wait polls the legacy MRT Cloud API until the environment is ready. The
+    // SCAPI backend has no equivalent polling helper yet, so warn rather than
+    // silently ignoring the flag.
+    if (wait) {
+      if (result.backend === 'legacy') {
         this.log(t('commands.mrt.env.create.waiting', 'Waiting for environment "{{slug}}" to be ready...', {slug}));
-
-        result = await this.operations.waitForEnv(
+        const ready = await this.operations.waitForEnv(
           {
             projectSlug: project,
-            slug,
+            slug: env.id,
             origin: this.resolvedConfig.values.mrtOrigin,
             pollIntervalSeconds: pollInterval,
             timeoutSeconds: timeout,
@@ -287,27 +270,35 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
               );
             },
           },
-          this.getMrtAuth(),
+          legacyAuth!,
+        );
+        raw = ready;
+        env = {
+          id: ready.slug ?? env.id,
+          name: ready.name,
+          status: ready.state || undefined,
+          region: ready.ssr_region || undefined,
+          architecture: ready.ssr_architecture ?? undefined,
+          isProduction: ready.is_production ?? undefined,
+          backend: 'legacy',
+        };
+      } else {
+        this.warn(
+          '--wait is not supported on the SCAPI MRT backend yet; returning the created environment immediately.',
         );
       }
-
-      if (this.jsonEnabled()) {
-        return result;
-      }
-
-      // Human-readable output
-      this.log(t('commands.mrt.env.create.success', 'Environment created successfully.'));
-
-      printEnvDetails(result, project);
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.env.create.failed', 'Failed to create environment: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
     }
+
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.mrt.env.create.success', 'Environment created successfully.'));
+      printEnvView(env, project);
+    }
+
+    // Under --json, emit the backend's native response verbatim.
+    return raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

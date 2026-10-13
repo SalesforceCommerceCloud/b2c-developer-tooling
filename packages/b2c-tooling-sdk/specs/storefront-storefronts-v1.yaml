@@ -1,0 +1,541 @@
+openapi: "3.0.3"
+# ---------------------------------------------------------------------------
+# SCAPI MRT Storefronts API (v1) — self-contained bundle.
+#
+# Source of truth: git.soma.salesforce.com/cc-mercury-api/storefront-oas
+#   storefronts-oas/v1/api_spec/src/storefronts.yaml (version 1.0.4)
+#
+# The upstream source is a multi-file spec whose $refs resolve component files
+# under src/components/ plus a build-time `dependencies/commerce-cloud-standards-oas`
+# folder (populated by the redocly/maven build, not committed to git). That tree
+# is not directly consumable by openapi-typescript, and every other spec in this
+# repo is a single self-contained file, so this file inlines the referenced
+# components: the standard SCAPI `organizationId`/`storefrontId` parameters, the
+# `SiteId` scalar, the pagination envelope, and the RFC 7807 `ErrorResponse`.
+#
+# Scope note: this bundle covers the storefront resource itself
+# (list/create/get/update/delete), which is what the `mrt project` commands need
+# (an MRT project is a SCAPI storefront). When bumping to a newer upstream
+# version, re-bundle from the same source path.
+# ---------------------------------------------------------------------------
+info:
+  x-api-type: Admin
+  x-api-family: Storefront
+  title: Storefronts
+  version: 1.0.4
+  description: >-
+    SCAPI Managed Runtime Storefronts API. Manage the storefronts (MRT projects)
+    provisioned for an organization: list, create, get, update (including a full
+    replacement of the assigned-sites set), and delete.
+servers:
+  - url: "https://{shortCode}.api.commercecloud.salesforce.com/storefront/storefronts/v1"
+    variables:
+      shortCode:
+        default: "123456gf"
+paths:
+  /organizations/{organizationId}/storefronts:
+    get:
+      summary: Get storefronts for an organization.
+      description: >-
+        Retrieves the list of storefronts provisioned for the organization,
+        ordered by creationDate ascending.
+      operationId: getStorefronts
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - name: limit
+          in: query
+          required: false
+          description: Number of records to retrieve per request. Must be between 1 and 200. Defaults to 25.
+          schema:
+            type: integer
+            format: int32
+            default: 25
+            minimum: 1
+            maximum: 200
+        - name: offset
+          in: query
+          required: false
+          description: Zero-based index of the first record to include in the result.
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: List of storefronts successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontResult"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.storefronts"
+            - "sfcc.storefront.storefronts.rw"
+    post:
+      summary: Create a storefront.
+      description: >-
+        Queues creation of a new storefront. Returns immediately with the
+        storefront resource in the in_progress setup status. Poll the storefront
+        by ID to track provisioning progress.
+      operationId: createStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorefrontCreateRequest"
+      responses:
+        "202":
+          description: Storefront creation successfully queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Storefront"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "409":
+          $ref: "#/components/responses/409Conflict"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.storefronts.rw"
+  /organizations/{organizationId}/storefronts/{storefrontId}:
+    get:
+      summary: Get a storefront by ID.
+      description: >-
+        Retrieves the details of a specific storefront, including its current
+        setup status and assigned sites.
+      operationId: getStorefrontById
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+      responses:
+        "200":
+          description: Storefront successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Storefront"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.storefronts"
+            - "sfcc.storefront.storefronts.rw"
+    patch:
+      summary: Update a storefront.
+      description: >-
+        Updates a storefront. Every field is optional and only the supplied
+        fields are changed. When `sites` is provided it replaces the storefront's
+        full set of assigned sites—a complete replacement, not an incremental
+        update—so the request body must contain the complete desired set of site
+        IDs.
+      operationId: updateStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorefrontUpdateRequest"
+      responses:
+        "200":
+          description: Storefront successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Storefront"
+        "400":
+          $ref: "#/components/responses/400BadRequest"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.storefronts.rw"
+    delete:
+      summary: Delete a storefront.
+      description: >-
+        Queues deletion of the storefront. Returns immediately with the
+        storefront resource in the delete_in_progress setup status. Poll the
+        storefront by ID to track deletion progress.
+      operationId: deleteStorefront
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/storefrontId"
+      responses:
+        "202":
+          description: Storefront deletion successfully queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Storefront"
+        "401":
+          $ref: "#/components/responses/401Unauthorized"
+        "403":
+          $ref: "#/components/responses/403Forbidden"
+        "404":
+          $ref: "#/components/responses/404NotFound"
+        "409":
+          $ref: "#/components/responses/409Conflict"
+      security:
+        - AmOAuth2:
+            - "sfcc.storefront.storefronts.rw"
+components:
+  securitySchemes:
+    AmOAuth2:
+      type: oauth2
+      description: AccountManager OAuth 2.0 bearer token Authentication.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.storefront.storefronts: Read-only access to the Storefronts API.
+            sfcc.storefront.storefronts.rw: Read and write access to the Storefronts API.
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes:
+            sfcc.storefront.storefronts: Read-only access to the Storefronts API.
+            sfcc.storefront.storefronts.rw: Read and write access to the Storefronts API.
+  parameters:
+    # Standard SCAPI organization identifier (inlined from
+    # commerce-cloud-standards-oas). For B2C Commerce this is `f_ecom_<tenant>`.
+    organizationId:
+      name: organizationId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      description: The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 32
+    storefrontId:
+      name: storefrontId
+      in: path
+      required: true
+      description: >-
+        The storefront identifier. Must consist only of lowercase letters,
+        numbers, and hyphens, with no leading or trailing hyphens.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 20
+        pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+  responses:
+    401Unauthorized:
+      description: Your access token is invalid or expired and can't be used to identify a user.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    403Forbidden:
+      description: You aren't authorized to perform this action.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    400BadRequest:
+      description: The request was malformed or failed validation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    404NotFound:
+      description: The requested resource was not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    409Conflict:
+      description: The request conflicts with the current state of the storefront.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    # Standard SCAPI RFC 7807 error envelope (inlined from commerce-cloud-standards-oas).
+    ErrorResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        title:
+          type: string
+          maxLength: 256
+        type:
+          type: string
+          maxLength: 2048
+        detail:
+          type: string
+        instance:
+          type: string
+          maxLength: 2048
+      required:
+        - detail
+        - title
+        - type
+    # Standard SCAPI site identifier (inlined from commerce-cloud-standards-oas).
+    SiteId:
+      type: string
+      description: The identifier of a B2C Commerce site.
+      minLength: 1
+      maxLength: 256
+      example: "RefArch"
+    StorefrontType:
+      type: string
+      description: >-
+        The type of the storefront. `unknown` is a legacy fallback for existing
+        records with no recorded type; it is never a valid value on create.
+      enum:
+        - storefront_next
+        - pwa_kit
+        - headless
+        - unknown
+      example: "storefront_next"
+    StorefrontCreateType:
+      type: string
+      description: >-
+        The type of storefront to create. Only `storefront_next` is currently
+        supported by the create-new-storefront flow.
+      enum:
+        - storefront_next
+      example: "storefront_next"
+    StorefrontSetupStatus:
+      type: string
+      description: The current provisioning/lifecycle status of the storefront.
+      enum:
+        - in_progress
+        - success
+        - backfilled
+        - failed
+        - delete_in_progress
+        - delete_failed
+        - deleted
+        - unknown
+      example: "success"
+    SsrRegion:
+      type: string
+      description: >-
+        The default AWS region for server-side rendering functions of
+        environments newly created under this storefront. Each value corresponds
+        to the AWS region of the same name with underscores substituted for
+        hyphens (for example, `us_east_2` is the AWS region `us-east-2`).
+      enum:
+        - us_east_1
+        - us_east_2
+        - us_west_1
+        - us_west_2
+        - ap_south_1
+        - ap_south_2
+        - ap_northeast_2
+        - ap_southeast_1
+        - ap_southeast_2
+        - ap_southeast_3
+        - ap_northeast_1
+        - ap_northeast_3
+        - ca_central_1
+        - eu_central_1
+        - eu_central_2
+        - eu_west_1
+        - eu_west_2
+        - eu_west_3
+        - eu_north_1
+        - eu_south_1
+        - sa_east_1
+      example: "us_east_2"
+    Storefront:
+      description: >-
+        A storefront represents a provisioned Storefront Next or PWA Kit
+        Composable storefront, its type, and the sites assigned to it.
+      type: object
+      required:
+        - storefrontId
+        - storefrontName
+        - type
+        - setupStatus
+      properties:
+        storefrontId:
+          type: string
+          description: >-
+            A storefront identifier that B2C Commerce generates based on the
+            provided storefront name. The storefront ID is unique within the
+            organization. It consists only of lowercase letters, numbers, and
+            hyphens, with no leading or trailing hyphens.
+          minLength: 1
+          maxLength: 20
+          pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+          example: "my-storefront-a1b2c3"
+        storefrontName:
+          type: string
+          description: >-
+            The storefront name that you specify when creating a storefront. Must
+            be 64 characters or fewer.
+          minLength: 1
+          maxLength: 64
+          example: "my-storefront"
+        type:
+          $ref: "#/components/schemas/StorefrontType"
+        setupStatus:
+          $ref: "#/components/schemas/StorefrontSetupStatus"
+        sites:
+          type: array
+          description: >-
+            The IDs of the existing sites assigned to this storefront. By default
+            a site can be assigned to only one storefront. Storefronts of type
+            `pwa_kit` are exempt from this restriction and may share a site with
+            another storefront.
+          items:
+            $ref: "#/components/schemas/SiteId"
+          example: ["RefArch"]
+        creationDate:
+          type: string
+          format: date-time
+          description: The timestamp when the storefront was created.
+          example: "2026-04-08T21:47:28.188965Z"
+        lastModified:
+          type: string
+          format: date-time
+          description: The timestamp when the storefront was last modified.
+          example: "2026-04-08T21:47:31.307595Z"
+        ssrRegion:
+          $ref: "#/components/schemas/SsrRegion"
+        ssrArchitecture:
+          type: string
+          nullable: true
+          description: >-
+            The default architecture for the server-side rendering function of
+            environments newly created under this storefront. Null when no
+            architecture default is configured.
+          enum:
+            - x86
+            - arm64
+          example: "arm64"
+        allowCookies:
+          type: boolean
+          description: >-
+            Whether cookies are allowed for the storefront. Always enabled for
+            Storefront Next storefronts.
+          example: true
+        preserveProxyUserAgent:
+          type: boolean
+          description: >-
+            Whether the end-user's User-Agent header is preserved on requests
+            forwarded through the storefront's configured proxies.
+          example: false
+    StorefrontResult:
+      description: Paginated result containing a list of storefronts.
+      type: object
+      required:
+        - limit
+        - offset
+        - total
+        - data
+      properties:
+        limit:
+          type: integer
+          format: int32
+          description: Maximum number of records returned per request.
+          example: 25
+        offset:
+          type: integer
+          format: int32
+          description: Zero-based index of the first record included in the result.
+          example: 0
+        total:
+          type: integer
+          format: int32
+          description: Total number of storefronts matching the request.
+          example: 2
+        data:
+          type: array
+          description: The list of storefronts. May be empty.
+          items:
+            $ref: "#/components/schemas/Storefront"
+    StorefrontCreateRequest:
+      description: Request body for creating a storefront.
+      type: object
+      required:
+        - storefrontName
+        - type
+        - sites
+      properties:
+        storefrontName:
+          type: string
+          description: The name to assign to the new storefront. Must be unique within the organization.
+          minLength: 1
+          maxLength: 64
+          example: "my-storefront"
+        type:
+          $ref: "#/components/schemas/StorefrontCreateType"
+        sites:
+          type: array
+          description: The IDs of existing sites to assign to the storefront. At least one site is required.
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SiteId"
+          example: ["RefArch"]
+    StorefrontUpdateRequest:
+      description: >-
+        Request body for updating a storefront. Every field is optional and only
+        the supplied fields are changed. When `sites` is provided it is a complete
+        replacement of the storefront's site assignment, not an incremental
+        update—supply the full set of site IDs.
+      type: object
+      properties:
+        sites:
+          type: array
+          description: >-
+            The complete set of site IDs assigned to the storefront, replacing any
+            previous assignment. When provided, at least one site is required.
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SiteId"
+          example: ["RefArch"]
+        ssrRegion:
+          $ref: "#/components/schemas/SsrRegion"
+        ssrArchitecture:
+          type: string
+          nullable: true
+          description: >-
+            The default architecture for the server-side rendering function of
+            environments newly created under this storefront. Set to null to clear
+            the architecture default.
+          enum:
+            - x86
+            - arm64
+          example: "arm64"
+        allowCookies:
+          type: boolean
+          description: >-
+            Whether cookies are allowed for the storefront. Cannot be modified for
+            Storefront Next storefronts, where cookies are always enabled.
+          example: true
+        preserveProxyUserAgent:
+          type: boolean
+          description: >-
+            Whether the end-user's User-Agent header is preserved on requests
+            forwarded through the storefront's configured proxies.
+          example: false

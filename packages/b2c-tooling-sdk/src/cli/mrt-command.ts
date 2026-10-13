@@ -14,8 +14,21 @@ import {t} from '../i18n/index.js';
 import {DEFAULT_MRT_ORIGIN, MrtMaintenanceError, runWithMrtReadOnlyListener} from '../clients/mrt.js';
 import {assertScapiAdminAuthSupported} from '../clients/scapi-backend-utils.js';
 import {toOrganizationId} from '../clients/storefront-deployments.js';
-import {mrtScapiUnavailableMessage} from '../operations/mrt/mrt-backend.js';
-import type {MrtBackendPreference, ScapiMrtConnection} from '../operations/mrt/mrt-backend.js';
+import {mrtScapiUnavailableMessage, resolveMrtBackend} from '../operations/mrt/mrt-backend.js';
+import type {MrtBackend, MrtBackendPreference, ScapiMrtConnection} from '../operations/mrt/mrt-backend.js';
+
+/**
+ * A command flag that only one MRT backend honors. Declared by commands via
+ * {@link MrtCommand.mrtBackendOnlyFlags} so {@link MrtCommand.getMrtBackendContext}
+ * can detect — from the raw argv — when the user explicitly passed a flag the
+ * resolved backend ignores.
+ */
+export interface MrtBackendOnlyFlag {
+  /** Canonical long flag, shown in the message (e.g. `--name`). */
+  name: string;
+  /** Short char alias (e.g. `n` for `-n`), if the flag has one. */
+  char?: string;
+}
 
 /** Trust status page, surfaced so users can check status and ETA. */
 const MRT_STATUS_URL = 'https://status.salesforce.com/instances/MANAGEDRUNTIMEADMIN';
@@ -289,13 +302,32 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
    * Whether this command implements the SCAPI MRT backend. Defaults to `false`;
    * the supported commands (`mrt bundle history`, `mrt bundle list`,
    * `mrt bundle deploy` — both the local-build push and `<bundleId>` deploy —
-   * and the `mrt env var` family: `list`, `set`, `delete`, `push`) override it
-   * to `true`. Used by {@link init} to reject an explicit `--mrt-backend scapi`
+   * the `mrt env` lifecycle family: `list`, `create`, `clone`, `get`, `update`,
+   * `delete`, `set-primary`, `invalidate`, the `mrt env var` family: `list`,
+   * `set`, `delete`, `push`, the `mrt env redirect` family: `list`, `create`,
+   * `get`, `update`, `delete`, `clone`, the `mrt env access-control` family:
+   * `list`, `create`, `get`, `delete`, and the `mrt project` family: `list`,
+   * `create`, `get`, `update`, `delete`) override it to `true`. Used by
+   * {@link init} to reject an explicit `--mrt-backend scapi`
    * on commands that would otherwise silently fall back to legacy — an explicit
    * SCAPI request must never be quietly downgraded.
    */
   protected supportsScapiMrt(): boolean {
     return false;
+  }
+
+  /**
+   * Flags this command exposes that only one MRT backend honors. A command whose
+   * flags are backend-specific (e.g. `--name`/`--production` are legacy-only on
+   * `env create`, `--site` is SCAPI-only) overrides this to declare them, keyed
+   * by the backend that honors each flag. {@link getMrtBackendContext} uses the
+   * declaration to error (explicit backend) or warn (`auto`) when the user passes
+   * a flag the resolved backend ignores — so a backend-specific flag can never be
+   * silently dropped (e.g. `project update --name` reporting success on SCAPI
+   * while sending an empty PATCH). Flags both backends honor must not be listed.
+   */
+  protected mrtBackendOnlyFlags(): {legacy?: MrtBackendOnlyFlag[]; scapi?: MrtBackendOnlyFlag[]} {
+    return {};
   }
 
   public override async init(): Promise<void> {
@@ -306,7 +338,11 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
     if (!this.supportsScapiMrt() && this.mrtBackendPreference === 'scapi') {
       this.error(
         '--mrt-backend scapi is not supported by this command yet. The SCAPI MRT backend currently supports ' +
-          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", and "mrt env var" (list/set/delete/push). ' +
+          '"mrt bundle history", "mrt bundle list", "mrt bundle deploy", ' +
+          '"mrt env" (list/create/clone/get/update/delete/set-primary/invalidate), ' +
+          '"mrt env var" (list/set/delete/push), ' +
+          '"mrt env redirect" (list/create/get/update/delete/clone), "mrt env access-control" (list/create/get/delete), ' +
+          'and "mrt project" (list/create/get/update/delete). ' +
           'Re-run with --mrt-backend legacy or auto.',
       );
     }
@@ -362,7 +398,53 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       }
     }
 
+    // Backend-specific command flags (--name, --site, ...) are checked against
+    // the backend this run resolves to, so one is never silently dropped. The
+    // guards above guarantee resolveMrtBackend cannot throw here.
+    this.checkIgnoredBackendFlags(resolveMrtBackend({preference, hasScapiConfig: Boolean(scapiConnection)}));
+
     return {preference, scapiConnection, legacyAuth};
+  }
+
+  /**
+   * Errors or warns when the user explicitly typed a command flag the resolved
+   * backend ignores (declared via {@link mrtBackendOnlyFlags}). Explicit
+   * `--mrt-backend <backend>` errors — the flag can never be honored this run;
+   * `auto` warns — it resolved to a backend that drops the flag. Detected from
+   * the raw argv so env vars / dw.json are not misreported.
+   */
+  private checkIgnoredBackendFlags(backend: MrtBackend): void {
+    const {legacy = [], scapi = []} = this.mrtBackendOnlyFlags();
+    const otherBackend: MrtBackend = backend === 'scapi' ? 'legacy' : 'scapi';
+    // The resolved backend ignores the flags that belong to the *other* backend.
+    const ignoredDefs = backend === 'scapi' ? legacy : scapi;
+    const ignored = this.detectProvidedFlags(ignoredDefs);
+    if (ignored.length === 0) {
+      return;
+    }
+
+    const message =
+      `Flag(s) ${ignored.join(', ')} only affect the ${otherBackend} MRT backend; this run uses the ` +
+      `${backend} backend, which ignores them. Re-run with --mrt-backend ${otherBackend} to apply them.`;
+
+    // Explicit `--mrt-backend <backend>` pins the run, so the flags can never
+    // take effect — fail loud. Under `auto` the choice was implicit, so warn.
+    if (this.mrtBackendPreference === backend) {
+      this.error(message);
+    } else {
+      this.warn(message);
+    }
+  }
+
+  /** Returns the canonical names of the given flags that appear in the raw argv. */
+  private detectProvidedFlags(flags: MrtBackendOnlyFlag[]): string[] {
+    const rawArgs = this._rawArgv;
+    return flags
+      .filter(({name, char}) => {
+        const tokens = char ? [name, `-${char}`] : [name];
+        return tokens.some((flag) => rawArgs.some((arg) => arg === flag || arg.startsWith(`${flag}=`)));
+      })
+      .map(({name}) => name);
   }
 
   /**

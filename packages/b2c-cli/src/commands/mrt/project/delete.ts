@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {deleteProjectWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import {confirm} from '../../../prompts.js';
 
@@ -40,6 +40,7 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
   static examples = [
     '<%= config.bin %> <%= command.id %> my-old-project',
     '<%= config.bin %> <%= command.id %> --project my-old-project --force',
+    '<%= config.bin %> <%= command.id %> my-old-project --mrt-backend scapi --force',
   ];
 
   static flags = {
@@ -51,11 +52,13 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
     }),
   };
 
+  protected operations = {
+    deleteProjectWithBackend,
+  };
+
   async run(): Promise<DeleteResult> {
     // Prevent deletion in safe mode
     this.assertDestructiveOperationAllowed('delete MRT project');
-
-    this.requireMrtCredentials();
 
     const slug = this.resolveProjectSlug(this.args.slug);
     const {force} = this.flags;
@@ -72,27 +75,29 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
       }
     }
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+
     this.log(t('commands.mrt.project.delete.deleting', 'Deleting project "{{slug}}"...', {slug}));
 
-    try {
-      await deleteProject(
-        {
-          projectSlug: slug,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    // The resolved backend is surfaced via `onResolve` (debug log) only — it is
+    // deliberately kept out of the `--json` payload so the legacy `--json`
+    // output stays byte-identical and matches the rest of the MRT commands.
+    await this.operations.deleteProjectWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: slug,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deleting project via backend'),
+    });
 
-      this.log(t('commands.mrt.project.delete.success', 'Project "{{slug}}" deleted successfully.', {slug}));
+    this.log(t('commands.mrt.project.delete.success', 'Project "{{slug}}" deleted successfully.', {slug}));
 
-      return {slug, deleted: true};
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.project.delete.failed', 'Failed to delete project: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
-    }
+    return {slug, deleted: true};
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

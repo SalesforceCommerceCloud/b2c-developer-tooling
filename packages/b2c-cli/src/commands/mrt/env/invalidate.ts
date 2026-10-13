@@ -5,7 +5,7 @@
  */
 import {Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {invalidateCache, type InvalidateCacheResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {invalidateCacheWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
@@ -26,6 +26,7 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
     '<%= config.bin %> <%= command.id %> --project my-storefront --environment production --pattern "/*"',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e production --pattern "/products/*"',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e production --pattern "/category/shoes"',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e production --pattern "/*" --mrt-backend scapi',
   ];
 
   static flags = {
@@ -36,9 +37,11 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
     }),
   };
 
-  async run(): Promise<InvalidateCacheResult> {
-    this.requireMrtCredentials();
+  protected operations = {
+    invalidateCacheWithBackend,
+  };
 
+  async run(): Promise<unknown> {
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -59,39 +62,53 @@ export default class MrtCacheInvalidate extends MrtCommand<typeof MrtCacheInvali
       this.error('Pattern must start with a forward slash (/).');
     }
 
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
+
     this.log(
       t('commands.mrt.cache.invalidate.invalidating', 'Invalidating cache for pattern "{{pattern}}"...', {pattern}),
     );
 
-    try {
-      const result = await invalidateCache(
-        {
-          projectSlug: project,
-          targetSlug: environment,
-          pattern,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    const result = await this.operations.invalidateCacheWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      pattern,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Invalidating cache via backend'),
+    });
 
-      this.log(t('commands.mrt.cache.invalidate.success', '{{result}}', {result: result.result}));
-      this.log(
-        t(
-          'commands.mrt.cache.invalidate.note',
-          'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
-        ),
-      );
+    // this.log() is swallowed under --json by MrtCommand.log(), so no jsonEnabled() guard is needed here.
+    this.log(t('commands.mrt.cache.invalidate.success', 'Cache invalidation requested.'));
+    this.log(
+      t(
+        'commands.mrt.cache.invalidate.note',
+        'Note: Cache invalidations are asynchronous and usually complete within two minutes.',
+      ),
+    );
 
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.cache.invalidate.failed', 'Failed to invalidate cache: {{message}}', {
-            message: error.message,
-          }),
-        );
-      }
-      throw error;
+    // The legacy backend returns a native payload; emit it verbatim under --json
+    // to preserve the existing contract.
+    if (result.backend === 'legacy') {
+      return result.raw;
     }
+
+    // Invalidation is fire-and-forget: the SCAPI backend returns an empty 202
+    // (raw === null), so returning `result.raw` directly would leave --json with
+    // no output. Emit a stable acknowledgement instead for the SCAPI backend.
+    return {
+      project,
+      environment,
+      pattern,
+      backend: result.backend,
+      requested: true,
+      raw: result.raw,
+    };
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

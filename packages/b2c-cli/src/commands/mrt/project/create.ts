@@ -6,11 +6,12 @@
 import {Args, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {createProject, type MrtProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {createProjectWithBackend, type MrtProjectView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
 /**
- * Valid AWS regions for MRT projects.
+ * Valid AWS regions for MRT projects (hyphenated legacy form; the SCAPI backend
+ * converts to its underscored form internally).
  */
 const SSR_REGIONS = [
   'us-east-1',
@@ -40,29 +41,56 @@ const SSR_REGIONS = [
 
 type SsrRegion = (typeof SSR_REGIONS)[number];
 
+// Mirrors the SCAPI Storefronts `StorefrontCreateType` enum, which currently
+// allows only `storefront_next`: "Only `storefront_next` is currently supported
+// by the create-new-storefront flow." The broader `StorefrontType` enum
+// (`pwa_kit`, `headless`, `unknown`) describes *existing* storefronts for
+// read/categorization and is not accepted on create, so we deliberately do not
+// expose those here — passing one would be rejected by the gateway.
+const STOREFRONT_TYPES = ['storefront_next'] as const;
+
+type StorefrontCreateType = (typeof STOREFRONT_TYPES)[number];
+
 /**
  * Print project details in a formatted display.
  */
-function printProjectDetails(project: MrtProject): void {
+function printProjectDetails(project: MrtProjectView): void {
   const ui = cliui({width: process.stdout.columns || 80});
   const labelWidth = 16;
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});
-  ui.div({text: 'Slug:', width: labelWidth}, {text: project.slug ?? ''});
-  ui.div({text: 'Organization:', width: labelWidth}, {text: project.organization});
+  ui.div({text: 'ID:', width: labelWidth}, {text: project.id});
 
-  if (project.ssr_region) {
-    ui.div({text: 'Region:', width: labelWidth}, {text: project.ssr_region});
+  if (project.organization) {
+    ui.div({text: 'Organization:', width: labelWidth}, {text: project.organization});
+  }
+
+  if (project.type) {
+    ui.div({text: 'Type:', width: labelWidth}, {text: project.type});
+  }
+
+  if (project.status) {
+    ui.div({text: 'Status:', width: labelWidth}, {text: project.status});
+  }
+
+  if (project.region) {
+    ui.div({text: 'Region:', width: labelWidth}, {text: project.region});
   }
 
   if (project.url) {
     ui.div({text: 'URL:', width: labelWidth}, {text: project.url});
   }
 
-  if (project.created_at) {
-    ui.div({text: 'Created:', width: labelWidth}, {text: new Date(project.created_at).toLocaleString()});
+  if (project.sites && project.sites.length > 0) {
+    ui.div({text: 'Sites:', width: labelWidth}, {text: project.sites.join(', ')});
   }
+
+  if (project.createdAt) {
+    ui.div({text: 'Created:', width: labelWidth}, {text: new Date(project.createdAt).toLocaleString()});
+  }
+
+  ui.div({text: 'Backend:', width: labelWidth}, {text: project.backend});
 
   ux.stdout(ui.toString());
 }
@@ -90,71 +118,89 @@ export default class MrtProjectCreate extends MrtCommand<typeof MrtProjectCreate
   static examples = [
     '<%= config.bin %> <%= command.id %> "My Storefront" --organization my-org',
     '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --storefront my-storefront',
-    '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org -s my-storefront',
     '<%= config.bin %> <%= command.id %> "My Storefront" -o my-org --region us-east-1',
+    '<%= config.bin %> <%= command.id %> "My Storefront" --site RefArch --mrt-backend scapi',
   ];
 
   static flags = {
     ...MrtCommand.baseFlags,
     organization: Flags.string({
       char: 'o',
-      description: 'Organization slug to create the project in',
-      required: true,
+      description: 'Organization slug to create the project in (required for the legacy backend)',
     }),
     url: Flags.string({
-      description: 'Project URL',
+      description: 'Project URL (legacy backend only)',
     }),
     region: Flags.string({
       char: 'r',
-      description: 'Default AWS region for new environments',
+      description: 'Default AWS region for new environments (legacy backend only)',
       options: SSR_REGIONS as unknown as string[],
+    }),
+    type: Flags.string({
+      description: 'Storefront type (SCAPI backend only)',
+      options: STOREFRONT_TYPES as unknown as string[],
+      default: 'storefront_next',
+    }),
+    site: Flags.string({
+      description: 'Site ID to assign to the storefront (SCAPI backend only; repeatable, at least one required)',
+      multiple: true,
     }),
   };
 
-  async run(): Promise<MrtProject> {
-    this.requireMrtCredentials();
+  protected operations = {
+    createProjectWithBackend,
+  };
 
+  // SCAPI is scoped to the connection's tenant and generates the storefront ID;
+  // --organization/--url/--region configure the legacy MRT Cloud API, while
+  // --type/--site target the SCAPI Storefronts API.
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [{name: '--organization', char: 'o'}, {name: '--url'}, {name: '--region', char: 'r'}],
+      scapi: [{name: '--type'}, {name: '--site'}],
+    };
+  }
+
+  async run(): Promise<unknown> {
     const {name} = this.args;
-    const {organization, url, region} = this.flags;
+    const {organization, url, region, type, site} = this.flags;
     // The new project's slug comes from the shared --project / --storefront (-p / -s)
-    // flag; when omitted the MRT API auto-generates one from the name.
+    // flag; when omitted the legacy MRT API auto-generates one from the name (SCAPI
+    // always generates the storefront ID).
     const slug = this.resolvedConfig.values.mrtProject;
 
-    this.log(
-      t('commands.mrt.project.create.creating', 'Creating project "{{name}}" in {{organization}}...', {
-        name,
-        organization,
-      }),
-    );
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    try {
-      const result = await createProject(
-        {
-          name,
-          organization,
-          slug,
-          url,
-          ssrRegion: region as SsrRegion | undefined,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    // Each backend branch validates its own required input: SCAPI needs at least
+    // one --site, legacy needs --organization.
+    this.log(t('commands.mrt.project.create.creating', 'Creating project "{{name}}"...', {name}));
 
-      if (this.jsonEnabled()) {
-        return result;
-      }
+    const result = await this.operations.createProjectWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      name,
+      slug,
+      organization,
+      url,
+      ssrRegion: region as SsrRegion | undefined,
+      type: type as StorefrontCreateType | undefined,
+      sites: site,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Creating project via backend'),
+    });
 
+    if (!this.jsonEnabled()) {
       this.log(t('commands.mrt.project.create.success', 'Project created successfully.'));
-      printProjectDetails(result);
-
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.project.create.failed', 'Failed to create project: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
+      printProjectDetails(result.project);
     }
+
+    // Under --json, emit the backend's native create response verbatim.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

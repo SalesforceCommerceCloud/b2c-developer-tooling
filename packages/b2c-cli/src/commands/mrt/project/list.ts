@@ -11,29 +11,33 @@ import {
   selectColumns,
   type ColumnDef,
 } from '@salesforce/b2c-tooling-sdk/cli';
-import {listProjects, type ListProjectsResult, type MrtProject} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {listProjectsWithBackend, type MrtProjectView} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 
-const COLUMNS: Record<string, ColumnDef<MrtProject>> = {
+const COLUMNS: Record<string, ColumnDef<MrtProjectView>> = {
   name: {
     header: 'Name',
     get: (proj) => proj.name,
   },
   slug: {
     header: 'ID',
-    get: (proj) => proj.slug ?? '',
+    get: (proj) => proj.id || '-',
   },
   organization: {
     header: 'Organization',
-    get: (proj) => proj.organization,
+    get: (proj) => proj.organization ?? '-',
   },
   region: {
     header: 'Region',
-    get: (proj) => proj.ssr_region ?? '-',
+    get: (proj) => proj.region ?? '-',
   },
   created: {
     header: 'Created',
-    get: (proj) => (proj.created_at ? new Date(proj.created_at).toLocaleDateString() : '-'),
+    get: (proj) => (proj.createdAt ? new Date(proj.createdAt).toLocaleDateString() : '-'),
+  },
+  backend: {
+    header: 'Backend',
+    get: (proj) => proj.backend,
   },
 };
 
@@ -58,6 +62,7 @@ export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --organization my-org',
     '<%= config.bin %> <%= command.id %> --limit 10',
+    '<%= config.bin %> <%= command.id %> --mrt-backend scapi',
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
@@ -65,7 +70,7 @@ export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
     ...MrtCommand.baseFlags,
     organization: Flags.string({
       char: 'o',
-      description: 'Filter by organization slug',
+      description: 'Filter by organization slug (legacy backend only)',
     }),
     limit: Flags.integer({
       description: 'Maximum number of results to return',
@@ -76,22 +81,27 @@ export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
     ...columnFlagsFor(COLUMNS),
   };
 
-  async run(): Promise<ListProjectsResult> {
-    this.requireMrtCredentials();
+  protected operations = {
+    listProjectsWithBackend,
+  };
 
+  async run(): Promise<unknown> {
     const {organization, limit, offset} = this.flags;
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
     this.log(t('commands.mrt.project.list.fetching', 'Fetching projects...'));
 
-    const result = await listProjects(
-      {
-        organization,
-        limit,
-        offset,
-        origin: this.resolvedConfig.values.mrtOrigin,
-      },
-      this.getMrtAuth(),
-    );
+    const result = await this.operations.listProjectsWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      organization,
+      limit,
+      offset,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Listing projects via backend'),
+    });
 
     if (!this.jsonEnabled()) {
       if (result.projects.length === 0) {
@@ -105,6 +115,11 @@ export default class MrtProjectList extends MrtCommand<typeof MrtProjectList> {
       }
     }
 
-    return result;
+    // Under --json, emit the backend's native list response verbatim.
+    return result.raw;
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

@@ -98,6 +98,20 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
   }
 }
 
+// A command that declares backend-specific flags, used to verify
+// checkIgnoredBackendFlags errors/warns when a flag the resolved backend ignores
+// is supplied. `--region` is legacy-only; `--site` is SCAPI-only.
+class BackendFlagsMrtCommand extends TestMrtCommand {
+  static override id = 'test:mrt-backend-flags';
+
+  protected override mrtBackendOnlyFlags() {
+    return {
+      legacy: [{name: '--region', char: 'r'}],
+      scapi: [{name: '--site'}],
+    };
+  }
+}
+
 // A command that has NOT wired the SCAPI MRT backend (base default), used to
 // verify the `init()` guardrail rejects an explicit `--mrt-backend scapi`.
 class UnsupportedMrtCommand extends MrtCommand<typeof UnsupportedMrtCommand> {
@@ -535,6 +549,93 @@ describe('cli/mrt-command', () => {
       expect(context.scapiConnection).to.equal(undefined);
       expect(context.preference).to.equal('legacy');
       expect(context.legacyAuth).to.not.equal(undefined);
+    });
+  });
+
+  describe('getMrtBackendContext — ignored backend-specific command flag', () => {
+    // `_rawArgv` is what checkIgnoredBackendFlags inspects; stubParse does not
+    // populate it, so simulate the typed tokens directly.
+    function setRawArgv(cmd: TestMrtCommand, argv: string[]): void {
+      (cmd as unknown as {_rawArgv: string[]})._rawArgv = argv;
+    }
+
+    let backendCommand: BackendFlagsMrtCommand;
+
+    beforeEach(() => {
+      backendCommand = new BackendFlagsMrtCommand([], config);
+    });
+
+    it('errors under explicit --mrt-backend scapi when a legacy-only flag is supplied', async () => {
+      stubParse(backendCommand, {
+        ...SCAPI_FLAGS,
+        'client-id': 'client',
+        'client-secret': 'secret',
+        'mrt-backend': 'scapi',
+      });
+      await backendCommand.init();
+      setRawArgv(backendCommand, ['--region', 'us-east-1']);
+      const errorStub = sinon.stub(backendCommand, 'error').throws(new Error('exit'));
+
+      try {
+        backendCommand.testGetMrtBackendContext();
+      } catch {
+        // this.error throws
+      }
+
+      expect(errorStub.calledOnce).to.be.true;
+      const message = errorStub.firstCall.args[0] as string;
+      expect(message).to.include('--region');
+      expect(message).to.include('scapi');
+    });
+
+    it('warns (does not error) under auto when SCAPI runs but a legacy-only flag is supplied', async () => {
+      stubParse(backendCommand, {
+        ...SCAPI_FLAGS,
+        'client-id': 'client',
+        'client-secret': 'secret',
+        'mrt-backend': 'auto',
+      });
+      await backendCommand.init();
+      setRawArgv(backendCommand, ['--region', 'us-east-1']);
+      const errorStub = sinon.stub(backendCommand, 'error').throws(new Error('exit'));
+      const warnStub = sinon.stub(backendCommand, 'warn');
+
+      backendCommand.testGetMrtBackendContext();
+
+      expect(errorStub.called).to.be.false;
+      expect(warnStub.calledOnce).to.be.true;
+      expect(warnStub.firstCall.args[0] as string).to.include('--region');
+    });
+
+    it('errors under explicit --mrt-backend legacy when a SCAPI-only flag is supplied', async () => {
+      stubParse(backendCommand, {'mrt-backend': 'legacy', 'api-key': 'test-api-key'});
+      await backendCommand.init();
+      setRawArgv(backendCommand, ['--site', 'RefArch']);
+      const errorStub = sinon.stub(backendCommand, 'error').throws(new Error('exit'));
+
+      try {
+        backendCommand.testGetMrtBackendContext();
+      } catch {
+        // this.error throws
+      }
+
+      expect(errorStub.calledOnce).to.be.true;
+      const message = errorStub.firstCall.args[0] as string;
+      expect(message).to.include('--site');
+      expect(message).to.include('legacy');
+    });
+
+    it('does not error or warn when no backend-specific flag is supplied', async () => {
+      stubParse(backendCommand, {'mrt-backend': 'legacy', 'api-key': 'test-api-key'});
+      await backendCommand.init();
+      setRawArgv(backendCommand, []);
+      const errorStub = sinon.stub(backendCommand, 'error').throws(new Error('exit'));
+      const warnStub = sinon.stub(backendCommand, 'warn');
+
+      backendCommand.testGetMrtBackendContext();
+
+      expect(errorStub.called).to.be.false;
+      expect(warnStub.called).to.be.false;
     });
   });
 
