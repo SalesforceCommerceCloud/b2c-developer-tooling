@@ -13,7 +13,8 @@
  *
  * @module clients/ods
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ods.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware, createExtraParamsMiddleware} from './middleware.js';
@@ -176,9 +177,12 @@ export function createOdsClient(config: OdsClientConfig, auth: AuthStrategy): Od
   const host = config.host ?? DEFAULT_ODS_HOST;
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `https://${host}/api/v1`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `https://${host}/api/v1`,
+    },
+    auth,
+  );
 
   // Core middleware: extraParams → auth
   if (config.extraParams) {

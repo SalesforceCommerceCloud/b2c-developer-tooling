@@ -15,6 +15,18 @@ API clients in this project use:
 - **openapi-fetch**: Type-safe HTTP client generated from OpenAPI specs
 - **openapi-typescript**: Generates TypeScript types from OpenAPI specs
 - **Middleware pattern**: Auth and logging injected via openapi-fetch middleware
+- **Shared transport**: every client is created with `createHttpClient(options, auth)` from `src/clients/http-transport.ts` (never openapi-fetch's `createClient`), so the transport options carried by the client's auth strategy apply
+
+### Shared HTTP Transport (required)
+
+TLS behavior such as the internal `selfsigned-api` mode is set on the `fetch` call (an undici dispatcher), not on the `Request`, so middleware cannot add it. The setting is **per config, not global**: strategies created from a resolved config (`createOAuth()`, `B2CInstance`, `resolveAuthStrategy`, `OAuthCommand`) carry `selfSignedApi`, `withAdditionalScopes()`/`withScopes()` preserve it, and clients built from the strategy inherit it. `src/clients/http-transport.ts` owns the policy:
+
+- `createHttpClient<paths>(options, auth)` — use instead of openapi-fetch's `createClient`; pass the client's auth strategy. ESLint (`no-restricted-imports`) fails a direct default import of `openapi-fetch` in `src/`.
+- `getApiFetch(auth)` — use instead of the global `fetch` for any direct OCAPI, SCAPI or Account Manager request (token calls, retries, hand-rolled requests). Pass the strategy or config the request belongs to. ESLint (`no-restricted-globals`) fails a bare `fetch` in `src/` outside an allowlist of non-B2C hosts.
+- New strategies or config types that make API requests should accept `HttpTransportOptions` (`selfSignedApi`) and pass it through; a strategy wrapper must copy `selfSignedApi` from the strategy it wraps. Anything that does not receive it stays on strict TLS.
+- SCAPI Admin APIs on `{shortCode}.api.commercecloud.salesforce.com` should use `buildScapiClient()` (`src/clients/scapi-client-factory.ts`), which already uses the shared transport plus auth, rate-limit and logging middleware.
+- If a client needs a custom `fetch` option, call `getApiFetch(auth)` inside it (see `src/scapi/request.ts`).
+- WebDAV is separate: `B2CInstance.webdav` uses `createWebDavDispatcher(tlsOptions)` from the same module, driven by `selfsigned`/client certificates, never by `selfSignedApi`.
 
 ## Creating a New API Client
 
@@ -51,7 +63,8 @@ pnpm --filter @salesforce/b2c-tooling-sdk run generate:types
 
 ```typescript
 // src/clients/newapi.ts
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './newapi.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
@@ -73,9 +86,9 @@ export function createNewApiClient(
   config: NewApiClientConfig,
   auth: AuthStrategy
 ): NewApiClient {
-  const client = createClient<paths>({
+  const client = createHttpClient<paths>({
     baseUrl: `https://${config.hostname}/api/v1`,
-  });
+  }, auth);
 
   // Middleware order: auth first (runs last), logging last (sees complete request)
   client.use(createAuthMiddleware(auth));
@@ -136,9 +149,9 @@ export function createMyApiClient(
   config: MyApiClientConfig,
   auth: AuthStrategy
 ): MyApiClient {
-  const client = createClient<paths>({
+  const client = createHttpClient<paths>({
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/my-api/v1`,
-  });
+  }, auth);
 
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? [
@@ -228,7 +241,8 @@ Reference implementation: `packages/b2c-tooling-sdk/src/clients/custom-apis.ts`
  * Copyright (c) 2025, Salesforce, Inc.
  * SPDX-License-Identifier: Apache-2
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {OAuthStrategy} from '../auth/oauth.js';
 import type {paths, components} from './custom-apis.generated.js';
@@ -250,9 +264,9 @@ export function createCustomApisClient(
   config: CustomApisClientConfig,
   auth: AuthStrategy
 ): CustomApisClient {
-  const client = createClient<paths>({
+  const client = createHttpClient<paths>({
     baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/dx/custom-apis/v1`,
-  });
+  }, auth);
 
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? [
@@ -456,6 +470,7 @@ const {data, error} = await client.GET('/endpoint', {...});
 2. Update `generate:types` script in `package.json`
 3. Run `pnpm --filter @salesforce/b2c-tooling-sdk run generate:types`
 4. Create client module with:
+   - `createHttpClient(options, auth)` (or `buildScapiClient()`) — never openapi-fetch's `createClient` or a bare `fetch`
    - Config interface including `tenantId`
    - Default scopes constant
    - Factory function with scope injection pattern

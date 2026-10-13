@@ -8,6 +8,7 @@ import type {Socket} from 'node:net';
 import {URL} from 'node:url';
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import type {HttpTransportOptions} from '../clients/http-transport.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -24,7 +25,7 @@ const PENDING_AUTH: Map<string, Promise<AccessTokenResponse>> = new Map();
 /**
  * Configuration for the implicit OAuth flow.
  */
-export interface ImplicitOAuthConfig {
+export interface ImplicitOAuthConfig extends HttpTransportOptions {
   /** OAuth client ID registered with Account Manager */
   clientId: string;
   /** OAuth scopes to request (e.g., 'sfcc.products', 'sfcc.orders') */
@@ -158,6 +159,11 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       '[Auth] ImplicitOAuthStrategy initialized',
     );
     logger.trace({scopes: this.config.scopes}, '[Auth] Configured scopes');
+  }
+
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
   }
 
   /**

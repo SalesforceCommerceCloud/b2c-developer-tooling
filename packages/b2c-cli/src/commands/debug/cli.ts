@@ -88,6 +88,7 @@ export default class DebugCli extends InstanceCommand<typeof DebugCli> {
         password,
         clientId: this.flags['client-id'],
         cartridgeRoots: cartridges,
+        selfSignedApi: this.resolvedConfig.values.selfSignedApi,
       },
       callbacks,
     );

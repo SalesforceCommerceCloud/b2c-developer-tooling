@@ -11,7 +11,8 @@
  *
  * @module clients/ocapi
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './ocapi.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
@@ -146,9 +147,12 @@ export function createOcapiClient(
   const apiVersion = opts.apiVersion ?? DEFAULT_API_VERSION;
   const registry = opts.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
+    },
+    auth,
+  );
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));

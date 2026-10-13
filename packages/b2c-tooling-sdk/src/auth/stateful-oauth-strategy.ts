@@ -23,13 +23,14 @@
  * @module auth/stateful-oauth-strategy
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import type {HttpTransportOptions} from '../clients/http-transport.js';
 import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {decodeJwtTokenInfo} from './jwt-utils.js';
 import {findAuthSession, deleteAuthSession, type AuthSession} from './session-store.js';
 
-export interface StatefulOAuthStrategyOptions {
+export interface StatefulOAuthStrategyOptions extends HttpTransportOptions {
   accountManagerHost: string;
   scopes?: string[];
 }
@@ -41,9 +42,12 @@ export interface StatefulOAuthStrategyOptions {
  */
 export class StatefulOAuthStrategy implements AuthStrategy {
   private _session: AuthSession;
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  readonly selfSignedApi?: boolean;
 
-  constructor(session: AuthSession, _options: StatefulOAuthStrategyOptions) {
+  constructor(session: AuthSession, options: StatefulOAuthStrategyOptions) {
     this._session = session;
+    this.selfSignedApi = options.selfSignedApi;
   }
 
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {

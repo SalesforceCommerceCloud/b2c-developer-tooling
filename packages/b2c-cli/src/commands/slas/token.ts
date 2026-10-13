@@ -137,6 +137,7 @@ export default class SlasToken extends SlasClientCommand<typeof SlasToken> {
       slasClientSecret,
       siteId,
       redirectUri,
+      selfSignedApi: this.resolvedConfig.values.selfSignedApi,
     };
 
     const shopperLogin = this.flags['shopper-login'] as string | undefined;

@@ -38,6 +38,50 @@ export default [
     },
   },
   {
+    // API clients must use the shared transport (clients/http-transport.ts) so
+    // SDK-wide HTTP policy such as TLS settings applies to every client.
+    files: ['src/**/*.ts'],
+    ignores: ['src/clients/http-transport.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'openapi-fetch',
+              importNames: ['default'],
+              message: 'Use createHttpClient() from clients/http-transport.js (or buildScapiClient) instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Direct requests use getApiFetch() (or an auth strategy's fetch) for the
+    // same reason. Allowed: the transport itself, and requests to non-B2C hosts.
+    files: ['src/**/*.ts'],
+    ignores: [
+      'src/clients/http-transport.ts',
+      'src/auth/dispatch-fetch.ts',
+      'src/auth/stateful-oauth-strategy.ts',
+      'src/docs/search.ts',
+      'src/operations/cap/pull.ts',
+      'src/scapi/local.ts',
+      'src/skills/github.ts',
+      'src/telemetry/app-insights-client.ts',
+    ],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'fetch',
+          message: 'Use getApiFetch() from clients/http-transport.js (or the auth strategy fetch) instead.',
+        },
+      ],
+    },
+  },
+  {
     files: ['test/**/*.ts'],
     rules: {
       ...chaiTestRules,

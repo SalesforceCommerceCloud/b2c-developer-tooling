@@ -78,6 +78,11 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
     }
   }
 
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
+  }
+
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {
     if (this.useImplicit) {
       return this.getImplicit().fetch(url, init);
@@ -165,6 +170,7 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
         openBrowser: this.config.openBrowser,
         persistSession: this.config.persistSession,
         pkceUnsupported: true,
+        selfSignedApi: this.config.selfSignedApi,
       };
       this.implicit = new ImplicitOAuthStrategy(implicitConfig);
     }

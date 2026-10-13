@@ -80,6 +80,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   cartridgesPath: 'cartridges',
   cloudOrigin: 'mrtOrigin',
   selfsigned: 'selfSigned',
+  'selfsigned-api': 'selfSignedApi',
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
   'client-auth-method': 'clientAuthMethod',
@@ -205,6 +206,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    selfSignedApi: json.selfSignedApi,
     // API backend
     apiBackend: json.apiBackend,
     // MRT backend
@@ -365,6 +367,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.selfSignedApi !== undefined) {
+    result.selfSignedApi = config.selfSignedApi;
   }
   if (config.apiBackend !== undefined) {
     result.apiBackend = config.apiBackend;
@@ -629,6 +634,7 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      selfSignedApi: overrides.selfSignedApi ?? base.selfSignedApi,
       // API backend
       apiBackend: overrides.apiBackend ?? base.apiBackend,
       // MRT backend
@@ -716,6 +722,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
       jwtCertPath: config.jwtCertPath,
       jwtKeyPath: config.jwtKeyPath,
       jwtPassphrase: config.jwtPassphrase,
+      selfSignedApi: config.selfSignedApi,
     };
   }
 

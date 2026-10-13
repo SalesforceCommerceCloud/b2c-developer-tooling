@@ -15,7 +15,8 @@
  *
  * @module clients/scapi-client-factory
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {
   createAuthMiddleware,
@@ -113,9 +114,12 @@ export function buildScapiClient<P extends Record<string, any>>(
     throw new Error(`[buildScapiClient] ${options.domainKey}: must provide either scopeCascade or defaultScopes.`);
   }
 
-  const client = createClient<P>({
-    baseUrl: `${getScapiOrigin(config.shortCode)}/${options.pathSegment}`,
-  });
+  const client = createHttpClient<P>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/${options.pathSegment}`,
+    },
+    auth,
+  );
 
   if (options.scopeCascade) {
     // Cascade-aware path: bake the tenant scope into the auth strategy as a

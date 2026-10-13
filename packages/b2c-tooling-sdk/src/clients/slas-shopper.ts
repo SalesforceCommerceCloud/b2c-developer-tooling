@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient, type HttpTransportOptions} from './http-transport.js';
 import {wrapNetworkError} from '../errors/network-error.js';
 import {createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
@@ -13,7 +14,7 @@ import {getScapiOrigin} from './scapi-origin.js';
 export type {paths, components};
 export type SlasShopperClient = Client<paths>;
 
-export interface SlasShopperClientConfig {
+export interface SlasShopperClientConfig extends HttpTransportOptions {
   shortCode: string;
   organizationId: string;
   /** Cancel authorization and token exchange. */
@@ -29,13 +30,16 @@ export interface SlasShopperClientConfig {
  */
 export function createSlasShopperClient(config: SlasShopperClientConfig): SlasShopperClient {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
-  const client = createClient<paths>({
-    baseUrl: `${getScapiOrigin(config.shortCode)}/shopper/auth/v1/organizations/${config.organizationId}`,
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    bodySerializer: (body: unknown) => new URLSearchParams(body as Record<string, string>).toString(),
-    redirect: 'manual',
-    signal: config.signal,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/shopper/auth/v1/organizations/${config.organizationId}`,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      bodySerializer: (body: unknown) => new URLSearchParams(body as Record<string, string>).toString(),
+      redirect: 'manual',
+      signal: config.signal,
+    },
+    config,
+  );
 
   client.use({
     onError({error, request}) {

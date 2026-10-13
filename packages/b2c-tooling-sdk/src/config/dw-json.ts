@@ -121,6 +121,12 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /**
+   * Skip TLS certificate verification for OCAPI, SCAPI and Account Manager requests.
+   * Internal development aid; dw.json key `selfsigned-api`.
+   * @internal
+   */
+  selfSignedApi?: boolean;
   /** API backend preference for operations that support both OCAPI and SCAPI */
   apiBackend?: 'ocapi' | 'scapi' | 'auto';
   /** MRT backend preference: legacy MRT Cloud API vs SCAPI MRT deployments API */

@@ -110,6 +110,8 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     jwtCertPath: flags['jwt-cert'] as string | undefined,
     jwtKeyPath: flags['jwt-key'] as string | undefined,
     jwtPassphrase: flags['jwt-passphrase'] as string | undefined,
+    // Internal self-signed API TLS mode; undefined unless set so dw.json can apply
+    selfSignedApi: flags['selfsigned-api'] === true ? true : undefined,
   };
 }
 
@@ -156,7 +158,9 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
-    selfSigned: (flags.selfsigned as boolean) || !(flags.verify as boolean),
+    // Only override when a flag opts out of verification; otherwise leave
+    // undefined so dw.json/env `selfSigned` can apply.
+    selfSigned: flags.selfsigned === true || flags.verify === false ? true : undefined,
     // API backend
     apiBackend: flags['api-backend'] as NormalizedConfig['apiBackend'],
     // Include OAuth flags (instance operations often need OAuth too)

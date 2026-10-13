@@ -47,7 +47,8 @@ import {BasicAuthStrategy} from '../auth/basic.js';
 import {resolveAuthStrategy, resolveSystemOAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
-import {createTlsDispatcher, type TlsOptions} from '../clients/tls-dispatcher.js';
+import type {TlsOptions} from '../clients/tls-dispatcher.js';
+import {createWebDavDispatcher} from '../clients/http-transport.js';
 
 /**
  * SCAPI connection coordinates plus an auth strategy able to request the
@@ -217,10 +218,8 @@ export class B2CInstance {
    */
   get webdav(): WebDavClient {
     if (!this._webdav) {
-      // Create TLS dispatcher if TLS options are configured
-      const dispatcher = this.config.tlsOptions ? createTlsDispatcher(this.config.tlsOptions) : undefined;
       this._webdav = new WebDavClient(this.webdavHostname, this.getWebDavAuthStrategy(), {
-        dispatcher,
+        dispatcher: createWebDavDispatcher(this.config.tlsOptions),
       });
     }
     return this._webdav;
@@ -295,6 +294,7 @@ export class B2CInstance {
       clientAuthMethod: this.auth.oauth.clientAuthMethod,
       redirectUri: this.auth.oauth.redirectUri,
       openBrowser: this.auth.oauth.openBrowser,
+      selfSignedApi: this.auth.oauth.selfSignedApi,
     };
 
     // Filter to OAuth methods while preserving the configured priority. JWT

@@ -55,6 +55,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_CERTIFICATE: 'certificate',
   SFCC_CERTIFICATE_PASSPHRASE: 'certificatePassphrase',
   SFCC_SELFSIGNED: 'selfSigned',
+  SFCC_SELFSIGNED_API: 'selfSignedApi',
   SFCC_CLIENT_ID: 'clientId',
   SFCC_CLIENT_SECRET: 'clientSecret',
   SFCC_OAUTH_SCOPES: 'scopes',
@@ -110,7 +111,7 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
 ]);
 
 /** Fields that should be parsed as booleans. */
-const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);
+const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned', 'selfSignedApi']);
 
 /**
  * Enum-valued fields and their allowed values. Values outside the set are

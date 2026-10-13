@@ -56,6 +56,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
               accountManagerHost: config.accountManagerHost,
               clientAuthMethod: config.clientAuthMethod,
               scopes,
+              selfSignedApi: config.selfSignedApi,
             }).getTokenResponse(signal);
           }
           if (method === 'jwt' && config.jwtCertPath && config.jwtKeyPath) {
@@ -66,6 +67,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
               passphrase: config.jwtPassphrase,
               accountManagerHost: config.accountManagerHost ?? 'account.demandware.com',
               scopes,
+              selfSignedApi: config.selfSignedApi,
             }).getTokenResponse(signal);
           }
         }

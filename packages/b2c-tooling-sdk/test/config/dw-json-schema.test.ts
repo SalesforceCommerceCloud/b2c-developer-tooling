@@ -53,6 +53,7 @@ const DW_JSON_CONFIG_KEYS = {
   certificate: true,
   certificatePassphrase: true,
   selfSigned: true,
+  selfSignedApi: 'internal',
   apiBackend: true,
   mrtBackend: true,
   jwtCertPath: true,
@@ -88,6 +89,9 @@ describe('config/dw-json-schema', () => {
   it('omits internal fields', () => {
     expect(properties).not.to.have.property('scapi-base-url');
     expect(properties).not.to.have.property('scapiBaseUrl');
+    expect(properties).not.to.have.property('selfsigned-api');
+    expect(properties).not.to.have.property('selfSignedApi');
+    expect(normalizeConfigKeys({'selfsigned-api': true})).to.deep.equal({selfSignedApi: true});
   });
 
   it('includes legacy aliases and marks alternates', () => {

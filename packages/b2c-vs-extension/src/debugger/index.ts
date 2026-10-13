@@ -57,6 +57,7 @@ class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
       password: values.password,
       clientId: 'b2c-vs-extension',
       cartridgeRoots: cartridges,
+      selfSignedApi: values.selfSignedApi,
     };
 
     const adapter = new B2CScriptDebugAdapter(sessionConfig);

@@ -9,6 +9,8 @@ import type {Socket} from 'node:net';
 import {URL} from 'node:url';
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import {getApiFetch, type HttpTransportOptions} from '../clients/http-transport.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -87,7 +89,7 @@ function isPkceGrantUnsupportedError(oauthError: string | undefined): boolean {
 /**
  * Configuration for the OAuth Authorization Code + PKCE flow.
  */
-export interface PkceOAuthConfig {
+export interface PkceOAuthConfig extends HttpTransportOptions {
   clientId: string;
   scopes?: string[];
   accountManagerHost?: string;
@@ -178,6 +180,11 @@ export class PkceOAuthStrategy implements AuthStrategy {
       },
       '[Auth] PkceOAuthStrategy initialized',
     );
+  }
+
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
   }
 
   /**
@@ -344,7 +351,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
 
     let response: Response;
     try {
-      response = await dispatchFetch(tokenUrl, {
+      response = await getApiFetch(this.config)(tokenUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body.toString(),
@@ -507,11 +514,16 @@ export class PkceOAuthStrategy implements AuthStrategy {
       '[Auth REQ BODY] POST /dwsso/oauth2/access_token',
     );
 
-    const tokenRes = await dispatchFetch(tokenUrl, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: tokenBody.toString(),
-    });
+    let tokenRes: Response;
+    try {
+      tokenRes = await getApiFetch(this.config)(tokenUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: tokenBody.toString(),
+      });
+    } catch (err) {
+      throw wrapNetworkError(err, {operation: 'PKCE token exchange', host: new URL(tokenUrl).host});
+    }
     const rawText = await tokenRes.text();
     logger.debug(
       {url: tokenUrl, status: tokenRes.status},

@@ -12,6 +12,7 @@
  *
  * @module operations/debug/sdapi-client
  */
+import {getApiFetch, type ApiFetch, type HttpTransportOptions} from '../../clients/http-transport.js';
 import {wrapNetworkError} from '../../errors/network-error.js';
 import {getLogger} from '../../logging/logger.js';
 import type {
@@ -51,7 +52,7 @@ export class SdapiError extends Error {
   }
 }
 
-export interface SdapiClientConfig {
+export interface SdapiClientConfig extends HttpTransportOptions {
   hostname: string;
   username: string;
   password: string;
@@ -66,6 +67,7 @@ export function createSdapiClient(config: SdapiClientConfig): SdapiClient {
 }
 
 export class SdapiClient {
+  private readonly apiFetch: ApiFetch;
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
   private readonly logger = getLogger();
@@ -82,6 +84,7 @@ export class SdapiClient {
   private readonly cookies = new Map<string, string>();
 
   constructor(config: SdapiClientConfig) {
+    this.apiFetch = getApiFetch(config);
     this.baseUrl = `https://${config.hostname}/s/-/dw/debugger/v2_0`;
     const credentials = btoa(`${config.username}:${config.password}`);
     this.headers = {
@@ -233,7 +236,7 @@ export class SdapiClient {
 
     let response: Response;
     try {
-      response = await fetch(url, {
+      response = await this.apiFetch(url, {
         method,
         headers,
         body: options?.body ? JSON.stringify(options.body) : undefined,

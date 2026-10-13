@@ -185,6 +185,7 @@ export function resolveAuthStrategy(
             scopes: credentials.scopes,
             accountManagerHost: credentials.accountManagerHost,
             clientAuthMethod: credentials.clientAuthMethod,
+            selfSignedApi: credentials.selfSignedApi,
           });
         }
         break;
@@ -199,6 +200,7 @@ export function resolveAuthStrategy(
             accountManagerHost: credentials.accountManagerHost,
             redirectUri: credentials.redirectUri,
             openBrowser: credentials.openBrowser,
+            selfSignedApi: credentials.selfSignedApi,
           });
         }
         break;
@@ -211,6 +213,7 @@ export function resolveAuthStrategy(
             accountManagerHost: credentials.accountManagerHost,
             redirectUri: credentials.redirectUri,
             openBrowser: credentials.openBrowser,
+            selfSignedApi: credentials.selfSignedApi,
           });
         }
         break;
@@ -254,6 +257,8 @@ export interface SystemOAuthCredentials {
   jwtCertPath?: string;
   jwtKeyPath?: string;
   jwtPassphrase?: string;
+  /** @internal See {@link AuthStrategy.selfSignedApi}. */
+  selfSignedApi?: boolean;
 }
 
 /**
@@ -281,7 +286,8 @@ export function resolveSystemOAuthStrategy(
   credentials: SystemOAuthCredentials,
   methods: AuthMethod[] = ['client-credentials', 'jwt'],
 ): AuthStrategy | undefined {
-  const {clientId, clientSecret, clientAuthMethod, scopes, jwtCertPath, jwtKeyPath, jwtPassphrase} = credentials;
+  const {clientId, clientSecret, clientAuthMethod, scopes, jwtCertPath, jwtKeyPath, jwtPassphrase, selfSignedApi} =
+    credentials;
   if (!clientId) {
     return undefined;
   }
@@ -292,7 +298,7 @@ export function resolveSystemOAuthStrategy(
 
   for (const method of methods) {
     if (method === 'client-credentials' && clientSecret) {
-      return new OAuthStrategy({clientId, clientSecret, scopes, accountManagerHost, clientAuthMethod});
+      return new OAuthStrategy({clientId, clientSecret, scopes, accountManagerHost, clientAuthMethod, selfSignedApi});
     }
 
     if (method === 'jwt' && jwtCertPath && jwtKeyPath) {
@@ -303,6 +309,7 @@ export function resolveSystemOAuthStrategy(
         passphrase: jwtPassphrase,
         accountManagerHost,
         scopes,
+        selfSignedApi,
       });
     }
   }

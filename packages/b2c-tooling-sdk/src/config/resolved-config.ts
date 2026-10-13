@@ -86,6 +86,7 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
       clientAuthMethod: this.values.clientAuthMethod,
       redirectUri: options?.redirectUri,
       openBrowser: options?.openBrowser,
+      selfSignedApi: this.values.selfSignedApi,
     };
     return resolveAuthStrategy(credentials, {allowedMethods: options?.allowedMethods});
   }

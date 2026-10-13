@@ -46,6 +46,7 @@ export class DebugSessionManager {
       username: config.username,
       password: config.password,
       clientId: config.clientId,
+      selfSignedApi: config.selfSignedApi,
     });
   }
 

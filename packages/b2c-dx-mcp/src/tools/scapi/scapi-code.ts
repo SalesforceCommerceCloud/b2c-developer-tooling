@@ -341,6 +341,7 @@ export function createScapiCodeTools(
                   tenantId,
                   slasClientId: config.values.slasClientId,
                   slasClientSecret: config.values.slasClientSecret,
+                  selfSignedApi: config.values.selfSignedApi,
                 }),
                 documents,
                 onSchema(document, full) {

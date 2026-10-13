@@ -13,7 +13,8 @@
  * @module clients/mrt
  */
 import {AsyncLocalStorage} from 'node:async_hooks';
-import createClient, {type Client, type Middleware} from 'openapi-fetch';
+import type {Client, Middleware} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './mrt.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
@@ -241,9 +242,12 @@ export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): Mr
     origin = `https://${origin}`;
   }
 
-  const client = createClient<paths>({
-    baseUrl: origin,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: origin,
+    },
+    auth,
+  );
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
