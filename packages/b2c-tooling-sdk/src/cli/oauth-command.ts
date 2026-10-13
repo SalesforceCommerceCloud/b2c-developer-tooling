@@ -5,7 +5,7 @@
  */
 import {Command, Flags} from '@oclif/core';
 import {BaseCommand, ERROR_CODE} from './base-command.js';
-import {loadConfig, extractOAuthFlags, ALL_AUTH_METHODS} from './config.js';
+import {loadConfig, extractOAuthFlags, listFromEnv, ALL_AUTH_METHODS} from './config.js';
 import type {AuthMethod} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {UserAuthStrategy} from '../auth/types.js';
@@ -69,8 +69,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       helpGroup: 'AUTH',
     }),
     'auth-scope': Flags.string({
-      description: 'OAuth scopes to request (comma-separated)',
-      env: 'SFCC_OAUTH_SCOPES',
+      description: 'OAuth scopes to request (comma-separated; env: SFCC_OAUTH_SCOPES)',
+      default: listFromEnv('SFCC_OAUTH_SCOPES'),
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
@@ -89,8 +89,8 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       aliases: ['tenant'],
     }),
     'auth-methods': Flags.string({
-      description: 'Allowed auth methods in priority order (comma-separated)',
-      env: 'SFCC_AUTH_METHODS',
+      description: 'Allowed auth methods in priority order (comma-separated; env: SFCC_AUTH_METHODS)',
+      default: listFromEnv('SFCC_AUTH_METHODS', ALL_AUTH_METHODS),
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',

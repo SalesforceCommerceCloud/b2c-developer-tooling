@@ -27,6 +27,13 @@ import, the same approach reports execution status without `localPath`.
 The `job export` command exports data from a B2C Commerce instance as a site archive. You must specify at least one data unit to export.
 
 ```bash
+# export everything (global data, sites, catalogs, libraries, static resources,
+# inventory lists, price books, customer lists)
+b2c job export --all --output ./full-export
+
+# export every object of a type with the special ID "all"
+b2c job export --site all --catalog all --library all
+
 # export global metadata
 b2c job export --global-data meta_data
 
@@ -96,17 +103,18 @@ Do not require a temporary directory and copy step for export-based migrations. 
 
 #### Available Data Units
 
-**Top-level categories** (each takes one or more IDs via flags):
+**Top-level categories** (each takes one or more IDs, or the special ID `all` for every object of that type):
 
-| Flag               | Description                                                                    |
-| ------------------ | ------------------------------------------------------------------------------ |
-| `--site`           | Site IDs to export (use `--site-data` to pick specific units, defaults to all) |
-| `--storefront`     | One composable storefront name                                                 |
-| `--catalog`        | Catalog IDs                                                                    |
-| `--library`        | Library IDs                                                                    |
-| `--inventory-list` | Inventory list IDs                                                             |
-| `--price-book`     | Price book IDs                                                                 |
-| `--global-data`    | Global data units (comma-separated names from the list below)                  |
+| Flag               | Description                                                                                         |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `--site`           | Site IDs to export (use `--site-data` to pick specific units, defaults to all)                      |
+| `--storefront`     | One composable storefront name                                                                      |
+| `--catalog`        | Catalog IDs                                                                                         |
+| `--library`        | Library IDs                                                                                         |
+| `--inventory-list` | Inventory list IDs                                                                                  |
+| `--price-book`     | Price book IDs                                                                                      |
+| `--global-data`    | Global data units (comma-separated names from the list below)                                       |
+| `--all`            | Everything above plus static resources and customer lists; exclusive with all except `--storefront` |
 
 **Site data units** (use with `--site-data`):
 
@@ -116,6 +124,6 @@ Do not require a temporary directory and copy step for export-based migrations. 
 
 `access_roles`, `all`, `csc_settings`, `csrf_whitelists`, `custom_preference_groups`, `custom_quota_settings`, `custom_types`, `event_routing`, `geolocations`, `global_custom_objects`, `job_schedules`, `job_schedules_deprecated`, `locales`, `meta_data`, `oauth_providers`, `ocapi_settings`, `page_meta_tags`, `preferences`, `price_adjustment_limits`, `services`, `sorting_rules`, `static_resources`, `system_type_definitions`, `users`, `webdav_client_permissions`
 
-For full control over the export configuration (including `assignments`, `catalog_static_resources`, `library_static_resources`, and `customer_lists`), use `--data-units` with a JSON string matching the `ExportDataUnitsConfiguration` shape. The `storefronts` object is keyed by storefront name and may select only one storefront.
+Prefer `--all` or `all` IDs over hand-written JSON. `--all` already includes `catalog_static_resources`, `library_static_resources`, and `customer_lists`. For anything else the flags cannot express (such as `assignments`, or specific static resource or customer list IDs), use `--data-units` with a JSON string matching the `ExportDataUnitsConfiguration` shape. The `storefronts` object is keyed by storefront name and may select only one storefront.
 
 The `storefronts` export data unit requires B2C Commerce 26.10 or later. Failed storefront exports include a version note alongside the original error; check the instance version when the server rejects this data unit.

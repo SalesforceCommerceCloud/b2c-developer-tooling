@@ -8,7 +8,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, Parser} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ImplicitOAuthStrategy,
@@ -132,6 +132,26 @@ describe('cli/oauth-command', () => {
     sinon.restore();
     restoreConfig();
     clearAllAuthSessions();
+  });
+
+  describe('comma-separated list env vars', () => {
+    it('parses SFCC_OAUTH_SCOPES and SFCC_AUTH_METHODS into arrays', async () => {
+      process.env.SFCC_OAUTH_SCOPES = 'sfcc.storefront.deployments.rw,sfcc.storefront.environments.rw';
+      process.env.SFCC_AUTH_METHODS = 'client-credentials,implicit';
+
+      const {flags} = await Parser.parse([], {flags: OAuthCommand.baseFlags});
+
+      expect(flags['auth-scope']).to.deep.equal(['sfcc.storefront.deployments.rw', 'sfcc.storefront.environments.rw']);
+      expect(flags['auth-methods']).to.deep.equal(['client-credentials', 'implicit']);
+    });
+
+    it('prefers explicit flags over the env vars', async () => {
+      process.env.SFCC_OAUTH_SCOPES = 'from-env';
+
+      const {flags} = await Parser.parse(['--auth-scope', 'a,b'], {flags: OAuthCommand.baseFlags});
+
+      expect(flags['auth-scope']).to.deep.equal(['a', 'b']);
+    });
   });
 
   describe('requireOAuthCredentials', () => {

@@ -320,6 +320,11 @@ export interface ResolveConfigOptions {
    * never validate. Same protection applies to slasClientId / slasClientSecret.
    */
   clientIdProtection?: boolean;
+  /**
+   * Human-readable origin of each override field (e.g. `.env (SFCC_OAUTH_CLIENT_ID)`, `--client-id`).
+   * Used only in mismatch warning messages.
+   */
+  overrideOrigins?: Partial<Record<keyof NormalizedConfig, string>>;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */

@@ -1,5 +1,25 @@
 # @salesforce/b2c-cli
 
+## 2.6.0
+
+### Minor Changes
+
+- [#759](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/759) [`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96) - Add `b2c job export --all` to export every data unit (global data, sites, catalogs, libraries, static resources, inventory lists, price books, customer lists) without writing `--data-units` JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`0497681`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04976817b080f6a7afe809ccd7177bcdb36e6340)]:
+  - @salesforce/b2c-tooling-sdk@2.6.2
+
+## 2.5.2
+
+### Patch Changes
+
+- [#754](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/754) [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8) - Fix comma-separated values in `SFCC_OAUTH_SCOPES`, `SFCC_AUTH_METHODS`, and `SFCC_IMPORT_SET_EXCLUDE`. Previously, multiple scopes made SCAPI-backed MRT commands report missing SCAPI auth, and multiple auth methods failed every OAuth command. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8), [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8)]:
+  - @salesforce/b2c-tooling-sdk@2.6.1
+
 ## 2.5.1
 
 ### Patch Changes

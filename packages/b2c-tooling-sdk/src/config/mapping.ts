@@ -414,6 +414,16 @@ export interface MergeConfigOptions {
    * @default true
    */
   clientIdProtection?: boolean;
+  /**
+   * Which source supplied each base field (e.g. `password-store (pass:b2c-cli/_default)`).
+   * Used only in warning messages; defaults to "config file".
+   */
+  baseOrigins?: Partial<Record<keyof NormalizedConfig, string>>;
+  /**
+   * Where each override field came from (e.g. `.env (SFCC_OAUTH_CLIENT_ID)`, `--client-id`).
+   * Used only in warning messages; defaults to "override".
+   */
+  overrideOrigins?: Partial<Record<keyof NormalizedConfig, string>>;
 }
 
 /**
@@ -481,6 +491,8 @@ export function mergeConfigsWithProtection(
   const warnings: ConfigWarning[] = [];
   const hostnameProtection = options.hostnameProtection !== false;
   const clientIdProtection = options.clientIdProtection !== false;
+  const describeOverride = (field: keyof NormalizedConfig) => options.overrideOrigins?.[field] ?? 'override';
+  const describeBase = (field: keyof NormalizedConfig) => options.baseOrigins?.[field] ?? 'config file';
 
   // Check for hostname mismatch
   const hostnameExplicitlyProvided = Boolean(overrides.hostname);
@@ -490,10 +502,14 @@ export function mergeConfigsWithProtection(
   if (hostnameMismatch && hostnameProtection) {
     warnings.push({
       code: 'HOSTNAME_MISMATCH',
-      message: `Server override "${overrides.hostname}" differs from config file "${base.hostname}". Config file values ignored.`,
+      message:
+        `Server "${overrides.hostname}" from ${describeOverride('hostname')} differs from ` +
+        `"${base.hostname}" in ${describeBase('hostname')}. Ignoring values from ${describeBase('hostname')}.`,
       details: {
         providedHostname: overrides.hostname,
+        providedFrom: describeOverride('hostname'),
         configHostname: base.hostname,
+        configFrom: describeBase('hostname'),
       },
     });
 
@@ -524,11 +540,14 @@ export function mergeConfigsWithProtection(
       warnings.push({
         code: 'CLIENT_ID_MISMATCH',
         message:
-          `Client ID override "${overrides.clientId}" differs from config file "${base.clientId}". ` +
-          `Ignoring stored clientSecret for the configured client.`,
+          `Client ID "${overrides.clientId}" from ${describeOverride('clientId')} differs from ` +
+          `"${base.clientId}" in ${describeBase('clientId')}. ` +
+          `Ignoring the clientSecret from ${describeBase('clientSecret')}.`,
         details: {
           providedClientId: overrides.clientId,
+          providedFrom: describeOverride('clientId'),
           configClientId: base.clientId,
+          configFrom: describeBase('clientId'),
         },
       });
     }
@@ -549,11 +568,14 @@ export function mergeConfigsWithProtection(
       warnings.push({
         code: 'SLAS_CLIENT_ID_MISMATCH',
         message:
-          `SLAS client ID override "${overrides.slasClientId}" differs from config file "${base.slasClientId}". ` +
-          `Ignoring stored slasClientSecret for the configured client.`,
+          `SLAS client ID "${overrides.slasClientId}" from ${describeOverride('slasClientId')} differs from ` +
+          `"${base.slasClientId}" in ${describeBase('slasClientId')}. ` +
+          `Ignoring the slasClientSecret from ${describeBase('slasClientSecret')}.`,
         details: {
           providedSlasClientId: overrides.slasClientId,
+          providedFrom: describeOverride('slasClientId'),
           configSlasClientId: base.slasClientId,
+          configFrom: describeBase('slasClientId'),
         },
       });
     }

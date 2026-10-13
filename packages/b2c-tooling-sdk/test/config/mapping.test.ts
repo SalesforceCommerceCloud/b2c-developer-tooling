@@ -307,4 +307,61 @@ describe('config/mapping', () => {
       expect(result.authMethods).to.deep.equal(['client-credentials', 'implicit']);
     });
   });
+  describe('mergeConfigsWithProtection - mismatch warning origins', () => {
+    it('keeps the generic wording when no origins are given', () => {
+      const {warnings} = mergeConfigsWithProtection({clientId: 'new'}, {clientId: 'old', clientSecret: 'secret'});
+
+      expect(warnings).to.have.length(1);
+      expect(warnings[0].message).to.equal(
+        'Client ID "new" from override differs from "old" in config file. Ignoring the clientSecret from config file.',
+      );
+    });
+
+    it('names both sides of a client ID mismatch', () => {
+      const {config, warnings} = mergeConfigsWithProtection(
+        {clientId: 'new'},
+        {clientId: 'old', clientSecret: 'secret'},
+        {
+          baseOrigins: {
+            clientId: 'password-store (pass:b2c-cli/_default)',
+            clientSecret: 'password-store (pass:b2c-cli/_default)',
+          },
+          overrideOrigins: {clientId: '.env (SFCC_OAUTH_CLIENT_ID)'},
+        },
+      );
+
+      expect(config.clientSecret).to.be.undefined;
+      expect(warnings[0].code).to.equal('CLIENT_ID_MISMATCH');
+      expect(warnings[0].message).to.equal(
+        'Client ID "new" from .env (SFCC_OAUTH_CLIENT_ID) differs from "old" in password-store (pass:b2c-cli/_default). ' +
+          'Ignoring the clientSecret from password-store (pass:b2c-cli/_default).',
+      );
+      expect(warnings[0].details).to.include({
+        providedFrom: '.env (SFCC_OAUTH_CLIENT_ID)',
+        configFrom: 'password-store (pass:b2c-cli/_default)',
+      });
+    });
+
+    it('names both sides of SLAS client ID and hostname mismatches', () => {
+      const slas = mergeConfigsWithProtection(
+        {slasClientId: 'new'},
+        {slasClientId: 'old', slasClientSecret: 'secret'},
+        {
+          baseOrigins: {slasClientId: 'dw-json', slasClientSecret: 'dw-json'},
+          overrideOrigins: {slasClientId: '--slas'},
+        },
+      );
+      expect(slas.warnings[0].message).to.include('from --slas differs from "old" in dw-json');
+
+      const host = mergeConfigsWithProtection(
+        {hostname: 'a.example.com'},
+        {hostname: 'b.example.com'},
+        {baseOrigins: {hostname: 'dw-json (/p/dw.json)'}, overrideOrigins: {hostname: '--server'}},
+      );
+      expect(host.warnings[0].message).to.equal(
+        'Server "a.example.com" from --server differs from "b.example.com" in dw-json (/p/dw.json). ' +
+          'Ignoring values from dw-json (/p/dw.json).',
+      );
+    });
+  });
 });

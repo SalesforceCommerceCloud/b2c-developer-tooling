@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.1
+
+### Patch Changes
+
+- [#759](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/759) [`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96) - Document `b2c job export --all` and the `all` ID for `--site`, `--catalog`, `--library`, `--inventory-list`, and `--price-book`, so agents choose these flags over hand-written data-units JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.12.0
 
 ### Minor Changes
