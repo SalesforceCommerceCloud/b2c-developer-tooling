@@ -19,7 +19,7 @@ import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
 import type {SchemaListItem} from '@salesforce/b2c-tooling-sdk/clients';
-import {getApiErrorMessage} from '@salesforce/b2c-tooling-sdk/clients';
+import {getApiErrorMessage, getScapiOrigin} from '@salesforce/b2c-tooling-sdk/clients';
 import {collapseOpenApiSchema, type OpenApiSchemaInput} from '@salesforce/b2c-tooling-sdk/schemas';
 import {
   SCAPI_SCHEMA_EXPANSIONS,
@@ -54,7 +54,7 @@ import {
  * ```
  */
 function buildScapiApiUrl(shortCode: string, apiFamily: string, apiName: string, apiVersion: string): string {
-  return `https://${shortCode}.api.commercecloud.salesforce.com/${apiFamily}/${apiName}/${apiVersion}`;
+  return `${getScapiOrigin(shortCode)}/${apiFamily}/${apiName}/${apiVersion}`;
 }
 
 function getSchemasApiError(error: unknown, response: Response): string {

@@ -21,6 +21,7 @@ import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {buildTenantScope} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 /**
  * Re-export generated types for external use.
@@ -142,7 +143,7 @@ export function createMetricsClient(config: MetricsClientConfig, auth: AuthStrat
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
   const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/observability/metrics/v1`,
+    baseUrl: `${getScapiOrigin(config.shortCode)}/observability/metrics/v1`,
   });
 
   // Build required scopes: domain scope + tenant-specific scope

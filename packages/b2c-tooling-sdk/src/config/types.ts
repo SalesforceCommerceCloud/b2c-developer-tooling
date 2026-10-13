@@ -96,6 +96,11 @@ export interface NormalizedConfig {
   shortCode?: string;
   /** Tenant/Organization ID for SCAPI */
   tenantId?: string;
+  /**
+   * SCAPI origin override (replaces `https://{shortCode}.api.commercecloud.salesforce.com`).
+   * @internal For local SCAPI development; dw.json key `scapi-base-url`.
+   */
+  scapiBaseUrl?: string;
 
   // ODS (On-Demand Sandbox)
   /** ODS API hostname */

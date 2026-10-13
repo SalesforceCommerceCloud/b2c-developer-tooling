@@ -21,6 +21,7 @@ import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {toOrganizationId, normalizeTenantId, buildTenantScope} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 export type {paths, components};
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
@@ -103,7 +104,7 @@ export function createPreferencesClient(
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
   const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/configuration/preferences/v1`,
+    baseUrl: `${getScapiOrigin(config.shortCode)}/configuration/preferences/v1`,
   });
 
   const domainScopes = options?.readWrite ? PREFERENCES_RW_SCOPES : PREFERENCES_READ_SCOPES;

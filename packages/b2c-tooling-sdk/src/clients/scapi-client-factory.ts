@@ -27,6 +27,7 @@ import {
 import {globalMiddlewareRegistry, type HttpClientType, type MiddlewareRegistry} from './middleware-registry.js';
 import {buildTenantScope} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 export interface BuildScapiClientOptions {
   /**
@@ -113,7 +114,7 @@ export function buildScapiClient<P extends Record<string, any>>(
   }
 
   const client = createClient<P>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/${options.pathSegment}`,
+    baseUrl: `${getScapiOrigin(config.shortCode)}/${options.pathSegment}`,
   });
 
   if (options.scopeCascade) {

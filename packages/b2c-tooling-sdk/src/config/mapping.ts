@@ -180,6 +180,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     siteId: json.siteId,
     shortCode: json.shortCode,
     tenantId: json.tenantId,
+    scapiBaseUrl: json.scapiBaseUrl,
     sandboxApiHost: json.sandboxApiHost,
     realm: json.realm,
     autoUpload: json.autoUpload,
@@ -307,6 +308,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.tenantId !== undefined) {
     result.tenantId = config.tenantId;
+  }
+  if (config.scapiBaseUrl !== undefined) {
+    result.scapiBaseUrl = config.scapiBaseUrl;
   }
   if (config.authMethods !== undefined) {
     result.authMethods = config.authMethods;
@@ -601,6 +605,7 @@ export function mergeConfigsWithProtection(
       clientAuthMethod: overrides.clientAuthMethod ?? base.clientAuthMethod,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
+      scapiBaseUrl: overrides.scapiBaseUrl ?? base.scapiBaseUrl,
       autoUpload: overrides.autoUpload ?? base.autoUpload,
       cartridges: overrides.cartridges ?? base.cartridges,
       importSetExclude: overrides.importSetExclude ?? base.importSetExclude,

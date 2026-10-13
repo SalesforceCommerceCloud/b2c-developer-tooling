@@ -11,6 +11,7 @@ import {buildDwJsonSchema, normalizeConfigKeys, type DwJsonConfig} from '@salesf
 /**
  * Every DwJsonConfig field. `satisfies` makes typecheck fail when a field is
  * added to DwJsonConfig without being listed here (and thus in the schema).
+ * `'internal'` fields are hidden development options kept out of the schema.
  */
 const DW_JSON_CONFIG_KEYS = {
   name: true,
@@ -26,6 +27,7 @@ const DW_JSON_CONFIG_KEYS = {
   slasClientSecret: true,
   siteId: true,
   shortCode: true,
+  scapiBaseUrl: 'internal',
   webdavHostname: true,
   authMethods: true,
   userAuth: true,
@@ -57,7 +59,7 @@ const DW_JSON_CONFIG_KEYS = {
   jwtKeyPath: true,
   jwtPassphrase: true,
   safety: true,
-} satisfies Record<keyof DwJsonConfig, true>;
+} satisfies Record<keyof DwJsonConfig, 'internal' | true>;
 
 type Schema = {
   definitions: {instance: {properties: Record<string, {description?: string}>}};
@@ -69,7 +71,9 @@ describe('config/dw-json-schema', () => {
   const properties = schema.definitions.instance.properties;
 
   it('covers every DwJsonConfig field in camelCase', () => {
-    const missing = Object.keys(DW_JSON_CONFIG_KEYS).filter((key) => !properties[key]);
+    const missing = Object.entries(DW_JSON_CONFIG_KEYS)
+      .filter(([key, kind]) => kind === true && !properties[key])
+      .map(([key]) => key);
     expect(missing).to.deep.equal([]);
   });
 
@@ -79,6 +83,11 @@ describe('config/dw-json-schema', () => {
       expect(normalized, key).to.have.lengthOf(1);
       expect(DW_JSON_CONFIG_KEYS, `${key} → ${normalized[0]}`).to.have.property(normalized[0]);
     }
+  });
+
+  it('omits internal fields', () => {
+    expect(properties).not.to.have.property('scapi-base-url');
+    expect(properties).not.to.have.property('scapiBaseUrl');
   });
 
   it('includes legacy aliases and marks alternates', () => {

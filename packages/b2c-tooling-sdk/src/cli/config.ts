@@ -101,6 +101,7 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     clientSecret: flags['client-secret'] as string | undefined,
     shortCode: flags['short-code'] as string | undefined,
     tenantId: flags['tenant-id'] as string | undefined,
+    scapiBaseUrl: flags['scapi-base-url'] as string | undefined,
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
     clientAuthMethod: flags['client-auth-method'] as ClientAuthMethod | undefined,

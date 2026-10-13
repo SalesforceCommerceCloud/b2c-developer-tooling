@@ -364,6 +364,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       [
         ['shortCode', config.shortCode],
         ['tenantId', config.tenantId],
+        ...(config.scapiBaseUrl ? [['scapiBaseUrl', config.scapiBaseUrl] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,

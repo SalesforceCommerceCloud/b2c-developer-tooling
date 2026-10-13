@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
+import {getScapiOrigin} from '@salesforce/b2c-tooling-sdk/clients';
 import {ExistingSlasClientCommand} from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -55,7 +56,7 @@ export default class SlasClientOpen extends ExistingSlasClientCommand<typeof Sla
       );
     }
 
-    const url = `https://${shortCode}.api.commercecloud.salesforce.com/shopper/auth-admin/v1/ui/client?clientId=${encodeURIComponent(clientId)}&tenantId=${encodeURIComponent(tenantId)}`;
+    const url = `${getScapiOrigin(shortCode)}/shopper/auth-admin/v1/ui/client?clientId=${encodeURIComponent(clientId)}&tenantId=${encodeURIComponent(tenantId)}`;
 
     this.log(t('commands.slas.client.open.opening', 'Opening SLAS Admin UI...'));
     this.log(url);

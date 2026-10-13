@@ -18,6 +18,7 @@ import type {paths, components} from './custom-apis.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 /**
  * Re-export generated types for external use.
@@ -142,7 +143,7 @@ export function createCustomApisClient(config: CustomApisClientConfig, auth: Aut
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
   const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/dx/custom-apis/v1`,
+    baseUrl: `${getScapiOrigin(config.shortCode)}/dx/custom-apis/v1`,
   });
 
   // Build required scopes: domain scope + tenant-specific scope
