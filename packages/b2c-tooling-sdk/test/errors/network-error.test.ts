@@ -193,6 +193,19 @@ describe('errors/network-error', () => {
   });
 
   describe('wrapNetworkError', () => {
+    it('includes the root cause for unclassified failures', () => {
+      const error = new TypeError('fetch failed', {cause: new Error('unexpected redirect')});
+      const wrapped = wrapNetworkError(error, {operation: 'SCAPI request', host: 'h'}) as NetworkError;
+      expect(wrapped.kind).to.equal('unknown');
+      expect(wrapped.message).to.include('failed: a network error occurred (unexpected redirect).');
+    });
+
+    it('omits the detail when there is no cause', () => {
+      const wrapped = wrapNetworkError(new TypeError('Failed to fetch'), {operation: 'SCAPI request'}) as NetworkError;
+      expect(wrapped.message).to.include('failed: a network error occurred.');
+      expect(wrapped.message).not.to.include('(Failed to fetch)');
+    });
+
     it('wraps TypeError "fetch failed" into NetworkError with operation and host', () => {
       const error = new TypeError('fetch failed');
       const wrapped = wrapNetworkError(error, {operation: 'WebDAV POST', host: 'test.demandware.net'});
