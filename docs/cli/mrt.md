@@ -821,7 +821,7 @@ b2c mrt bundle deploy -p my-storefront --mrt-backend legacy --v2 --match-mode ig
 | `--message`, `-m` | Bundle message/description | |
 | `--build-dir`, `-b` | Path to build directory | `build` |
 | `--v2` | Use the v2 bundle format/endpoint. SCAPI always uses v2; on legacy this routes the upload through the v2 endpoint instead of v1 | `false` |
-| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-only` | Server-only file patterns | `ssr.{js,mjs}` or `streamingHandler.{js,mjs}` (whichever is in the build), `server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
 | `--root-dir` | Archive path prefix for built files and the config file (v2 uploads only) | `bld` |
 | `--config-path` | In-archive config file path, relative to `--root-dir` (v2 uploads only) | `.mrt/config.json` |
@@ -843,6 +843,8 @@ Build and upload a **v2-format** bundle to Managed Runtime. This is **upload onl
 The v2 format differs from the default (v1) `deploy` upload: the archive is a gzip tar whose files sit under a root directory (default `bld/`), and the SSR configuration (`ssr-only`, `ssr-shared`, SSR parameters, and bundle metadata) is written **inside** the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`) rather than sent as request fields. It is uploaded as `multipart/form-data` to the v2 endpoint.
 
 **Config resolution:** the SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` (e.g. `build/.mrt/config.json`) when it exists. If there is no v2 config file, the command reads `config.server.ts` from the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs`, or the legacy `build/config.server.js`, is also accepted), and then falls back to built-in defaults. Command flags (`--ssr-only`, `--ssr-shared`, `--ssr-param`, `--node-version`, `--dependencies`, `--cc-override`) override the resolved values **per key**. When the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config so there is exactly one copy.
+
+If the config exports no `ssrOnly`/`ssrShared` (for example a `config.server.ts` whose default export nests them under another key), the command logs a warning and uses the built-in defaults. When `ssr-only` falls back to the defaults, the entry point is detected from the build directory: `ssr.{js,mjs}` and/or `streamingHandler.{js,mjs}`, whichever exists at its root, plus `server/**/*` (both entry candidates are kept if neither is found).
 
 `config.server.ts` is evaluated from source (via jiti), so keep any type-only imports as `import type` — they are erased and need not resolve. A `config.server.ts` that exists but fails to import causes the command to error rather than silently falling back to defaults.
 
@@ -874,7 +876,7 @@ b2c mrt bundle upload-v2 -p my-storefront --cloud-origin https://cloud.mobify.co
 | `--root-dir` | Archive path prefix for built files and the config file | `bld` |
 | `--config-path` | In-archive config file path, relative to `--root-dir` | `.mrt/config.json` |
 | `--match-mode` | How `ssr-only`/`ssr-shared` patterns matching no files are handled (`strict` or `ignore_missing`) | `strict` |
-| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-only` | Server-only file patterns | `ssr.{js,mjs}` or `streamingHandler.{js,mjs}` (whichever is in the build), `server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
 | `--node-version`, `-n` | Node.js version for SSR | `24.x` |
 | `--ssr-param` | SSR parameters (key=value, repeatable) | |

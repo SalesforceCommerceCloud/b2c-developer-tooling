@@ -64,7 +64,7 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi -
 |------|-------------|---------|
 | `--message`, `-m` | Bundle message/description | |
 | `--build-dir`, `-b` | Path to build directory | `build` |
-| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-only` | Server-only file patterns | `ssr.{js,mjs}` or `streamingHandler.{js,mjs}` (whichever is in the build), `server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
 | `--v2` | Use the v2 bundle format/endpoint (SCAPI always uses v2; opt in on legacy) | `false` |
 | `--root-dir` | Archive path prefix for built files and the config file (v2 uploads only) | `bld` |
@@ -108,7 +108,7 @@ b2c mrt bundle upload-v2 -p my-storefront --dependencies @./deps.json --cc-overr
 | `--root-dir` | Archive path prefix for built files and the config file | `bld` |
 | `--config-path` | In-archive config file path, relative to `--root-dir` | `.mrt/config.json` |
 | `--match-mode` | Handling of SSR patterns matching no files (`strict` or `ignore_missing`) | `strict` |
-| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
+| `--ssr-only` | Server-only file patterns | `ssr.{js,mjs}` or `streamingHandler.{js,mjs}` (whichever is in the build), `server/**/*` |
 | `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
 | `--node-version`, `-n` | Node.js version for SSR | `24.x` |
 | `--ssr-param` | SSR parameters (key=value, can repeat) | |
