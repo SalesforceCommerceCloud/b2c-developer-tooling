@@ -1,5 +1,12 @@
 # @salesforce/b2c-cli
 
+## 2.7.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @salesforce/b2c-tooling-sdk@2.7.1
+
 ## 2.7.0
 
 ### Minor Changes
