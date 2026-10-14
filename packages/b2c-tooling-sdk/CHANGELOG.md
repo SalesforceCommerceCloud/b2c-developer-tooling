@@ -1,5 +1,27 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.7.0
+
+### Minor Changes
+
+- [#753](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/753) [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028) - `mrt env access-control` now supports full CRUD (`list` / `create` / `get` / `delete`) and is backend-aware via `--mrt-backend` (SCAPI Storefront Environments API or legacy MRT Cloud API); `delete` prompts for confirmation (`--force` / `-f` to skip) and header values stay masked on both backends. (Thanks [@vvemireddy-sf](https://github.com/vvemireddy-sf)!)
+
+- [#753](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/753) [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028) - `mrt env` lifecycle commands (`list` / `create` / `clone` / `get` / `update` / `delete` / `invalidate`), plus a new SCAPI-only `mrt env set-primary`, are now backend-aware: `--mrt-backend` runs them over the SCAPI Storefront Environments API or the legacy MRT Cloud API, with `auto` falling back to legacy when no SCAPI connection is configured. (Thanks [@vvemireddy-sf](https://github.com/vvemireddy-sf)!)
+
+- [#753](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/753) [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028) - `mrt project` (`list` / `create` / `get` / `update` / `delete`) is now backend-aware via `--mrt-backend`, running over the SCAPI Storefront Storefronts API (a project maps to a storefront) or the legacy MRT Cloud API; each command validates its backend-specific flags against the backend that runs. (Thanks [@vvemireddy-sf](https://github.com/vvemireddy-sf)!)
+
+- [#753](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/753) [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028) - `mrt env redirect` now supports `get` / `update` alongside `list` / `create` / `delete` / `clone` and is backend-aware via `--mrt-backend` (SCAPI Storefront Environments API or legacy MRT Cloud API); `--columns fromPath,toUrl` keep working as aliases for the renamed `source` / `destination` columns, and `--search` is honored on the legacy backend only (it warns and is dropped on SCAPI). (Thanks [@vvemireddy-sf](https://github.com/vvemireddy-sf)!)
+
+### Patch Changes
+
+- [#765](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/765) [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2) - Network failures from API commands (such as MRT, OCAPI and SCAPI) now say which request and host failed and why (for example a TLS, DNS or timeout problem) instead of a bare "fetch failed". (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#765](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/765) [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2) - `selfsigned: true` in dw.json is now honored; previously only `--selfsigned` or `SFCC_SELFSIGNED` disabled certificate verification. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#765](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/765) [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2) - Internal: added a development-only TLS option for local servers; no user-facing change. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#764](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/764) [`5779a35`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5779a35b1d552eaac5ce261aa91883b74324d606) - (internal) Add a SCAPI base URL override for local SCAPI development (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.6.2
 
 ### Patch Changes
