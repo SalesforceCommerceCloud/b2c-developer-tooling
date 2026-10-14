@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.5.5
+
+### Patch Changes
+
+- [#768](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/768) [`6e76a4a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6e76a4a197e02e5c08b81421bd696e6ccb5f22f9) - Fix API Browser "Execute" doing nothing for some operations (e.g. Shopper Products getProduct). "Try it out" fields no longer prefill with sample values; only organizationId and siteId are filled from your config. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#766](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/766) [`e33f89e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e33f89eb684bb9a895eb0c01734a53dcac35a313) - Replace a Stripe-style placeholder key in the bundled Storefront Environments API examples so the VS Code extension passes Open VSX secret scanning (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies []:
+  - @salesforce/b2c-tooling-sdk@2.7.1
+
 ## 1.5.4
 
 ### Patch Changes

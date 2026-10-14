@@ -1,5 +1,12 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.5.4
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @salesforce/b2c-tooling-sdk@2.7.1
+
 ## 3.5.3
 
 ### Patch Changes

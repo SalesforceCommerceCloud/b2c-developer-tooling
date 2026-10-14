@@ -1,5 +1,11 @@
 # @salesforce/b2c-api-schemas
 
+## 0.3.1
+
+### Patch Changes
+
+- [#766](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/766) [`e33f89e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e33f89eb684bb9a895eb0c01734a53dcac35a313) - Replace a Stripe-style placeholder key in the bundled Storefront Environments API examples so the VS Code extension passes Open VSX secret scanning (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.0
 
 ### Minor Changes
