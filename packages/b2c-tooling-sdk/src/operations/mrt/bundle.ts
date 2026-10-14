@@ -35,6 +35,38 @@ export const DEFAULT_SSR_ONLY = ['ssr.js', 'ssr.mjs', 'server/**/*'];
 export const DEFAULT_SSR_SHARED = ['static/**/*', 'client/**/*'];
 
 /**
+ * Picks the default ssrOnly patterns for a build directory when neither the
+ * caller nor a server config supplies any. A build that has a streaming handler
+ * entry point and no `ssr.{js,mjs}` is a streaming bundle; listing `ssr.js` /
+ * `ssr.mjs` for it makes MRT reject the upload (`Files not found in bundle
+ * archive`). Because the v2 upload matches strictly (every pattern must match a
+ * file), the streaming default lists only the entry files and directories that
+ * actually exist. Everything else keeps {@link DEFAULT_SSR_ONLY}.
+ */
+async function resolveDefaultSsrOnly(buildPath: string): Promise<string[]> {
+  const exists = async (file: string): Promise<boolean> => {
+    try {
+      await stat(path.join(buildPath, file));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const existing = async (names: string[]): Promise<string[]> => {
+    const found = await Promise.all(names.map(async (name) => ((await exists(name)) ? name : undefined)));
+    return found.filter((name): name is string => name !== undefined);
+  };
+
+  if ((await existing(['ssr.js', 'ssr.mjs'])).length > 0) return DEFAULT_SSR_ONLY;
+
+  const streamingEntries = await existing(['streamingHandler.js', 'streamingHandler.mjs']);
+  if (streamingEntries.length === 0) return DEFAULT_SSR_ONLY;
+
+  getLogger().debug({buildPath}, '[MRT] Detected a streaming bundle; defaulting ssrOnly to the streaming handler');
+  return (await exists('server')) ? [...streamingEntries, 'server/**/*'] : streamingEntries;
+}
+
+/**
  * Default SSR parameters applied to all bundles.
  * These can be overridden by providing ssrParameters in CreateBundleOptions.
  */
@@ -327,7 +359,7 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
   // Collect declared package.json dependencies for bundle metadata (best-effort).
   const dependencies = await loadProjectDependencies(projectDirectory);
 
-  const ssrOnly = options.ssrOnly ?? serverConfig?.ssrOnly ?? DEFAULT_SSR_ONLY;
+  const ssrOnly = options.ssrOnly ?? serverConfig?.ssrOnly ?? (await resolveDefaultSsrOnly(buildPath));
   const ssrShared = options.ssrShared ?? serverConfig?.ssrShared ?? DEFAULT_SSR_SHARED;
   const ssrParamsFromConfig = serverConfig?.ssrParameters ?? {};
 
@@ -671,7 +703,7 @@ export async function createBundleV2(options: CreateBundleV2Options): Promise<Bu
   const baseSsrParameters =
     (v2Config?.ssrParameters as Record<string, unknown> | undefined) ?? serverConfig?.ssrParameters ?? {};
 
-  const ssrOnly = options.ssrOnly ?? baseSsrOnly ?? DEFAULT_SSR_ONLY;
+  const ssrOnly = options.ssrOnly ?? baseSsrOnly ?? (await resolveDefaultSsrOnly(buildPath));
   const ssrShared = options.ssrShared ?? baseSsrShared ?? DEFAULT_SSR_SHARED;
 
   // Merge: defaults < base config file < explicit options (explicit values win)

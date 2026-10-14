@@ -42,7 +42,7 @@ b2c mrt bundle deploy -p my-storefront --mrt-backend scapi --root-dir bld --matc
 b2c mrt bundle deploy -p my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing
 ```
 
-**Bundle format:** SCAPI always uploads the v2 format. The legacy backend defaults to v1; pass `--v2` to upload through the legacy v2 endpoint (upload, plus a separate deploy when `-e` is given). `--root-dir`, `--config-path`, and `--match-mode` control the v2 archive layout and only take effect on a v2 upload — on a legacy v1 push they are ignored and the command warns (pass `--v2` to enable them). `b2c mrt bundle deploy --v2` performs the same v2 upload as `b2c mrt bundle upload-v2` and can also deploy in one step.
+**Bundle format:** SCAPI always uploads the v2 format. The legacy backend defaults to v1; pass `--v2` to upload through the legacy v2 endpoint (upload, plus a separate deploy when `-e` is given). `--root-dir`, `--config-path`, and `--match-mode` control the v2 archive layout and only take effect on a v2 upload — on a legacy v1 push they are ignored and the command warns (pass `--v2` to enable them). `b2c mrt bundle deploy --v2` performs the same v2 upload as the deprecated `b2c mrt bundle upload-v2` and can also deploy in one step.
 
 ### Deploy Existing Bundle
 
@@ -75,45 +75,34 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi -
 
 ## Bundle Upload (v2)
 
-Build and upload a **v2-format** bundle. This is **upload only** — it does not deploy. Deploy the returned bundle ID separately with `b2c mrt bundle deploy <bundleId> -e <env>`.
+> **Deprecated:** `b2c mrt bundle upload-v2` prints a deprecation warning and is now an alias of `b2c mrt bundle deploy --v2` — same flags, backend routing, config resolution, and output. Like `deploy --v2`, it also deploys when an environment is provided (`-e`, `MRT_ENVIRONMENT`, or `mrtEnvironment` in `dw.json`). Use `b2c mrt bundle deploy --v2` instead.
+
+Build and upload a **v2-format** bundle (`b2c mrt bundle deploy --v2`; add `-e <env>` to deploy in the same step).
 
 Unlike `deploy` (v1), the v2 archive is a gzip tar whose files live under a root directory (default `bld/`), and the SSR configuration is written **inside** the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`) rather than sent as request fields.
 
-The SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` when present. Otherwise it is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs` or the legacy `build/config.server.js` is also accepted), then defaults. Flags override the resolved values per key. If the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config (no duplicate entry).
+The SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` when present. Otherwise it is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs` or the legacy `build/config.server.js` is also accepted), then defaults (a build with `streamingHandler.{js,mjs}` and no `ssr.{js,mjs}` defaults `ssr-only` to the streaming handler rather than `ssr.js`/`ssr.mjs`). Flags override the resolved values per key. If the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config (no duplicate entry).
 
 `config.server.ts` is evaluated from source (via jiti), so keep type-only imports as `import type`. A `config.server.ts` that exists but fails to import errors the command rather than silently falling back to defaults.
 
-Both `deploy` (v1) and `upload-v2` record the project's `package.json` dependencies (`dependencies` + `devDependencies`) as bundle metadata (v1 `bundle_metadata.dependencies`; v2 `bundleMetadata.dependencies` inside the archive config), matching pwa-kit/storefront-next. An explicit `--dependencies` (v2) or dependencies already in the v2 config file take precedence; collection is best-effort and never blocks a bundle.
+Both `deploy` (v1) and `deploy --v2` record the project's `package.json` dependencies (`dependencies` + `devDependencies`) as bundle metadata (v1 `bundle_metadata.dependencies`; v2 `bundleMetadata.dependencies` inside the archive config), matching pwa-kit/storefront-next. An explicit `--dependencies` (v2) or dependencies already in the v2 config file take precedence; collection is best-effort and never blocks a bundle.
 
 ```bash
 # Build and upload from ./build
-b2c mrt bundle upload-v2 --project my-storefront
+b2c mrt bundle deploy --v2 --project my-storefront
 
 # Upload from a custom build directory
-b2c mrt bundle upload-v2 -p my-storefront --build-dir ./dist
+b2c mrt bundle deploy --v2 -p my-storefront --build-dir ./dist
 
 # Allow SSR patterns that match no files
-b2c mrt bundle upload-v2 -p my-storefront --match-mode ignore_missing
+b2c mrt bundle deploy --v2 -p my-storefront --match-mode ignore_missing
 
 # SSR parameters and bundle metadata
-b2c mrt bundle upload-v2 -p my-storefront --ssr-param EnvBasePath=/mobify --node-version 20.x
-b2c mrt bundle upload-v2 -p my-storefront --dependencies @./deps.json --cc-override plugin-a
+b2c mrt bundle deploy --v2 -p my-storefront --ssr-param EnvBasePath=/mobify --node-version 20.x
+b2c mrt bundle deploy --v2 -p my-storefront --dependencies @./deps.json --cc-override plugin-a
 ```
 
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--message`, `-m` | Bundle message/description | |
-| `--build-dir`, `-b` | Path to build directory | `build` |
-| `--root-dir` | Archive path prefix for built files and the config file | `bld` |
-| `--config-path` | In-archive config file path, relative to `--root-dir` | `.mrt/config.json` |
-| `--match-mode` | Handling of SSR patterns matching no files (`strict` or `ignore_missing`) | `strict` |
-| `--ssr-only` | Server-only file patterns | `ssr.js,ssr.mjs,server/**/*` |
-| `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
-| `--node-version`, `-n` | Node.js version for SSR | `24.x` |
-| `--ssr-param` | SSR parameters (key=value, can repeat) | |
-| `--dependencies` | Bundle dependencies as inline JSON or a `@path` to a JSON file | |
-| `--cc-override` | Commerce Cloud override identifier (can repeat) | |
+**Flags:** the same as `deploy` above, plus `--dependencies` (inline JSON or `@path` to a JSON file) and `--cc-override` (repeatable) for v2 bundle metadata.
 
 ## Bundle List
 

@@ -441,6 +441,52 @@ describe('operations/mrt/bundle', () => {
       expect(bundle.config.ssrShared).to.deep.equal(DEFAULT_SSR_SHARED);
     });
 
+    it('defaults ssrOnly to only the streaming entry that exists (strict match mode rejects missing files)', async () => {
+      const buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(path.join(buildDir, 'static'), {recursive: true});
+      fs.writeFileSync(path.join(buildDir, 'streamingHandler.mjs'), 'export {};');
+      fs.writeFileSync(path.join(buildDir, 'static', 'index.html'), '<html></html>');
+
+      const bundle = await createBundleV2({buildDirectory: buildDir, projectDirectory: tempDir});
+
+      expect(bundle.matchMode).to.equal('strict');
+      expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.mjs']);
+    });
+
+    it('includes server/**/* in the streaming default only when a server directory exists', async () => {
+      const buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(path.join(buildDir, 'server'), {recursive: true});
+      fs.writeFileSync(path.join(buildDir, 'streamingHandler.js'), 'module.exports = {};');
+      fs.writeFileSync(path.join(buildDir, 'server', 'a.js'), 'module.exports = {};');
+
+      const bundle = await createBundleV2({buildDirectory: buildDir, projectDirectory: tempDir});
+
+      expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.js', 'server/**/*']);
+    });
+
+    it('keeps the ssr defaults when the build has both ssr and streaming entries', async () => {
+      const buildDir = makeBuildDir();
+      fs.writeFileSync(path.join(buildDir, 'streamingHandler.js'), 'module.exports = {};');
+
+      const bundle = await createBundleV2({buildDirectory: buildDir, projectDirectory: tempDir});
+
+      expect(bundle.config.ssrOnly).to.deep.equal(DEFAULT_SSR_ONLY);
+    });
+
+    it('lets explicit ssrOnly win over streaming detection', async () => {
+      const buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(buildDir, {recursive: true});
+      fs.writeFileSync(path.join(buildDir, 'streamingHandler.js'), 'module.exports = {};');
+
+      const bundle = await createBundleV2({
+        buildDirectory: buildDir,
+        projectDirectory: tempDir,
+        ssrOnly: ['custom.js'],
+      });
+
+      expect(bundle.config.ssrOnly).to.deep.equal(['custom.js']);
+    });
+
     /** Writes a v2 config file into a build dir at the default config path. */
     function writeV2ConfigFile(
       buildDir: string,
