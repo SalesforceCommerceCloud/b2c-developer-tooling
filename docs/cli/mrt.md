@@ -239,8 +239,6 @@ b2c mrt project get --project my-storefront
 b2c mrt project get --storefront my-storefront --mrt-backend scapi --json
 ```
 
-On the legacy backend the output includes the project's static IP default (`Static IPs Default: Enabled` or `Disabled`); `--json` returns it as `static_ips_default`.
-
 ### b2c mrt project update
 
 Update an MRT project (storefront). Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`); at least one updatable field must be supplied.
@@ -445,7 +443,6 @@ b2c mrt env get --project my-storefront --environment staging
 b2c mrt env get -p my-storefront -e production --json
 ```
 
-On the legacy backend the output includes `Static IPs: Enabled` or `Disabled` and, when static IPs are enabled and addresses have been assigned, the environment's `Outbound IPs`. `--json` returns the raw `ssr_static_ips` and `ssr_static_outbound_ips` fields.
 
 ### b2c mrt env update
 

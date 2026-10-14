@@ -60,8 +60,6 @@ b2c mrt env get --project my-storefront --environment staging
 b2c mrt env get -p my-storefront -e production --json
 ```
 
-Output includes `Static IPs: Enabled|Disabled` and, once assigned, the `Outbound IPs` for the environment (`ssr_static_ips` / `ssr_static_outbound_ips` in `--json`).
-
 ### Update Environment
 
 ```bash

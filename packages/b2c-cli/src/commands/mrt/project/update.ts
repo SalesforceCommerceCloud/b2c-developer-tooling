@@ -68,10 +68,6 @@ function printProjectDetails(project: MrtProjectView): void {
     ui.div({text: 'URL:', width: labelWidth}, {text: project.url});
   }
 
-  if (project.staticIpsDefault !== undefined) {
-    ui.div({text: 'Static IPs Default:', width: labelWidth}, {text: project.staticIpsDefault ? 'Enabled' : 'Disabled'});
-  }
-
   if (project.sites && project.sites.length > 0) {
     ui.div({text: 'Sites:', width: labelWidth}, {text: project.sites.join(', ')});
   }

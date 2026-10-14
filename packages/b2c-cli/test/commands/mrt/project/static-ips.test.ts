@@ -87,14 +87,14 @@ describe('mrt project static IPs', () => {
       return captured;
     }
 
-    it('sends static_ips_default=true for --static-ips-default and prints Enabled', async () => {
+    it('sends static_ips_default=true for --static-ips-default and does not print a Static IPs Default row', async () => {
       const captured = captureCreate();
       const command = await initCommand(MrtProjectCreate, ['My Project', '-o', 'my-org', '--static-ips-default']);
 
       await command.run();
 
       expect(captured.body.static_ips_default).to.equal(true);
-      expect(printed()).to.match(/Static IPs Default:\s+Enabled/);
+      expect(printed()).to.not.include('Static IPs Default');
     });
 
     it('sends static_ips_default=false for --no-static-ips-default', async () => {
@@ -104,7 +104,7 @@ describe('mrt project static IPs', () => {
       await command.run();
 
       expect(captured.body.static_ips_default).to.equal(false);
-      expect(printed()).to.match(/Static IPs Default:\s+Disabled/);
+      expect(printed()).to.not.include('Static IPs Default');
     });
 
     it('returns the API object and prints no details table in JSON mode', async () => {
@@ -153,14 +153,14 @@ describe('mrt project static IPs', () => {
       return captured;
     }
 
-    it('sends exactly {static_ips_default: false} for --no-static-ips-default and prints Disabled', async () => {
+    it('sends exactly {static_ips_default: false} for --no-static-ips-default and does not print a Static IPs Default row', async () => {
       const captured = captureUpdate();
       const command = await initCommand(MrtProjectUpdate, ['my-project', '--no-static-ips-default']);
 
       await command.run();
 
       expect(captured.body).to.deep.equal({static_ips_default: false});
-      expect(printed()).to.match(/Static IPs Default:\s+Disabled/);
+      expect(printed()).to.not.include('Static IPs Default');
     });
 
     it('returns the API object and prints no details table in JSON mode', async () => {
@@ -255,7 +255,7 @@ describe('mrt project static IPs', () => {
   });
 
   describe('get', () => {
-    it('prints Disabled and returns static_ips_default for JSON', async () => {
+    it('does not print a Static IPs Default row, and returns static_ips_default for JSON', async () => {
       server.use(
         http.get(`${ORIGIN}/api/projects/:slug/`, () =>
           HttpResponse.json({slug: 'my-project', name: 'My Project', static_ips_default: false}),
@@ -265,19 +265,8 @@ describe('mrt project static IPs', () => {
 
       const result = await command.run();
 
-      expect(printed()).to.match(/Static IPs Default:\s+Disabled/);
-      expect(result.static_ips_default).to.equal(false);
-    });
-
-    it('does not print the row when the API omits static_ips_default', async () => {
-      server.use(
-        http.get(`${ORIGIN}/api/projects/:slug/`, () => HttpResponse.json({slug: 'my-project', name: 'My Project'})),
-      );
-      const command = await initCommand(MrtProjectGet, ['my-project']);
-
-      await command.run();
-
       expect(printed()).to.not.include('Static IPs Default');
+      expect(result.static_ips_default).to.equal(false);
     });
   });
 });

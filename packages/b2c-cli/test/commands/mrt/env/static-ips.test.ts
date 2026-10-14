@@ -100,14 +100,14 @@ describe('mrt env static IPs', () => {
       return captured;
     }
 
-    it('sends ssr_static_ips=true for --static-ips and prints Enabled', async () => {
+    it('sends ssr_static_ips=true for --static-ips and does not print a Static IPs row', async () => {
       const captured = captureCreate();
       const command = await initCommand(MrtEnvCreate, ['staging', '--static-ips']);
 
       await command.run();
 
       expect(captured.body.ssr_static_ips).to.equal(true);
-      expect(printed()).to.match(/Static IPs:\s+Enabled/);
+      expect(printed()).to.not.include('Static IPs');
     });
 
     it('sends ssr_static_ips=false for --no-static-ips', async () => {
@@ -117,7 +117,7 @@ describe('mrt env static IPs', () => {
       await command.run();
 
       expect(captured.body.ssr_static_ips).to.equal(false);
-      expect(printed()).to.match(/Static IPs:\s+Disabled/);
+      expect(printed()).to.not.include('Static IPs');
     });
 
     it('returns the API object and prints no details table in JSON mode', async () => {
@@ -171,7 +171,7 @@ describe('mrt env static IPs', () => {
       await command.run();
 
       expect(captured.body).to.deep.equal({ssr_static_ips: true});
-      expect(printed()).to.match(/Static IPs:\s+Enabled/);
+      expect(printed()).to.not.include('Static IPs');
     });
 
     it('returns the API object and prints no details table in JSON mode', async () => {
@@ -268,7 +268,7 @@ describe('mrt env static IPs', () => {
   describe('get', () => {
     const env = {slug: 'production', name: 'Production', state: 'active'};
 
-    it('prints Enabled and each outbound IP, and returns both fields for JSON', async () => {
+    it('does not print static IP rows, and returns both fields for JSON', async () => {
       const ips = ['203.0.113.10', '203.0.113.11'];
       server.use(
         http.get(TARGET, () => HttpResponse.json({...env, ssr_static_ips: true, ssr_static_outbound_ips: ips})),
@@ -277,41 +277,11 @@ describe('mrt env static IPs', () => {
 
       const result = await command.run();
 
-      expect(printed()).to.match(/Static IPs:\s+Enabled/);
-      expect(printed()).to.match(/Outbound IPs:\s+203\.0\.113\.10/);
-      expect(printed()).to.include('203.0.113.11');
+      expect(printed()).to.not.include('Static IPs');
+      expect(printed()).to.not.include('Outbound IPs');
+      expect(printed()).to.not.include('203.0.113.10');
       expect(result.ssr_static_ips).to.equal(true);
       expect(result.ssr_static_outbound_ips).to.deep.equal(ips);
-    });
-
-    it('prints Enabled but no outbound IP rows when none are assigned yet', async () => {
-      server.use(
-        http.get(TARGET, () => HttpResponse.json({...env, ssr_static_ips: true, ssr_static_outbound_ips: null})),
-      );
-      const command = await initCommand(MrtEnvGet, []);
-
-      await command.run();
-
-      expect(printed()).to.match(/Static IPs:\s+Enabled/);
-      expect(printed()).to.not.include('Outbound IPs');
-    });
-
-    it('prints Disabled when static IPs are off', async () => {
-      server.use(http.get(TARGET, () => HttpResponse.json({...env, ssr_static_ips: false})));
-      const command = await initCommand(MrtEnvGet, []);
-
-      await command.run();
-
-      expect(printed()).to.match(/Static IPs:\s+Disabled/);
-    });
-
-    it('does not print static IP rows when the API omits the fields', async () => {
-      server.use(http.get(TARGET, () => HttpResponse.json(env)));
-      const command = await initCommand(MrtEnvGet, []);
-
-      await command.run();
-
-      expect(printed()).to.not.include('Static IPs');
     });
   });
 });

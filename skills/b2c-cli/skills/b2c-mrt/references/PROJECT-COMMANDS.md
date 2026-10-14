@@ -48,8 +48,6 @@ b2c mrt project get --project my-storefront  # flag
 b2c mrt project get -p my-storefront --mrt-backend scapi --json
 ```
 
-On the legacy backend, output includes `Static IPs Default: Enabled|Disabled` (`static_ips_default` in `--json`).
-
 ### Update Project
 
 At least one updatable field must be supplied.
