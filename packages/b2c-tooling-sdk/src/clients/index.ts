@@ -138,7 +138,13 @@ export type {
 // User-Agent provider (auto-registers on import)
 export {setUserAgent, getUserAgent, resetUserAgent, userAgentProvider} from './user-agent.js';
 
-export {createHttpClient, createWebDavDispatcher, getApiFetch} from './http-transport.js';
+export {
+  createApiWebSocket,
+  createHttpClient,
+  createWebDavDispatcher,
+  getApiDispatcher,
+  getApiFetch,
+} from './http-transport.js';
 export type {ApiFetch, HttpTransportOptions} from './http-transport.js';
 
 export {MiddlewareRegistry, globalMiddlewareRegistry} from './middleware-registry.js';

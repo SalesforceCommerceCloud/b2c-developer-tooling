@@ -226,7 +226,7 @@ export function resolveAuthStrategy(
 
       case 'api-key':
         if (credentials.apiKey) {
-          return new ApiKeyStrategy(credentials.apiKey, credentials.apiKeyHeaderName);
+          return new ApiKeyStrategy(credentials.apiKey, credentials.apiKeyHeaderName, credentials);
         }
         break;
     }

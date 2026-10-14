@@ -131,9 +131,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_JWT_PASSPHRASE',
       helpGroup: 'AUTH',
     }),
-    // Internal: skip TLS verification for OCAPI, SCAPI and Account Manager requests
+    // Internal: skip TLS verification for OCAPI, SCAPI, Account Manager and MRT requests
     'selfsigned-api': Flags.boolean({
-      description: 'Allow self-signed or mismatched certificates for OCAPI, SCAPI and Account Manager requests',
+      description: 'Allow self-signed or mismatched certificates for OCAPI, SCAPI, Account Manager and MRT requests',
       env: 'SFCC_SELFSIGNED_API',
       hidden: true,
     }),

@@ -8,7 +8,7 @@
  *
  * All TLS policy for SDK requests lives here:
  *
- * - OCAPI, SCAPI and Account Manager requests go through {@link createHttpClient}
+ * - OCAPI, SCAPI, Account Manager and MRT requests go through {@link createHttpClient}
  *   (openapi-fetch clients) or {@link getApiFetch} (direct requests such as OAuth
  *   token calls and middleware retries). Transport options come from the auth
  *   strategy the client is built with, which is created from a resolved config,
@@ -20,7 +20,7 @@
  * @module clients/http-transport
  */
 import createClient, {type Client, type ClientOptions} from 'openapi-fetch';
-import {fetch as undiciFetch, type Dispatcher} from 'undici';
+import {fetch as undiciFetch, WebSocket as UndiciWebSocket, type Dispatcher} from 'undici';
 import {getLogger} from '../logging/logger.js';
 import {createTlsDispatcher, type TlsOptions} from './tls-dispatcher.js';
 
@@ -30,8 +30,8 @@ import {createTlsDispatcher, type TlsOptions} from './tls-dispatcher.js';
  */
 export interface HttpTransportOptions {
   /**
-   * Skip TLS certificate verification for OCAPI, SCAPI and Account Manager
-   * requests. Development aid for local servers; dw.json key `selfsigned-api`.
+   * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and
+   * MRT requests. Development aid for local servers; dw.json key `selfsigned-api`.
    * @internal
    */
   readonly selfSignedApi?: boolean;
@@ -77,26 +77,42 @@ async function fetchWithDispatcher(
   });
 }
 
-const insecureFetch: ApiFetch = (input, init) => {
-  insecureDispatcher ??= createTlsDispatcher({rejectUnauthorized: false});
-  return fetchWithDispatcher(input, init, insecureDispatcher!);
-};
-
 /**
- * Returns the `fetch` to use for OCAPI, SCAPI and Account Manager requests.
- *
- * Pass the auth strategy (or config) the request belongs to. Without options,
- * or when no option is set, this is the global `fetch` with full TLS checks.
+ * Returns the undici dispatcher for API requests, or `undefined` for Node's
+ * default transport. Use with APIs that take a dispatcher rather than a
+ * `fetch`, such as an auth strategy's `fetch()` init.
  */
-export function getApiFetch(options: HttpTransportOptions | undefined): ApiFetch {
+export function getApiDispatcher(options: HttpTransportOptions | undefined): Dispatcher | undefined {
   if (options?.selfSignedApi !== true) {
-    return defaultFetch;
+    return undefined;
   }
   if (!warnedInsecure) {
     warnedInsecure = true;
     getLogger().warn('TLS certificate verification is disabled for API requests (selfsigned-api)');
   }
-  return insecureFetch;
+  insecureDispatcher ??= createTlsDispatcher({rejectUnauthorized: false});
+  return insecureDispatcher;
+}
+
+/**
+ * Returns the `fetch` to use for OCAPI, SCAPI, Account Manager and MRT requests.
+ *
+ * Pass the auth strategy (or config) the request belongs to. Without options,
+ * or when no option is set, this is the global `fetch` with full TLS checks.
+ */
+export function getApiFetch(options: HttpTransportOptions | undefined): ApiFetch {
+  const dispatcher = getApiDispatcher(options);
+  return dispatcher ? (input, init) => fetchWithDispatcher(input, init, dispatcher) : defaultFetch;
+}
+
+/**
+ * Opens a WebSocket for an API connection (e.g. MRT log streaming) using the
+ * transport options of the auth strategy it belongs to.
+ */
+export function createApiWebSocket(url: string, options: HttpTransportOptions | undefined): WebSocket {
+  const dispatcher = getApiDispatcher(options);
+  // undici's own WebSocket accepts the npm undici dispatcher (see auth/dispatch-fetch.ts).
+  return dispatcher ? (new UndiciWebSocket(url, {dispatcher}) as unknown as WebSocket) : new WebSocket(url);
 }
 
 /**

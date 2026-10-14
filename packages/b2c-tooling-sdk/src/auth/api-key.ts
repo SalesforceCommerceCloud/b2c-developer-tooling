@@ -5,6 +5,7 @@
  */
 import type {AuthStrategy, FetchInit} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import type {HttpTransportOptions} from '../clients/http-transport.js';
 import {getLogger} from '../logging/logger.js';
 
 /**
@@ -27,16 +28,20 @@ import {getLogger} from '../logging/logger.js';
 export class ApiKeyStrategy implements AuthStrategy {
   private readonly headerValue: string;
   private readonly headerName: string;
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  readonly selfSignedApi?: boolean;
 
   /**
    * Creates a new ApiKeyStrategy instance for API key authentication.
    *
    * @param key - The API key value to use for authentication
    * @param headerName - The HTTP header name to populate with the API key. Defaults to 'x-api-key'. When set to 'Authorization', the key will be formatted as a Bearer token ('Bearer {key}'); for other header names, the key is set directly.
+   * @param transport - Transport options for API clients built with this strategy.
    */
-  constructor(key: string, headerName = 'x-api-key') {
+  constructor(key: string, headerName = 'x-api-key', transport?: HttpTransportOptions) {
     const logger = getLogger();
     this.headerName = headerName;
+    this.selfSignedApi = transport?.selfSignedApi;
 
     // For Authorization header, use Bearer prefix (standard for MRT API)
     // For other headers (like x-api-key), use the key directly

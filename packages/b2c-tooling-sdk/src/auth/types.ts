@@ -130,7 +130,7 @@ export interface OAuthAuthConfig {
   /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
   /**
-   * Skip TLS certificate verification for OCAPI, SCAPI and Account Manager requests.
+   * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and MRT requests.
    * @internal
    */
   selfSignedApi?: boolean;

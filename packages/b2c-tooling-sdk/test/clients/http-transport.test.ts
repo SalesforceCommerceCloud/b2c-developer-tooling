@@ -6,11 +6,19 @@
 import {expect} from 'chai';
 import * as fs from 'node:fs';
 import {createServer, type Server} from 'node:https';
-import type {AddressInfo} from 'node:net';
+import type {AddressInfo, Socket} from 'node:net';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 import {OAuthStrategy} from '../../src/auth/oauth.js';
-import {createHttpClient, createWebDavDispatcher, getApiFetch} from '../../src/clients/http-transport.js';
+import {
+  createApiWebSocket,
+  createHttpClient,
+  createWebDavDispatcher,
+  getApiDispatcher,
+  getApiFetch,
+} from '../../src/clients/http-transport.js';
+import {createLoggingToken} from '../../src/operations/mrt/tail-logs.js';
 import {withScopes} from '../../src/clients/scapi-backend-utils.js';
 import {buildAuthConfigFromNormalized, createInstanceFromConfig} from '../../src/config/mapping.js';
 import {ResolvedConfigImpl} from '../../src/config/resolved-config.js';
@@ -41,6 +49,14 @@ describe('clients/http-transport', () => {
     });
   });
 
+  describe('getApiDispatcher', () => {
+    it('returns a dispatcher only when selfSignedApi is set', () => {
+      expect(getApiDispatcher(undefined)).to.be.undefined;
+      expect(getApiDispatcher({selfSignedApi: false})).to.be.undefined;
+      expect(getApiDispatcher({selfSignedApi: true})).to.not.be.undefined;
+    });
+  });
+
   describe('createWebDavDispatcher', () => {
     it('returns undefined without TLS options', () => {
       expect(createWebDavDispatcher(undefined)).to.be.undefined;
@@ -63,6 +79,12 @@ describe('clients/http-transport', () => {
       expect(withScopes(auth, ['sfcc.jobs']).selfSignedApi).to.equal(true);
     });
 
+    it('carries selfSignedApi into the MRT API key strategy', () => {
+      const config = new ResolvedConfigImpl({mrtApiKey: 'key', selfSignedApi: true}, [], []);
+      expect(config.createMrtAuth().selfSignedApi).to.equal(true);
+      expect(new ResolvedConfigImpl({mrtApiKey: 'key'}, [], []).createMrtAuth().selfSignedApi).to.be.undefined;
+    });
+
     it('carries selfSignedApi into ResolvedConfig.createOAuth strategies', () => {
       const config = new ResolvedConfigImpl({clientId: 'client', clientSecret: 'secret', selfSignedApi: true}, [], []);
       expect(config.createOAuth().selfSignedApi).to.equal(true);
@@ -77,6 +99,7 @@ describe('clients/http-transport', () => {
 
   describe('against a self-signed server', () => {
     let server: Server;
+    const sockets = new Set<Socket>();
     let host: string;
     let baseUrl: string;
 
@@ -95,17 +118,34 @@ describe('clients/http-transport', () => {
               res.end(JSON.stringify({access_token: FAKE_TOKEN, expires_in: 1800}));
               return;
             }
+            if (req.url?.endsWith('/jwt/')) {
+              res.end(JSON.stringify({token: `logging:${req.headers.authorization}`}));
+              return;
+            }
             res.end(JSON.stringify({method: req.method, path: req.url, body, auth: req.headers.authorization ?? null}));
           });
         },
       );
+      server.on('secureConnection', (socket) => sockets.add(socket));
+      // Minimal WebSocket handshake so WebSocket TLS can be exercised.
+      server.on('upgrade', (req, socket) => {
+        const accept = createHash('sha1')
+          .update(`${req.headers['sec-websocket-key']}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
+          .digest('base64');
+        socket.end(
+          `HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`,
+        );
+      });
       await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
       host = `127.0.0.1:${(server.address() as AddressInfo).port}`;
       baseUrl = `https://${host}`;
     });
 
     after(async () => {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+      // Pooled keep-alive and upgraded connections would otherwise hold the server open.
+      for (const socket of sockets) socket.destroy();
+      await closed;
     });
 
     it('rejects the certificate by default', async () => {
@@ -155,6 +195,29 @@ describe('clients/http-transport', () => {
 
       expect(response.status).to.equal(200);
       expect(data).to.include({method: 'GET', path: '/sites', auth: `Bearer ${FAKE_TOKEN}`});
+    });
+
+    it('applies the MRT API key strategy transport to logging token requests', async () => {
+      const auth = new ResolvedConfigImpl({mrtApiKey: 'key', selfSignedApi: true}, [], []).createMrtAuth();
+
+      const token = await createLoggingToken({projectSlug: 'p', environmentSlug: 'e', origin: baseUrl}, auth);
+
+      expect(token).to.equal('logging:Bearer key');
+    });
+
+    it('opens API WebSockets with the strategy transport', async () => {
+      const open = (options: {selfSignedApi?: boolean}) =>
+        new Promise<string>((resolve) => {
+          const ws = createApiWebSocket(`wss://${host}/`, options);
+          ws.addEventListener('open', () => {
+            ws.close();
+            resolve('open');
+          });
+          ws.addEventListener('error', () => resolve('error'));
+        });
+
+      expect(await open({selfSignedApi: true})).to.equal('open');
+      expect(await open({})).to.equal('error');
     });
 
     it('does not relax TLS for strategies built without selfSignedApi', async () => {
