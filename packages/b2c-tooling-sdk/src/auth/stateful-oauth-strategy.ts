@@ -60,6 +60,7 @@ export class StatefulOAuthStrategy implements AuthStrategy {
 
     let res: Response;
     try {
+      // eslint-disable-next-line no-restricted-globals -- strategy fetch pass-through, like dispatchFetch
       res = await fetch(url, {...init, headers} as RequestInit);
     } catch (err) {
       const host = new URL(url).host;

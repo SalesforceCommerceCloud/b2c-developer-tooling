@@ -121,6 +121,7 @@ export async function pullCommerceApps(
       source = 'github';
 
       try {
+        // eslint-disable-next-line no-restricted-globals -- public GitHub download, not a B2C API
         const response = await fetch(githubUrl);
         if (!response.ok) {
           failed.push({featureName, error: `Not found on instance or GitHub (${githubUrl})`});

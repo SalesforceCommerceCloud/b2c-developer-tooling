@@ -99,6 +99,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
         siteId: siteId!,
         redirectUri: args.redirectUri ?? 'http://localhost:3000/callback',
         signal,
+        selfSignedApi: config.selfSignedApi,
       };
       if (args.flow !== 'registered' && (args.shopperLogin || args.shopperPassword))
         throw new Error('Set flow: registered when supplying shopper credentials.');

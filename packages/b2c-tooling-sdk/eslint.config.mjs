@@ -64,9 +64,7 @@ export default [
     ignores: [
       'src/clients/http-transport.ts',
       'src/auth/dispatch-fetch.ts',
-      'src/auth/stateful-oauth-strategy.ts',
       'src/docs/search.ts',
-      'src/operations/cap/pull.ts',
       'src/scapi/local.ts',
       'src/skills/github.ts',
       'src/telemetry/app-insights-client.ts',

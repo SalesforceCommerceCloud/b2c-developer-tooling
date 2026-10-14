@@ -394,13 +394,18 @@ export function createRateLimitMiddleware(config: RateLimitMiddlewareConfig = {}
     async onResponse(ctx) {
       const {request, response} = ctx;
       const ctxFetch = (ctx as {fetch?: (request: Request) => Promise<Response>}).fetch;
+      // openapi-fetch passes the client's fetch (the shared transport) via ctx.options.
+      const clientFetch = (ctx as {options?: {fetch?: (request: Request) => Promise<Response>}}).options?.fetch;
       // Only handle configured status codes
       if (!statusCodes.includes(response.status) || maxRetries <= 0) {
         return response;
       }
 
       const fetchFn: ((request: Request) => Promise<Response>) | undefined =
-        ctxFetch ?? configFetch ?? (typeof globalThis.fetch === 'function' ? getApiFetch(undefined) : undefined);
+        ctxFetch ??
+        configFetch ??
+        clientFetch ??
+        (typeof globalThis.fetch === 'function' ? getApiFetch(undefined) : undefined);
 
       if (!fetchFn) {
         return response;
