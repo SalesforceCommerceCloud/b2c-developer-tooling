@@ -196,6 +196,56 @@ describe('operations/mrt/bundle', () => {
       }
     });
 
+    it('should read SSR config from the build .mrt/config.json and leave it out of the archive', async () => {
+      const buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(path.join(buildDir, '.mrt'), {recursive: true});
+      fs.writeFileSync(path.join(buildDir, 'ssr.js'), 'console.log("ssr");');
+      fs.writeFileSync(path.join(buildDir, 'app.css'), 'a{}');
+      fs.writeFileSync(
+        path.join(buildDir, '.mrt', 'config.json'),
+        JSON.stringify({ssrOnly: ['ssr.js'], ssrShared: ['**/*.css'], ssrParameters: {EnvBasePath: '/x'}}),
+      );
+
+      const bundle = await createBundle({
+        projectSlug: 'test-project',
+        buildDirectory: buildDir,
+        projectDirectory: tempDir,
+      });
+
+      expect(bundle.ssr_only).to.deep.equal(['ssr.js']);
+      expect(bundle.ssr_shared).to.deep.equal(['app.css']);
+      expect(bundle.ssr_parameters).to.deep.include({EnvBasePath: '/x'});
+
+      const extractDir = path.join(tempDir, 'extracted');
+      fs.mkdirSync(extractDir);
+      await new Promise<void>((resolve, reject) => {
+        const extract = tar.extract(extractDir);
+        extract.on('error', reject);
+        extract.on('finish', resolve);
+        Readable.from(Buffer.from(bundle.data, 'base64')).pipe(extract);
+      });
+      expect(fs.existsSync(path.join(extractDir, 'test-project', 'bld', '.mrt', 'config.json'))).to.be.false;
+    });
+
+    it('should let explicit options win over the build .mrt/config.json', async () => {
+      const buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(path.join(buildDir, '.mrt'), {recursive: true});
+      fs.writeFileSync(path.join(buildDir, 'ssr.js'), 'console.log("ssr");');
+      fs.writeFileSync(
+        path.join(buildDir, '.mrt', 'config.json'),
+        JSON.stringify({ssrOnly: ['nope.js'], ssrShared: []}),
+      );
+
+      const bundle = await createBundle({
+        projectSlug: 'test-project',
+        buildDirectory: buildDir,
+        projectDirectory: tempDir,
+        ssrOnly: ['ssr.js'],
+      });
+
+      expect(bundle.ssr_only).to.deep.equal(['ssr.js']);
+    });
+
     it('should require SSR patterns when no config is found (no defaults)', async () => {
       const buildDir = path.join(tempDir, 'build');
       fs.mkdirSync(buildDir, {recursive: true});

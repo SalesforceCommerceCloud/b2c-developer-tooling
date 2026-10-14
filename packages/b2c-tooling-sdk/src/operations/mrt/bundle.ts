@@ -61,16 +61,16 @@ export interface CreateBundleOptions {
 
   /**
    * Glob patterns for files that should only run on the server.
-   * Required unless supplied by `config.server.{ts,js}` in the project directory
-   * (or the legacy `build/config.server.js`); there is no built-in default.
+   * Required unless supplied by the build's `.mrt/config.json`, `config.server.{ts,js}`
+   * in the project directory (or the legacy `build/config.server.js`); no built-in default.
    * @example ['ssr.js', 'ssr/*.js']
    */
   ssrOnly?: string[];
 
   /**
    * Glob patterns for files shared between client and server.
-   * Required unless supplied by `config.server.{ts,js}` in the project directory
-   * (or the legacy `build/config.server.js`); there is no built-in default.
+   * Required unless supplied by the build's `.mrt/config.json`, `config.server.{ts,js}`
+   * in the project directory (or the legacy `build/config.server.js`); no built-in default.
    * @example ['static/**\/*', '**\/*.js']
    */
   ssrShared?: string[];
@@ -226,7 +226,7 @@ function requireSsrPatterns(
   throw new Error(
     `SSR patterns are required: ${missing} could not be determined. ${found}\n` +
       'Provide them via config.server.ts (export `config` or a default export with ssrOnly/ssrShared) in the project ' +
-      'directory, a v2 config file in the build (v2 uploads), or the --ssr-only/--ssr-shared flags ' +
+      "directory, the build's .mrt/config.json, or the --ssr-only/--ssr-shared flags " +
       "(use --ssr-shared '[]' for none).",
   );
 }
@@ -343,9 +343,14 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
   const projectDirectory = options.projectDirectory ?? process.cwd();
   const buildPath = path.isAbsolute(buildDirectory) ? buildDirectory : path.join(process.cwd(), buildDirectory);
 
-  // Prefer config.server.{ts,js} read from the project directory; fall back to a
-  // legacy compiled build/config.server.js for builds that still emit one.
-  const serverConfig = (await loadProjectServerConfig(projectDirectory)) ?? (await loadServerConfig(buildPath));
+  // Prefer the config file the build emits at {buildPath}/.mrt/config.json (the same
+  // file v2 uploads use); else config.server.{ts,js} read from the project directory,
+  // falling back to a legacy compiled build/config.server.js. The build config file
+  // is not part of the v1 payload, so it is excluded from the archive below.
+  const v2ConfigPath = path.resolve(buildPath, DEFAULT_V2_CONFIG_PATH);
+  const buildConfig = (await loadV2Config(buildPath, DEFAULT_V2_CONFIG_PATH)) as Partial<MrtServerConfig> | null;
+  const serverConfig =
+    buildConfig ?? (await loadProjectServerConfig(projectDirectory)) ?? (await loadServerConfig(buildPath));
 
   // Collect declared package.json dependencies for bundle metadata (best-effort).
   const dependencies = await loadProjectDependencies(projectDirectory);
@@ -394,6 +399,7 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
       const newRoot = path.join(projectSlug, 'bld');
 
       const pack = tar.pack(buildPath, {
+        ignore: (name) => buildConfig !== null && path.resolve(name) === v2ConfigPath,
         map(header) {
           if (header.type === 'file') {
             filesInArchive.push(header.name);
