@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.5.4
+
+### Patch Changes
+
+- [#765](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/765) [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2) - Internal: added a development-only TLS option for local servers; no user-facing change. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#764](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/764) [`5779a35`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5779a35b1d552eaac5ce261aa91883b74324d606) - (internal) Add a SCAPI base URL override for local SCAPI development (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2), [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2), [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`5779a35`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5779a35b1d552eaac5ce261aa91883b74324d606)]:
+  - @salesforce/b2c-tooling-sdk@2.7.0
+
 ## 1.5.3
 
 ### Patch Changes
