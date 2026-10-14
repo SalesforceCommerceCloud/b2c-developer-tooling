@@ -119,6 +119,7 @@ export function buildScapiClient<P extends Record<string, any>>(
       baseUrl: `${getScapiOrigin(config.shortCode)}/${options.pathSegment}`,
     },
     auth,
+    {operation: 'SCAPI request'},
   );
 
   if (options.scopeCascade) {

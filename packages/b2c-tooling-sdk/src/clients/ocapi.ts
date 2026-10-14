@@ -152,6 +152,7 @@ export function createOcapiClient(
       baseUrl: `https://${hostname}/s/-/dw/data/${apiVersion}`,
     },
     auth,
+    {operation: 'OCAPI request'},
   );
 
   // Core middleware: auth first

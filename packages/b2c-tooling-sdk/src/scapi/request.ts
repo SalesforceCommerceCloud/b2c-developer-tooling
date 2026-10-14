@@ -299,6 +299,7 @@ export function createScapiRequest(
         },
       },
       auth,
+      {operation: 'SCAPI request'},
     );
     for (const middleware of (options.middlewareRegistry ?? globalMiddlewareRegistry).getMiddleware('scapi', {
       exclude: ['cli-safety-guard'],

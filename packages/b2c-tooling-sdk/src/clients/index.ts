@@ -145,7 +145,7 @@ export {
   getApiDispatcher,
   getApiFetch,
 } from './http-transport.js';
-export type {ApiFetch, HttpTransportOptions} from './http-transport.js';
+export type {ApiFetch, HttpClientOptions, HttpTransportOptions} from './http-transport.js';
 
 export {MiddlewareRegistry, globalMiddlewareRegistry} from './middleware-registry.js';
 export type {HttpClientType, HttpMiddlewareProvider, UnifiedMiddleware} from './middleware-registry.js';

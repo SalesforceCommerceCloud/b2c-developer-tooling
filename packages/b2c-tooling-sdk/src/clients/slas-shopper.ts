@@ -5,7 +5,6 @@
  */
 import type {Client} from 'openapi-fetch';
 import {createHttpClient, type HttpTransportOptions} from './http-transport.js';
-import {wrapNetworkError} from '../errors/network-error.js';
 import {createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import type {paths, components} from './slas-shopper.generated.js';
@@ -39,13 +38,9 @@ export function createSlasShopperClient(config: SlasShopperClientConfig): SlasSh
       signal: config.signal,
     },
     config,
+    {operation: 'SLAS token request'},
   );
 
-  client.use({
-    onError({error, request}) {
-      throw wrapNetworkError(error, {operation: 'SLAS token request', host: new URL(request.url).host});
-    },
-  });
   for (const middleware of registry.getMiddleware('slas')) {
     client.use(middleware);
   }

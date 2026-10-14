@@ -164,6 +164,7 @@ export function createMrtB2CClient(config: MrtB2CClientConfig, auth: AuthStrateg
       baseUrl: origin,
     },
     auth,
+    {operation: 'MRT API request'},
   );
 
   // Core middleware: auth first

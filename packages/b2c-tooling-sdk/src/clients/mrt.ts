@@ -247,6 +247,7 @@ export function createMrtClient(config: MrtClientConfig, auth: AuthStrategy): Mr
       baseUrl: origin,
     },
     auth,
+    {operation: 'MRT API request'},
   );
 
   // Core middleware: auth first

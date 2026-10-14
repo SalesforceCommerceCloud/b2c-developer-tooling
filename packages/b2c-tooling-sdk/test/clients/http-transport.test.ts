@@ -18,6 +18,7 @@ import {
   getApiDispatcher,
   getApiFetch,
 } from '../../src/clients/http-transport.js';
+import {NetworkError} from '../../src/errors/network-error.js';
 import {createLoggingToken} from '../../src/operations/mrt/tail-logs.js';
 import {withScopes} from '../../src/clients/scapi-backend-utils.js';
 import {buildAuthConfigFromNormalized, createInstanceFromConfig} from '../../src/config/mapping.js';
@@ -218,6 +219,47 @@ describe('clients/http-transport', () => {
 
       expect(await open({selfSignedApi: true})).to.equal('open');
       expect(await open({})).to.equal('error');
+    });
+
+    it('reports client network failures as a NetworkError with the operation and host', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = createHttpClient<any>({baseUrl}, undefined, {operation: 'MRT API request'});
+      try {
+        await client.GET('/sites', {});
+        expect.fail('expected certificate error');
+      } catch (error) {
+        expect(error).to.be.instanceOf(NetworkError);
+        expect((error as NetworkError).kind).to.equal('tls');
+        expect((error as Error).message).to.include(`MRT API request to ${host} failed`);
+      }
+    });
+
+    it('passes aborts and non-network errors through unchanged', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const failing = createHttpClient<any>(
+        {
+          baseUrl,
+          fetch: async () => {
+            throw new Error('APPROVAL_MISMATCH');
+          },
+        },
+        undefined,
+      );
+      try {
+        await failing.GET('/sites', {});
+        expect.fail('expected error');
+      } catch (error) {
+        expect((error as Error).message).to.equal('APPROVAL_MISMATCH');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = createHttpClient<any>({baseUrl}, {selfSignedApi: true});
+      try {
+        await client.GET('/sites', {signal: AbortSignal.abort()});
+        expect.fail('expected abort');
+      } catch (error) {
+        expect((error as Error).name).to.equal('AbortError');
+      }
     });
 
     it('does not relax TLS for strategies built without selfSignedApi', async () => {

@@ -304,6 +304,18 @@ export function describeNetworkErrorKind(kind: NetworkErrorKind): {summary: stri
  *   throw wrapNetworkError(err, { operation: 'OAuth token request', host: 'account.demandware.com' });
  * }
  */
+/** Message of the deepest `cause`, skipping generic "fetch failed" wrappers. */
+function innermostErrorMessage(err: unknown): string | undefined {
+  let current: unknown = err;
+  let message: string | undefined;
+  for (let depth = 0; current && typeof current === 'object' && depth < 5; depth++) {
+    const {message: m, cause} = current as {message?: unknown; cause?: unknown};
+    if (typeof m === 'string' && m && !/^(fetch failed|failed to fetch)$/i.test(m)) message = m;
+    current = cause;
+  }
+  return message;
+}
+
 export function wrapNetworkError(err: unknown, context: {operation?: string; host?: string}): NetworkError | unknown {
   // If already a NetworkError, optionally fill in missing context but don't double-wrap
   if (err instanceof NetworkError) {
@@ -336,7 +348,9 @@ export function wrapNetworkError(err: unknown, context: {operation?: string; hos
   const {summary, hint} = describeNetworkErrorKind(kind);
   const operation = context.operation ?? 'Network request';
   const hostPart = context.host ? ` to ${context.host}` : '';
-  const message = `${operation}${hostPart} failed: ${summary}. ${hint}`;
+  // Unclassified failures keep the underlying cause (e.g. "unexpected redirect") so the message stays actionable.
+  const detail = kind === 'unknown' ? innermostErrorMessage(err) : undefined;
+  const message = `${operation}${hostPart} failed: ${summary}${detail ? ` (${detail})` : ''}. ${hint}`;
 
   return new NetworkError(message, {
     kind,

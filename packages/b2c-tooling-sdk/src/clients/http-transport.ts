@@ -21,6 +21,7 @@
  */
 import createClient, {type Client, type ClientOptions} from 'openapi-fetch';
 import {fetch as undiciFetch, WebSocket as UndiciWebSocket, type Dispatcher} from 'undici';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {createTlsDispatcher, type TlsOptions} from './tls-dispatcher.js';
 
@@ -115,6 +116,28 @@ export function createApiWebSocket(url: string, options: HttpTransportOptions | 
   return dispatcher ? (new UndiciWebSocket(url, {dispatcher}) as unknown as WebSocket) : new WebSocket(url);
 }
 
+/** Options for {@link createHttpClient}. */
+export interface HttpClientOptions {
+  /** Label used in network error messages, e.g. `"MRT API request"`. Defaults to `"API request"`. */
+  operation?: string;
+}
+
+/**
+ * Turns low-level failures (undici's bare `TypeError: fetch failed`) into a
+ * `NetworkError` naming the operation, host and cause (TLS, DNS, ...).
+ * Aborts and non-network errors pass through unchanged.
+ */
+function withNetworkErrors(fetchFn: (request: Request) => Promise<Response>, operation: string) {
+  return async (request: Request): Promise<Response> => {
+    try {
+      return await fetchFn(request);
+    } catch (error) {
+      if ((error as {name?: string} | undefined)?.name === 'AbortError') throw error;
+      throw wrapNetworkError(error, {operation, host: new URL(request.url).host});
+    }
+  };
+}
+
 /**
  * Creates an openapi-fetch client that uses the API transport for `transport`
  * (normally the client's auth strategy).
@@ -122,14 +145,17 @@ export function createApiWebSocket(url: string, options: HttpTransportOptions | 
  * All SDK API clients must be created through this function (or
  * `buildScapiClient`) rather than openapi-fetch's `createClient`.
  * A caller-supplied `fetch` replaces the transport entirely; wrap
- * {@link getApiFetch} inside it to keep the transport options.
+ * {@link getApiFetch} inside it to keep the transport options. Either way,
+ * network failures are reported as a `NetworkError`.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createHttpClient<P extends Record<string, any>>(
   options: ClientOptions,
   transport: HttpTransportOptions | undefined,
+  {operation = 'API request'}: HttpClientOptions = {},
 ): Client<P> {
-  return createClient<P>({fetch: getApiFetch(transport), ...options});
+  const fetchFn = options.fetch ?? getApiFetch(transport);
+  return createClient<P>({...options, fetch: withNetworkErrors(fetchFn, operation)});
 }
 
 /**
