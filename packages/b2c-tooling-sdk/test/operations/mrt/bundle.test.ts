@@ -438,8 +438,8 @@ describe('operations/mrt/bundle', () => {
 
       const bundle = await createBundleV2({buildDirectory: buildDir});
 
-      // makeBuildDir() contains ssr.js only, so the streaming entry candidate is dropped.
-      expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}', 'server/**/*']);
+      // makeBuildDir() contains ssr.js only (no server dir), so only the ssr entry is listed.
+      expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}']);
       expect(bundle.config.ssrShared).to.deep.equal(DEFAULT_SSR_SHARED);
     });
 
@@ -454,11 +454,29 @@ describe('operations/mrt/bundle', () => {
       it('uses only ssr.{js,mjs} when the build has an ssr entry', async () => {
         const bundle = await createBundleV2({buildDirectory: makeBuildWith('ssr.mjs')});
 
-        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}', 'server/**/*']);
+        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}']);
       });
 
       it('uses only streamingHandler.{js,mjs} when the build has a streaming entry', async () => {
         const bundle = await createBundleV2({buildDirectory: makeBuildWith('streamingHandler.mjs')});
+
+        expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.{js,mjs}']);
+      });
+
+      it('adds root loader.js and package.json when present', async () => {
+        const bundle = await createBundleV2({
+          buildDirectory: makeBuildWith('streamingHandler.mjs', 'loader.js', 'package.json'),
+        });
+
+        expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.{js,mjs}', 'loader.js', 'package.json']);
+      });
+
+      it('adds server/**/* only when the build has a server directory', async () => {
+        const buildDir = makeBuildWith('streamingHandler.mjs');
+        fs.mkdirSync(path.join(buildDir, 'server'));
+        fs.writeFileSync(path.join(buildDir, 'server', 'a.js'), '');
+
+        const bundle = await createBundleV2({buildDirectory: buildDir});
 
         expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.{js,mjs}', 'server/**/*']);
       });
@@ -510,7 +528,7 @@ describe('operations/mrt/bundle', () => {
 
         const bundle = await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir});
 
-        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}', 'server/**/*']);
+        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}']);
         expect(logged).to.include('exports no ssrOnly/ssrShared');
         expect(logged).to.include('runtime');
       });

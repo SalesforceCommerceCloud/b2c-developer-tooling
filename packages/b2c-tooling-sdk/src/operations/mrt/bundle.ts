@@ -37,7 +37,9 @@ export interface MrtServerConfig {
  * build is used (see {@link detectDefaultSsrOnly}).
  */
 const DEFAULT_SSR_ENTRY_PATTERNS = ['ssr.{js,mjs}', 'streamingHandler.{js,mjs}'];
-export const DEFAULT_SSR_ONLY = [...DEFAULT_SSR_ENTRY_PATTERNS, 'server/**/*'];
+/** Root-level files the SSR runtime needs alongside the entry point (e.g. streaming builds' loader and package.json). */
+const DEFAULT_SSR_SUPPORT_FILES = ['loader.js', 'package.json'];
+export const DEFAULT_SSR_ONLY = [...DEFAULT_SSR_ENTRY_PATTERNS, ...DEFAULT_SSR_SUPPORT_FILES, 'server/**/*'];
 export const DEFAULT_SSR_SHARED = ['static/**/*', 'client/**/*'];
 
 /**
@@ -216,9 +218,12 @@ function pickServerConfig(mod: unknown): MrtServerConfig | null {
 
 /**
  * Default `ssrOnly` for a build: the entry-point candidate(s) found at the root of
- * the build directory plus `server/**\/*`. When no candidate is present (or the
- * directory is unreadable) all candidates are kept, so the server reports the
- * missing entry point rather than receiving none.
+ * the build directory, the root-level `loader.js` / `package.json` when present, plus
+ * `server/**\/*` when a `server` directory exists. The v2
+ * upload matches strictly (every pattern must match a file), so only patterns that
+ * can match something in the build are listed. When no entry point is present (or
+ * the directory is unreadable) {@link DEFAULT_SSR_ONLY} is returned unchanged, so
+ * the server reports the missing entry point rather than receiving none.
  */
 async function detectDefaultSsrOnly(buildPath: string): Promise<string[]> {
   let entries: string[];
@@ -231,9 +236,11 @@ async function detectDefaultSsrOnly(buildPath: string): Promise<string[]> {
     const matcher = new Minimatch(pattern);
     return entries.some((entry) => matcher.match(entry));
   });
-  return present.length > 0
-    ? [...present, ...DEFAULT_SSR_ONLY.slice(DEFAULT_SSR_ENTRY_PATTERNS.length)]
-    : DEFAULT_SSR_ONLY;
+  if (present.length === 0) return DEFAULT_SSR_ONLY;
+  const support = DEFAULT_SSR_SUPPORT_FILES.filter((file) => entries.includes(file));
+  const detected = [...present, ...support];
+  getLogger().debug({buildPath, detected}, '[MRT] Detected default ssrOnly patterns from the build');
+  return entries.includes('server') ? [...detected, 'server/**/*'] : detected;
 }
 
 /**
