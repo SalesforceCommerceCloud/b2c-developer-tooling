@@ -12,7 +12,8 @@
  *
  * @module clients/slas-admin
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './slas-admin.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
@@ -142,9 +143,12 @@ export interface SlasClientConfig {
 export function createSlasClient(config: SlasClientConfig, auth: AuthStrategy): SlasClient {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `${getScapiOrigin(config.shortCode)}/shopper/auth-admin/v1`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/shopper/auth-admin/v1`,
+    },
+    auth,
+  );
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));

@@ -10,6 +10,7 @@
  * @module slas/types
  */
 
+import type {HttpTransportOptions} from '../clients/http-transport.js';
 import type {MiddlewareRegistry} from '../clients/middleware-registry.js';
 
 /**
@@ -28,7 +29,7 @@ export interface SlasTokenResponse {
 /**
  * Configuration for SLAS shopper token retrieval.
  */
-export interface SlasTokenConfig {
+export interface SlasTokenConfig extends HttpTransportOptions {
   /** Cancel authorization and token exchange. */
   signal?: AbortSignal;
   /** Defaults to the global HTTP middleware registry. */

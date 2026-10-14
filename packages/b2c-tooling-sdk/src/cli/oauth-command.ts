@@ -131,6 +131,12 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       env: 'SFCC_JWT_PASSPHRASE',
       helpGroup: 'AUTH',
     }),
+    // Internal: skip TLS verification for OCAPI, SCAPI, Account Manager and MRT requests
+    'selfsigned-api': Flags.boolean({
+      description: 'Allow self-signed or mismatched certificates for OCAPI, SCAPI, Account Manager and MRT requests',
+      env: 'SFCC_SELFSIGNED_API',
+      hidden: true,
+    }),
   };
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
@@ -217,6 +223,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
         return new StatefulOAuthStrategy(storedSession, {
           accountManagerHost,
           scopes: requiredScopes,
+          selfSignedApi: config.selfSignedApi,
         });
       }
       if (isValid && explicitAuthFlags.length > 0) {
@@ -252,6 +259,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               scopes: config.scopes,
               accountManagerHost,
               clientAuthMethod: config.clientAuthMethod,
+              selfSignedApi: config.selfSignedApi,
             });
           }
           break;
@@ -268,6 +276,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
                 passphrase: config.jwtPassphrase,
                 accountManagerHost,
                 scopes: config.scopes,
+                selfSignedApi: config.selfSignedApi,
               });
             } catch (error) {
               // JWT config is present but invalid (corrupted files, wrong passphrase, etc.)
@@ -294,6 +303,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               clientId: effectiveClientId,
               scopes: config.scopes,
               accountManagerHost,
+              selfSignedApi: config.selfSignedApi,
             });
           }
           break;
@@ -319,6 +329,7 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
               clientId: effectiveClientId,
               scopes: config.scopes,
               accountManagerHost,
+              selfSignedApi: config.selfSignedApi,
             });
           }
           break;

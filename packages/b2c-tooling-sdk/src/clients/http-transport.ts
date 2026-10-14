@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+/**
+ * Shared HTTP transport for SDK clients.
+ *
+ * All TLS policy for SDK requests lives here:
+ *
+ * - OCAPI, SCAPI, Account Manager and MRT requests go through {@link createHttpClient}
+ *   (openapi-fetch clients) or {@link getApiFetch} (direct requests such as OAuth
+ *   token calls and middleware retries). Transport options come from the auth
+ *   strategy the client is built with, which is created from a resolved config,
+ *   so a setting applies only to clients made from that config.
+ * - WebDAV uses {@link createWebDavDispatcher}, driven by the instance's
+ *   `selfsigned`/client-certificate options. API transport options never affect
+ *   WebDAV, and WebDAV options never affect API requests.
+ *
+ * @module clients/http-transport
+ */
+import createClient, {type Client, type ClientOptions} from 'openapi-fetch';
+import {fetch as undiciFetch, WebSocket as UndiciWebSocket, type Dispatcher} from 'undici';
+import {wrapNetworkError} from '../errors/network-error.js';
+import {getLogger} from '../logging/logger.js';
+import {createTlsDispatcher, type TlsOptions} from './tls-dispatcher.js';
+
+/**
+ * Transport options for API requests. Auth strategies carry these so every
+ * client built from a strategy shares its config's transport.
+ */
+export interface HttpTransportOptions {
+  /**
+   * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and
+   * MRT requests. Development aid for local servers; dw.json key `selfsigned-api`.
+   * @internal
+   */
+  readonly selfSignedApi?: boolean;
+}
+
+/** A `fetch` function for SDK API requests. */
+export type ApiFetch = (input: Request | string | URL, init?: RequestInit) => Promise<Response>;
+
+/** Statuses whose responses must not have a body. */
+const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
+
+/** Cache of the insecure dispatcher, which is stateless apart from its connection pool. */
+let insecureDispatcher: Dispatcher | undefined;
+let warnedInsecure = false;
+
+/** Resolves the global `fetch` at call time so test interceptors (MSW) still apply. */
+const defaultFetch: ApiFetch = (input, init) => fetch(input, init);
+
+/**
+ * Sends a request through undici's own `fetch` so the npm `undici` dispatcher
+ * and fetch implementation match (see `auth/dispatch-fetch.ts`), and returns a
+ * global `Response` so openapi-fetch's `instanceof Response` checks still pass.
+ */
+async function fetchWithDispatcher(
+  input: Request | string | URL,
+  init: RequestInit | undefined,
+  dispatcher: Dispatcher,
+): Promise<Response> {
+  const request = new Request(input, init);
+  const body = request.body ? await request.arrayBuffer() : undefined;
+  const response = await undiciFetch(request.url, {
+    method: request.method,
+    headers: [...request.headers],
+    body,
+    redirect: request.redirect,
+    signal: request.signal,
+    dispatcher,
+  });
+  return new Response(NULL_BODY_STATUSES.has(response.status) ? null : (response.body as ReadableStream | null), {
+    status: response.status,
+    statusText: response.statusText,
+    headers: [...response.headers],
+  });
+}
+
+/**
+ * Returns the undici dispatcher for API requests, or `undefined` for Node's
+ * default transport. Use with APIs that take a dispatcher rather than a
+ * `fetch`, such as an auth strategy's `fetch()` init.
+ */
+export function getApiDispatcher(options: HttpTransportOptions | undefined): Dispatcher | undefined {
+  if (options?.selfSignedApi !== true) {
+    return undefined;
+  }
+  if (!warnedInsecure) {
+    warnedInsecure = true;
+    getLogger().warn('TLS certificate verification is disabled for API requests (selfsigned-api)');
+  }
+  insecureDispatcher ??= createTlsDispatcher({rejectUnauthorized: false});
+  return insecureDispatcher;
+}
+
+/**
+ * Returns the `fetch` to use for OCAPI, SCAPI, Account Manager and MRT requests.
+ *
+ * Pass the auth strategy (or config) the request belongs to. Without options,
+ * or when no option is set, this is the global `fetch` with full TLS checks.
+ */
+export function getApiFetch(options: HttpTransportOptions | undefined): ApiFetch {
+  const dispatcher = getApiDispatcher(options);
+  return dispatcher ? (input, init) => fetchWithDispatcher(input, init, dispatcher) : defaultFetch;
+}
+
+/**
+ * Opens a WebSocket for an API connection (e.g. MRT log streaming) using the
+ * transport options of the auth strategy it belongs to.
+ */
+export function createApiWebSocket(url: string, options: HttpTransportOptions | undefined): WebSocket {
+  const dispatcher = getApiDispatcher(options);
+  // undici's own WebSocket accepts the npm undici dispatcher (see auth/dispatch-fetch.ts).
+  return dispatcher ? (new UndiciWebSocket(url, {dispatcher}) as unknown as WebSocket) : new WebSocket(url);
+}
+
+/** Options for {@link createHttpClient}. */
+export interface HttpClientOptions {
+  /** Label used in network error messages, e.g. `"MRT API request"`. Defaults to `"API request"`. */
+  operation?: string;
+}
+
+/**
+ * Turns low-level failures (undici's bare `TypeError: fetch failed`) into a
+ * `NetworkError` naming the operation, host and cause (TLS, DNS, ...).
+ * Aborts and non-network errors pass through unchanged.
+ */
+function withNetworkErrors(fetchFn: (request: Request) => Promise<Response>, operation: string) {
+  return async (request: Request): Promise<Response> => {
+    try {
+      return await fetchFn(request);
+    } catch (error) {
+      if ((error as {name?: string} | undefined)?.name === 'AbortError') throw error;
+      throw wrapNetworkError(error, {operation, host: new URL(request.url).host});
+    }
+  };
+}
+
+/**
+ * Creates an openapi-fetch client that uses the API transport for `transport`
+ * (normally the client's auth strategy).
+ *
+ * All SDK API clients must be created through this function (or
+ * `buildScapiClient`) rather than openapi-fetch's `createClient`.
+ * A caller-supplied `fetch` replaces the transport entirely; wrap
+ * {@link getApiFetch} inside it to keep the transport options. Either way,
+ * network failures are reported as a `NetworkError`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createHttpClient<P extends Record<string, any>>(
+  options: ClientOptions,
+  transport: HttpTransportOptions | undefined,
+  {operation = 'API request'}: HttpClientOptions = {},
+): Client<P> {
+  const fetchFn = options.fetch ?? getApiFetch(transport);
+  return createClient<P>({...options, fetch: withNetworkErrors(fetchFn, operation)});
+}
+
+/**
+ * Creates the undici dispatcher for WebDAV requests from the instance's TLS
+ * options, or `undefined` for Node's default transport.
+ */
+export function createWebDavDispatcher(tlsOptions: TlsOptions | undefined): Dispatcher | undefined {
+  return tlsOptions ? createTlsDispatcher(tlsOptions) : undefined;
+}

@@ -12,7 +12,8 @@
  *
  * @module clients/am-api
  */
-import createClient, {type Client, type Middleware} from 'openapi-fetch';
+import type {Client, Middleware} from 'openapi-fetch';
+import {createHttpClient, getApiFetch} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {
   paths as UsersPaths,
@@ -231,9 +232,12 @@ export function createAccountManagerUsersClient(
   const hostname = config.hostname ?? DEFAULT_ACCOUNT_MANAGER_HOST;
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<UsersPaths>({
-    baseUrl: `https://${hostname}`,
-  });
+  const client = createHttpClient<UsersPaths>(
+    {
+      baseUrl: `https://${hostname}`,
+    },
+    auth,
+  );
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
@@ -560,9 +564,12 @@ export function createAccountManagerRolesClient(
   const hostname = config.hostname ?? DEFAULT_ACCOUNT_MANAGER_HOST;
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<RolesPaths>({
-    baseUrl: `https://${hostname}`,
-  });
+  const client = createHttpClient<RolesPaths>(
+    {
+      baseUrl: `https://${hostname}`,
+    },
+    auth,
+  );
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));
@@ -706,9 +713,12 @@ export function createAccountManagerApiClientsClient(
   const hostname = config.hostname ?? DEFAULT_ACCOUNT_MANAGER_HOST;
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<ApiClientsPaths>({
-    baseUrl: `https://${hostname}`,
-  });
+  const client = createHttpClient<ApiClientsPaths>(
+    {
+      baseUrl: `https://${hostname}`,
+    },
+    auth,
+  );
 
   client.use(createAuthMiddleware(auth));
   client.use(createPageableTransformMiddleware());
@@ -1028,6 +1038,7 @@ export function createAccountManagerOrgsClient(
   const baseUrl = `https://${hostname}/dw/rest/v1`;
   const logger = getLogger();
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
+  const apiFetch = getApiFetch(auth);
 
   // Get middleware from registry for am-orgs-api
   const pluginMiddleware = registry.getMiddleware('am-orgs-api');
@@ -1059,7 +1070,7 @@ export function createAccountManagerOrgsClient(
             parseAs: 'json',
             querySerializer: (params) => new URLSearchParams(params as Record<string, string>).toString(),
             bodySerializer: JSON.stringify,
-            fetch: fetch,
+            fetch: apiFetch,
           },
         });
         // Middleware can return Request or Response, but we only want Request here
@@ -1109,7 +1120,7 @@ export function createAccountManagerOrgsClient(
             parseAs: 'json',
             querySerializer: (params) => new URLSearchParams(params as Record<string, string>).toString(),
             bodySerializer: JSON.stringify,
-            fetch: fetch,
+            fetch: apiFetch,
           },
         });
         if (result) {
@@ -1142,7 +1153,7 @@ export function createAccountManagerOrgsClient(
 
     let response: Response;
     try {
-      response = await fetch(request);
+      response = await apiFetch(request);
     } catch (err) {
       const host = new URL(baseUrl).host;
       throw wrapNetworkError(err, {operation: 'Account Manager API request', host});

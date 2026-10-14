@@ -70,6 +70,15 @@ export interface AuthStrategy {
    * @returns The access token (Bearer value, no `Bearer ` prefix).
    */
   getAccessTokenForCascade?(candidates: string[][]): Promise<string>;
+
+  /**
+   * Optional: Skip TLS certificate verification for OCAPI, SCAPI and Account
+   * Manager requests made with this strategy (see `clients/http-transport`).
+   * Strategies created from a config with `selfsigned-api` set this; clients
+   * built from the strategy inherit it.
+   * @internal
+   */
+  readonly selfSignedApi?: boolean;
 }
 
 /**
@@ -120,6 +129,11 @@ export interface OAuthAuthConfig {
   redirectUri?: string;
   /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
+  /**
+   * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and MRT requests.
+   * @internal
+   */
+  selfSignedApi?: boolean;
 }
 
 /**
@@ -210,4 +224,6 @@ export interface AuthCredentials {
   redirectUri?: string;
   /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
   openBrowser?: (url: string) => Promise<void>;
+  /** @internal See {@link AuthStrategy.selfSignedApi}. */
+  selfSignedApi?: boolean;
 }

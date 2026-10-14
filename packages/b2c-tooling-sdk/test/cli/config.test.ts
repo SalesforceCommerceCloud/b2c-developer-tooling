@@ -373,6 +373,11 @@ describe('cli/config', () => {
   });
 
   describe('extractOAuthFlags', () => {
+    it('sets selfSignedApi only when --selfsigned-api is given', () => {
+      expect(extractOAuthFlags({'selfsigned-api': true}).selfSignedApi).to.equal(true);
+      expect(extractOAuthFlags({}).selfSignedApi).to.be.undefined;
+    });
+
     it('extracts OAuth flags from parsed flags', () => {
       const flags: ParsedFlags = {
         'client-id': 'my-client-id',
@@ -486,6 +491,40 @@ describe('cli/config', () => {
       expect(result.hostname).to.be.undefined;
       expect(result.username).to.be.undefined;
       expect(result.password).to.be.undefined;
+    });
+
+    it('leaves selfSigned undefined for default --selfsigned/--verify values', () => {
+      const result = extractInstanceFlags({selfsigned: false, verify: true});
+      expect(result.selfSigned).to.be.undefined;
+    });
+
+    it('sets selfSigned for --selfsigned or --no-verify', () => {
+      expect(extractInstanceFlags({selfsigned: true, verify: true}).selfSigned).to.equal(true);
+      expect(extractInstanceFlags({selfsigned: false, verify: false}).selfSigned).to.equal(true);
+    });
+
+    describe('with dw.json selfsigned', () => {
+      let tempDir: string;
+
+      beforeEach(() => {
+        isolateConfig();
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'extract-instance-selfsigned-'));
+        fs.writeFileSync(
+          path.join(tempDir, 'dw.json'),
+          JSON.stringify({hostname: 'localhost', username: 'admin', password: 'pw', selfsigned: true}),
+        );
+      });
+
+      afterEach(() => {
+        fs.rmSync(tempDir, {recursive: true, force: true});
+        restoreConfig();
+      });
+
+      it('keeps dw.json selfsigned when no flag is given', async () => {
+        const flagConfig = extractInstanceFlags({selfsigned: false, verify: true});
+        const config = await loadConfig(flagConfig, {projectDirectory: tempDir});
+        expect(config.values.selfSigned).to.equal(true);
+      });
     });
   });
 

@@ -13,6 +13,7 @@ import {
   type ClientAuthMethod,
 } from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
+import {getApiFetch} from '@salesforce/b2c-tooling-sdk/clients';
 import {t} from '../../../i18n/index.js';
 
 /**
@@ -154,7 +155,7 @@ export default class AuthClient extends BaseCommand<typeof AuthClient> {
     this.logger.trace({method, url, body}, `[StatefulAuth REQ BODY] ${method} ${url}`);
 
     const startTime = Date.now();
-    const response = await fetch(url, {
+    const response = await getApiFetch(this.resolvedConfig.values)(url, {
       method,
       headers: {
         ...authHeaders,

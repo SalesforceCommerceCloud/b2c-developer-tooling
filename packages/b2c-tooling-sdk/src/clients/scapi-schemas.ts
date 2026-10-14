@@ -12,7 +12,8 @@
  *
  * @module clients/scapi-schemas
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './scapi-schemas.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
@@ -179,9 +180,12 @@ export interface ScapiSchemasClientConfig {
 export function createScapiSchemasClient(config: ScapiSchemasClientConfig, auth: AuthStrategy): ScapiSchemasClient {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `${getScapiOrigin(config.shortCode)}/dx/scapi-schemas/v1`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/dx/scapi-schemas/v1`,
+    },
+    auth,
+  );
 
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? [...SCAPI_SCHEMAS_DEFAULT_SCOPES, buildTenantScope(config.tenantId)];

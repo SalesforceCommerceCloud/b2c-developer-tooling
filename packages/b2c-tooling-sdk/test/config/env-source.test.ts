@@ -255,6 +255,13 @@ describe('config/EnvSource', () => {
   });
 
   describe('boolean parsing', () => {
+    it('parses SFCC_SELFSIGNED_API=true as boolean selfSignedApi', () => {
+      const source = new EnvSource({SFCC_SELFSIGNED_API: 'true'});
+      const result = source.load({});
+      expect(result!.config.selfSignedApi).to.equal(true);
+      expect(result!.config.selfSigned).to.be.undefined;
+    });
+
     it('parses SFCC_SELFSIGNED=true as boolean true', () => {
       const source = new EnvSource({SFCC_SELFSIGNED: 'true'});
       const result = source.load({});

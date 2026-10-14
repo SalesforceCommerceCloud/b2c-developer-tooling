@@ -15,6 +15,7 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import type {AuthStrategy, FetchInit, AccessTokenResponse} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import {getApiFetch, type HttpTransportOptions} from '../clients/http-transport.js';
 import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {
@@ -30,7 +31,7 @@ import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthRespo
 /**
  * Configuration for JWT Bearer authentication.
  */
-export interface JwtOAuthConfig {
+export interface JwtOAuthConfig extends HttpTransportOptions {
   /** OAuth client ID */
   clientId: string;
   /** Path to JWT certificate file (cert.pem) */
@@ -111,6 +112,11 @@ export class JwtOAuthStrategy implements AuthStrategy {
       key: keyContent,
       passphrase: config.passphrase,
     });
+  }
+
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
   }
 
   /**
@@ -415,7 +421,7 @@ export class JwtOAuthStrategy implements AuthStrategy {
 
     let response: Response;
     try {
-      response = await fetch(request, {signal, redirect: 'error'});
+      response = await getApiFetch(this.config)(request, {signal, redirect: 'error'});
     } catch (err) {
       const host = new URL(tokenUrl).host;
       throw wrapNetworkError(err, {operation: 'OAuth JWT token request', host});

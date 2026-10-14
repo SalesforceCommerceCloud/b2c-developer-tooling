@@ -86,6 +86,7 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
       clientAuthMethod: this.values.clientAuthMethod,
       redirectUri: options?.redirectUri,
       openBrowser: options?.openBrowser,
+      selfSignedApi: this.values.selfSignedApi,
     };
     return resolveAuthStrategy(credentials, {allowedMethods: options?.allowedMethods});
   }
@@ -94,7 +95,7 @@ export class ResolvedConfigImpl implements ResolvedB2CConfig {
     if (!this.hasMrtConfig()) {
       throw new Error('MRT auth requires mrtApiKey');
     }
-    return new ApiKeyStrategy(this.values.mrtApiKey!, 'Authorization');
+    return new ApiKeyStrategy(this.values.mrtApiKey!, 'Authorization', this.values);
   }
 
   createWebDavAuth(): AuthStrategy {

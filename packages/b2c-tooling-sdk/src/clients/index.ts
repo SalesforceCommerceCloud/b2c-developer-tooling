@@ -84,7 +84,8 @@
  *
  * ```typescript
  * // src/clients/my-api.ts
- * import createClient, { type Client } from 'openapi-fetch';
+ * import type { Client } from 'openapi-fetch';
+ * import { createHttpClient } from './http-transport.js';
  * import type { AuthStrategy } from '../auth/types.js';
  * import type { paths, components } from './my-api.generated.js';
  * import { createAuthMiddleware, createLoggingMiddleware } from './middleware.js';
@@ -93,9 +94,9 @@
  * export type MyApiClient = Client<paths>;
  *
  * export function createMyApiClient(config: MyApiConfig, auth: AuthStrategy): MyApiClient {
- *   const client = createClient<paths>({
+ *   const client = createHttpClient<paths>({
  *     baseUrl: `https://${config.host}/api/v1`,
- *   });
+ *   }, auth);
  *
  *   // Add middleware - auth first, logging last (so logging sees complete request)
  *   client.use(createAuthMiddleware(auth));
@@ -136,6 +137,15 @@ export type {
 
 // User-Agent provider (auto-registers on import)
 export {setUserAgent, getUserAgent, resetUserAgent, userAgentProvider} from './user-agent.js';
+
+export {
+  createApiWebSocket,
+  createHttpClient,
+  createWebDavDispatcher,
+  getApiDispatcher,
+  getApiFetch,
+} from './http-transport.js';
+export type {ApiFetch, HttpClientOptions, HttpTransportOptions} from './http-transport.js';
 
 export {MiddlewareRegistry, globalMiddlewareRegistry} from './middleware-registry.js';
 export type {HttpClientType, HttpMiddlewareProvider, UnifiedMiddleware} from './middleware-registry.js';

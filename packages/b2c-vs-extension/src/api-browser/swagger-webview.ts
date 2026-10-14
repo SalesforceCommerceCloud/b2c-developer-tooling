@@ -7,8 +7,10 @@ import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk'
 import {
   buildTenantScope,
   createScapiSchemasClient,
+  getApiFetch,
   getScapiOrigin,
   toOrganizationId,
+  type ApiFetch,
 } from '@salesforce/b2c-tooling-sdk/clients';
 import type {SlasComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
@@ -192,6 +194,7 @@ export function injectCustomApiOrgPathPrefix(spec: Record<string, unknown>): voi
 async function resolveExternalRefs(
   spec: Record<string, unknown>,
   authHeader: string | undefined,
+  apiFetch: ApiFetch,
   log: vscode.OutputChannel,
 ): Promise<void> {
   const visited = new Set<string>();
@@ -217,7 +220,7 @@ async function resolveExternalRefs(
       try {
         const headers: Record<string, string> = {};
         if (authHeader) headers['Authorization'] = authHeader;
-        const res = await fetch(refUrl, {headers});
+        const res = await apiFetch(refUrl, {headers});
         if (res.ok) {
           const resolved = (await res.json()) as Record<string, unknown>;
           // Inline the resolved content, removing the $ref
@@ -308,7 +311,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       const oauthOptions = await this.configProvider.getImplicitAuthOptions();
       const oauthStrategy = config.createOAuth(oauthOptions);
       const authHeader = await oauthStrategy.getAuthorizationHeader?.();
-      await resolveExternalRefs(spec, authHeader, this.log);
+      await resolveExternalRefs(spec, authHeader, getApiFetch(oauthStrategy), this.log);
     }
 
     // Custom APIs author paths relative to their resource; the platform routes
@@ -541,7 +544,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     }
 
     try {
-      const res = await fetch(url, {
+      const apiFetch = getApiFetch(this.configProvider.getConfig()?.values);
+      const res = await apiFetch(url, {
         method,
         headers,
         body: body || undefined,
@@ -650,6 +654,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       slasClientSecret,
       siteId,
       redirectUri,
+      selfSignedApi: config.values.selfSignedApi,
     });
 
     return tokenResponse.access_token;

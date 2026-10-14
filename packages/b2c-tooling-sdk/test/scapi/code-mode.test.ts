@@ -546,7 +546,10 @@ describe('SCAPI code mode', function () {
         return HttpResponse.json({});
       }),
     );
-    await rejects(() => request()({method: 'GET', path: prefix + 'test'}, new AbortController().signal), 'fetch');
+    await rejects(
+      () => request()({method: 'GET', path: prefix + 'test'}, new AbortController().signal),
+      'SCAPI request to',
+    );
     expect(redirected).to.equal(0);
   });
 

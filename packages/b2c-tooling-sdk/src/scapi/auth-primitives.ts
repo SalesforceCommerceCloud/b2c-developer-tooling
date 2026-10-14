@@ -56,6 +56,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
               accountManagerHost: config.accountManagerHost,
               clientAuthMethod: config.clientAuthMethod,
               scopes,
+              selfSignedApi: config.selfSignedApi,
             }).getTokenResponse(signal);
           }
           if (method === 'jwt' && config.jwtCertPath && config.jwtKeyPath) {
@@ -66,6 +67,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
               passphrase: config.jwtPassphrase,
               accountManagerHost: config.accountManagerHost ?? 'account.demandware.com',
               scopes,
+              selfSignedApi: config.selfSignedApi,
             }).getTokenResponse(signal);
           }
         }
@@ -97,6 +99,7 @@ export function createScapiAuth(config: NormalizedConfig, cwd = process.cwd()) {
         siteId: siteId!,
         redirectUri: args.redirectUri ?? 'http://localhost:3000/callback',
         signal,
+        selfSignedApi: config.selfSignedApi,
       };
       if (args.flow !== 'registered' && (args.shopperLogin || args.shopperPassword))
         throw new Error('Set flow: registered when supplying shopper credentials.');

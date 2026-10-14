@@ -95,7 +95,7 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     }
 
     const accountManagerHost = this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
-    const scopes = this.resolvedConfig.values.scopes;
+    const {scopes, selfSignedApi} = this.resolvedConfig.values;
     const method = this.selectMethod();
 
     if (method === 'implicit') {
@@ -107,12 +107,12 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
             'See https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#implicit-flow-deprecation',
         ),
       );
-      const strategy = new ImplicitOAuthStrategy({clientId, scopes, accountManagerHost});
+      const strategy = new ImplicitOAuthStrategy({clientId, scopes, accountManagerHost, selfSignedApi});
       await strategy.getTokenResponse();
     } else {
       // PKCE with an automatic, WARN-logged fallback to the implicit flow for
       // clients not yet registered for PKCE (see oauth-pkce-fallback in the SDK).
-      const strategy = createUserAuthStrategy({clientId, scopes, accountManagerHost});
+      const strategy = createUserAuthStrategy({clientId, scopes, accountManagerHost, selfSignedApi});
       await strategy.getTokenResponse();
     }
 

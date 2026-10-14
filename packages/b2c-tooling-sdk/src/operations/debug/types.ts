@@ -8,6 +8,7 @@
  *
  * @module operations/debug/types
  */
+import type {HttpTransportOptions} from '../../clients/http-transport.js';
 import type {CartridgeMapping} from '../code/cartridges.js';
 
 // ---------------------------------------------------------------------------
@@ -90,7 +91,7 @@ export interface BreakpointInput {
 // Configuration
 // ---------------------------------------------------------------------------
 
-export interface DebugSessionConfig {
+export interface DebugSessionConfig extends HttpTransportOptions {
   /** B2C instance hostname */
   hostname: string;
   /** Basic auth username (BM user with WebDAV_Manage_Customization) */

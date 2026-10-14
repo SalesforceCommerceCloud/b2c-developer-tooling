@@ -11,7 +11,8 @@
  *
  * @module clients/mrt-b2c
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './mrt-b2c.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
@@ -158,9 +159,13 @@ export function createMrtB2CClient(config: MrtB2CClientConfig, auth: AuthStrateg
     origin = `https://${origin}`;
   }
 
-  const client = createClient<paths>({
-    baseUrl: origin,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: origin,
+    },
+    auth,
+    {operation: 'MRT API request'},
+  );
 
   // Core middleware: auth first
   client.use(createAuthMiddleware(auth));

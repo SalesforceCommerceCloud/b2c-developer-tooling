@@ -15,6 +15,7 @@ import type {Middleware} from 'openapi-fetch';
 import type {AuthStrategy} from '../auth/types.js';
 import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
+import {getApiFetch} from './http-transport.js';
 
 /**
  * Configuration for extra parameters middleware.
@@ -126,7 +127,7 @@ export function createAuthMiddleware(auth: AuthStrategy): Middleware {
         // Retry the request
         let retryResponse: Response;
         try {
-          retryResponse = await fetch(retryRequest);
+          retryResponse = await getApiFetch(auth)(retryRequest);
         } catch (err) {
           const host = new URL(request.url).host;
           throw wrapNetworkError(err, {operation: 'Auth middleware retry', host});
@@ -245,7 +246,7 @@ export function createScapiAuthMiddleware(auth: AuthStrategy, cascade: ScopeCasc
           retryRequest.headers.set('Authorization', await auth.getAuthorizationHeader());
         }
 
-        const retryResponse = await fetch(retryRequest);
+        const retryResponse = await getApiFetch(auth)(retryRequest);
         logger.debug({status: retryResponse.status}, `[ScapiAuthMiddleware] Retry response: ${retryResponse.status}`);
         return retryResponse;
       }
@@ -393,13 +394,18 @@ export function createRateLimitMiddleware(config: RateLimitMiddlewareConfig = {}
     async onResponse(ctx) {
       const {request, response} = ctx;
       const ctxFetch = (ctx as {fetch?: (request: Request) => Promise<Response>}).fetch;
+      // openapi-fetch passes the client's fetch (the shared transport) via ctx.options.
+      const clientFetch = (ctx as {options?: {fetch?: (request: Request) => Promise<Response>}}).options?.fetch;
       // Only handle configured status codes
       if (!statusCodes.includes(response.status) || maxRetries <= 0) {
         return response;
       }
 
       const fetchFn: ((request: Request) => Promise<Response>) | undefined =
-        ctxFetch ?? configFetch ?? (typeof fetch === 'function' ? fetch : undefined);
+        ctxFetch ??
+        configFetch ??
+        clientFetch ??
+        (typeof globalThis.fetch === 'function' ? getApiFetch(undefined) : undefined);
 
       if (!fetchFn) {
         return response;

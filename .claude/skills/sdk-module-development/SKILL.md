@@ -103,11 +103,12 @@ The `development` condition:
 
 ## Client Factory Pattern
 
-HTTP clients follow a consistent factory function pattern:
+HTTP clients follow a consistent factory function pattern. Always build them with `createHttpClient(options, auth)` from `src/clients/http-transport.ts` (and use `getApiFetch(auth)` instead of the global `fetch` for direct API requests) so the auth strategy's transport options apply — see [API Client Development](../api-client-development/SKILL.md#shared-http-transport-required).
 
 ```typescript
 // src/clients/newapi.ts
-import createClient, { type Client } from 'openapi-fetch';
+import type { Client } from 'openapi-fetch';
+import { createHttpClient } from './http-transport.js';
 import type { AuthStrategy } from '../auth/types.js';
 import type { paths, components } from './newapi.generated.js';
 import { createAuthMiddleware, createLoggingMiddleware } from './middleware.js';
@@ -126,9 +127,9 @@ export function createNewApiClient(
 ): NewApiClient {
   const { apiVersion = 'v1' } = options ?? {};
 
-  const client = createClient<paths>({
+  const client = createHttpClient<paths>({
     baseUrl: `https://${hostname}/api/newapi/${apiVersion}`,
-  });
+  }, auth);
 
   // Middleware order: auth first (runs last), logging last (sees complete request)
   client.use(createAuthMiddleware(auth));

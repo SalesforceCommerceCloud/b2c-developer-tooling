@@ -12,7 +12,8 @@
  *
  * @module clients/custom-apis
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './custom-apis.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
@@ -142,9 +143,12 @@ export interface CustomApisClientConfig {
 export function createCustomApisClient(config: CustomApisClientConfig, auth: AuthStrategy): CustomApisClient {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `${getScapiOrigin(config.shortCode)}/dx/custom-apis/v1`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/dx/custom-apis/v1`,
+    },
+    auth,
+  );
 
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? [...CUSTOM_APIS_DEFAULT_SCOPES, buildTenantScope(config.tenantId)];
