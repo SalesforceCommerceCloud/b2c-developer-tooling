@@ -17,6 +17,9 @@ const context = [
   ...(values['project-directory'] ? ['--project-directory', values['project-directory']] : []),
   ...(values.instance ? ['--instance', values.instance] : []),
 ];
+// Upstream examples include Stripe-shaped placeholder keys (e.g. sk_live_a1b2c3d4e5f6) that marketplace secret
+// scanners such as Open VSX reject when the contracts are bundled; neutralize them so they no longer match.
+const STRIPE_SHAPED_EXAMPLE = /\b([rs]k_(?:live|prod)_)[A-Za-z0-9]{10,99}\b/g;
 async function cli(args: string[]): Promise<string> {
   const {stdout} = await promisify(execFile)('b2c', ['scapi', 'schemas', ...args, '--json', ...context], {
     maxBuffer: 32 * 1024 * 1024,
@@ -56,7 +59,7 @@ try {
     if (!schema.openapi || !schema.paths) throw new Error(`Invalid OpenAPI: ${apiName}`);
     const id = `${apiFamily}/${apiName}/${apiVersion}`;
     const file = `scapi/${id}.json`;
-    const content = `${JSON.stringify(schema, null, 2)}\n`;
+    const content = `${JSON.stringify(schema, null, 2)}\n`.replaceAll(STRIPE_SHAPED_EXAMPLE, '$1EXAMPLE');
 
     await mkdir(join(staging, 'scapi', apiFamily, apiName), {recursive: true});
 
