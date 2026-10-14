@@ -30,7 +30,7 @@ import {
   cloneBundledSpec,
   isLiveSource,
 } from './offline.js';
-import {prefillParameters} from './prefill.js';
+import {prefillParameters, stripParameterExamples} from './prefill.js';
 import {resolveApiBrowserTenantId} from './tenant.js';
 
 type SlasClientEntry = SlasComponents['schemas']['Client'];
@@ -331,7 +331,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       spec.servers = [{url: baseUrl}];
     }
 
-    // Pre-fill known parameters (organizationId, siteId)
+    // Start optional fields empty, then pre-fill known parameters (organizationId, siteId)
+    stripParameterExamples(spec);
     const defaults: Record<string, string> = {};
     if (organizationId) defaults.organizationId = organizationId;
     const siteId = config?.values.siteId as string | undefined;
