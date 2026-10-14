@@ -10,16 +10,9 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as zlib from 'node:zlib';
-import {Readable, Writable} from 'node:stream';
+import {Readable} from 'node:stream';
 import tar from 'tar-fs';
-import {configureLogger, resetLogger} from '../../../src/logging/index.js';
-import {
-  createBundle,
-  createBundleV2,
-  DEFAULT_SSR_PARAMETERS,
-  DEFAULT_SSR_ONLY,
-  DEFAULT_SSR_SHARED,
-} from '../../../src/operations/mrt/bundle.js';
+import {createBundle, createBundleV2, DEFAULT_SSR_PARAMETERS} from '../../../src/operations/mrt/bundle.js';
 
 /**
  * Gunzips and extracts a v2 bundle archive to a temp dir, returning the list of
@@ -200,6 +193,18 @@ describe('operations/mrt/bundle', () => {
         expect.fail('Should have thrown error');
       } catch (error: any) {
         expect(error.message).to.include('ssrOnly patterns are required');
+      }
+    });
+
+    it('should require SSR patterns when no config is found (no defaults)', async () => {
+      const buildDir = path.join(tempDir, 'build');
+      fs.mkdirSync(buildDir, {recursive: true});
+
+      try {
+        await createBundle({projectSlug: 'test-project', buildDirectory: buildDir, projectDirectory: tempDir});
+        expect.fail('Should have thrown error');
+      } catch (error: any) {
+        expect(error.message).to.include('ssrOnly and ssrShared could not be determined');
       }
     });
 
@@ -433,132 +438,82 @@ describe('operations/mrt/bundle', () => {
       });
     });
 
-    it('falls back to default SSR patterns when none are provided', async () => {
-      const buildDir = makeBuildDir();
-
-      const bundle = await createBundleV2({buildDirectory: buildDir});
-
-      // makeBuildDir() contains ssr.js only (no server dir), so only the ssr entry is listed.
-      expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}']);
-      expect(bundle.config.ssrShared).to.deep.equal(DEFAULT_SSR_SHARED);
-    });
-
-    describe('default ssrOnly entry-point detection', () => {
-      function makeBuildWith(...files: string[]): string {
-        const buildDir = path.join(tempDir, 'build');
-        fs.mkdirSync(buildDir, {recursive: true});
-        for (const file of files) fs.writeFileSync(path.join(buildDir, file), '');
-        return buildDir;
-      }
-
-      it('uses only ssr.{js,mjs} when the build has an ssr entry', async () => {
-        const bundle = await createBundleV2({buildDirectory: makeBuildWith('ssr.mjs')});
-
-        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}']);
-      });
-
-      it('uses only streamingHandler.{js,mjs} when the build has a streaming entry', async () => {
-        const bundle = await createBundleV2({buildDirectory: makeBuildWith('streamingHandler.mjs')});
-
-        expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.{js,mjs}']);
-      });
-
-      it('adds root loader.js and package.json when present', async () => {
-        const bundle = await createBundleV2({
-          buildDirectory: makeBuildWith('streamingHandler.mjs', 'loader.js', 'package.json'),
-        });
-
-        expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.{js,mjs}', 'loader.js', 'package.json']);
-      });
-
-      it('adds server/**/* only when the build has a server directory', async () => {
-        const buildDir = makeBuildWith('streamingHandler.mjs');
-        fs.mkdirSync(path.join(buildDir, 'server'));
-        fs.writeFileSync(path.join(buildDir, 'server', 'a.js'), '');
-
-        const bundle = await createBundleV2({buildDirectory: buildDir});
-
-        expect(bundle.config.ssrOnly).to.deep.equal(['streamingHandler.{js,mjs}', 'server/**/*']);
-      });
-
-      it('keeps every candidate when the build has neither entry', async () => {
-        const bundle = await createBundleV2({buildDirectory: makeBuildWith('other.js')});
-
-        expect(bundle.config.ssrOnly).to.deep.equal(DEFAULT_SSR_ONLY);
-      });
-
-      it('does not override explicitly configured ssrOnly', async () => {
-        const bundle = await createBundleV2({
-          buildDirectory: makeBuildWith('streamingHandler.mjs'),
-          ssrOnly: ['custom.js'],
-        });
-
-        expect(bundle.config.ssrOnly).to.deep.equal(['custom.js']);
-      });
-    });
-
-    describe('unrecognized config.server.ts shape', () => {
-      let logged: string;
+    describe('SSR patterns are required (no defaults)', () => {
+      let projectDir: string;
 
       beforeEach(() => {
-        logged = '';
-        configureLogger({
-          level: 'warn',
-          json: true,
-          destination: new Writable({
-            write(chunk, _encoding, callback) {
-              logged += chunk.toString();
-              callback();
-            },
-          }),
-        });
-      });
-
-      afterEach(() => {
-        resetLogger();
-      });
-
-      it('warns and falls back to defaults when the export has no ssrOnly/ssrShared', async () => {
-        const projectDir = path.join(tempDir, 'project');
+        projectDir = path.join(tempDir, 'project');
         fs.mkdirSync(projectDir, {recursive: true});
-        fs.writeFileSync(
-          path.join(projectDir, 'config.server.ts'),
-          "export default {runtime: {ssrOnly: ['custom/**']}, app: {}};",
-        );
-
-        const bundle = await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir});
-
-        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.{js,mjs}']);
-        expect(logged).to.include('exports no ssrOnly/ssrShared');
-        expect(logged).to.include('runtime');
       });
 
-      it('does not warn when explicit options supply the patterns', async () => {
-        const projectDir = path.join(tempDir, 'project');
-        fs.mkdirSync(projectDir, {recursive: true});
-        fs.writeFileSync(path.join(projectDir, 'config.server.ts'), 'export default {runtime: {}};');
+      it('throws when no config is found and no patterns are passed', async () => {
+        try {
+          await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir});
+          expect.fail('should have thrown');
+        } catch (error) {
+          expect((error as Error).message).to.include('ssrOnly and ssrShared could not be determined');
+          expect((error as Error).message).to.include('No server config was found');
+        }
+      });
 
-        await createBundleV2({
+      it('throws when only one of the lists is passed', async () => {
+        try {
+          await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir, ssrOnly: ['ssr.js']});
+          expect.fail('should have thrown');
+        } catch (error) {
+          expect((error as Error).message).to.include('ssrShared could not be determined');
+        }
+      });
+
+      it('accepts an explicitly empty ssrShared', async () => {
+        const bundle = await createBundleV2({
           buildDirectory: makeBuildDir(),
           projectDirectory: projectDir,
           ssrOnly: ['ssr.js'],
           ssrShared: [],
         });
 
-        expect(logged).to.not.include('exports no');
+        expect(bundle.config.ssrShared).to.deep.equal([]);
       });
 
-      it('does not warn when ssrOnly/ssrShared are exported', async () => {
-        const projectDir = path.join(tempDir, 'project');
-        fs.mkdirSync(projectDir, {recursive: true});
+      it('throws naming the exported keys when config.server exports no ssrOnly/ssrShared', async () => {
         fs.writeFileSync(
           path.join(projectDir, 'config.server.ts'),
-          "export const config = {ssrOnly: ['ssr.js'], ssrShared: [], ssrParameters: {}};",
+          "export default {runtime: {ssrOnly: ['custom/**']}, app: {}};",
         );
 
-        await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir});
+        try {
+          await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir});
+          expect.fail('should have thrown');
+        } catch (error) {
+          expect((error as Error).message).to.include('exports no ssrOnly and ssrShared');
+          expect((error as Error).message).to.include('runtime, app');
+        }
+      });
 
-        expect(logged).to.not.include('exports no ssrOnly/ssrShared');
+      it('uses config.server when it exports both lists', async () => {
+        fs.writeFileSync(
+          path.join(projectDir, 'config.server.ts'),
+          "export const config = {ssrOnly: ['ssr.js'], ssrShared: ['static/**/*'], ssrParameters: {}};",
+        );
+
+        const bundle = await createBundleV2({buildDirectory: makeBuildDir(), projectDirectory: projectDir});
+
+        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.js']);
+        expect(bundle.config.ssrShared).to.deep.equal(['static/**/*']);
+      });
+
+      it('lets explicit options fill a list the config omits', async () => {
+        fs.writeFileSync(path.join(projectDir, 'config.server.ts'), "export const config = {ssrOnly: ['ssr.js']};");
+
+        const bundle = await createBundleV2({
+          buildDirectory: makeBuildDir(),
+          projectDirectory: projectDir,
+          ssrShared: ['static/**/*'],
+        });
+
+        expect(bundle.config.ssrOnly).to.deep.equal(['ssr.js']);
+        expect(bundle.config.ssrShared).to.deep.equal(['static/**/*']);
       });
     });
 

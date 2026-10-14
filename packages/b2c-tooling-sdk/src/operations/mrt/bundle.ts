@@ -12,7 +12,7 @@
  * @module operations/mrt/bundle
  */
 import {createWriteStream} from 'node:fs';
-import {readdir, readFile, stat, mkdtemp, rm} from 'node:fs/promises';
+import {readFile, stat, mkdtemp, rm} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {pathToFileURL} from 'node:url';
@@ -30,17 +30,6 @@ export interface MrtServerConfig {
   ssrShared: string[];
   ssrParameters?: Record<string, unknown>;
 }
-
-/**
- * Candidate SSR entry points, one pattern per entry kind. Under `strict` matching
- * every pattern must match a file, so only the candidate actually present in the
- * build is used (see {@link detectDefaultSsrOnly}).
- */
-const DEFAULT_SSR_ENTRY_PATTERNS = ['ssr.{js,mjs}', 'streamingHandler.{js,mjs}'];
-/** Root-level files the SSR runtime needs alongside the entry point (e.g. streaming builds' loader and package.json). */
-const DEFAULT_SSR_SUPPORT_FILES = ['loader.js', 'package.json'];
-export const DEFAULT_SSR_ONLY = [...DEFAULT_SSR_ENTRY_PATTERNS, ...DEFAULT_SSR_SUPPORT_FILES, 'server/**/*'];
-export const DEFAULT_SSR_SHARED = ['static/**/*', 'client/**/*'];
 
 /**
  * Default SSR parameters applied to all bundles.
@@ -72,16 +61,16 @@ export interface CreateBundleOptions {
 
   /**
    * Glob patterns for files that should only run on the server.
-   * If omitted, loaded from `config.server.{ts,js}` in the project directory
-   * (or the legacy `build/config.server.js`) if present.
+   * Required unless supplied by `config.server.{ts,js}` in the project directory
+   * (or the legacy `build/config.server.js`); there is no built-in default.
    * @example ['ssr.js', 'ssr/*.js']
    */
   ssrOnly?: string[];
 
   /**
    * Glob patterns for files shared between client and server.
-   * If omitted, loaded from `config.server.{ts,js}` in the project directory
-   * (or the legacy `build/config.server.js`) if present.
+   * Required unless supplied by `config.server.{ts,js}` in the project directory
+   * (or the legacy `build/config.server.js`); there is no built-in default.
    * @example ['static/**\/*', '**\/*.js']
    */
   ssrShared?: string[];
@@ -217,50 +206,28 @@ function pickServerConfig(mod: unknown): MrtServerConfig | null {
 }
 
 /**
- * Default `ssrOnly` for a build: the entry-point candidate(s) found at the root of
- * the build directory, the root-level `loader.js` / `package.json` when present, plus
- * `server/**\/*` when a `server` directory exists. The v2
- * upload matches strictly (every pattern must match a file), so only patterns that
- * can match something in the build are listed. When no entry point is present (or
- * the directory is unreadable) {@link DEFAULT_SSR_ONLY} is returned unchanged, so
- * the server reports the missing entry point rather than receiving none.
+ * Requires both SSR pattern lists to be resolved from somewhere (explicit options,
+ * the build's v2 config file, or `config.server.*`). There are no built-in
+ * defaults: guessing patterns for an arbitrary build produces bundles the server
+ * rejects (entry point not declared, or patterns matching nothing) or silently
+ * drops files at runtime, so a missing list is reported up front instead.
  */
-async function detectDefaultSsrOnly(buildPath: string): Promise<string[]> {
-  let entries: string[];
-  try {
-    entries = await readdir(buildPath);
-  } catch {
-    return DEFAULT_SSR_ONLY;
-  }
-  const present = DEFAULT_SSR_ENTRY_PATTERNS.filter((pattern) => {
-    const matcher = new Minimatch(pattern);
-    return entries.some((entry) => matcher.match(entry));
-  });
-  if (present.length === 0) return DEFAULT_SSR_ONLY;
-  const support = DEFAULT_SSR_SUPPORT_FILES.filter((file) => entries.includes(file));
-  const detected = [...present, ...support];
-  getLogger().debug({buildPath, detected}, '[MRT] Detected default ssrOnly patterns from the build');
-  return entries.includes('server') ? [...detected, 'server/**/*'] : detected;
-}
+function requireSsrPatterns(
+  resolved: {ssrOnly?: string[]; ssrShared?: string[]},
+  loaded: object | null,
+): {ssrOnly: string[]; ssrShared: string[]} {
+  const {ssrOnly, ssrShared} = resolved;
+  if (ssrOnly && ssrShared) return {ssrOnly, ssrShared};
 
-/**
- * Warns when a loaded `config.server.*` is about to be ignored for a pattern list
- * because it didn't export one (typically an unexpected export shape), so the
- * silent fallback to the built-in default patterns is visible.
- */
-function warnIfServerConfigIgnored(
-  serverConfig: MrtServerConfig | null,
-  explicit: {ssrOnly?: string[]; ssrShared?: string[]},
-): void {
-  if (!serverConfig) return;
-  const missing = (['ssrOnly', 'ssrShared'] as const).filter(
-    (key) => explicit[key] === undefined && serverConfig[key] === undefined,
-  );
-  if (missing.length === 0) return;
-  getLogger().warn(
-    {missing, exportedKeys: Object.keys(serverConfig)},
-    `[MRT] config.server exports no ${missing.join('/')}; falling back to default SSR patterns. ` +
-      'Export a `config` object (or default export) with ssrOnly/ssrShared, or pass --ssr-only/--ssr-shared.',
+  const missing = [!ssrOnly && 'ssrOnly', !ssrShared && 'ssrShared'].filter(Boolean).join(' and ');
+  const found = loaded
+    ? `A server config was found but exports no ${missing} (exported keys: ${Object.keys(loaded).join(', ') || 'none'}).`
+    : 'No server config was found.';
+  throw new Error(
+    `SSR patterns are required: ${missing} could not be determined. ${found}\n` +
+      'Provide them via config.server.ts (export `config` or a default export with ssrOnly/ssrShared) in the project ' +
+      'directory, a v2 config file in the build (v2 uploads), or the --ssr-only/--ssr-shared flags ' +
+      "(use --ssr-shared '[]' for none).",
   );
 }
 
@@ -383,9 +350,10 @@ export async function createBundle(options: CreateBundleOptions): Promise<Bundle
   // Collect declared package.json dependencies for bundle metadata (best-effort).
   const dependencies = await loadProjectDependencies(projectDirectory);
 
-  warnIfServerConfigIgnored(serverConfig, options);
-  const ssrOnly = options.ssrOnly ?? serverConfig?.ssrOnly ?? (await detectDefaultSsrOnly(buildPath));
-  const ssrShared = options.ssrShared ?? serverConfig?.ssrShared ?? DEFAULT_SSR_SHARED;
+  const {ssrOnly, ssrShared} = requireSsrPatterns(
+    {ssrOnly: options.ssrOnly ?? serverConfig?.ssrOnly, ssrShared: options.ssrShared ?? serverConfig?.ssrShared},
+    serverConfig,
+  );
   const ssrParamsFromConfig = serverConfig?.ssrParameters ?? {};
 
   // Merge: defaults < config.server < explicit options (explicit values win)
@@ -550,7 +518,7 @@ export interface CreateBundleV2Options {
    * paths relative to `rootDir`.
    * If omitted, read from the on-disk v2 config file
    * ({buildDirectory}/{configPath}) if present, else the project's
-   * `config.server.{ts,js}`, else defaults.
+   * `config.server.{ts,js}`; there is no built-in default.
    */
   ssrOnly?: string[];
 
@@ -560,7 +528,7 @@ export interface CreateBundleV2Options {
    * paths relative to `rootDir`.
    * If omitted, read from the on-disk v2 config file
    * ({buildDirectory}/{configPath}) if present, else the project's
-   * `config.server.{ts,js}`, else defaults.
+   * `config.server.{ts,js}`; there is no built-in default.
    */
   ssrShared?: string[];
 
@@ -715,8 +683,8 @@ export async function createBundleV2(options: CreateBundleV2Options): Promise<Bu
   // Resolve the base SSR config. Prefer the v2 config file the build emits at
   // {buildPath}/{configPath}; if absent, read the project's config.server.{ts,js}
   // (falling back to a legacy compiled build/config.server.js); if neither
-  // exists, use defaults. Explicit options always win over the resolved base,
-  // per key.
+  // exists, SSR patterns must be passed explicitly. Explicit options always win over
+  // the resolved base, per key.
   const v2Config = await loadV2Config(buildPath, configPath);
   const serverConfig = v2Config
     ? null
@@ -727,10 +695,10 @@ export async function createBundleV2(options: CreateBundleV2Options): Promise<Bu
   const baseSsrParameters =
     (v2Config?.ssrParameters as Record<string, unknown> | undefined) ?? serverConfig?.ssrParameters ?? {};
 
-  warnIfServerConfigIgnored(serverConfig, options);
-
-  const ssrOnly = options.ssrOnly ?? baseSsrOnly ?? (await detectDefaultSsrOnly(buildPath));
-  const ssrShared = options.ssrShared ?? baseSsrShared ?? DEFAULT_SSR_SHARED;
+  const {ssrOnly, ssrShared} = requireSsrPatterns(
+    {ssrOnly: options.ssrOnly ?? baseSsrOnly, ssrShared: options.ssrShared ?? baseSsrShared},
+    v2Config ?? serverConfig,
+  );
 
   const matchMode = options.matchMode || DEFAULT_V2_MATCH_MODE;
 
@@ -748,7 +716,7 @@ export async function createBundleV2(options: CreateBundleV2Options): Promise<Bu
       configPath,
       matchMode,
       ssrParameters,
-      configSource: v2Config ? 'v2-config-file' : serverConfig ? 'config.server' : 'defaults',
+      configSource: v2Config ? 'v2-config-file' : serverConfig ? 'config.server' : 'options',
     },
     '[MRT] Creating v2 bundle',
   );

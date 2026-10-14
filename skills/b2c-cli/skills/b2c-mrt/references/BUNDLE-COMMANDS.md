@@ -64,8 +64,8 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi -
 |------|-------------|---------|
 | `--message`, `-m` | Bundle message/description | |
 | `--build-dir`, `-b` | Path to build directory | `build` |
-| `--ssr-only` | Server-only file patterns | `ssr.{js,mjs}` or `streamingHandler.{js,mjs}` (whichever is in the build), plus `loader.js` and `package.json` if present, and `server/**/*` if the build has a `server` directory |
-| `--ssr-shared` | Shared file patterns | `static/**/*,client/**/*` |
+| `--ssr-only` | Server-only file patterns. Required unless provided by the project's server config | |
+| `--ssr-shared` | Shared file patterns. Required unless provided by the project's server config (`'[]'` for none) | |
 | `--v2` | Use the v2 bundle format/endpoint (SCAPI always uses v2; opt in on legacy) | `false` |
 | `--root-dir` | Archive path prefix for built files and the config file (v2 uploads only) | `bld` |
 | `--config-path` | In-archive config file path, relative to `--root-dir` (v2 uploads only) | `.mrt/config.json` |
@@ -81,7 +81,7 @@ Build and upload a **v2-format** bundle (`b2c mrt bundle deploy --v2`; add `-e <
 
 Unlike `deploy` (v1), the v2 archive is a gzip tar whose files live under a root directory (default `bld/`), and the SSR configuration is written **inside** the archive at `{root-dir}/{config-path}` (default `bld/.mrt/config.json`) rather than sent as request fields.
 
-The SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` when present. Otherwise it is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs` or the legacy `build/config.server.js` is also accepted), then defaults (`ssr-only` defaults to the entry point found in the build — `ssr.{js,mjs}` and/or `streamingHandler.{js,mjs}` — plus `loader.js`/`package.json` when present and `server/**/*` when a `server` directory exists). Flags override the resolved values per key. If the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config (no duplicate entry).
+The SSR configuration is read from the build's on-disk v2 config file at `{build-dir}/{config-path}` when present. Otherwise it is read from `config.server.ts` in the project directory (`--project-directory`, default the current directory — a compiled `config.server.js`/`config.server.mjs` or the legacy `build/config.server.js` is also accepted), and there are no built-in defaults: `ssr-only` and `ssr-shared` must come from one of these or from flags (`--ssr-shared '[]'` for none), otherwise the command errors. Flags override the resolved values per key. If the build already emits the v2 config file, it is excluded from the archive and replaced by the resolved config (no duplicate entry).
 
 `config.server.ts` is evaluated from source (via jiti), so keep type-only imports as `import type`. A `config.server.ts` that exists but fails to import errors the command rather than silently falling back to defaults.
 
