@@ -14,7 +14,7 @@ import {
   serializeErrorCause,
 } from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
-import {preloadEnvFile, takePreloadedEnvFile} from '@salesforce/b2c-tooling-sdk/config';
+import {preloadEnvFile, takePreloadedEnvFile, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
@@ -58,6 +58,10 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
 
   public testAddTelemetryContext() {
     return this.addTelemetryContext();
+  }
+
+  public testFlagOrConfig(flag: string | undefined, key: 'siteId') {
+    return this.flagOrConfig(flag, key);
   }
 
   public testConfigDocsHint() {
@@ -966,6 +970,22 @@ describe('cli/base-command', () => {
         expect(attributes.duration).to.be.a('number');
         expect(attributes.duration).to.be.at.least(100);
       });
+    });
+  });
+  describe('flagOrConfig', () => {
+    it('prefers the flag value over config', () => {
+      command.setResolvedConfig({values: {siteId: 'FromConfig'}} as unknown as ResolvedB2CConfig);
+      expect(command.testFlagOrConfig('FromFlag', 'siteId')).to.equal('FromFlag');
+    });
+
+    it('falls back to config when the flag is unset', () => {
+      command.setResolvedConfig({values: {siteId: 'FromConfig'}} as unknown as ResolvedB2CConfig);
+      expect(command.testFlagOrConfig(undefined, 'siteId')).to.equal('FromConfig');
+    });
+
+    it('returns undefined when neither is set', () => {
+      command.setResolvedConfig({values: {}} as unknown as ResolvedB2CConfig);
+      expect(command.testFlagOrConfig(undefined, 'siteId')).to.be.undefined;
     });
   });
 });
