@@ -26,7 +26,7 @@ Commands that operate on a specific zone use the `--zone` / `-z` flag:
 |------|-------------|
 | `--zone`, `-z` | Zone ID (32-char hex) or zone name |
 
-Zone names are resolved to IDs automatically via case-insensitive lookup.
+Zone names are resolved to IDs automatically via case-insensitive lookup across all zones in the organization (the CLI pages through the zones API, so organizations with more than 25 or 50 zones are fully supported).
 
 ### Authentication
 
@@ -45,7 +45,7 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 ### b2c ecdn zones list
 
-List all CDN zones for a tenant.
+List all CDN zones for a tenant. The command pages through the zones API automatically, so every zone is returned regardless of how many exist.
 
 ```bash
 b2c ecdn zones list --tenant-id zzxy_prd
@@ -56,9 +56,8 @@ b2c ecdn zones list --tenant-id zzxy_prd
 | Column | Description |
 |--------|-------------|
 | Name | Zone name |
-| ID | Zone ID |
 | Status | Zone status |
-| Type | Zone type (storefront) |
+| Zone ID | Zone ID (shown with `--extended`) |
 
 ---
 

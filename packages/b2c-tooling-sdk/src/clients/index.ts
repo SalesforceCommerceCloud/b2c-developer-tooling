@@ -291,8 +291,9 @@ export type {
   ListOrgsOptions,
 } from './am-api.js';
 
-export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
+export {createCdnZonesClient, listAllZones, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {
+  ListAllZonesResult,
   CdnZonesClient,
   CdnZonesClientConfig,
   CdnZonesClientOptions,

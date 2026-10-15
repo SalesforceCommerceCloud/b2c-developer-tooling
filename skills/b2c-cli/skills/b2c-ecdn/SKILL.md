@@ -28,7 +28,7 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 ### List CDN Zones
 
 ```bash
-# list all CDN zones for the configured tenant
+# list all CDN zones for the configured tenant (pages through every zone)
 b2c ecdn zones list
 
 # JSON output
@@ -123,7 +123,7 @@ The tenant ID can be overridden via flag or environment variable:
 The `--zone` flag accepts either:
 
 - Zone ID (32-character hex string)
-- Zone name (human-readable, case-insensitive lookup)
+- Zone name (human-readable, case-insensitive lookup across all zones in the org, including beyond the first 25)
 
 ### OAuth Scopes
 
