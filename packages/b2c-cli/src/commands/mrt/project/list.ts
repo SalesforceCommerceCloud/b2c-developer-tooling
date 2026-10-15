@@ -39,6 +39,11 @@ const COLUMNS: Record<string, ColumnDef<MrtProjectView>> = {
     header: 'Backend',
     get: (proj) => proj.backend,
   },
+  // Optional (not in DEFAULT_COLUMNS): static outbound IPs are legacy-only; renders '-' when not reported.
+  'static-ips-default': {
+    header: 'Static IPs Default',
+    get: (proj) => (proj.staticIpsDefault === undefined ? '-' : proj.staticIpsDefault ? 'Enabled' : 'Disabled'),
+  },
 };
 
 const DEFAULT_COLUMNS = ['name', 'slug', 'organization', 'region'];

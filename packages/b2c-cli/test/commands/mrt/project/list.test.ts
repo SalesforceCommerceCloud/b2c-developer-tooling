@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import {TableRenderer} from '@salesforce/b2c-tooling-sdk/cli';
 import MrtProjectList from '../../../../src/commands/mrt/project/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -151,6 +151,49 @@ describe('mrt project list', () => {
     await command.run();
 
     expect(renderStub.called).to.equal(false);
+  });
+
+  describe('renderTable — static IPs default column', () => {
+    const PROJECTS = [
+      {id: 'on-proj', name: 'On', backend: 'legacy', staticIpsDefault: true},
+      {id: 'off-proj', name: 'Off', backend: 'legacy', staticIpsDefault: false},
+      {id: 'unset-proj', name: 'Unset', backend: 'legacy'},
+    ];
+
+    async function render(flags: Record<string, unknown>): Promise<string> {
+      const command = createCommand();
+      stubParse(command, {...flags}, {});
+      await command.init();
+      stubBackendContext(command);
+      sinon.stub(command, 'jsonEnabled').returns(false);
+      sinon.stub(command, 'log').returns(void 0);
+      sinon.stub(command, 'resolvedConfig').get(() => ({values: {}}));
+      const listStub = sinon.stub().resolves({
+        backend: 'legacy',
+        count: PROJECTS.length,
+        projects: PROJECTS,
+        raw: {},
+      } as any);
+      command.operations = {...command.operations, listProjectsWithBackend: listStub};
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      await command.run();
+      return stdoutStub
+        .getCalls()
+        .map((call) => String(call.args[0] ?? ''))
+        .join('\n');
+    }
+
+    it('is not shown by default', async () => {
+      expect(await render({})).to.not.include('Static IPs Default');
+    });
+
+    it('is shown when requested with --columns, as Enabled / Disabled / -', async () => {
+      const output = await render({columns: 'slug,static-ips-default'});
+      expect(output).to.include('Static IPs Default');
+      expect(output).to.match(/on-proj\s+Enabled/);
+      expect(output).to.match(/off-proj\s+Disabled/);
+      expect(output).to.match(/unset-proj\s+-/);
+    });
   });
 
   it('supports the SCAPI MRT backend', () => {
