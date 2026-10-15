@@ -34,8 +34,7 @@ export default class CapUninstall extends JobCommand<typeof CapUninstall> {
     ...JobCommand.baseFlags,
     'site-id': Flags.string({
       char: 's',
-      description: 'Site ID to uninstall the Commerce App from',
-      required: true,
+      description: 'Site ID to uninstall the Commerce App from (defaults to siteId from configuration)',
       aliases: ['site'],
     }),
     timeout: Flags.integer({
@@ -54,7 +53,13 @@ export default class CapUninstall extends JobCommand<typeof CapUninstall> {
     this.requireWebDavCredentials();
 
     const {appName} = this.args;
-    const {'site-id': site, timeout} = this.flags;
+    const {timeout} = this.flags;
+    const site = this.flagOrConfig(this.flags['site-id'], 'siteId');
+    if (!site) {
+      this.error(
+        t('error.siteIdRequired', 'Site ID is required. Provide --site-id or set siteId in your configuration.'),
+      );
+    }
     const hostname = this.resolvedConfig.values.hostname!;
 
     this.log(

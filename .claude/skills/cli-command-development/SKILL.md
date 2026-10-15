@@ -201,6 +201,17 @@ static flags = {
 };
 ```
 
+### Flags That Duplicate Config Identifiers
+
+Any flag that names something also stored in shared configuration (`siteId`, `realm`, `mrtProject`, `mrtEnvironment`, `contentLibrary`, `shortCode`, `tenantId`, ...) **must fall back to the resolved config value** (dw.json, env, package.json). Users set these once and expect every command to honor them.
+
+- Do NOT mark such a flag `required: true` — the config value may satisfy it.
+- Resolve with `this.flagOrConfig(this.flags['site-id'], 'siteId')` (on `BaseCommand`); an explicit flag always wins.
+- Error only when both are missing, and name both sources in the message (`Provide --site-id or set siteId in your configuration`).
+- Note the fallback in the flag description (`defaults to siteId from configuration`).
+- Exception: when omitting the flag has meaning of its own (e.g. `cap list` without `--site-id` queries all sites), keep it optional with no fallback.
+- Check `NormalizedConfig` in `packages/b2c-tooling-sdk/src/config/types.ts` when adding a flag to see whether a config field already exists.
+
 ## Table Output
 
 Use `createTable` for consistent tabular output:

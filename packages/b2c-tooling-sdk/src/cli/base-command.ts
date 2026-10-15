@@ -6,7 +6,7 @@
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
 import type {LoadConfigOptions} from './config.js';
-import type {ResolvedB2CConfig} from '../config/index.js';
+import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
 import {parseFriendlySandboxId} from '../operations/ods/sandbox-lookup.js';
 import type {
   ConfigSourcesHookOptions,
@@ -506,6 +506,18 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   /** `--config` / `SFCC_CONFIG`; oclif treats an empty env var as unset, but empty means "no dw.json". */
   protected getConfigPathFlag(): string | undefined {
     return this.flags.config ?? (process.env.SFCC_CONFIG === '' ? '' : undefined);
+  }
+
+  /**
+   * Resolves a flag value against shared configuration: an explicit flag always wins,
+   * otherwise the configured value (dw.json, env, package.json, etc.) is used.
+   * Use this for any flag that duplicates a config identifier (siteId, realm, mrtProject, ...).
+   */
+  protected flagOrConfig<K extends keyof NormalizedConfig>(
+    flagValue: NormalizedConfig[K] | undefined,
+    key: K,
+  ): NormalizedConfig[K] | undefined {
+    return flagValue ?? this.resolvedConfig.values[key];
   }
 
   protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
