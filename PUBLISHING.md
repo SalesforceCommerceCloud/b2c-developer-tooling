@@ -58,10 +58,17 @@ This is the normal release flow from `main`.
    - Creates a GitHub Release with aggregated changelogs
    - Triggers a documentation rebuild
    - Releases the GitHub Actions at the new CLI version (when the CLI was published)
+   - Pins the `b2c-dx-mcp` plugin to the new MCP version once npm serves it (when the MCP server was published to `latest`)
 
 No manual tagging or workflow dispatch is needed.
 
 A stable CLI publish also releases the GitHub Actions at the same version (see [GitHub Actions Releases](#github-actions-releases)).
+
+## MCP Plugin Pin
+
+The `b2c-dx-mcp` plugin (`plugins/b2c-dx-mcp/`, its Claude marketplace entry and Codex manifest) launches an exact `@salesforce/b2c-dx-mcp@X.Y.Z` with `npx`. The version PR does not change it: plugin manifests are live as soon as they reach `main`, and pinning a version npm does not serve yet leaves new installs failing to start.
+
+After a stable MCP publish to `latest`, `publish.yml` dispatches **Pin MCP Plugin**. It waits until npm serves the version (plus the registry's 5-minute cache period), runs `scripts/pin-mcp-plugin.mjs`, and pushes the pin to `main`. If npm does not serve it within 30 minutes the run fails and the plugin keeps the previous version; retry with `gh workflow run pin-mcp-plugin.yml -f version=X.Y.Z`.
 
 ## GitHub Actions Releases
 
