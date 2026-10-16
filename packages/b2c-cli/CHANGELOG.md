@@ -1,5 +1,20 @@
 # @salesforce/b2c-cli
 
+## 2.8.0
+
+### Minor Changes
+
+- [#762](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/762) [`20784c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/20784c93ae31eb2f81d000b7755bd9f245c4ac29) - Add static outbound IP support to Managed Runtime (legacy backend only): `--[no-]static-ips-default` on `mrt project create/update`, `--[no-]static-ips` on `mrt env create/update`, and opt-in `static-ips-default` / `static-ips` columns for `mrt project list` / `mrt env list` (via `--columns`; not shown by default). Static IP values are not printed by `get`/`create`/`update`; `--json` returns `static_ips_default`, `ssr_static_ips` and `ssr_static_outbound_ips`. Omitting a flag sends nothing. Passing a static IP flag with `--mrt-backend scapi` is an error, and with `auto` it warns and is ignored when SCAPI serves the run. The SDK `createProject`/`updateProject`/`createProjectWithBackend`/`updateProjectWithBackend` accept `staticIpsDefault` and `createEnv`/`updateEnv`/`createEnvironmentWithBackend`/`updateEnvironmentWithBackend` accept `ssrStaticIps`. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+### Patch Changes
+
+- [#772](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/772) [`2d86737`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2d86737d68228c642d85cb4522ecca96b2cd40e8) - Commands now use your configured `siteId`, `realm` and `mrtProject` when the matching flag is omitted (`sites cartridges`, `preferences site`, `cap install/tasks/uninstall`, `sandbox create`, `mrt bundle save`). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#774](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/774) [`13038ab`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/13038abf6363fb0ffbff5943b406c35ab9c50ee8) - Fix `b2c ecdn zones list` and `--zone <name>` lookup only seeing the first 25 zones; zones are now paged in full. The SDK adds a `listAllZones` helper. (Thanks [@jlbruno](https://github.com/jlbruno)!)
+
+- Updated dependencies [[`2d86737`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2d86737d68228c642d85cb4522ecca96b2cd40e8), [`13038ab`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/13038abf6363fb0ffbff5943b406c35ab9c50ee8), [`20784c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/20784c93ae31eb2f81d000b7755bd9f245c4ac29)]:
+  - @salesforce/b2c-tooling-sdk@2.8.0
+
 ## 2.7.1
 
 ### Patch Changes
