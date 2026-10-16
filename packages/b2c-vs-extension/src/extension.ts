@@ -247,6 +247,9 @@ async function detectB2cCli(context?: vscode.ExtensionContext): Promise<CliDetec
   return {...local, latestVersion: latest, isOutdated};
 }
 
+/** globalState flag set on the first activation, so telemetry can tell new installs from returning ones. */
+const ACTIVATED_KEY = 'b2c-dx.telemetry.activated';
+
 export async function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
 
@@ -262,9 +265,18 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   try {
-    const result = await activateInner(context, log);
-    sendEvent('EXTENSION_ACTIVATED');
-    return result;
+    const startedAt = Date.now();
+    const summary = await activateInner(context, log);
+    // Coarse, value-free usage context: is the workspace set up, and where does it run.
+    const firstActivation = !context.globalState.get<boolean>(ACTIVATED_KEY);
+    if (firstActivation) void context.globalState.update(ACTIVATED_KEY, true);
+    sendEvent('EXTENSION_ACTIVATED', {
+      ...summary,
+      activationMs: Date.now() - startedAt,
+      firstActivation,
+      remote: vscode.env.remoteName ?? 'local',
+      workspaceFolders: vscode.workspace.workspaceFolders?.length ?? 0,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
@@ -308,7 +320,10 @@ export async function deactivate(): Promise<void> {
   await disposeTelemetry();
 }
 
-async function activateInner(context: vscode.ExtensionContext, log: vscode.OutputChannel) {
+async function activateInner(
+  context: vscode.ExtensionContext,
+  log: vscode.OutputChannel,
+): Promise<{hasDwJson: boolean; instanceConfigured: boolean}> {
   // Initialize b2c-cli plugins before registering commands/views.
   // This ensures plugin config sources and middleware are available
   // before the first resolveConfig() call. Failures are non-fatal.
@@ -1142,7 +1157,8 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
   // Drop the per-workspace onboarding panel state (persona + step records)
   // when the workspace has no dw.json, so the deep-dive panel reopens with no
   // selection. Cheap to call: workspaceState writes are local.
-  if (!(await workspaceHasDwJson())) {
+  const hasDwJson = await workspaceHasDwJson();
+  if (!hasDwJson) {
     await onboardingStore.reset();
   }
 
@@ -1156,4 +1172,6 @@ async function activateInner(context: vscode.ExtensionContext, log: vscode.Outpu
       log.appendLine(`Warning: Failed to show walkthrough: ${err instanceof Error ? err.message : String(err)}`);
     });
   }
+
+  return {hasDwJson, instanceConfigured: configProvider.getConfig()?.hasB2CInstanceConfig() ?? false};
 }

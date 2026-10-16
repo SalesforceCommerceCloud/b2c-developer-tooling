@@ -52,6 +52,53 @@ export function ocapiDeprecatedMessage(requiredScopes?: string[]): string {
   );
 }
 
+/** Doc anchor for granting a client ID OCAPI Data API permissions. */
+const OCAPI_SETTINGS_DOC_URL =
+  'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#configuring-ocapi-in-business-manager';
+
+/** OCAPI fault text returned when the client ID has no Data API permission for a resource. */
+const OCAPI_ACCESS_DENIED = /^Access to resource '([A-Z]+) ([^'\s]+)' isn't allowed for the current client/;
+
+/**
+ * Converts a Data API request path to the `resource_id` pattern used in OCAPI
+ * settings: drops the `/data/vXX_X` prefix and query, and replaces every
+ * identifier segment (the Data API alternates collection and id) with `*`,
+ * e.g. `/data/v25_6/code_versions/v1` becomes `/code_versions/*`.
+ */
+function toOcapiResourceId(path: string): string {
+  const segments = path
+    .split('?')[0]
+    .replace(/^(?:\/s\/-\/dw)?\/data\/v\d+_\d+/, '')
+    .split('/')
+    .filter(Boolean);
+  return '/' + segments.map((segment, i) => (i % 2 === 1 && segment !== 'this' ? '*' : segment)).join('/');
+}
+
+/**
+ * Builds guidance for an OCAPI "Access to resource ... isn't allowed for the
+ * current client" fault: the exact Data API settings entry that grants the
+ * failed request. Returns undefined for any other message.
+ *
+ * The suggestion only contains the HTTP method and a wildcarded resource
+ * pattern, never IDs from the request path.
+ */
+export function ocapiPermissionHint(faultMessage: string): string | undefined {
+  const match = OCAPI_ACCESS_DENIED.exec(faultMessage);
+  if (!match) return undefined;
+  const entry = {
+    resource_id: toOcapiResourceId(match[2]),
+    methods: [match[1].toLowerCase()],
+    read_attributes: '(**)',
+    write_attributes: '(**)',
+  };
+  return (
+    'To allow it, add this resource for the client ID in Business Manager ' +
+    '(Administration > Site Development > Open Commerce API Settings, type Data API):\n' +
+    `  ${JSON.stringify(entry)}\n` +
+    `See: ${OCAPI_SETTINGS_DOC_URL}`
+  );
+}
+
 /**
  * Generic OCAPI deprecation message (no specific scope named). Convenience for
  * call sites that surface the guidance directly without an operation scope.
@@ -134,7 +181,8 @@ export function getApiErrorMessage(error: unknown, response: Response | {status:
     if (err.fault && typeof err.fault === 'object') {
       const fault = err.fault as Record<string, unknown>;
       if (typeof fault.message === 'string' && fault.message) {
-        return fault.message;
+        const hint = ocapiPermissionHint(fault.message);
+        return hint ? `${fault.message}\n${hint}` : fault.message;
       }
     }
 

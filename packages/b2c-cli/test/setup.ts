@@ -30,6 +30,10 @@ process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 // Agent-specific behavior is tested with explicit environments.
 process.env.SFCC_AGENT = '0';
 
+// Never send test runs to production telemetry. CI sets this too, but forks and
+// local runs don't, and their command tests would otherwise report real events.
+process.env.SFCC_DISABLE_TELEMETRY = 'true';
+
 // Isolate the auth-session store to a unique per-process temp dir. Both
 // the test setup and BaseCommand.init() will use this path, so tests
 // (or parallel mocha workers) don't race on the developer's real auth file.
