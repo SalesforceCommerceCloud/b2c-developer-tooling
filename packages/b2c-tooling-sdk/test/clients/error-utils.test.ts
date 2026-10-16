@@ -11,6 +11,7 @@ import {
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
   ocapiDeprecatedMessage,
+  ocapiPermissionHint,
 } from '../../src/clients/error-utils.js';
 
 describe('getApiErrorMessage', () => {
@@ -45,6 +46,19 @@ describe('getApiErrorMessage', () => {
       const error = {fault: {type: 'NotFoundException', message: 'Site not found'}};
       const response = mockResponse(404, 'Not Found');
       expect(getApiErrorMessage(error, response)).to.equal('Site not found');
+    });
+
+    it('appends a Business Manager permission hint for client access faults', () => {
+      const error = {
+        fault: {
+          type: 'ClientAccessForbiddenException',
+          message: "Access to resource 'GET /data/v25_6/code_versions' isn't allowed for the current client.",
+        },
+      };
+      const message = getApiErrorMessage(error, mockResponse(403, 'Forbidden'));
+      expect(message).to.match(/^Access to resource 'GET \/data\/v25_6\/code_versions' isn't allowed/);
+      expect(message).to.include('"resource_id":"/code_versions"');
+      expect(message).to.include('#configuring-ocapi-in-business-manager');
     });
 
     it('ignores fault if message is not a string', () => {
@@ -264,5 +278,35 @@ describe('getApiErrorMessage', () => {
         expect(err.cause).to.equal(fault);
       }
     });
+  });
+});
+
+describe('ocapiPermissionHint', () => {
+  const fault = (resource: string) => `Access to resource '${resource}' isn't allowed for the current client.`;
+
+  it('suggests the resource entry for a collection', () => {
+    const hint = ocapiPermissionHint(fault('GET /data/v25_6/code_versions'));
+    expect(hint).to.include(
+      '{"resource_id":"/code_versions","methods":["get"],"read_attributes":"(**)","write_attributes":"(**)"}',
+    );
+  });
+
+  it('replaces identifiers with wildcards', () => {
+    expect(ocapiPermissionHint(fault('POST /data/v24_5/sites/RefArch/cartridges'))).to.include(
+      '"resource_id":"/sites/*/cartridges","methods":["post"]',
+    );
+    expect(ocapiPermissionHint(fault('POST /data/v25_6/jobs/sfcc-site-archive-export/executions'))).to.include(
+      '"resource_id":"/jobs/*/executions"',
+    );
+  });
+
+  it('keeps the literal "this" segment and drops query strings', () => {
+    expect(ocapiPermissionHint(fault('GET /data/v25_6/users/this?expand=roles'))).to.include(
+      '"resource_id":"/users/this"',
+    );
+  });
+
+  it('returns undefined for other faults', () => {
+    expect(ocapiPermissionHint('Site not found')).to.equal(undefined);
   });
 });
