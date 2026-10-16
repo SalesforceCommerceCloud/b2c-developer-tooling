@@ -42,9 +42,8 @@ server in a sandbox. See [Agent Sandboxing](../guide/agent-sandboxing).
 
 ## Deployments {#deployments}
 
-Cartridge deployment writes to the selected code version. MRT publishing uploads
-a bundle and can activate it in an environment. Confirm the project, instance, code version, and
-MRT environment before requesting these operations.
+Cartridge deployment writes to the selected code version. Confirm the instance
+and code version before requesting a deployment.
 Selected cartridge uploads overwrite matching files and preserve other files.
 Code-version reload can briefly activate another version before activating the target.
 

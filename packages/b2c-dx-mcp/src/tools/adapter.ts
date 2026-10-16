@@ -56,16 +56,16 @@
  * };
  *
  * const mrtTool = createToolAdapter({
- *   name: 'mrt_bundle_push',
- *   effect: 'write', idempotent: false, openWorld: true,
- *   description: 'Push bundle to MRT',
+ *   name: 'mrt_members_list',
+ *   effect: 'read', idempotent: true, openWorld: true,
+ *   description: 'List MRT project members',
  *   toolsets: ['MRT'],
  *   requiresMrtAuth: true,
  *   inputSchema: {
  *     projectSlug: z.string().describe('MRT project slug'),
  *   },
  *   execute: async (args, { mrtConfig }) => {
- *     const result = await pushBundle({ projectSlug: args.projectSlug }, mrtConfig.auth);
+ *     const result = await listMembers({ projectSlug: args.projectSlug }, mrtConfig.auth);
  *     return result;
  *   },
  *   formatOutput: (output) => jsonResult(output),

@@ -71,7 +71,7 @@ describe('registry', () => {
       expect(registry.MRT.length).to.be.greaterThan(0);
 
       const toolNames = registry.MRT.map((t) => t.name);
-      expect(toolNames).to.include('mrt_bundle_push');
+      expect(toolNames).to.include('mrt_logs_watch');
     });
 
     it('should create PWAV3 tools', () => {
@@ -79,9 +79,9 @@ describe('registry', () => {
       const registry = createToolRegistry(loadServices);
 
       expect(registry.PWAV3).to.be.an('array');
-      // mrt_bundle_push appears in PWAV3 (multi-toolset); PWA Kit-specific tools not yet implemented
+      // MRT log tools appear in PWAV3 (multi-toolset); PWA Kit-specific tools not yet implemented
       const toolNames = registry.PWAV3.map((t) => t.name);
-      expect(toolNames).to.include('mrt_bundle_push');
+      expect(toolNames).to.include('mrt_logs_watch');
     });
 
     it('should create SCAPI tools', () => {
@@ -104,8 +104,8 @@ describe('registry', () => {
       expect(registry.STOREFRONTNEXT.length).to.be.greaterThan(0);
 
       const toolNames = registry.STOREFRONTNEXT.map((t) => t.name);
-      // mrt_bundle_push and scapi tools appear in STOREFRONTNEXT (multi-toolset, GA)
-      expect(toolNames).to.include('mrt_bundle_push');
+      // MRT log and scapi tools appear in STOREFRONTNEXT (multi-toolset, GA)
+      expect(toolNames).to.include('mrt_logs_watch');
       expect(toolNames).to.include('scapi_schemas_list');
     });
 
@@ -146,7 +146,6 @@ describe('registry', () => {
         'logs_list_files',
         'logs_watch',
         'metrics_get',
-        'mrt_bundle_push',
         'mrt_logs_watch',
         'scapi_custom_apis_get_status',
         'scapi_schemas_list',
@@ -261,7 +260,7 @@ describe('registry', () => {
       // Should include CARTRIDGES tools
       expect(server.registeredTools).to.include('cartridge_deploy');
       // Should include MRT tools
-      expect(server.registeredTools).to.include('mrt_bundle_push');
+      expect(server.registeredTools).to.include('mrt_logs_watch');
       // Should not include PWAV3-only tools (placeholder tools removed)
       expect(server.registeredTools).to.not.include('pwakit_create_storefront');
     });
@@ -277,14 +276,14 @@ describe('registry', () => {
 
       // Should include tools from all toolsets (placeholder tools removed)
       expect(server.registeredTools).to.include('cartridge_deploy');
-      expect(server.registeredTools).to.include('mrt_bundle_push');
+      expect(server.registeredTools).to.include('mrt_logs_watch');
       expect(server.registeredTools).to.include('scapi_schemas_list');
     });
 
     it('should register individual tools via --tools flag', async () => {
       const server = createMockServer();
       const flags: StartupFlags = {
-        tools: ['cartridge_deploy', 'mrt_bundle_push'],
+        tools: ['cartridge_deploy', 'mrt_logs_watch'],
       };
 
       const loadServices = createMockLoadServicesWrapper();
@@ -292,7 +291,7 @@ describe('registry', () => {
 
       expect(server.registeredTools).to.have.lengthOf(2);
       expect(server.registeredTools).to.include('cartridge_deploy');
-      expect(server.registeredTools).to.include('mrt_bundle_push');
+      expect(server.registeredTools).to.include('mrt_logs_watch');
     });
 
     it('should combine toolsets and individual tools', async () => {
@@ -394,7 +393,7 @@ describe('registry', () => {
       await registerToolsets(flags, server, loadServices);
 
       expect(server.registeredTools).to.include('cartridge_deploy');
-      expect(server.registeredTools).to.include('mrt_bundle_push');
+      expect(server.registeredTools).to.include('mrt_logs_watch');
       expect(server.registeredTools).to.include('scapi_schemas_list');
       expect(server.registeredTools).to.include('scapi_custom_apis_get_status');
 
@@ -425,7 +424,7 @@ describe('registry', () => {
         const actual = createMockServer();
         await registerToolsets({projectDirectory: os.homedir()}, actual, createMockLoadServicesWrapper());
         expect(actual.registeredTools).to.deep.equal(expected.registeredTools);
-        expect(actual.registeredTools).to.include.members(['cartridge_deploy', 'mrt_bundle_push', 'skills_read']);
+        expect(actual.registeredTools).to.include.members(['cartridge_deploy', 'mrt_logs_watch', 'skills_read']);
         expect(actual.registeredTools).to.include.members(['metrics_get', 'scapi_search', 'scapi_execute']);
         expect(readDirectory.called).to.equal(false);
       } finally {
