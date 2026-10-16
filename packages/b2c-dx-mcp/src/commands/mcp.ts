@@ -65,7 +65,7 @@
  * ## Configuration
  *
  * Different tools require different configuration:
- * - **MRT tools** (e.g., `mrt_bundle_push`) → MRT flags (--project, --api-key)
+ * - **MRT tools** (e.g., `mrt_logs_watch`) → MRT flags (--project, --api-key)
  * - **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) → Instance flags or dw.json
  * - **Local tools** (e.g., scaffolding) → None
  *

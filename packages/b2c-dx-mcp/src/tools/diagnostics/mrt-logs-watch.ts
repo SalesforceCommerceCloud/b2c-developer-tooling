@@ -62,7 +62,7 @@ function createMrtLogsWatchStartTool(
       openWorld: true,
       description:
         'Start, list, or stop live MRT log watches. Requires project/environment to start; read with mrt_logs_watch_poll. Stop discards unread entries; safe to repeat.',
-      toolsets: ['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT'],
+      toolsets: ['DIAGNOSTICS', 'MRT', 'PWAV3', 'STOREFRONTNEXT'],
       requiresMrtAuth: true,
       inputSchema: {
         level: z.array(z.string()).optional().describe('Keep matching levels before buffering (e.g. ERROR, WARN).'),
