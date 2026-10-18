@@ -15,9 +15,17 @@ import {parseStringPromise} from 'xml2js';
 import type {Dispatcher} from 'undici';
 import type {AuthStrategy} from '../auth/types.js';
 import {HTTPError} from '../errors/http-error.js';
-import {wrapNetworkError} from '../errors/network-error.js';
+import {classifyNetworkError, NetworkError, wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry, type UnifiedMiddleware} from './middleware-registry.js';
+
+/**
+ * Methods retried once when the server resets the connection. These are safe to
+ * replay: a repeat gives the same result whether or not the first attempt
+ * reached the server. MKCOL is excluded because callers use it as a lock
+ * ({@link WebDavClient.mkcol} retries itself, since it accepts 405).
+ */
+const RESET_RETRY_METHODS = new Set(['GET', 'HEAD', 'PROPFIND', 'PUT']);
 
 /**
  * Result of a PROPFIND operation.
@@ -168,19 +176,29 @@ export class WebDavClient {
 
     // Use auth.fetch with the (potentially modified) request
     // Pass dispatcher for TLS/mTLS support
+    // Streams cannot be replayed, so only buffered bodies are retried.
+    const canRetry = RESET_RETRY_METHODS.has(request.method) && !(init?.body instanceof ReadableStream);
     let response: Response;
-    try {
-      response = await this.auth.fetch(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: init?.body, // Use original body since Request body may have been consumed
-        signal: request.signal,
-        redirect: request.redirect,
-        dispatcher: this.dispatcher,
-      });
-    } catch (err) {
-      const host = new URL(this.baseUrl).host;
-      throw wrapNetworkError(err, {operation: `WebDAV ${request.method}`, host});
+    for (let attempt = 1; ; attempt++) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        response = await this.auth.fetch(request.url, {
+          method: request.method,
+          headers: request.headers,
+          body: init?.body, // Use original body since Request body may have been consumed
+          signal: request.signal,
+          redirect: request.redirect,
+          dispatcher: this.dispatcher,
+        });
+        break;
+      } catch (err) {
+        if (canRetry && attempt === 1 && classifyNetworkError(err) === 'connection-reset') {
+          logger.debug({method: request.method, url: request.url}, `[WebDAV RETRY] ${request.method} ${request.url}`);
+          continue;
+        }
+        const host = new URL(this.baseUrl).host;
+        throw wrapNetworkError(err, {operation: `WebDAV ${request.method}`, host});
+      }
     }
 
     const duration = Date.now() - startTime;
@@ -273,7 +291,14 @@ export class WebDavClient {
    * await client.mkcol('Cartridges/v1');
    */
   async mkcol(path: string): Promise<void> {
-    const response = await this.request(path, {method: 'MKCOL'});
+    let response: Response;
+    try {
+      response = await this.request(path, {method: 'MKCOL'});
+    } catch (error) {
+      // Safe to retry here: if the reset request did create the collection, the retry gets 405.
+      if (!(error instanceof NetworkError && error.kind === 'connection-reset')) throw error;
+      response = await this.request(path, {method: 'MKCOL'});
+    }
 
     // 201 = created, 405 = already exists (acceptable)
     if (!response.ok && response.status !== 405) {

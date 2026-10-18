@@ -462,6 +462,9 @@ describe('WebDAV Operations E2E Tests', function () {
 
   describe('Step 11: Verify Extracted Files', function () {
     it('should find extracted files in directory', async function () {
+      // A retry only re-polls without re-running the unzip, so it cannot change the outcome
+      // and would multiply the 7-minute wait below past the job timeout.
+      this.retries(0);
       // Unzip visibility can be delayed on WebDAV; use longer timeout and poll every 1s
       try {
         await waitFor(
