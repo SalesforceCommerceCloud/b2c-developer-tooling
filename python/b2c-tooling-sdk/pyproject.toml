@@ -51,7 +51,7 @@ dev = [
     "mypy>=1.11",
     # Pinned exactly: datamodel-code-generator output is not stable across
     # versions, so an exact pin keeps model regeneration deterministic.
-    "datamodel-code-generator==0.76.2",
+    "datamodel-code-generator==0.81.0",
     "unasync>=0.6",
 ]
 docs = [
