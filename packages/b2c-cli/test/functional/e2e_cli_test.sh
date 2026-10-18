@@ -227,8 +227,10 @@ webdav_roundtrip() {
     $CLI webdav put "$WEBDAV_FILE" "$base/x/y/renamed.txt" "${w[@]}"
     webdav_expect_content "$root" "$base/x/y/renamed.txt"
 
-    # leading slash is relative to the root
-    $CLI webdav put "$WEBDAV_FILE" "/$base/lead/" "${w[@]}"
+    # leading slash is relative to the root. Git Bash on Windows rewrites
+    # "/..." arguments to Windows paths; exclude the remote path (the local
+    # temp file still needs conversion). No effect on other platforms.
+    MSYS2_ARG_CONV_EXCL="/$base" $CLI webdav put "$WEBDAV_FILE" "/$base/lead/" "${w[@]}"
     webdav_expect_content "$root" "$base/lead/webdav-e2e.txt"
 
     # zip, remove the source, and restore it with unzip
