@@ -39,7 +39,11 @@ catalog:
 
 minimumReleaseAge: 2880
 
-minimumReleaseAgeExclude: []
+minimumReleaseAgeExclude:
+  [
+    # Renovate security update: pnpm@10.34.5
+    pnpm@10.34.5
+  ]
 
 nodeLinker: hoisted
 
