@@ -115,7 +115,7 @@
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@eslint/js": "^9",
-    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/client": "2.2.0",
     "@modelcontextprotocol/inspector": "2.2.0",
     "@oclif/prettier-config": "catalog:",
     "@salesforce/dev-config": "catalog:",
