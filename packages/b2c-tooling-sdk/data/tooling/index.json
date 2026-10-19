@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-09T19:44:48.202Z",
+  "generatedAt": "2026-10-16T02:25:32.847Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -539,7 +539,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Managed Runtime {#mrt} • Instance files {#webdav} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs {#mrt} • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Instance files {#webdav} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {

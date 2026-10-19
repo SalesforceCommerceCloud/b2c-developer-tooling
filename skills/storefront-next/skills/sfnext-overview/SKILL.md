@@ -78,7 +78,7 @@ Use `b2c` (`npx @salesforce/b2c-cli` if not installed) for platform work around 
 
 ## MCP tools (b2c-dx-mcp, STOREFRONTNEXT toolset)
 
-`mrt_bundle_push`, `mrt_logs_watch`, `scapi_search`, `scapi_execute`, `scapi_snippet_save`, `scapi_schemas_list`, `scapi_custom_apis_get_status`, plus the docs tools `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, `docs_schema_list`. Availability depends on how the MCP server was started; list tools in your client.
+`mrt_logs_watch`, `scapi_search`, `scapi_execute`, `scapi_snippet_save`, `scapi_schemas_list`, `scapi_custom_apis_get_status`, plus the docs tools `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, `docs_schema_list`. Availability depends on how the MCP server was started; list tools in your client.
 
 ## Docs search fallback
 

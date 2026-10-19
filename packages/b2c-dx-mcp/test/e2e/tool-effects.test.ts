@@ -49,7 +49,7 @@ const groups = [
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true},
   },
   {
-    names: ['mrt_bundle_push', 'debug_start_session', 'debug_control', 'debug_evaluate', 'debug_capture_at_breakpoint'],
+    names: ['debug_start_session', 'debug_control', 'debug_evaluate', 'debug_capture_at_breakpoint'],
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true},
   },
   {

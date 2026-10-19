@@ -163,9 +163,9 @@ Instance logs require WebDAV log-read access.
 
 </ExamplePrompt>
 
-### Managed Runtime logs
+### Managed Runtime logs {#mrt}
 
-**Toolsets:** `DIAGNOSTICS`, `PWAV3`, `STOREFRONTNEXT`
+**Toolsets:** `DIAGNOSTICS`, `MRT`, `PWAV3`, `STOREFRONTNEXT`
 
 | Tool                  | Capability                                 |
 | --------------------- | ------------------------------------------ |
@@ -222,17 +222,6 @@ sandbox and end sessions when finished. See [debugger access](./security#debugge
 Cartridges require WebDAV write access. Code-version discovery and reload use
 SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
 Check [deployment permissions](./security#deployments) before connecting.
-
-### Managed Runtime {#mrt}
-
-**Toolsets:** `MRT`, `PWAV3`, `STOREFRONTNEXT`
-
-| Tool              | Capability                                                   |
-| ----------------- | ------------------------------------------------------------ |
-| `mrt_bundle_push` | Publish a pre-built storefront bundle; optionally deploy it. |
-
-Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
-plus an environment when deploying.
 
 ## Instance files {#webdav}
 
@@ -313,10 +302,10 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 | ---------------- | ---------------------------------------------------------------- |
 | `CARTRIDGES`     | Cartridge deployment and instance diagnostics.                   |
 | `DIAGNOSTICS`    | Debugging, instance/MRT logs, and configuration inspection.      |
-| `MRT`            | Managed Runtime bundle publishing and deployment.                |
-| `PWAV3`          | Shared MRT and SCAPI tools for PWA Kit projects.                 |
+| `MRT`            | Managed Runtime log streaming.                                   |
+| `PWAV3`          | Shared MRT log and SCAPI tools for PWA Kit projects.             |
 | `SCAPI`          | API development, instance diagnostics, and optional metrics.     |
-| `STOREFRONTNEXT` | Shared MRT and SCAPI tools for Storefront Next projects.         |
+| `STOREFRONTNEXT` | Shared MRT log and SCAPI tools for Storefront Next projects.     |
 | `CIP`            | Analytics report discovery, warehouse metadata, and SQL queries. |
 
 Skills and documentation are included in every toolset. Shared tools appear once.

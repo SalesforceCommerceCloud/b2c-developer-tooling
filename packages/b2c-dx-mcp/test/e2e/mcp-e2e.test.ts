@@ -390,7 +390,7 @@ describe('MCP Server E2E', function () {
           const result = (await client.call('tools/list')) as {tools: {name: string}[]};
           const names = result.tools.map((tool) => tool.name).sort();
           expect(names).to.deep.equal(expectedNames);
-          expect(names).to.include.members(['cartridge_deploy', 'mrt_bundle_push', 'skills_read']);
+          expect(names).to.include.members(['cartridge_deploy', 'mrt_logs_watch', 'skills_read']);
           expect(names).to.include.members(['metrics_get', 'scapi_search', 'scapi_execute']);
           expect(names).not.to.include('pwakit_get_guidelines');
           expect(names).not.to.include('scapi_custom_api_generate_scaffold');
