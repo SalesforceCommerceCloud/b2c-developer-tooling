@@ -26,18 +26,32 @@ export interface LogsGetRecentInjections {
 
 const DEFAULT_PREFIXES = ['error', 'customerror'];
 const DEFAULT_COUNT = 50;
+const DEFAULT_MAX_MESSAGE_LENGTH = 2000;
 
 interface GetRecentInput {
   count?: number;
   level?: string[];
+  maxMessageLength?: number;
   prefixes?: string[];
   search?: string;
   since?: string;
 }
 
+/** Entries omit `raw`; it repeats `message` with the timestamp and level already parsed out. */
+type RecentLogEntry = Omit<LogEntry, 'raw'> & {truncatedChars?: number};
+
 interface GetRecentOutput {
   count: number;
-  entries: LogEntry[];
+  entries: RecentLogEntry[];
+}
+
+function toRecentEntry({raw: _raw, ...entry}: LogEntry, maxMessageLength: number): RecentLogEntry {
+  if (maxMessageLength === 0 || entry.message.length <= maxMessageLength) return entry;
+  return {
+    ...entry,
+    message: entry.message.slice(0, maxMessageLength),
+    truncatedChars: entry.message.length - maxMessageLength,
+  };
 }
 
 export function createLogsGetRecentTool(
@@ -74,6 +88,14 @@ export function createLogsGetRecentTool(
           .string()
           .optional()
           .describe('Case-insensitive substring filter applied to entry message and raw text.'),
+        maxMessageLength: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe(
+            `Truncate each message to this many characters; truncatedChars reports the remainder. Default: ${DEFAULT_MAX_MESSAGE_LENGTH}; 0 disables.`,
+          ),
       },
       async execute(args, context) {
         const prefixes = args.prefixes ?? DEFAULT_PREFIXES;
@@ -102,9 +124,10 @@ export function createLogsGetRecentTool(
           entries = filterBySearch(entries, args.search);
         }
 
-        entries = entries.slice(0, count);
+        const maxMessageLength = args.maxMessageLength ?? DEFAULT_MAX_MESSAGE_LENGTH;
+        const recent = entries.slice(0, count).map((entry) => toRecentEntry(entry, maxMessageLength));
 
-        return {count: entries.length, entries};
+        return {count: recent.length, entries: recent};
       },
       formatOutput: (output) => jsonResult(output),
     },

@@ -22,6 +22,10 @@ import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 120_000;
+// Globals are mostly module-level requires and constants; debug_inspect with scope "global" fetches them.
+const DEFAULT_SCOPES: VariableScope[] = ['local', 'closure'];
+
+type VariableScope = 'closure' | 'global' | 'local';
 
 interface CaptureInput {
   session_id: string;
@@ -29,6 +33,7 @@ interface CaptureInput {
   line: number;
   condition?: string;
   expressions?: string[];
+  scopes?: VariableScope[];
   timeout_ms?: number;
   auto_continue?: boolean;
   trigger_url?: string;
@@ -77,6 +82,10 @@ export function createDebugCaptureAtBreakpointTool(
           .array(z.string())
           .optional()
           .describe('Expressions evaluated when halted; may change remote state.'),
+        scopes: z
+          .array(z.enum(['local', 'closure', 'global']))
+          .optional()
+          .describe('Variable scopes to return. Default: ["local", "closure"]; [] omits variables.'),
         timeout_ms: z
           .number()
           .int()
@@ -151,7 +160,10 @@ export function createDebugCaptureAtBreakpointTool(
         const stack = threadDetail.call_stack.map((frame) => projectFrame(frame, entry.sourceMapper));
 
         const varsResult = await entry.manager.client.getVariables(thread.id, 0);
-        const variables = varsResult.object_members.map((m) => projectVariable(m));
+        const scopes = args.scopes ?? DEFAULT_SCOPES;
+        const variables = varsResult.object_members
+          .filter((m) => !m.scope || scopes.includes(m.scope))
+          .map((m) => projectVariable(m));
 
         const evaluations: Array<{expression: string; result: string}> = [];
         if (args.expressions) {
