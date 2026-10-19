@@ -1,0 +1,22 @@
+{
+  "name": "storefront-next",
+  "version": "1.12.2",
+  "description": "Storefront Next development skills for building React 19 storefronts on Salesforce B2C Commerce.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "storefront-next",
+    "react",
+    "b2c-commerce",
+    "commerce-cloud",
+    "react-router",
+    "page-designer",
+    "scapi"
+  ],
+  "icon": "./assets/logo.png"
+}

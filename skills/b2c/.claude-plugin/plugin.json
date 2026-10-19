@@ -1,0 +1,20 @@
+{
+  "name": "b2c",
+  "version": "1.12.2",
+  "description": "B2C Commerce development skills including Custom API development guides.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "sfra",
+    "scapi",
+    "ocapi"
+  ],
+  "icon": "./assets/logo.png"
+}
