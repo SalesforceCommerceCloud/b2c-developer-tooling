@@ -118,3 +118,9 @@ savePrefix: ''
 trustPolicy: no-downgrade
 
 trustPolicyExclude: []
+
+# Apply the trust check only to releases from the last 30 days. Older releases
+# (e.g. semver 6.3.1, a maintenance release published after provenance-attested
+# 7.x versions) are flagged as downgrades because the check is publish-date based,
+# which breaks fresh lockfile resolution such as Renovate's.
+trustPolicyIgnoreAfter: 43200
