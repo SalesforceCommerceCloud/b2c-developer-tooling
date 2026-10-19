@@ -110,7 +110,7 @@ claude plugin marketplace remove b2c-developer-tooling
 #### Claude Desktop and Cowork {#claude-cowork}
 
 Local sessions in the Claude Desktop **Code** tab use the Claude Code plugins installed above.
-Cowork installs plugins separately; see [Claude Cowork](./desktop-assistants#claude-cowork).
+Tasks on **Home** (formerly Cowork) install plugins separately; see [Claude Desktop (Cowork)](./desktop-assistants#claude-cowork).
 
 </template>
 <template #copilot-title>

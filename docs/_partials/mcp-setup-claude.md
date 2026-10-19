@@ -16,4 +16,4 @@ See [Claude Code MCP setup](https://code.claude.com/docs/en/mcp).
 
 </details>
 
-[Claude Cowork setup](/guide/desktop-assistants#claude-cowork) · [Claude Desktop setup](/mcp/#claude-desktop)
+[Claude Desktop (Cowork) setup](/guide/desktop-assistants#claude-cowork) · [Claude Desktop manual setup](/mcp/#claude-desktop)

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-19T20:13:36.766Z",
+  "generatedAt": "2026-10-19T22:45:52.392Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -341,7 +341,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/desktop-assistants.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/desktop-assistants.md",
-      "headings": "Before you start • Claude Cowork {#claude-cowork} • ChatGPT Work {#chatgpt-work} • Troubleshooting",
+      "headings": "Before you start • Claude Desktop (Cowork) {#claude-cowork} • ChatGPT Work {#chatgpt-work} • Troubleshooting",
       "preview": "Install the B2C Commerce MCP server and skills in Claude Cowork, Claude Desktop, and ChatGPT Work (ChatGPT desktop app) to run B2C tasks from desktop AI assistants."
     },
     {
