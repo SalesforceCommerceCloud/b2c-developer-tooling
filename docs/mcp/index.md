@@ -27,6 +27,7 @@ Our plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
 
 </AssistantInstall>
 
+For Claude Cowork and ChatGPT Work, see [Desktop Assistants](../guide/desktop-assistants).
 For [Claude Desktop](#claude-desktop), [Copilot CLI](#copilot-cli), [ChatGPT online](#chatgpt),
 and other clients, see [Other clients](#other-clients).
 
@@ -126,7 +127,8 @@ can help your assistant recognize when to use B2C tools and skills.
 
 ### Claude Desktop {#claude-desktop}
 
-Open **Settings > Developer > Edit Config** and add:
+For Cowork, install the plugin instead; see [Claude Cowork](../guide/desktop-assistants#claude-cowork).
+For Claude Desktop chat, open **Settings > Developer > Edit Config** and add:
 
 <!--@include: ../_partials/mcp-manual-json.md-->
 

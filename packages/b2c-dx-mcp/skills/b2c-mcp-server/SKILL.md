@@ -15,6 +15,7 @@ Read only the skill that matches the task; each links its own references.
 | Warehouse reports and SQL (required before `cip_query`) | `skill://mcp/b2c-mcp-cip/SKILL.md` |
 | Configuration, credentials, access grants, wrong target | `skill://mcp/b2c-mcp-config/SKILL.md` |
 | Server-side script debugging | `skill://mcp/b2c-mcp-debugger/SKILL.md` |
+| Dashboard, Claude artifact or Cowork page showing B2C data | `skill://mcp/b2c-mcp-claude-artifacts/SKILL.md` |
 | Instance files and selected cartridge uploads | [files](references/files.md) |
 | Production incident or unknown operational signal | `skill://b2c-ops/b2c-production-triage/SKILL.md` |
 | Failed or late jobs | `skill://b2c-ops/b2c-job-health/SKILL.md` |

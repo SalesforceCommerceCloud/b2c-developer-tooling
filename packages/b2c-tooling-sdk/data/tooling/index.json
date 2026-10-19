@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-16T02:25:32.847Z",
+  "generatedAt": "2026-10-19T19:46:15.440Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -287,7 +287,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills.md",
-      "headings": "Skill Collections {#available-plugins} • Install skills {#quick-start} • Codex • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Code • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • GitHub Copilot in VS Code {#copilot-vs-code} • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Cursor • OpenCode • Gemini CLI • Other Agent Harnesses {#other-ides} • Manual installation {#manual-installation} • Skills in action • Investigate an operational incident • Add useful logging • Build an editable component • Usage Examples",
+      "headings": "Skill Collections {#available-plugins} • Install skills {#quick-start} • Codex • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Code • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Claude Desktop and Cowork {#claude-cowork} • GitHub Copilot in VS Code {#copilot-vs-code} • Install the plugin <span class=\"recommended VPBadge\">Recommended</span> • Cursor • OpenCode • Gemini CLI • Other Agent Harnesses {#other-ides} • Manual installation {#manual-installation} • Skills in action • Investigate an operational incident • Add useful logging • Build an editable component • Usage Examples",
       "preview": "Agentic B2C Developer Toolkit — AI agent skills and plugins that teach Agentforce Vibes, Claude Code, Codex, Cursor, and GitHub Copilot the full B2C Commerce stack."
     },
     {
@@ -334,6 +334,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md",
       "headings": "Choose Your Connection • Configuration File • Single Instance • Shopper Authentication (SLAS) • Multiple Instances • Managing Instances with the CLI • Configuration File Selection • Global Default Configuration • Environment Variables • .env File • Storefront Next Compatibility • Check Your Configuration {#debugging-configuration} • Resolution Priority • Credential Grouping • Settings Reference {#supported-fields} • Editor Validation (JSON Schema) {#json-schema} • Instance and Site • Administrative Authentication {#oauth-scapi-ocapi} • Client Authentication Method {#client-authentication-method} • Shopper Authentication • WebDAV and Certificates {#basic-authentication-webdav} • Code, Content, and Documentation • Sandboxes and Analytics • Managed Runtime • Other Environment Settings • Project Configuration (package.json) • Allowed Fields • Content Libraries Example • CLI Flags • Overriding Authentication Behavior • Available Auth Methods • Specifying Auth Methods • MRT API Key • Two-Factor Authentication (mTLS) • Troubleshooting • Next Steps",
       "preview": "Configure B2C Commerce connections for the CLI, MCP, and IDE extension, including SLAS credentials, named instances, and shared project defaults."
+    },
+    {
+      "id": "guide-desktop-assistants",
+      "title": "Desktop Assistants",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/desktop-assistants.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/desktop-assistants.md",
+      "headings": "Before you start • Claude Cowork {#claude-cowork} • ChatGPT Work {#chatgpt-work} • Troubleshooting",
+      "preview": "Install the B2C MCP server and skills in Claude Cowork and ChatGPT Work."
     },
     {
       "id": "guide-extending",
