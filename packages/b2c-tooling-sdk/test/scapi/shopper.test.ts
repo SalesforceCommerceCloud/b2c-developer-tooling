@@ -174,7 +174,11 @@ describe('SCAPI shopper execution', () => {
 
   it('explains that the standard shopper scope covers only operations that accept it', async () => {
     let scp = 'sfcc.shopper-standard';
-    const shopperAuth: ScapiShopperAuth = {getAccessToken: async () => jwt({scp}), invalidate() {}};
+    const invalidated: string[] = [];
+    const shopperAuth: ScapiShopperAuth = {
+      getAccessToken: async () => jwt({scp}),
+      invalidate: (siteId) => invalidated.push(siteId),
+    };
     server.use(
       http.get(`${origin}/product/shopper-products/v1/organizations/f_ecom_test_001/products/p1/images`, () =>
         HttpResponse.json({title: 'Forbidden'}, {status: 403}),
@@ -191,7 +195,16 @@ describe('SCAPI shopper execution', () => {
       .to.include('accepts any of: sfcc.shopper-products.')
       .and.include('sfcc.shopper-standard does not cover this operation');
     scp = 'sfcc.shopper-categories';
-    expect(await forbidden()).to.include('The shopper token grants: sfcc.shopper-categories; add one of');
+    expect(await forbidden())
+      .to.include('The shopper token grants: sfcc.shopper-categories; add one of')
+      .and.include('next request uses a new token');
+    // Tokens missing every accepted scope are discarded so scopes granted on the client since then apply.
+    expect(invalidated).to.deep.equal(['RefArch', 'RefArch']);
+    scp = 'sfcc.shopper-products';
+    expect(await forbidden())
+      .to.include('so scopes are likely not the cause')
+      .and.not.include('new token');
+    expect(invalidated).to.have.length(2);
   });
 
   it('reports SLAS configuration and login failures', async () => {

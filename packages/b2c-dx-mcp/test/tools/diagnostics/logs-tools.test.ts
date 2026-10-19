@@ -118,6 +118,26 @@ describe('tools/diagnostics/logs', () => {
       expect(json.entries[0].message).to.equal('OrderMgr failed');
     });
 
+    it('omits raw and truncates long messages', async () => {
+      const stub = sinon.stub().resolves([makeEntry({message: 'x'.repeat(30)}), makeEntry({message: 'short'})]);
+      const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: stub});
+      const result = await tool.handler({maxMessageLength: 10});
+      const json = getResultJson<{entries: Array<{message: string; raw?: string; truncatedChars?: number}>}>(result);
+      expect(json.entries[0]).to.not.have.property('raw');
+      expect(json.entries[0].message).to.equal('x'.repeat(10));
+      expect(json.entries[0].truncatedChars).to.equal(20);
+      expect(json.entries[1].message).to.equal('short');
+      expect(json.entries[1]).to.not.have.property('truncatedChars');
+    });
+
+    it('keeps full messages when maxMessageLength is 0', async () => {
+      const stub = sinon.stub().resolves([makeEntry({message: 'x'.repeat(5000)})]);
+      const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: stub});
+      const result = await tool.handler({maxMessageLength: 0});
+      const json = getResultJson<{entries: Array<{message: string}>}>(result);
+      expect(json.entries[0].message).to.have.length(5000);
+    });
+
     it('parses --since', async () => {
       const future = new Date(Date.now() + 60_000);
       const stub = sinon
