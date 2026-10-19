@@ -42,7 +42,9 @@ minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
   [
     # Renovate security update: pnpm@10.34.5
-    pnpm@10.34.5
+    pnpm@10.34.5,
+    # Renovate security update: @modelcontextprotocol/client@2.2.0
+    "@modelcontextprotocol/client@2.2.0"
   ]
 
 nodeLinker: hoisted
