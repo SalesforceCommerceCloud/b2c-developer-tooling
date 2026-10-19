@@ -186,7 +186,8 @@ echo "webdav e2e $(date +%s)" > "$WEBDAV_FILE"
 # Asserts that NAME is (or, with "absent", is not) an entry of DIR on ROOT.
 webdav_expect_entry() {
     local root="$1" dir="$2" name="$3" mode="${4:-present}" found
-    found=$($CLI webdav ls "$dir" --root "$root" --server "$SERVER" --json \
+    # All arguments are remote; stop Git Bash rewriting a "/" dir to a Windows path.
+    found=$(MSYS2_ARG_CONV_EXCL='*' $CLI webdav ls "$dir" --root "$root" --server "$SERVER" --json \
         | jq -r --arg name "$name" '[.entries[] | select(.displayName == $name)] | length')
     if [ "$mode" == "absent" ] && [ "$found" != "0" ]; then
         echo "FAILED: $root/$dir/$name should not exist"
