@@ -25,7 +25,9 @@
         "longDescription": "B2C Commerce tools and expertise for your AI assistant: build storefronts, deploy cartridges, debug scripts, inspect logs, investigate failed jobs, and work with products and promotions through SCAPI code mode.",
         "developerName": "Salesforce",
         "category": "Productivity",
-        "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/"
+        "websiteURL": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
+        "logo": "./assets/logo.svg",
+        "composerIcon": "./assets/logo.svg"
       }
     }
   }

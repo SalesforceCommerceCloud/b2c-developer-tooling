@@ -3,7 +3,7 @@
 <!--@include: ./mcp-plugin-codex.md-->
 
 Start a new Codex session in your project. This setup also works with the Codex
-IDE extension and the ChatGPT Work desktop app.
+IDE extension and the [ChatGPT Work](/guide/desktop-assistants#chatgpt-work) desktop app.
 
 <details class="details custom-block" data-setup-anchor="codex-manual">
 <summary>Manual MCP setup</summary>

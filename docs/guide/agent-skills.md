@@ -62,7 +62,7 @@ codex plugin add b2c-cli@b2c-developer-tooling
 
 Alternatively, run `/plugins` and select the **B2C Developer Tooling** marketplace.
 Start a new session after installation. This setup also works with the Codex
-IDE extension and the ChatGPT Work desktop app.
+IDE extension and the [ChatGPT Work](./desktop-assistants#chatgpt-work) desktop app.
 For ChatGPT online, see the [B2C MCP connection setup](../mcp/#chatgpt).
 
 ::: details Update or remove
@@ -106,6 +106,11 @@ claude plugin marketplace remove b2c-developer-tooling
 ```
 
 :::
+
+#### Claude Desktop and Cowork {#claude-cowork}
+
+Local sessions in the Claude Desktop **Code** tab use the Claude Code plugins installed above.
+Cowork installs plugins separately; see [Claude Cowork](./desktop-assistants#claude-cowork).
 
 </template>
 <template #copilot-title>

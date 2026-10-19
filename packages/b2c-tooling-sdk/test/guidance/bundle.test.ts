@@ -64,6 +64,11 @@ describe('guidance bundler', () => {
     expect(() => bundle()).to.throw('must equal its directory');
   });
 
+  it('rejects angle brackets in a description', () => {
+    writeSkill('alpha', '# Alpha\n', 'name: alpha\ndescription: Render <Region> blocks');
+    expect(() => bundle()).to.throw('must not contain angle brackets');
+  });
+
   it('rejects frontmatter that is not JSON-compatible', () => {
     writeSkill('alpha', '# Alpha\n', 'name: alpha\ndescription: dated\nupdated: 2026-01-01');
     expect(() => bundle()).to.throw('JSON-compatible');

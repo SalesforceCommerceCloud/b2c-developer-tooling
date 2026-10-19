@@ -78,6 +78,10 @@ function skillFrontmatter(content: string, folder: string, where: string): Recor
   if (typeof description !== 'string' || !description.trim() || description.length > 1024) {
     throw new Error(`Skill description must be 1-1024 characters: ${where}`);
   }
+  // claude.ai rejects XML tags in descriptions and strips angle brackets on marketplace sync.
+  if (/[<>]/.test(description)) {
+    throw new Error(`Skill description must not contain angle brackets: ${where}`);
+  }
   return frontmatter;
 }
 
