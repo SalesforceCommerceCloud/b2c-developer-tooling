@@ -7,6 +7,7 @@
 import {expect} from 'chai';
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
+import type {ToolContext} from '../src/utils/index.js';
 import type {Transport, JSONRPCMessage} from '@modelcontextprotocol/server';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 
@@ -373,6 +374,27 @@ describe('B2CDxMcpServer', () => {
       expect(mockTelemetry.events[0].attributes.isError).to.equal(true);
       expect(mockTelemetry.events[0].attributes.errorMessage).to.equal('Tool execution failed');
       expect(mockTelemetry.events[0].attributes.errorCause).to.include('Error: Inner error');
+    });
+
+    it('should send recorded CONTENT_READ events before TOOL_CALLED on success only', async () => {
+      const server = createServerWithHandlerCapture();
+      const read = {contentType: 'doc', contentId: 'dw.catalog.ProductMgr', offset: 0} as const;
+      const readHandler = (isError: boolean) => async (_args: unknown, context?: ToolContext) => {
+        context?.recordContentRead?.(read);
+        return {content: [{type: 'text' as const, text: 'ok'}], isError};
+      };
+
+      server.addTool('failed_read', 'Failed read', {}, readHandler(true));
+      await capturedHandler!({}, {});
+      server.addTool('docs_read', 'Read', {}, readHandler(false));
+      await capturedHandler!({}, {});
+
+      expect(mockTelemetry.events.map((event) => event.name)).to.deep.equal([
+        'TOOL_CALLED',
+        'CONTENT_READ',
+        'TOOL_CALLED',
+      ]);
+      expect(mockTelemetry.events[1].attributes).to.deep.equal({...read, via: 'docs_read'});
     });
 
     it('should measure runTimeMs accurately', async () => {

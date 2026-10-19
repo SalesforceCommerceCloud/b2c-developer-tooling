@@ -75,7 +75,7 @@
 
 import {z, type ZodRawShape} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {McpTool, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
+import type {McpTool, ToolContext, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
 import {
@@ -126,6 +126,9 @@ export interface ToolExecutionContext {
 
   /** Record a specialized directory resolved by the tool. */
   setResolvedDirectory: (name: string, value: DirectoryResolutionInfo) => void;
+
+  /** Record content returned to the client for telemetry. */
+  recordContentRead?: ToolContext['recordContentRead'];
 }
 
 /**
@@ -366,7 +369,7 @@ export function createToolAdapter<TInput, TOutput>(
     outputSchema: options.outputSchema,
     toolsets,
 
-    async handler(rawArgs: Record<string, unknown>): Promise<ToolResult> {
+    async handler(rawArgs: Record<string, unknown>, toolContext?: ToolContext): Promise<ToolResult> {
       // 1. Validate input with Zod
       const parseResult = zodSchema.safeParse(rawArgs);
       if (!parseResult.success) {
@@ -429,6 +432,7 @@ export function createToolAdapter<TInput, TOutput>(
             executionResolution.directories ??= {};
             executionResolution.directories[name] = value;
           },
+          recordContentRead: toolContext?.recordContentRead,
         };
         const output = await services.runWithSafety(() => execute(args, context));
 

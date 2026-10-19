@@ -26,7 +26,7 @@ import type {
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
-import type {McpToolConfig, ToolContext} from './utils/types.js';
+import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 
 /** MCP skills extension identifier (SEP-2640). */
 export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
@@ -154,6 +154,7 @@ export class B2CDxMcpServer extends McpServer {
           | {[CLIENT_CAPABILITIES_META_KEY]?: ClientCapabilities; [PROTOCOL_VERSION_META_KEY]?: string};
         const capabilities = envelope?.[CLIENT_CAPABILITIES_META_KEY] ?? this.server.getClientCapabilities();
         const elicitation = capabilities?.elicitation;
+        const contentReads: ContentRead[] = [];
         const result = await handler(args, {
           signal: context.mcpReq?.signal,
           requestState: context.mcpReq?.requestState?.(),
@@ -161,11 +162,15 @@ export class B2CDxMcpServer extends McpServer {
           supportsElicitation:
             elicitation !== undefined && (elicitation.form !== undefined || Object.keys(elicitation).length === 0),
           keepCancellation: !envelope?.[PROTOCOL_VERSION_META_KEY],
+          recordContentRead: (read) => contentReads.push(read),
         });
         const runTimeMs = Date.now() - startTime;
 
         // Extract error message from CallToolResult content when isError is true
         const errorMessage = result.isError ? result.content?.find((c) => c.type === 'text')?.text : undefined;
+        if (!result.isError) {
+          for (const read of contentReads) this.telemetry?.sendEvent('CONTENT_READ', {...read, via: name});
+        }
 
         await this.telemetry
           ?.sendEventAndFlush('TOOL_CALLED', {
@@ -244,6 +249,16 @@ export class B2CDxMcpServer extends McpServer {
       await (errorPromise ?? Promise.resolve()).catch(() => {});
       throw error;
     }
+  }
+
+  /**
+   * Record skill or doc content returned outside a tool call. `via` names the
+   * avenue (`resources/read`, `skills/get`) so dashboards can compare them.
+   */
+  public recordContentRead(via: string, read: ContentRead): void {
+    this.telemetry?.sendEventAndFlush('CONTENT_READ', {...read, via}).catch((error: unknown) => {
+      getLogger().debug({err: error, via}, '[mcp] telemetry sendEventAndFlush failed');
+    });
   }
 
   private logClient(clientInfo?: Implementation, protocolVersion?: string): void {
