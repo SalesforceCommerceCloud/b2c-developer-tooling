@@ -294,8 +294,6 @@ prepare a handoff. They work with the MCP or your existing CLI access.
 
 </ExamplePrompt>
 
-![Screenshot placeholder: an assistant applying B2C Commerce logging guidance to a checkout controller.](/placeholders/skills-checkout-logging.svg)
-
 The **B2C Commerce** collection covers cartridge development, including logging patterns.
 
 ### Build an editable component
@@ -305,8 +303,6 @@ The **B2C Commerce** collection covers cartridge development, including logging 
 > Create a Page Designer component for my Storefront Next project with an editable heading, image, and link.
 
 </ExamplePrompt>
-
-![Screenshot placeholder: a Storefront Next Page Designer component with editable content, alongside the assistant's completion summary.](/placeholders/skills-page-designer.svg)
 
 The **Storefront Next** collection covers components and Page Designer integration.
 

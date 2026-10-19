@@ -1,5 +1,5 @@
 ---
-description: Install the B2C MCP server and skills in Claude Cowork and ChatGPT Work.
+description: Install the B2C Commerce MCP server and skills in Claude Cowork, Claude Desktop, and ChatGPT Work (ChatGPT desktop app) to run B2C tasks from desktop AI assistants.
 ---
 
 # Desktop Assistants
