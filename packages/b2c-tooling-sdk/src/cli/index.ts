@@ -102,6 +102,7 @@ export {
   ERROR_CODE,
   augmentDuplicateFlagError,
   classifyError,
+  configSourceHint,
   serializeErrorCause,
 } from './base-command.js';
 export type {Flags, Args, ErrorCategory} from './base-command.js';

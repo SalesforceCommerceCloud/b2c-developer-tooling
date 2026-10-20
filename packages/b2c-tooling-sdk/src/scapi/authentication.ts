@@ -149,7 +149,7 @@ export function scapiShopperAuthError(error: unknown, context: AuthContext): Err
 export function shopperTokenLacksScopes(context: AuthContext): boolean {
   const granted = context.shopper?.tokenScopes;
   const accepted = context.candidates[0] ?? [];
-  return Boolean(granted && !granted.some((scope) => accepted.includes(scope)));
+  return Boolean(granted && accepted.length > 0 && !granted.some((scope) => accepted.includes(scope)));
 }
 
 function scopeAdvice(context: AuthContext): string {

@@ -57,6 +57,10 @@ class TestMrtCommand extends MrtCommand<typeof TestMrtCommand> {
   }
 
   // Expose protected methods/getters for testing
+  public testGetMrtAuth() {
+    return this.getMrtAuth();
+  }
+
   public testRequireMrtCredentials() {
     return this.requireMrtCredentials();
   }
@@ -166,6 +170,16 @@ describe('cli/mrt-command', () => {
       }
 
       expect(errorStub.called).to.be.true;
+    });
+
+    it('classifies a missing API key from getMrtAuth as a validation error', async () => {
+      stubParse(command, {'credentials-file': '/dev/null'});
+      await command.init();
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+      expect(() => command.testGetMrtAuth()).to.throw('Expected error');
+      expect(errorStub.firstCall.args[0]).to.include('MRT API key required');
+      expect((errorStub.firstCall.args[1] as {code?: string}).code).to.equal('VALIDATION');
     });
 
     it('does not throw when API key is set', async () => {

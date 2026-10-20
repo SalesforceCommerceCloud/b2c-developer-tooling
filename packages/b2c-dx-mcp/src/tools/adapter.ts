@@ -394,7 +394,8 @@ export function createToolAdapter<TInput, TOutput>(
           if (!services.b2cInstance) {
             return attachResolution(
               errorResult(
-                'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json',
+                'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json' +
+                  services.configHint(),
               ),
               executionResolution,
             );
@@ -408,7 +409,8 @@ export function createToolAdapter<TInput, TOutput>(
           if (!services.mrtConfig.auth) {
             return attachResolution(
               errorResult(
-                'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify',
+                'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify' +
+                  services.configHint(),
               ),
               executionResolution,
             );

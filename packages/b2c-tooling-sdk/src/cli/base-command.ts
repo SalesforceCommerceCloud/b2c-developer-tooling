@@ -94,6 +94,40 @@ function describeConfigSource(name: string): string {
 }
 
 /**
+ * Build a suffix for "X is required" config errors.
+ *
+ * When NO config source contributed any values (no dw.json found, no env
+ * vars, no flags — the dominant cause of these errors in telemetry), the user
+ * is almost certainly unconfigured rather than missing one specific field, so
+ * we point them at the configuration guide. When a source DID load, we name
+ * the kinds of sources that loaded (never their paths or values, since error
+ * messages are reported to telemetry) so a user who expected a different
+ * file to apply can tell, and point at `inspect` for the details.
+ *
+ * @param sources - Sources from the resolved configuration
+ * @param inspect - Command or tool that shows the resolved configuration, e.g. `b2c setup inspect`
+ * @returns A "\n\n..." suffix, or '' when only derived sources loaded
+ */
+export function configSourceHint(sources: readonly {name: string}[], inspect: string): string {
+  if (sources.length === 0) {
+    return t(
+      'base.configDocsHint',
+      '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}\nRun "{{inspect}}" to see the resolved configuration and its sources.',
+      {url: DOCS_CONFIGURATION_URL, inspect},
+    );
+  }
+  const loaded = [
+    ...new Set(sources.filter((s) => !DERIVED_CONFIG_SOURCES.has(s.name)).map((s) => describeConfigSource(s.name))),
+  ];
+  if (loaded.length === 0) return '';
+  return t(
+    'base.configPartialHint',
+    '\n\nConfiguration was loaded from {{sources}}, but it does not set this value. Run "{{inspect}}" to see the resolved configuration.',
+    {sources: loaded.join(', '), inspect},
+  );
+}
+
+/**
  * Classify a thrown command error for telemetry so analytics can exclude
  * expected validation/guardrail errors from reliability (defect-rate) metrics.
  *
@@ -625,39 +659,14 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
-   * Build a suffix appended to "X is required" config errors.
-   *
-   * When NO config source contributed any values (no dw.json found, no env
-   * vars, no flags — the dominant cause of these errors in telemetry), the user
-   * is almost certainly unconfigured rather than missing one specific field, so
-   * we point them at the configuration guide. When a source DID load, we name
-   * the kinds of sources that loaded (never their paths or values, since error
-   * messages are reported to telemetry) so a user who expected a different
-   * file to apply can tell, and point at `setup inspect` for the details.
+   * Build a suffix appended to "X is required" config errors; see {@link configSourceHint}.
    *
    * @returns A "\n\n..." suffix, or '' when configuration has not been resolved yet.
    */
   protected configDocsHint(): string {
     // resolvedConfig may be unset if the error is thrown before loadConfiguration().
     const sources = this.resolvedConfig?.sources;
-    if (!sources) return '';
-    const inspect = `${this.config?.bin ?? 'b2c'} setup inspect`;
-    if (sources.length === 0) {
-      return t(
-        'base.configDocsHint',
-        '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}\nRun "{{inspect}}" to see the resolved configuration and its sources.',
-        {url: DOCS_CONFIGURATION_URL, inspect},
-      );
-    }
-    const loaded = [
-      ...new Set(sources.filter((s) => !DERIVED_CONFIG_SOURCES.has(s.name)).map((s) => describeConfigSource(s.name))),
-    ];
-    if (loaded.length === 0) return '';
-    return t(
-      'base.configPartialHint',
-      '\n\nConfiguration was loaded from {{sources}}, but it does not set this value. Run "{{inspect}}" to see the resolved configuration.',
-      {sources: loaded.join(', '), inspect},
-    );
+    return sources ? configSourceHint(sources, `${this.config?.bin ?? 'b2c'} setup inspect`) : '';
   }
 
   /**

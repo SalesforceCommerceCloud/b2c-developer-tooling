@@ -240,6 +240,7 @@ export function createScapiRequest(
         },
       };
     };
+    let shopperToken: string | undefined;
     const auth: AuthStrategy = shopper
       ? {
           fetch: (url, init) => getApiFetch(options.shopperAuth)(url, init as RequestInit),
@@ -247,6 +248,7 @@ export function createScapiRequest(
           getAuthorizationHeader: async () => {
             try {
               const token = await options.shopperAuth!.getAccessToken(shopperSiteId!, signal);
+              shopperToken = token;
               authContext.shopper!.tokenScopes = shopperTokenScopes(token);
               return `Bearer ${token}`;
             } catch (error) {
@@ -338,7 +340,7 @@ export function createScapiRequest(
       shopper &&
       (result.response.status === 401 || (result.response.status === 403 && shopperTokenLacksScopes(authContext)))
     )
-      options.shopperAuth?.invalidate(shopperSiteId!);
+      options.shopperAuth?.invalidate(shopperSiteId!, shopperToken);
     // Authenticated live schema responses extend this execution's catalog, replacing bundled contracts.
     if (
       result.response.ok &&

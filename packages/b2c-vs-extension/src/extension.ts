@@ -15,6 +15,7 @@ import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {VsCodeSecretsAuthSessionBackend} from './pkce-secret-store.js';
 
 import * as cp from 'child_process';
+import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -250,10 +251,26 @@ async function detectB2cCli(context?: vscode.ExtensionContext): Promise<CliDetec
 /** globalState flag set on the first activation, so telemetry can tell new installs from returning ones. */
 const ACTIVATED_KEY = 'b2c-dx.telemetry.activated';
 
+/**
+ * True when nothing from an earlier activation exists: no flag, no other globalState, and no global
+ * storage (where prior versions' telemetry kept its install ID). Users upgrading from versions without
+ * the flag still have the latter, so they are not counted as new. Must run before telemetry init,
+ * which creates global storage.
+ */
+function isFirstActivation(context: vscode.ExtensionContext): boolean {
+  return (
+    !context.globalState.get<boolean>(ACTIVATED_KEY) &&
+    context.globalState.keys().length === 0 &&
+    !fs.existsSync(context.globalStorageUri.fsPath)
+  );
+}
+
 export async function activate(context: vscode.ExtensionContext) {
   const log = vscode.window.createOutputChannel('B2C DX');
 
   applyLogLevel(log);
+
+  const firstActivation = isFirstActivation(context);
 
   // Best-effort telemetry init. Non-blocking: client.start() runs in the
   // background. No-ops entirely when the user has telemetry disabled or no
@@ -267,9 +284,8 @@ export async function activate(context: vscode.ExtensionContext) {
   try {
     const startedAt = Date.now();
     const summary = await activateInner(context, log);
+    if (!context.globalState.get<boolean>(ACTIVATED_KEY)) void context.globalState.update(ACTIVATED_KEY, true);
     // Coarse, value-free usage context: is the workspace set up, and where does it run.
-    const firstActivation = !context.globalState.get<boolean>(ACTIVATED_KEY);
-    if (firstActivation) void context.globalState.update(ACTIVATED_KEY, true);
     sendEvent('EXTENSION_ACTIVATED', {
       ...summary,
       activationMs: Date.now() - startedAt,

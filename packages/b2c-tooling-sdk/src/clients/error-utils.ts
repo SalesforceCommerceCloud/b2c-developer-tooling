@@ -8,6 +8,9 @@
  *
  * @module clients/error-utils
  */
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {dirname, join} from 'node:path';
 
 /**
  * The OCAPI `fault.type` returned (with HTTP 403) when an instance has OCAPI
@@ -59,19 +62,51 @@ const OCAPI_SETTINGS_DOC_URL =
 /** OCAPI fault text returned when the client ID has no Data API permission for a resource. */
 const OCAPI_ACCESS_DENIED = /^Access to resource '([A-Z]+) ([^'\s]+)' isn't allowed for the current client/;
 
+let dataApiTemplates: string[][] | undefined;
+
+/** Path templates of the bundled Data API spec, split into segments; empty if the spec cannot be read. */
+function loadDataApiTemplates(): string[][] {
+  if (!dataApiTemplates) {
+    try {
+      const require = createRequire(import.meta.url);
+      const packageRoot = dirname(require.resolve('@salesforce/b2c-tooling-sdk/package.json'));
+      const spec = JSON.parse(readFileSync(join(packageRoot, 'specs/data-api.json'), 'utf8')) as {
+        paths: Record<string, unknown>;
+      };
+      dataApiTemplates = Object.keys(spec.paths).map((template) => template.split('/').filter(Boolean));
+    } catch {
+      dataApiTemplates = [];
+    }
+  }
+  return dataApiTemplates;
+}
+
 /**
  * Converts a Data API request path to the `resource_id` pattern used in OCAPI
- * settings: drops the `/data/vXX_X` prefix and query, and replaces every
- * identifier segment (the Data API alternates collection and id) with `*`,
- * e.g. `/data/v25_6/code_versions/v1` becomes `/code_versions/*`.
+ * settings: drops the `/data/vXX_X` prefix and query, matches the path against
+ * the Data API spec, and replaces each path parameter with `*`, e.g.
+ * `/data/v25_6/code_versions/v1` becomes `/code_versions/*` (one `*` per parameter).
+ * Returns undefined when no spec path matches.
  */
-function toOcapiResourceId(path: string): string {
+function toOcapiResourceId(path: string): string | undefined {
   const segments = path
     .split('?')[0]
     .replace(/^(?:\/s\/-\/dw)?\/data\/v\d+_\d+/, '')
     .split('/')
     .filter(Boolean);
-  return '/' + segments.map((segment, i) => (i % 2 === 1 && segment !== 'this' ? '*' : segment)).join('/');
+  let best: {literals: number; template: string[]} | undefined;
+  for (const template of loadDataApiTemplates()) {
+    if (template.length !== segments.length) continue;
+    let literals = 0;
+    const matches = template.every((part, i) => {
+      if (part.startsWith('{')) return true;
+      literals++;
+      return part === segments[i];
+    });
+    // Prefer literal segments over parameters, e.g. `/users/this` over `/users/{login}`.
+    if (matches && (!best || literals > best.literals)) best = {literals, template};
+  }
+  return best && '/' + best.template.map((part) => (part.startsWith('{') ? '*' : part)).join('/');
 }
 
 /**
@@ -80,20 +115,21 @@ function toOcapiResourceId(path: string): string {
  * failed request. Returns undefined for any other message.
  *
  * The suggestion only contains the HTTP method and a wildcarded resource
- * pattern, never IDs from the request path.
+ * pattern from the Data API spec, never IDs from the request path.
  */
 export function ocapiPermissionHint(faultMessage: string): string | undefined {
   const match = OCAPI_ACCESS_DENIED.exec(faultMessage);
-  if (!match) return undefined;
+  const resourceId = match && toOcapiResourceId(match[2]);
+  if (!resourceId) return undefined;
   const entry = {
-    resource_id: toOcapiResourceId(match[2]),
+    resource_id: resourceId,
     methods: [match[1].toLowerCase()],
     read_attributes: '(**)',
     write_attributes: '(**)',
   };
   return (
     'To allow it, add this resource for the client ID in Business Manager ' +
-    '(Administration > Site Development > Open Commerce API Settings, type Data API):\n' +
+    '(Administration > Site Development > Open Commerce API Settings, type Data API, context Global):\n' +
     `  ${JSON.stringify(entry)}\n` +
     `See: ${OCAPI_SETTINGS_DOC_URL}`
   );

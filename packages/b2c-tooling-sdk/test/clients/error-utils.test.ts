@@ -300,6 +300,23 @@ describe('ocapiPermissionHint', () => {
     );
   });
 
+  it('follows the Data API path templates rather than segment position', () => {
+    const custom = ocapiPermissionHint(fault('GET /data/v25_6/custom_objects/MyType/secretKey123'));
+    expect(custom).to.include('"resource_id":"/custom_objects/*/*"').and.not.include('secretKey123');
+    expect(
+      ocapiPermissionHint(fault('PATCH /data/v25_6/global_preferences/preference_groups/MyGroup/sandbox')),
+    ).to.include('"resource_id":"/global_preferences/preference_groups/*/*"');
+    expect(
+      ocapiPermissionHint(
+        fault('GET /s/-/dw/data/v25_6/sites/RefArch/site_preferences/preference_groups/MyGroup/sandbox'),
+      ),
+    ).to.include('"resource_id":"/sites/*/site_preferences/preference_groups/*/*"');
+  });
+
+  it('omits the hint for paths outside the Data API spec', () => {
+    expect(ocapiPermissionHint(fault('GET /data/v25_6/not_a_resource/abc'))).to.equal(undefined);
+  });
+
   it('keeps the literal "this" segment and drops query strings', () => {
     expect(ocapiPermissionHint(fault('GET /data/v25_6/users/this?expand=roles'))).to.include(
       '"resource_id":"/users/this"',

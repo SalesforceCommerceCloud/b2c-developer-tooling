@@ -48,6 +48,7 @@ import path from 'node:path';
 import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {configSourceHint} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
 import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
@@ -222,6 +223,14 @@ export class Services {
   // ============================================
 
   /**
+   * Suffix for "X required" configuration errors: points at the configuration guide when nothing
+   * loaded, otherwise names the source kinds that did; both suggest config_inspect.
+   */
+  public configHint(): string {
+    return configSourceHint(this.resolvedConfig.sources, 'config_inspect');
+  }
+
+  /**
    * Check if a file or directory exists.
    *
    * @param targetPath - Path to check
@@ -253,13 +262,15 @@ export class Services {
 
     if (!shortCode) {
       throw new Error(
-        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
       );
     }
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -303,13 +314,15 @@ export class Services {
 
     if (!shortCode) {
       throw new Error(
-        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
       );
     }
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -331,7 +344,8 @@ export class Services {
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -383,13 +397,15 @@ export class Services {
 
     if (!shortCode) {
       throw new Error(
-        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
       );
     }
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -435,7 +451,10 @@ export class Services {
    */
   public getWebDavClient(): WebDavClient {
     if (!this.b2cInstance) {
-      throw new Error('B2C instance required for WebDAV operations. Configure hostname and authentication in dw.json.');
+      throw new Error(
+        'B2C instance required for WebDAV operations. Configure hostname and authentication in dw.json.' +
+          this.configHint(),
+      );
     }
 
     return this.b2cInstance.webdav;
@@ -582,7 +601,10 @@ export class Services {
    */
   private getOAuthStrategy(): AuthStrategy {
     if (!this.resolvedConfig.hasOAuthConfig()) {
-      throw new Error('OAuth client ID required. Provide --client-id, set SFCC_CLIENT_ID, or configure in dw.json.');
+      throw new Error(
+        'OAuth client ID required. Provide --client-id, set SFCC_CLIENT_ID, or configure in dw.json.' +
+          this.configHint(),
+      );
     }
 
     // Use resolvedConfig factory to create OAuth strategy

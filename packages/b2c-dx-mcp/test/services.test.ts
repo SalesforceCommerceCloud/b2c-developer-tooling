@@ -387,6 +387,26 @@ describe('services', () => {
 
       expect(() => services.getOrganizationId()).to.throw('Tenant ID required');
     });
+
+    it('points at the configuration guide and config_inspect when no configuration loaded', () => {
+      const services = new Services({resolvedConfig: createMockResolvedConfig()});
+
+      expect(() => services.getOrganizationId())
+        .to.throw('No configuration was found')
+        .with.property('message')
+        .that.includes('Run "config_inspect"');
+    });
+
+    it('names the loaded source kinds when configuration lacks the value', () => {
+      const config = createMockResolvedConfig();
+      config.sources.push({name: 'DwJsonSource', location: '/secret/path/dw.json', fields: ['hostname']} as never);
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getOrganizationId())
+        .to.throw('Configuration was loaded from dw.json, but it does not set this value')
+        .with.property('message')
+        .that.not.includes('/secret/path');
+    });
   });
 
   describe('getPlatform', () => {
