@@ -582,7 +582,10 @@ summaries/keywords, then re-run `generate:guides-index` to merge them.
 
 The enrichment script defaults to `claude-haiku-5-5` (override with
 `DOCS_ENRICH_MODEL`) and requires `ANTHROPIC_API_KEY`; without a key it skips
-enrichment. It only enriches Developer Center guides. Help summaries come from
+enrichment. When changing the prompts, iterate with `enrich:docs -- --sample 10`
+(a dry run that prints new vs. existing enrichment and writes nothing) before a
+`--full` run. Keep `DOCS_ENRICH_CONCURRENCY` low (default 3) on shared gateways
+to avoid 429s; rate-limited requests back off and honor `retry-after`. It only enriches Developer Center guides. Help summaries come from
 DITA `<shortdesc>` and are refreshed with the source content.
 
 Audit published guide entries without a `summary` after each refresh. The
