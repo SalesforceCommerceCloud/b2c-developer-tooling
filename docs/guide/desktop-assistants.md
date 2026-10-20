@@ -1,10 +1,10 @@
 ---
-description: Install the B2C Commerce MCP server and skills in Claude Cowork, Claude Desktop, and ChatGPT Work (ChatGPT desktop app) to run B2C tasks from desktop AI assistants.
+description: Install the B2C Commerce MCP server and skills in Claude Desktop (Cowork) and the ChatGPT desktop app to run B2C tasks from desktop AI assistants.
 ---
 
 # Desktop Assistants
 
-Claude Desktop (Cowork) and ChatGPT Work run B2C Commerce tasks from the desktop, outside a
+Claude Desktop (Cowork) and ChatGPT run B2C Commerce tasks from the desktop, outside a
 code editor or terminal. Each app installs plugins from its own source, so a plugin
 installed in one Claude or ChatGPT surface is not always available in another.
 
@@ -15,7 +15,7 @@ and [skill collections](./agent-skills). No separate skills installation is need
 | --------------------------- | ------------------------------------ | ----------------------------------------- |
 | Claude Desktop (Cowork)     | Marketplaces added in Claude Desktop | [Claude Desktop (Cowork)](#claude-cowork) |
 | Claude Desktop **Code** tab | Claude Code plugins                  | [Claude Code setup](../mcp/#setup)        |
-| ChatGPT Work                | Codex plugins                        | [ChatGPT Work](#chatgpt-work)             |
+| ChatGPT                     | Added in ChatGPT or the Codex CLI    | [ChatGPT](#chatgpt-work)                  |
 | ChatGPT online              | Secure MCP Tunnel                    | [ChatGPT online](../mcp/#chatgpt)         |
 
 ## Before you start
@@ -54,29 +54,29 @@ mode. It installs plugins separately from Claude Code. Plugins installed with
 
 [![A Claude Desktop task answering "Were there any failing jobs recently on bdpx-prd?" after using 6 B2C MCP tools, with a table of two failing system jobs, their failure counts, and failure patterns.](/screenshots/claude-cowork-b2c-task.png)](/screenshots/claude-cowork-b2c-task.png)
 
-## ChatGPT Work {#chatgpt-work}
+## ChatGPT {#chatgpt-work}
 
-ChatGPT Work uses the plugins installed for Codex. If you already installed the
-B2C plugin for the Codex CLI or IDE extension, it is available in ChatGPT Work.
-Otherwise, install it from the Codex desktop app:
+The ChatGPT desktop app shares plugins with the Codex CLI. If you already
+installed the B2C plugin with the Codex CLI, it is available in ChatGPT.
+Otherwise, install it in ChatGPT:
 
 1. Open **Settings > Plugins** and select **Add > Add marketplace**. Enter
    `SalesforceCommerceCloud/b2c-developer-tooling` as the source, leave the
    other fields empty, and select **Add marketplace**.
 
-   [![Codex Add plugin marketplace dialog with SalesforceCommerceCloud/b2c-developer-tooling entered as the source.](/screenshots/codex-add-marketplace.png)](/screenshots/codex-add-marketplace.png)
+   [![ChatGPT Add plugin marketplace dialog with SalesforceCommerceCloud/b2c-developer-tooling entered as the source.](/screenshots/chatgpt-add-marketplace.png)](/screenshots/chatgpt-add-marketplace.png)
 
 2. Open **Plugins**, select the **Personal** tab, choose **B2C DX MCP**, and
    select **Install plugin**.
 
-   [![Codex plugin page for B2C DX MCP from the B2C Developer Tooling marketplace, showing the Install plugin button and the b2c-dx-mcp server.](/screenshots/codex-install-mcp.png)](/screenshots/codex-install-mcp.png)
+   [![ChatGPT plugin page for B2C DX MCP from the B2C Developer Tooling marketplace, showing the Install plugin button and the b2c-dx-mcp server.](/screenshots/chatgpt-install-mcp.png)](/screenshots/chatgpt-install-mcp.png)
 
-To install from a terminal instead, use the Codex CLI:
+To install with the Codex CLI instead:
 
 <!--@include: ../_partials/mcp-plugin-codex.md-->
 
-Start a new ChatGPT Work task. To update or remove the plugin, use the
-[Codex commands](./agent-skills#codex).
+Start a new task in ChatGPT. To update or remove the plugin, use the
+[Codex CLI commands](./agent-skills#codex).
 
 <ExamplePrompt>
 
@@ -84,20 +84,20 @@ Start a new ChatGPT Work task. To update or remove the plugin, use the
 
 </ExamplePrompt>
 
-[![ChatGPT Work listing schedule overlaps across a site's campaigns: open-ended seasonal offers, overlapping order, shipping, and product discounts, and a test campaign still active.](/screenshots/chatgpt-work-campaign.png)](/screenshots/chatgpt-work-campaign.png)
+[![ChatGPT listing schedule overlaps across a site's campaigns: open-ended seasonal offers, overlapping order, shipping, and product discounts, and a test campaign still active.](/screenshots/chatgpt-work-campaign.png)](/screenshots/chatgpt-work-campaign.png)
 
-ChatGPT online in a browser does not use Codex plugins. To connect it, see
+ChatGPT online in a browser does not use these plugins. To connect it, see
 [ChatGPT online](../mcp/#chatgpt).
 
 ## Troubleshooting
 
-| Problem                   | What to check                                                                                                                                |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Plugin is missing         | Check that you installed it for this surface. Claude Desktop (Cowork) and Claude Code install separately; ChatGPT Work shares Codex plugins. |
-| Server does not start     | Run `node --version` and confirm Node.js 22.16.0 or higher. Restart the app after installing Node.js.                                        |
-| Wrong project or instance | Specify the intended project or named instance in your request.                                                                              |
-| Old tools or skills       | Update the marketplace or plugin, then start a new task.                                                                                     |
-| Artifact shows no data    | Cowork artifacts cannot call local MCP tools. Embed the data and refresh it with a scheduled task.                                           |
+| Problem                   | What to check                                                                                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plugin is missing         | Check that you installed it for this surface. Claude Desktop (Cowork) and Claude Code install separately; ChatGPT shares plugins with the Codex CLI. |
+| Server does not start     | Run `node --version` and confirm Node.js 22.16.0 or higher. Restart the app after installing Node.js.                                                |
+| Wrong project or instance | Specify the intended project or named instance in your request.                                                                                      |
+| Old tools or skills       | Update the marketplace or plugin, then start a new task.                                                                                             |
+| Artifact shows no data    | Cowork artifacts cannot call local MCP tools. Embed the data and refresh it with a scheduled task.                                                   |
 
 See [MCP troubleshooting](../mcp/#troubleshooting) for authentication and
 configuration issues.

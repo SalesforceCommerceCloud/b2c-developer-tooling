@@ -1,12 +1,12 @@
-Using the Codex or ChatGPT desktop app? See [Codex desktop and ChatGPT Work setup](/guide/desktop-assistants#chatgpt-work).
+Using the ChatGPT desktop app? See [ChatGPT setup](/guide/desktop-assistants#chatgpt-work).
 For ChatGPT in a browser, see [ChatGPT online setup](/mcp/#chatgpt).
 
 **Install the plugin** <span class="recommended VPBadge">Recommended</span>
 
 <!--@include: ./mcp-plugin-codex.md-->
 
-Start a new Codex session in your project. This setup also works with the Codex
-IDE extension, the Codex desktop app, and ChatGPT Work.
+Start a new Codex session in your project. The plugin is also available in the
+ChatGPT desktop app.
 
 <details class="details custom-block" data-setup-anchor="codex-manual">
 <summary>Manual MCP setup</summary>
