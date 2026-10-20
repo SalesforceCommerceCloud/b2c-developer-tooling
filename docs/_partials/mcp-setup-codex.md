@@ -1,4 +1,4 @@
-Using the ChatGPT desktop app (Work)? See [ChatGPT setup](/guide/desktop-assistants#chatgpt-work).
+Using the ChatGPT desktop app (ChatGPT Work)? See [ChatGPT Work setup](/guide/desktop-assistants#chatgpt-work).
 
 **Install the plugin** <span class="recommended VPBadge">Recommended</span>
 

@@ -27,7 +27,7 @@ Our plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
 
 </AssistantInstall>
 
-For Claude Desktop (Cowork) and the ChatGPT desktop app (Work), see [Desktop Assistants](../guide/desktop-assistants).
+For Claude Desktop (Cowork) and the ChatGPT desktop app (ChatGPT Work), see [Desktop Assistants](../guide/desktop-assistants).
 For [Copilot CLI](#copilot-cli), [ChatGPT online](#chatgpt), and other clients, see [Other clients](#other-clients).
 
 ## B2C Commerce documentation

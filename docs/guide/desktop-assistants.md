@@ -4,7 +4,7 @@ description: Install the B2C Commerce MCP server and skills in Claude Desktop (C
 
 # Desktop Assistants
 
-Claude Desktop (Cowork) and ChatGPT (Work) run B2C Commerce tasks from the desktop, outside a
+Claude Desktop (Cowork) and ChatGPT Work run B2C Commerce tasks from the desktop, outside a
 code editor or terminal. Each app installs plugins from its own source, so a plugin
 installed in one Claude or ChatGPT surface is not always available in another.
 
@@ -15,7 +15,7 @@ and [skill collections](./agent-skills). No separate skills installation is need
 | --------------------------- | ------------------------------------ | ----------------------------------------- |
 | Claude Desktop (Cowork)     | Marketplaces added in Claude Desktop | [Claude Desktop (Cowork)](#claude-cowork) |
 | Claude Desktop **Code** tab | Claude Code plugins                  | [Claude Code setup](../mcp/#setup)        |
-| ChatGPT (Work)              | Codex plugins                        | [ChatGPT (Work)](#chatgpt-work)           |
+| ChatGPT Work                | Codex plugins                        | [ChatGPT Work](#chatgpt-work)             |
 | ChatGPT online              | Secure MCP Tunnel                    | [ChatGPT online](../mcp/#chatgpt)         |
 
 ## Before you start
@@ -54,7 +54,7 @@ mode. It installs plugins separately from Claude Code. Plugins installed with
 
 [![A Claude Desktop task answering "Were there any failing jobs recently on bdpx-prd?" after using 6 B2C MCP tools, with a table of two failing system jobs, their failure counts, and failure patterns.](/screenshots/claude-cowork-b2c-task.png)](/screenshots/claude-cowork-b2c-task.png)
 
-## ChatGPT (Work) {#chatgpt-work}
+## ChatGPT Work {#chatgpt-work}
 
 The ChatGPT desktop app runs Codex plugins. Codex shares its plugins between
 ChatGPT and the Codex CLI, so installing in either place makes the plugin
