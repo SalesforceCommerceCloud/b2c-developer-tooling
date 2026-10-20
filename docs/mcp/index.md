@@ -28,8 +28,7 @@ Our plugins use the open [Agent Plugins standard](https://agent-plugins.org/).
 </AssistantInstall>
 
 For Claude Desktop (Cowork) and ChatGPT Work, see [Desktop Assistants](../guide/desktop-assistants).
-For [Claude Desktop](#claude-desktop), [Copilot CLI](#copilot-cli), [ChatGPT online](#chatgpt),
-and other clients, see [Other clients](#other-clients).
+For [Copilot CLI](#copilot-cli), [ChatGPT online](#chatgpt), and other clients, see [Other clients](#other-clients).
 
 ## B2C Commerce documentation
 
@@ -124,16 +123,6 @@ Optional [project instructions](../guide/project-setup#give-your-assistant-proje
 can help your assistant recognize when to use B2C tools and skills.
 
 ## Other clients {#other-clients}
-
-### Claude Desktop {#claude-desktop}
-
-To run tasks from Claude Desktop **Home** (Cowork), install the plugin instead; see [Claude Desktop (Cowork)](../guide/desktop-assistants#claude-cowork).
-To set up Claude Desktop without the plugin, open **Settings > Developer > Edit Config** and add:
-
-<!--@include: ../_partials/mcp-manual-json.md-->
-
-Save, then fully quit and reopen Claude Desktop. See
-[Claude Desktop local server setup](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
 
 ### Copilot CLI {#copilot-cli}
 

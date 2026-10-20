@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-19T22:45:52.392Z",
+  "generatedAt": "2026-10-20T00:07:59.586Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -530,7 +530,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.md",
-      "headings": "Set up your assistant {#setup} • B2C Commerce documentation • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills • Other clients {#other-clients} • Claude Desktop {#claude-desktop} • Copilot CLI {#copilot-cli} • ChatGPT online {#chatgpt} • Other MCP clients {#other-mcp-clients} • Updates and customization • Troubleshooting",
+      "headings": "Set up your assistant {#setup} • B2C Commerce documentation • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills • Other clients {#other-clients} • Copilot CLI {#copilot-cli} • ChatGPT online {#chatgpt} • Other MCP clients {#other-mcp-clients} • Updates and customization • Troubleshooting",
       "preview": "Connect your AI assistant to B2C Commerce tools, documentation, skills, and APIs."
     },
     {

@@ -13,7 +13,7 @@ const root = ref<HTMLElement>();
 const enhanced = ref(false);
 const clients = [
   {id: 'claude', label: 'Claude'},
-  {id: 'codex', label: 'Codex'},
+  {id: 'codex', label: 'Codex/ChatGPT'},
   {id: 'copilot', label: 'VS Code'},
   {id: 'cursor', label: 'Cursor'},
   {id: 'opencode', label: 'OpenCode'},

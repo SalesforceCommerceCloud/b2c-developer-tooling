@@ -11,13 +11,12 @@ installed in one Claude or ChatGPT surface is not always available in another.
 The **b2c-dx-mcp** plugin includes the [B2C MCP](../mcp/) tools, documentation,
 and [skill collections](./agent-skills). No separate skills installation is needed.
 
-| Surface                         | Where plugins come from              | Setup                                     |
-| ------------------------------- | ------------------------------------ | ----------------------------------------- |
-| Claude Desktop (Cowork)         | Marketplaces added in Claude Desktop | [Claude Desktop (Cowork)](#claude-cowork) |
-| Claude Desktop **Code** tab     | Claude Code plugins                  | [Claude Code setup](../mcp/#setup)        |
-| Claude Desktop without a plugin | Desktop MCP configuration            | [Manual setup](../mcp/#claude-desktop)    |
-| ChatGPT Work                    | Codex plugins                        | [ChatGPT Work](#chatgpt-work)             |
-| ChatGPT online                  | Secure MCP Tunnel                    | [ChatGPT online](../mcp/#chatgpt)         |
+| Surface                     | Where plugins come from              | Setup                                     |
+| --------------------------- | ------------------------------------ | ----------------------------------------- |
+| Claude Desktop (Cowork)     | Marketplaces added in Claude Desktop | [Claude Desktop (Cowork)](#claude-cowork) |
+| Claude Desktop **Code** tab | Claude Code plugins                  | [Claude Code setup](../mcp/#setup)        |
+| ChatGPT Work                | Codex plugins                        | [ChatGPT Work](#chatgpt-work)             |
+| ChatGPT online              | Secure MCP Tunnel                    | [ChatGPT online](../mcp/#chatgpt)         |
 
 ## Before you start
 
