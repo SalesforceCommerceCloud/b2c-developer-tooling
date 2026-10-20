@@ -207,6 +207,21 @@ describe('SCAPI shopper execution', () => {
     expect(invalidated).to.have.length(2);
   });
 
+  it('ignores a late rejection of a token that has already been replaced', async () => {
+    let issued = 0;
+    server.use(
+      http.post(tokenUrl, () =>
+        HttpResponse.json({access_token: `shopper-${++issued}`, expires_in: 1800, token_type: 'BEARER'}),
+      ),
+    );
+    const auth = new ScapiShopperSessions().for(shopperConfig());
+    expect(await auth.getAccessToken('RefArch', signal())).to.equal('shopper-1');
+    auth.invalidate('RefArch', 'shopper-1');
+    expect(await auth.getAccessToken('RefArch', signal())).to.equal('shopper-2');
+    auth.invalidate('RefArch', 'shopper-1');
+    expect(await auth.getAccessToken('RefArch', signal())).to.equal('shopper-2');
+  });
+
   it('reports SLAS configuration and login failures', async () => {
     await rejects(
       () =>
