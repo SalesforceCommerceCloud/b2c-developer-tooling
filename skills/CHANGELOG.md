@@ -1,5 +1,19 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.3
+
+### Patch Changes
+
+- [#786](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/786) [`b098aec`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b098aec9f6613115f788423d25abe22ccf021c56) - Plugins now include an icon for Claude plugin listings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#783](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/783) [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18) - Custom API skill now covers remote-include request context: no path parameters inside include targets, SCAPI locale format, and how include errors affect the parent (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Plugins now show readable names, such as "B2C DX MCP" and "B2C Operations", in Claude plugin browsers, and the B2C DX MCP plugin has an icon in Codex. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#775](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/775) [`6c6e1b2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c6e1b27aefafccfeb5e73de7a1314df0a30cfe0) - Storefront Next skills no longer mention the removed `mrt_bundle_push` MCP tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Fixed Claude marketplace sync warnings for the Storefront Next extensions and Page Designer skills; skill bundling now rejects angle brackets in skill descriptions. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.12.2
 
 ### Patch Changes

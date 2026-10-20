@@ -18,7 +18,7 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.2"
+      "version": "1.12.3"
     },
     {
       "name": "b2c",
@@ -31,7 +31,7 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.2"
+      "version": "1.12.3"
     },
     {
       "name": "b2c-ops",
@@ -44,7 +44,7 @@
       "source": "./skills/b2c-ops",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.2"
+      "version": "1.12.3"
     },
     {
       "name": "b2c-dx-mcp",
@@ -57,7 +57,7 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false,
-      "version": "3.5.5"
+      "version": "3.6.0"
     },
     {
       "name": "storefront-next",
@@ -70,7 +70,7 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.2"
+      "version": "1.12.3"
     },
     {
       "name": "storefront-next-figma",

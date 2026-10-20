@@ -1,5 +1,13 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.8
+
+### Patch Changes
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Added a Desktop Assistants guide for installing the B2C MCP and skills in Claude Cowork and ChatGPT Work. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#775](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/775) [`6c6e1b2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c6e1b27aefafccfeb5e73de7a1314df0a30cfe0) - Removed the `mrt_bundle_push` MCP tool. Use `b2c mrt bundle deploy` or your project's push script (such as `sfnext push`) to publish Managed Runtime bundles. The `MRT` toolset now includes the MRT log tools. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.7
 
 ### Patch Changes

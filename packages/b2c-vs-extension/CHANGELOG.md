@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.7
+
+### Patch Changes
+
+- [#776](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/776) [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa) - Activation telemetry now includes coarse workspace context (whether an instance is configured, remote vs. local, first activation) to help prioritize improvements. No paths or configuration values are sent. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa), [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa), [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18), [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51), [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d), [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51)]:
+  - @salesforce/b2c-tooling-sdk@2.8.1
+
 ## 1.5.6
 
 ### Patch Changes
