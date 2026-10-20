@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, ux} from '@oclif/core';
 import MrtEnvList from '../../../../src/commands/mrt/env/list.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
@@ -148,6 +148,38 @@ describe('mrt env list', () => {
     await command.run();
 
     expect((command.renderTable as sinon.SinonStub).calledOnce).to.equal(true);
+  });
+
+  describe('renderTable — static IPs column', () => {
+    const ENVS = [
+      {id: 'staging', name: 'Staging', status: 'ready', backend: 'legacy', staticIps: true},
+      {id: 'dev', name: 'Dev', status: 'ready', backend: 'legacy', staticIps: false},
+      {id: 'qa', name: 'QA', status: 'ready', backend: 'legacy'},
+    ];
+
+    async function render(flags: Record<string, unknown>): Promise<string> {
+      const command = createCommand();
+      stubParse(command, {project: 'my-project', ...flags}, {});
+      await command.init();
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      command.renderTable(ENVS);
+      return stdoutStub
+        .getCalls()
+        .map((call) => String(call.args[0] ?? ''))
+        .join('\n');
+    }
+
+    it('is not shown by default', async () => {
+      expect(await render({})).to.not.include('Static IPs');
+    });
+
+    it('is shown when requested with --columns, as Enabled / Disabled / -', async () => {
+      const output = await render({columns: 'slug,static-ips'});
+      expect(output).to.include('Static IPs');
+      expect(output).to.match(/staging\s+Enabled/);
+      expect(output).to.match(/dev\s+Disabled/);
+      expect(output).to.match(/qa\s+-/);
+    });
   });
 
   it('supports the SCAPI MRT backend', () => {

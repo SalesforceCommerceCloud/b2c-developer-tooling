@@ -65,7 +65,7 @@
  * ## Configuration
  *
  * Different tools require different configuration:
- * - **MRT tools** (e.g., `mrt_bundle_push`) → MRT flags (--project, --api-key)
+ * - **MRT tools** (e.g., `mrt_logs_watch`) → MRT flags (--project, --api-key)
  * - **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) → Instance flags or dw.json
  * - **Local tools** (e.g., scaffolding) → None
  *
@@ -463,7 +463,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
               'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
-              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; ' +
+              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; artifacts or dashboards skill://mcp/b2c-mcp-claude-artifacts/SKILL.md; ' +
               'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).',
           },
         );

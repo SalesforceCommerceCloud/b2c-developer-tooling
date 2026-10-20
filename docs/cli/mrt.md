@@ -215,16 +215,19 @@ b2c mrt project list --json
 
 Create a new MRT project (storefront). The name is a positional argument.
 
-- **Legacy** requires `--organization` / `-o`. To choose the new project's slug, pass `--project` / `--storefront` (`-p` / `-s`) — when omitted, MRT auto-generates the slug from the name. `--url` and `--region` / `-r` are legacy-only.
+- **Legacy** requires `--organization` / `-o`. To choose the new project's slug, pass `--project` / `--storefront` (`-p` / `-s`) — when omitted, MRT auto-generates the slug from the name. `--url`, `--region` / `-r`, and `--static-ips-default` / `--no-static-ips-default` are legacy-only.
 - **SCAPI** requires at least one `--site` (repeatable) and ignores `--organization`/`--url`/`--region`/slug (the storefront ID is generated server-side). `--type` selects the storefront type (defaults to `storefront_next`). Creation returns `202 Accepted` with the storefront provisioning asynchronously — poll `project get` to track `setupStatus`.
 
 ```bash
 # Legacy
 b2c mrt project create "My Storefront" --organization my-org
 b2c mrt project create "My Storefront" -o my-org -s my-storefront --region us-east-1
+b2c mrt project create "My Storefront" -o my-org --static-ips-default
 # SCAPI
 b2c mrt project create "My Storefront" --site RefArch --mrt-backend scapi
 ```
+
+`--static-ips-default` (or `--no-static-ips-default`) sets whether new environments in the project are created with static outbound IPs enabled; when omitted, the MRT default applies. Static IPs are a **legacy backend only** feature: with `--mrt-backend scapi` the flag is rejected with an error, and with `--mrt-backend auto` a run served by SCAPI warns and ignores it. Static IPs must be enabled for your organization; otherwise the MRT API error is shown as-is.
 
 ### b2c mrt project get
 
@@ -240,13 +243,15 @@ b2c mrt project get --storefront my-storefront --mrt-backend scapi --json
 
 Update an MRT project (storefront). Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`); at least one updatable field must be supplied.
 
-- **Legacy** honors `--name` / `-n`, `--url`, and `--region` / `-r`.
+- **Legacy** honors `--name` / `-n`, `--url`, `--region` / `-r`, and `--static-ips-default` / `--no-static-ips-default`.
 - **SCAPI** cannot rename a storefront (no `--name`/`--url`). It honors `--region` / `-r` (converted to the SCAPI underscored form internally), `--ssr-architecture` (`x86` | `arm64`), `--allow-cookies` / `--no-allow-cookies`, `--preserve-proxy-user-agent` / `--no-preserve-proxy-user-agent`, and `--site` (repeatable). **`--site` fully replaces the storefront's assigned-sites set** — it is not incremental, so pass the complete desired set every time.
 
 ```bash
 # Legacy
 b2c mrt project update my-storefront --name "Updated Name"
 b2c mrt project update --project my-storefront --region us-east-1
+b2c mrt project update my-storefront --static-ips-default
+b2c mrt project update my-storefront --no-static-ips-default
 # SCAPI — replaces the full assigned-sites set with exactly these two
 b2c mrt project update my-storefront --site RefArch --site OtherSite --mrt-backend scapi
 ```
@@ -407,6 +412,9 @@ b2c mrt env create prod -p my-storefront --name "Production" \
   --production \
   --external-hostname www.example.com \
   --external-domain example.com
+
+# Create with static outbound IPs (legacy backend only)
+b2c mrt env create staging -p my-storefront --name "Staging" --static-ips
 ```
 
 **Flags:**
@@ -420,6 +428,7 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 | `--external-domain` | External domain for SSR |
 | `--allow-cookies` | Forward HTTP cookies |
 | `--enable-source-maps` | Enable source maps |
+| `--static-ips` / `--no-static-ips` | Make outbound requests from static IPs. When omitted, the project's static IP default is inherited (legacy backend only) |
 | `--proxy` | Proxy configuration in format `path=host` (repeatable) |
 | `--wait`, `-w` | Wait for the environment to be ready before returning |
 | `--poll-interval` | Polling interval in seconds when using `--wait` | `10` |
@@ -434,6 +443,7 @@ b2c mrt env get --project my-storefront --environment staging
 b2c mrt env get -p my-storefront -e production --json
 ```
 
+
 ### b2c mrt env update
 
 Update an environment.
@@ -441,6 +451,8 @@ Update an environment.
 ```bash
 b2c mrt env update -p my-storefront -e staging --name "Updated Staging"
 b2c mrt env update -p my-storefront -e production --allow-cookies
+b2c mrt env update -p my-storefront -e production --static-ips
+b2c mrt env update -p my-storefront -e production --no-static-ips
 ```
 
 **Flags:**
@@ -453,6 +465,7 @@ b2c mrt env update -p my-storefront -e production --allow-cookies
 | `--external-domain` | External domain for Universal PWA SSR (use empty string to clear) |
 | `--allow-cookies` | Forward HTTP cookies to origin |
 | `--enable-source-maps` | Enable source map support in the environment |
+| `--static-ips` / `--no-static-ips` | Make outbound requests from static IPs (legacy backend only) |
 | `--log-level` | Log level for the environment (`DEBUG`, `INFO`, `WARN`, `ERROR`, `TRACE`, `FATAL`) |
 | `--whitelisted-ips` | IP whitelist (CIDR blocks, space-separated; use empty string to clear) |
 | `--proxy` | Proxy configuration in format `path=host` (repeatable) |

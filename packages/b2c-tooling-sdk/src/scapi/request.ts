@@ -21,6 +21,7 @@ import type {ScapiShopperAuth} from './shopper.js';
 import {
   scapiAuthError,
   scapiAuthResponse,
+  shopperTokenLacksScopes,
   scapiShopperAuthError,
   selectScapiAuth,
   shopperTokenScopes,
@@ -332,7 +333,12 @@ export function createScapiRequest(
       }
     }
     const diagnostic = scapiAuthResponse(result.response.status, authContext);
-    if (shopper && result.response.status === 401) options.shopperAuth?.invalidate(shopperSiteId!);
+    // A token missing the operation's scopes keeps failing; a new one reflects scopes granted since.
+    if (
+      shopper &&
+      (result.response.status === 401 || (result.response.status === 403 && shopperTokenLacksScopes(authContext)))
+    )
+      options.shopperAuth?.invalidate(shopperSiteId!);
     // Authenticated live schema responses extend this execution's catalog, replacing bundled contracts.
     if (
       result.response.ok &&

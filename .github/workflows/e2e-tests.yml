@@ -270,8 +270,17 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
       - name: Run MCP E2E tests
+        id: e2e-test
         working-directory: packages/b2c-dx-mcp
         env:
           SFCC_DISABLE_TELEMETRY: 'true'
           NODE_ENV: test
         run: pnpm run test:e2e:ci
+      # The CI reporter writes JSON only, so failures are invisible in the step log without this.
+      - name: MCP E2E Test Report
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.e2e-test.conclusion != 'skipped'
+        with:
+          name: MCP E2E Test Results
+          path: 'packages/b2c-dx-mcp/test-results-e2e.json'
+          reporter: mocha-json

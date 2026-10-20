@@ -31,6 +31,8 @@ import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const DEFAULT_BASE_URL = DEFAULT_MRT_ORIGIN;
 
+type LegacyProject = Parameters<typeof normalizeLegacyProject>[0];
+
 const SHORT_CODE = 'kv7kzm78';
 const TENANT_ID = 'zzxy_prd';
 const ORGANIZATION_ID = 'f_ecom_zzxy_prd';
@@ -104,6 +106,7 @@ describe('operations/mrt/project', () => {
         architecture: undefined,
         url: 'https://example.com',
         organization: 'my-org',
+        staticIpsDefault: undefined,
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-02-01T00:00:00Z',
         backend: 'legacy',
@@ -852,6 +855,157 @@ describe('operations/mrt/project', () => {
 
       expect(result.backend).to.equal('legacy');
       expect(called).to.equal(true);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Static outbound IP default (legacy backend only)
+  // -------------------------------------------------------------------------
+
+  describe('static IPs default', () => {
+    const STATIC_IPS_ERROR = 'Static IPs are not enabled for this organization.';
+
+    it('normalizeLegacyProject maps static_ips_default', () => {
+      expect(
+        normalizeLegacyProject({slug: STOREFRONT_ID, name: 'P', static_ips_default: false} as LegacyProject)
+          .staticIpsDefault,
+      ).to.equal(false);
+      expect(normalizeLegacyProject({slug: STOREFRONT_ID, name: 'P'} as LegacyProject).staticIpsDefault).to.equal(
+        undefined,
+      );
+    });
+
+    for (const value of [true, false]) {
+      it(`createProjectWithBackend (legacy) sends static_ips_default=${value}`, async () => {
+        let receivedBody: Record<string, unknown> | undefined;
+        server.use(
+          http.post(LEGACY_PROJECTS, async ({request}) => {
+            receivedBody = (await request.json()) as Record<string, unknown>;
+            return HttpResponse.json({slug: STOREFRONT_ID, name: 'P', ...receivedBody}, {status: 201});
+          }),
+        );
+
+        const result = await createProjectWithBackend({
+          preference: 'legacy',
+          legacyAuth: new MockAuthStrategy(),
+          name: 'P',
+          organization: 'my-org',
+          staticIpsDefault: value,
+        });
+
+        expect(receivedBody?.static_ips_default).to.equal(value);
+        expect(result.project.staticIpsDefault).to.equal(value);
+      });
+
+      it(`updateProjectWithBackend (legacy) sends only static_ips_default=${value}`, async () => {
+        let receivedBody: Record<string, unknown> | undefined;
+        server.use(
+          http.patch(LEGACY_PROJECT, async ({request}) => {
+            receivedBody = (await request.json()) as Record<string, unknown>;
+            return HttpResponse.json({slug: STOREFRONT_ID, name: 'P', ...receivedBody});
+          }),
+        );
+
+        await updateProjectWithBackend({
+          preference: 'legacy',
+          legacyAuth: new MockAuthStrategy(),
+          projectSlug: STOREFRONT_ID,
+          staticIpsDefault: value,
+        });
+
+        expect(receivedBody).to.deep.equal({static_ips_default: value});
+      });
+    }
+
+    it('createProjectWithBackend (legacy) omits static_ips_default when not provided', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.post(LEGACY_PROJECTS, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({slug: STOREFRONT_ID, name: 'P'}, {status: 201});
+        }),
+      );
+
+      await createProjectWithBackend({
+        preference: 'legacy',
+        legacyAuth: new MockAuthStrategy(),
+        name: 'P',
+        organization: 'my-org',
+      });
+
+      expect(receivedBody).to.not.have.property('static_ips_default');
+    });
+
+    it('createProjectWithBackend (scapi) never sends static IP data', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.post(SCAPI_STOREFRONTS, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(scapiStorefront(), {status: 202});
+        }),
+      );
+
+      await createProjectWithBackend({
+        preference: 'scapi',
+        scapiConnection: scapiConn(),
+        name: 'P',
+        sites: ['RefArch'],
+        staticIpsDefault: true,
+      });
+
+      expect(JSON.stringify(receivedBody)).to.not.include('static');
+    });
+
+    it('updateProjectWithBackend (scapi) never sends static IP data', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.patch(SCAPI_STOREFRONT, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(scapiStorefront());
+        }),
+      );
+
+      await updateProjectWithBackend({
+        preference: 'scapi',
+        scapiConnection: scapiConn(),
+        projectSlug: STOREFRONT_ID,
+        sites: ['RefArch'],
+        staticIpsDefault: true,
+      });
+
+      expect(JSON.stringify(receivedBody)).to.not.include('static');
+    });
+
+    it('passes the server error message through unchanged on legacy create and update', async () => {
+      server.use(
+        http.post(LEGACY_PROJECTS, () => HttpResponse.json({message: STATIC_IPS_ERROR}, {status: 403})),
+        http.patch(LEGACY_PROJECT, () => HttpResponse.json({message: STATIC_IPS_ERROR}, {status: 403})),
+      );
+
+      for (const run of [
+        () =>
+          createProjectWithBackend({
+            preference: 'legacy',
+            legacyAuth: new MockAuthStrategy(),
+            name: 'P',
+            organization: 'my-org',
+            staticIpsDefault: true,
+          }),
+        () =>
+          updateProjectWithBackend({
+            preference: 'legacy',
+            legacyAuth: new MockAuthStrategy(),
+            projectSlug: STOREFRONT_ID,
+            staticIpsDefault: true,
+          }),
+      ]) {
+        try {
+          await run();
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect((error as Error).message).to.include(STATIC_IPS_ERROR);
+        }
+      }
     });
   });
 });

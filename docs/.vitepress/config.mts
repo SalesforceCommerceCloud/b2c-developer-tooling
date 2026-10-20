@@ -124,6 +124,7 @@ const toolkitSidebar = [
         ],
       },
       {text: 'Agent Skills', link: '/guide/agent-skills'},
+      {text: 'Desktop Assistants', link: '/guide/desktop-assistants'},
     ],
   },
   {

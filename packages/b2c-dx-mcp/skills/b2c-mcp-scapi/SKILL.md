@@ -64,6 +64,7 @@ declare const scapi: {
 - Check `ok`/`status`. Writes: read back. Check before retry. Await every request.
 - Limits: 20 calls, 4 parallel, 30 s. `fetch`/`WebSocket` disabled.
 - Write needing approval pauses for client elicitation. Decline = whole run ends. Never fake approval.
+- Claude artifact/dashboard: page code cannot call `scapi_execute`. Never allowlist this server's tools as artifact connectors (shared copies fail with **Connectors needed**). Embed results.
 
 ```js
 // rank candidates by prose (await it)
@@ -103,3 +104,4 @@ async () => {
 | Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
 | Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
 | Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |
+| Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing               | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

@@ -9,6 +9,7 @@
   "plugins": [
     {
       "name": "b2c-cli",
+      "displayName": "B2C CLI",
       "description": "B2C CLI Skills for Salesforce Commerce Cloud development.",
       "author": {
         "name": "Salesforce"
@@ -17,10 +18,11 @@
       "source": "./skills/b2c-cli",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.1"
+      "version": "1.12.2"
     },
     {
       "name": "b2c",
+      "displayName": "B2C Commerce Dev",
       "description": "B2C Commerce development skills including Custom API development guides.",
       "author": {
         "name": "Salesforce"
@@ -29,10 +31,11 @@
       "source": "./skills/b2c",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.1"
+      "version": "1.12.2"
     },
     {
       "name": "b2c-ops",
+      "displayName": "B2C Operations",
       "description": "B2C Commerce operator and administrator runbooks for job health, checkout failures, edge traffic and bots, and incident triage.",
       "author": {
         "name": "Salesforce"
@@ -41,10 +44,11 @@
       "source": "./skills/b2c-ops",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.1"
+      "version": "1.12.2"
     },
     {
       "name": "b2c-dx-mcp",
+      "displayName": "B2C DX MCP",
       "description": "Build, debug, and deploy Salesforce B2C Commerce with your AI assistant. Includes documentation, workflow skills, and Salesforce Commerce API tools.",
       "author": {
         "name": "Salesforce"
@@ -53,10 +57,11 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false,
-      "version": "3.5.4"
+      "version": "3.5.5"
     },
     {
       "name": "storefront-next",
+      "displayName": "Storefront Next",
       "description": "Storefront Next development skills for building React 19 storefronts on Salesforce B2C Commerce.",
       "author": {
         "name": "Salesforce"
@@ -65,10 +70,11 @@
       "source": "./skills/storefront-next",
       "category": "productivity",
       "strict": false,
-      "version": "1.12.1"
+      "version": "1.12.2"
     },
     {
       "name": "storefront-next-figma",
+      "displayName": "Storefront Next Figma",
       "description": "Figma design-kit skills for Storefront Next verticals — duplicate the kit, sync brand variables, and publish Code Connect. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
@@ -81,6 +87,7 @@
     },
     {
       "name": "figma-to-sfnext-pagedesigner",
+      "displayName": "Figma to Storefront Next Page Designer",
       "description": "Convert a Figma frame into live Storefront Next Page Designer blocks — React components with decorator metadata, brand-token reconciliation, and product data loaders. Requires the Figma MCP server.",
       "author": {
         "name": "Salesforce"
@@ -93,6 +100,7 @@
     },
     {
       "name": "b2c-python-sdk",
+      "displayName": "B2C Python SDK",
       "description": "Consuming the salesforce-b2c-tooling-sdk Python SDK — authenticate to B2C Commerce, resolve dw.json config, and call OCAPI/SCAPI/WebDAV clients and operations from scripts or notebooks.",
       "author": {
         "name": "Salesforce"

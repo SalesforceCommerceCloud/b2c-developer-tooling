@@ -106,6 +106,29 @@ describe('ecdn zones list', () => {
     });
   });
 
+  describe('paging', () => {
+    it('returns all zones beyond the first page', async () => {
+      const command: any = await createCommand({'tenant-id': 'zzxy_prd'});
+      stubCommon(command, {jsonEnabled: true});
+
+      const all = Array.from({length: 63}, (_, i) => ({zoneId: `z${i}`, name: `zone-${i}`, status: 'active'}));
+      const offsets: number[] = [];
+      stubCdnClient(command, {
+        async GET(_path: string, opts: any) {
+          const offset = opts.params.query.offset as number;
+          offsets.push(offset);
+          return {data: {data: all.slice(offset, offset + opts.params.query.limit)}};
+        },
+      });
+
+      const result = await command.run();
+
+      expect(result.total).to.equal(63);
+      expect(result.zones[62].name).to.equal('zone-62');
+      expect(offsets).to.deep.equal([0, 50]);
+    });
+  });
+
   describe('error handling', () => {
     it('errors on API failure', async () => {
       const command: any = await createCommand({'tenant-id': 'zzxy_prd'});

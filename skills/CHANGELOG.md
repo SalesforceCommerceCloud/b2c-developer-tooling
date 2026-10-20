@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.2
+
+### Patch Changes
+
+- [#774](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/774) [`13038ab`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/13038abf6363fb0ffbff5943b406c35ab9c50ee8) - Fix `b2c ecdn zones list` and `--zone <name>` lookup only seeing the first 25 zones; zones are now paged in full. The SDK adds a `listAllZones` helper. (Thanks [@jlbruno](https://github.com/jlbruno)!)
+
+- [#762](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/762) [`20784c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/20784c93ae31eb2f81d000b7755bd9f245c4ac29) - Document the new static IP flags and output fields in the `b2c-mrt` skill's project and environment command references. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
 ## 1.12.1
 
 ### Patch Changes

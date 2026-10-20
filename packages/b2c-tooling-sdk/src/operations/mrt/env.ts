@@ -100,6 +100,13 @@ export interface CreateEnvOptions {
   enableSourceMaps?: boolean;
 
   /**
+   * Make outbound requests from static IPs.
+   * If omitted, the project's static-IP default is inherited.
+   * Requires static IPs to be enabled for the organization.
+   */
+  ssrStaticIps?: boolean;
+
+  /**
    * Minimum log level for the environment.
    */
   logLevel?: LogLevel;
@@ -190,6 +197,10 @@ export async function createEnv(options: CreateEnvOptions, auth: AuthStrategy): 
 
   if (options.enableSourceMaps !== undefined) {
     body.enable_source_maps = options.enableSourceMaps;
+  }
+
+  if (options.ssrStaticIps !== undefined) {
+    body.ssr_static_ips = options.ssrStaticIps;
   }
 
   if (options.logLevel) {
@@ -776,6 +787,12 @@ export interface UpdateEnvOptions {
   enableSourceMaps?: boolean | null;
 
   /**
+   * Make outbound requests from static IPs.
+   * Requires static IPs to be enabled for the organization.
+   */
+  ssrStaticIps?: boolean;
+
+  /**
    * Minimum log level for the environment.
    */
   logLevel?: LogLevel | null;
@@ -866,6 +883,10 @@ export async function updateEnv(options: UpdateEnvOptions, auth: AuthStrategy): 
 
   if (options.enableSourceMaps !== undefined) {
     body.enable_source_maps = options.enableSourceMaps;
+  }
+
+  if (options.ssrStaticIps !== undefined) {
+    body.ssr_static_ips = options.ssrStaticIps;
   }
 
   if (options.logLevel !== undefined) {
@@ -969,6 +990,10 @@ export interface MrtEnvironmentView {
   enableSourceMaps?: boolean;
   /** Minimum log level, in the backend's own form (legacy only). */
   logLevel?: string;
+  /** Whether outbound requests are made from static IPs (legacy only). */
+  staticIps?: boolean;
+  /** Assigned static outbound IPs, as returned by the API (legacy only; shape is not typed). */
+  staticOutboundIps?: unknown;
   /** SSR proxy configurations (legacy only). */
   proxies?: Array<{path?: string; host: string}>;
   /** Backend that produced this row. */
@@ -996,6 +1021,8 @@ export function normalizeLegacyEnv(env: MrtEnvironment | MrtEnvironmentUpdate): 
     allowCookies: e.allow_cookies ?? undefined,
     enableSourceMaps: e.enable_source_maps ?? undefined,
     logLevel: (e.log_level as string) || undefined,
+    staticIps: e.ssr_static_ips ?? undefined,
+    staticOutboundIps: e.ssr_static_outbound_ips ?? undefined,
     // `path` is returned by the API but not in the generated proxy type.
     proxies: e.ssr_proxy_configs
       ? e.ssr_proxy_configs.map((p) => ({path: (p as {path?: string}).path, host: p.host}))
@@ -1547,6 +1574,8 @@ export interface CreateEnvironmentBackendOptions extends EnvBackendOptions {
   allowCookies?: boolean;
   /** Enable source maps (legacy only). */
   enableSourceMaps?: boolean;
+  /** Make outbound requests from static IPs (legacy only). */
+  ssrStaticIps?: boolean;
   /** Minimum log level (legacy only). */
   logLevel?: LogLevel;
   /** IP whitelist, space-separated CIDR blocks (legacy only). */
@@ -1578,6 +1607,7 @@ export async function createEnvironmentWithBackend(
     externalDomain,
     allowCookies,
     enableSourceMaps,
+    ssrStaticIps,
     logLevel,
     whitelistedIps,
     proxyConfigs,
@@ -1623,6 +1653,7 @@ export async function createEnvironmentWithBackend(
             externalDomain,
             allowCookies,
             enableSourceMaps,
+            ssrStaticIps,
             logLevel,
             whitelistedIps,
             proxyConfigs,
@@ -1798,6 +1829,8 @@ export interface UpdateEnvironmentBackendOptions extends EnvBackendOptions {
   preserveProxyUserAgent?: boolean | null;
   /** Enable source maps (legacy only). */
   enableSourceMaps?: boolean | null;
+  /** Make outbound requests from static IPs (legacy only). */
+  ssrStaticIps?: boolean;
   /** Minimum log level (legacy only). */
   logLevel?: LogLevel | null;
   /** IP whitelist, space-separated CIDR blocks (legacy only). */
@@ -1829,6 +1862,7 @@ export async function updateEnvironmentWithBackend(
     allowCookies,
     preserveProxyUserAgent,
     enableSourceMaps,
+    ssrStaticIps,
     logLevel,
     whitelistedIps,
     proxyConfigs,
@@ -1874,6 +1908,7 @@ export async function updateEnvironmentWithBackend(
             allowCookies,
             preserveProxyUserAgent,
             enableSourceMaps,
+            ssrStaticIps,
             logLevel,
             whitelistedIps,
             proxyConfigs,
