@@ -100,7 +100,7 @@
     "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "2.3.0",
     "@oclif/core": "catalog:",
     "@salesforce/b2c-agent-plugins": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",

@@ -46,7 +46,9 @@ minimumReleaseAgeExclude:
     # Renovate security update: @modelcontextprotocol/client@2.2.0
     "@modelcontextprotocol/client@2.2.0",
     # Renovate security update: markdown-it@14.3.1 || 14.3.2
-    markdown-it@14.3.1 || 14.3.2
+    markdown-it@14.3.1 || 14.3.2,
+    # Renovate security update: @modelcontextprotocol/server@2.3.0
+    "@modelcontextprotocol/server@2.3.0"
   ]
 
 nodeLinker: hoisted
