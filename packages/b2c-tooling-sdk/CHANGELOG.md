@@ -1,5 +1,21 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.8.1
+
+### Patch Changes
+
+- [#776](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/776) [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa) - Missing-configuration errors now say which configuration sources were loaded and suggest `b2c setup inspect` (or `config_inspect` in MCP). OCAPI "isn't allowed for the current client" errors now include the Business Manager resource entry to add. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#776](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/776) [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa) - MCP usage telemetry now records which MCP client and AI agent started the server, including sessions that never call a tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#783](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/783) [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18) - SCAPI shopper calls now start a new guest session after a 403 whose token lacks the operation's scopes, so scopes added to the SLAS client take effect without restarting the MCP server (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#777](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/777) [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51) - Updated dependencies with known security advisories to patched releases (undici, js-yaml, protobufjs, postcss), staying within their current major versions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Fixed Claude marketplace sync warnings for the Storefront Next extensions and Page Designer skills; skill bundling now rejects angle brackets in skill descriptions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#777](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/777) [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51) - WebDAV uploads, downloads, listings and directory creation now retry once when the sandbox drops the connection, instead of failing with "socket hang up". (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.8.0
 
 ### Minor Changes

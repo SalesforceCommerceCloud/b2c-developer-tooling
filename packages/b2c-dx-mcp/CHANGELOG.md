@@ -1,5 +1,29 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.6.0
+
+### Minor Changes
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Added guidance for building Claude artifacts and Cowork dashboards from B2C data, so they show embedded or locally served data instead of calling the local MCP server, which artifacts cannot reach and which blocks sharing. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#775](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/775) [`6c6e1b2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c6e1b27aefafccfeb5e73de7a1314df0a30cfe0) - Removed the `mrt_bundle_push` MCP tool. Use `b2c mrt bundle deploy` or your project's push script (such as `sfnext push`) to publish Managed Runtime bundles. The `MRT` toolset now includes the MRT log tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#776](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/776) [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa) - Missing-configuration errors now say which configuration sources were loaded and suggest `b2c setup inspect` (or `config_inspect` in MCP). OCAPI "isn't allowed for the current client" errors now include the Business Manager resource entry to add. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#776](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/776) [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa) - MCP usage telemetry now records which MCP client and AI agent started the server, including sessions that never call a tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#786](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/786) [`b098aec`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b098aec9f6613115f788423d25abe22ccf021c56) - Usage telemetry now records which skills, docs, and schemas are read, and whether they were read as resources, through `skills/get`, or with a tool. Search queries are not recorded. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#783](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/783) [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18) - Smaller diagnostics output: `logs_get_recent` drops the duplicate `raw` field and truncates long messages (`maxMessageLength`, default 2000), and `debug_capture_at_breakpoint` omits global variables unless requested via `scopes` (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#777](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/777) [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51) - Updated dependencies with known security advisories to patched releases (undici, js-yaml, protobufjs, postcss), staying within their current major versions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b098aec`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b098aec9f6613115f788423d25abe22ccf021c56), [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa), [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18), [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa), [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d), [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18), [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51), [`6c6e1b2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c6e1b27aefafccfeb5e73de7a1314df0a30cfe0), [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d), [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51)]:
+  - @salesforce/b2c-agent-plugins@1.12.3
+  - @salesforce/b2c-tooling-sdk@2.8.1
+
 ## 3.5.5
 
 ### Patch Changes
