@@ -4,7 +4,9 @@
   "version": "3.6.0",
   "author": "Salesforce",
   "license": "Apache-2.0",
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
+  "bugs": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/issues",
   "keywords": [
     "salesforce",
     "commerce-cloud",
