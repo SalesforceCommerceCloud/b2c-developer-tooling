@@ -4,8 +4,7 @@ Using the ChatGPT desktop app (ChatGPT Work)? See [ChatGPT Work setup](/guide/de
 
 <!--@include: ./mcp-plugin-codex.md-->
 
-Start a new Codex session in your project. Codex in the ChatGPT desktop app uses
-the same plugins.
+Start a new Codex session in your project. Codex plugins also work in ChatGPT Work.
 
 <details class="details custom-block" data-setup-anchor="codex-manual">
 <summary>Manual MCP setup</summary>

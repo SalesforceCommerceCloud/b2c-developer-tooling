@@ -61,8 +61,8 @@ codex plugin add b2c-cli@b2c-developer-tooling
 ```
 
 Alternatively, run `/plugins` and select the **B2C Developer Tooling** marketplace.
-Start a new session after installation. Codex in the
-[ChatGPT desktop app](./desktop-assistants#chatgpt-work) uses the same plugins.
+Start a new session after installation. Codex plugins also work in
+[ChatGPT Work](./desktop-assistants#chatgpt-work).
 For ChatGPT online, see the [B2C MCP connection setup](../mcp/#chatgpt).
 
 ::: details Update or remove
