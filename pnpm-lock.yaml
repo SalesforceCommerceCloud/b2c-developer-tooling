@@ -191,7 +191,7 @@ importers:
         version: 4.0.3
       markdown-it:
         specifier: ^14.1.0
-        version: 14.3.1
+        version: 14.3.2
       tsx:
         specifier: 'catalog:'
         version: 4.20.6
@@ -6557,8 +6557,8 @@ packages:
   mark.js@8.11.1:
     resolution: {integrity: sha512-1I+1qpDt4idfgLQG+BNWmrqku+7/2bi5nLf4YwF8y8zXvmfiTBY3PV3ZibfrjBueCByROpuBjLLFCajqkgYoLQ==}
 
-  markdown-it@14.3.1:
-    resolution: {integrity: sha512-4Ej49aYTDFIQ+uBkfX8GBvJGccoARxxPep+7aWTs55ozbjQJpW9M26Fe53vnGgvLeVzva/amzjQQaQu9w0vMhA==}
+  markdown-it@14.3.2:
+    resolution: {integrity: sha512-sHHjZ5fJKlgrG4qns2YwVcdNep35h5fERrfkD2YNsb9UFk0UIHarbiTaHKVMlPuWAoiilyK8Fv/jAm11slsY7Q==}
     hasBin: true
 
   markdown-it@14.3.3:
@@ -15616,7 +15616,7 @@ snapshots:
 
   mark.js@8.11.1: {}
 
-  markdown-it@14.3.1:
+  markdown-it@14.3.2:
     dependencies:
       argparse: 2.0.1
       entities: 4.5.0
@@ -17493,7 +17493,7 @@ snapshots:
     dependencies:
       '@gerrit0/mini-shiki': 3.15.0
       lunr: 2.3.9
-      markdown-it: 14.3.1
+      markdown-it: 14.3.2
       minimatch: 9.0.9
       typescript: 5.9.3
       yaml: 2.8.1
