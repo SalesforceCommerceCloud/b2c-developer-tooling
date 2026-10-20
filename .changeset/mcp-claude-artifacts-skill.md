@@ -2,4 +2,4 @@
 '@salesforce/b2c-dx-mcp': minor
 ---
 
-Added the `b2c-mcp-claude-artifacts` skill, which helps Claude choose a live local dashboard or a scheduled-refresh snapshot when building artifacts, Cowork dashboards, or published pages from B2C data, since artifacts cannot call local MCP servers.
+Added guidance for building Claude artifacts and Cowork dashboards from B2C data, so they show embedded or locally served data instead of calling the local MCP server, which artifacts cannot reach and which blocks sharing.

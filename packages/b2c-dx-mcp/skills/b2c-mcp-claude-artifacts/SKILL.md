@@ -1,6 +1,6 @@
 ---
 name: b2c-mcp-claude-artifacts
-description: Read before building a Claude artifact, Cowork dashboard, or published page from B2C data. Artifacts cannot call this local MCP server; choose live or refreshed-snapshot designs.
+description: Read before building, sharing, or fixing a Claude artifact, Cowork dashboard, or published page from B2C data, including a Connectors needed warning. Artifacts cannot call this local MCP server; never list its tools as artifact connectors.
 ---
 
 # B2C data in Claude artifacts
@@ -13,7 +13,20 @@ calling this server through `window.cowork.callMcpTool` fails with
 `Tool call failed: 400`; adding the tool to the artifact's MCP allowlist does not
 change that. Do not retry or rename tools to work around it.
 
+Listing this server's tools in the allowlist also turns the page into a live
+artifact that requires connectors. Anyone who imports the shared artifact sees
+**Connectors needed** for `plugin_b2c-dx-mcp_b2c-dx-mcp` (for example
+`cip_query, scapi_execute`) and cannot import it until those tools are removed.
+
 Decide the data path before writing the page.
+
+## Rules for every design
+
+- Keep this server's tools out of the artifact's MCP tool allowlist.
+- Do not call this server's tools from page code, such as
+  `window.cowork.callMcpTool`.
+- Before finishing, and before the user shares the artifact, confirm both. Remove
+  any entry or call added while drafting.
 
 ## Choose a design
 
@@ -46,7 +59,7 @@ Use this in Cowork when the page must live in the artifact panel:
 2. Save the query code and a build script with the user's project files so the
    snapshot can be regenerated without rediscovery.
 3. Embed the results in the artifact as a data constant, with the collection
-   time and source instance. Leave the artifact's MCP tool allowlist empty.
+   time and source instance.
 4. Create a Cowork scheduled task that reruns the collection and rebuilds the
    artifact at the cadence the user wants (for example, weekdays at 07:00).
 5. Optionally add a **Refresh now** button that calls
@@ -58,6 +71,18 @@ Use this in Cowork when the page must live in the artifact panel:
 fetch new B2C data. Cowork artifacts have no persistent storage. claude.ai artifacts
 have `window.storage`, useful for user notes or filters, not B2C credentials or
 refreshed data.
+
+## Fix a Connectors needed warning
+
+When a shared artifact asks for `plugin_b2c-dx-mcp_b2c-dx-mcp` connectors:
+
+1. Remove this server's tools from the artifact's MCP tool allowlist.
+2. Replace page code that calls them with embedded results; follow
+   [Refreshed snapshot](#refreshed-snapshot) if the page needs updates.
+3. Update the artifact and have the user share it again.
+
+Do not ask recipients to install the plugin instead; even with it, the page
+cannot call a local server.
 
 ## Page content
 

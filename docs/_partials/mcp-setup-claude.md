@@ -1,3 +1,5 @@
+Using Claude Desktop? See [Claude Desktop (Cowork) setup](/guide/desktop-assistants#claude-cowork).
+
 **Install the plugin** <span class="recommended VPBadge">Recommended</span>
 
 <!--@include: ./mcp-plugin-claude.md-->
@@ -15,5 +17,3 @@ Start a new session. To configure the current project only, run it from your pro
 See [Claude Code MCP setup](https://code.claude.com/docs/en/mcp).
 
 </details>
-
-[Claude Cowork setup](/guide/desktop-assistants#claude-cowork) · [Claude Desktop setup](/mcp/#claude-desktop)

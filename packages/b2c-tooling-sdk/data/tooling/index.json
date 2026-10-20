@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-19T19:46:15.440Z",
+  "generatedAt": "2026-10-20T00:16:50.454Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -341,8 +341,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/desktop-assistants.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/desktop-assistants.md",
-      "headings": "Before you start • Claude Cowork {#claude-cowork} • ChatGPT Work {#chatgpt-work} • Troubleshooting",
-      "preview": "Install the B2C MCP server and skills in Claude Cowork and ChatGPT Work."
+      "headings": "Before you start • Claude Desktop (Cowork) {#claude-cowork} • ChatGPT Work {#chatgpt-work} • Troubleshooting",
+      "preview": "Install the B2C Commerce MCP server and skills in Claude Desktop (Cowork) and the ChatGPT desktop app (ChatGPT Work) to run B2C tasks from desktop AI assistants."
     },
     {
       "id": "guide-extending",
@@ -530,7 +530,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/index.md",
-      "headings": "Set up your assistant {#setup} • B2C Commerce documentation • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills • Other clients {#other-clients} • Claude Desktop {#claude-desktop} • Copilot CLI {#copilot-cli} • ChatGPT online {#chatgpt} • Other MCP clients {#other-mcp-clients} • Updates and customization • Troubleshooting",
+      "headings": "Set up your assistant {#setup} • B2C Commerce documentation • Developer Tasks • Administrator and Merchant Tasks • Configuration and access • Tools and skills • Other clients {#other-clients} • Copilot CLI {#copilot-cli} • ChatGPT online {#chatgpt} • Other MCP clients {#other-mcp-clients} • Updates and customization • Troubleshooting",
       "preview": "Connect your AI assistant to B2C Commerce tools, documentation, skills, and APIs."
     },
     {

@@ -16,6 +16,22 @@ See the [Operations guide](https://salesforcecommercecloud.github.io/b2c-develop
 for setup and example requests. Direct plugin installation adds guidance; it
 does not grant access or install the MCP/CLI. MCP users need no separate install.
 
+## Installation
+
+```bash
+# Claude Code
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-ops@b2c-developer-tooling
+
+# GitHub Copilot CLI
+copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+copilot plugin install b2c-ops@b2c-developer-tooling
+```
+
+**Codex:** open the repo as a workspace, restart Codex, then install from the **B2C Developer Tooling** marketplace in the plugin directory.
+
+For file-copy install to any supported IDE, use `b2c setup skills b2c-ops`. See the [install guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills) for details.
+
 ## Adding a runbook
 
 Follow the repository's MCP development skill and workflow authoring reference.

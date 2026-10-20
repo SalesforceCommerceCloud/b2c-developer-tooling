@@ -1,9 +1,10 @@
+Using the ChatGPT desktop app (ChatGPT Work)? See [ChatGPT Work setup](/guide/desktop-assistants#chatgpt-work).
+
 **Install the plugin** <span class="recommended VPBadge">Recommended</span>
 
 <!--@include: ./mcp-plugin-codex.md-->
 
-Start a new Codex session in your project. This setup also works with the Codex
-IDE extension and the [ChatGPT Work](/guide/desktop-assistants#chatgpt-work) desktop app.
+Start a new Codex session in your project. Codex plugins also work in ChatGPT Work.
 
 <details class="details custom-block" data-setup-anchor="codex-manual">
 <summary>Manual MCP setup</summary>
@@ -23,5 +24,3 @@ args = ["-y", "@salesforce/b2c-dx-mcp@latest"]
 Start a new session. See [Codex MCP configuration](https://developers.openai.com/codex/mcp/).
 
 </details>
-
-[ChatGPT online setup](/mcp/#chatgpt)
