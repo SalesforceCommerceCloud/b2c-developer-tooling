@@ -40,7 +40,7 @@ Choose your assistant. Use the **B2C MCP plugin** where supported.
 
 Start a new session in your project. For **Copilot in VS Code**, other clients,
 and manual setup, see [installation](../mcp/#setup). For Claude Desktop
-(Cowork) and the ChatGPT desktop app, see [Desktop Assistants](./desktop-assistants).
+(Cowork) and the ChatGPT desktop app (Work), see [Desktop Assistants](./desktop-assistants).
 
 Documentation and skills work immediately without B2C Commerce credentials.
 Connected tasks use your [existing B2C configuration](../mcp/configuration).
