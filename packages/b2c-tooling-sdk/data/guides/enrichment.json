@@ -1232,6 +1232,87 @@
       "currency exchange"
     ]
   },
+  "b2c-commerce/b2c-dynamic-imaging-avif-webp": {
+    "summary": "Explains when to serve AVIF, WebP, or JPEG/PNG images in B2C Commerce storefronts and how to structure picture and source elements with Dynamic Imaging Service URLs.",
+    "keywords": [
+      "AVIF",
+      "WebP",
+      "picture element",
+      "source element",
+      "image format",
+      "JPEG fallback",
+      "PNG transparency",
+      "Dynamic Imaging Service",
+      "responsive images",
+      "image optimization",
+      "B2C Commerce images",
+      "modern image formats"
+    ]
+  },
+  "b2c-commerce/b2c-dynamic-imaging-community-wrapper": {
+    "summary": "Explains the community open-source dis-product-image-wrapper cartridge for centralizing product image parameters in SFRA/SiteGenesis B2C Commerce projects, and how it relates to URLUtils and MediaFile",
+    "keywords": [
+      "dis-product-image-wrapper",
+      "product image wrapper",
+      "ProductImageDIS",
+      "plugin_dis cartridge",
+      "B2C Commerce product images",
+      "SFRA product image",
+      "SiteGenesis images",
+      "Dynamic Imaging Service alternative",
+      "URLUtils MediaFile",
+      "ISML product image helper"
+    ]
+  },
+  "b2c-commerce/b2c-dynamic-imaging-service": {
+    "summary": "Explains how to use the B2C Commerce Dynamic Imaging Service to request resized, cropped, or reformatted images via URLUtils or MediaFile instead of uploading multiple image variants.",
+    "keywords": [
+      "Dynamic Imaging Service",
+      "image transformation",
+      "URLUtils",
+      "MediaFile",
+      "image resize",
+      "image crop",
+      "image format",
+      "on-the-fly image",
+      "B2C Commerce images",
+      "image URL",
+      "dynamic image URL",
+      "image parameters"
+    ]
+  },
+  "b2c-commerce/b2c-dynamic-imaging-troubleshooting": {
+    "summary": "Steps to troubleshoot broken, slow, or missing Dynamic Imaging Service images in B2C Commerce and to migrate image URLs from other hostnames or external DAM services.",
+    "keywords": [
+      "troubleshoot image",
+      "broken image",
+      "Dynamic Imaging Service",
+      "B2C Commerce images",
+      "image 4xx error",
+      "image timeout",
+      "image URL debugging",
+      "migrate image hostname",
+      "DAM migration",
+      "dw/image/v2",
+      "image not loading",
+      "slow image"
+    ]
+  },
+  "b2c-commerce/b2c-dynamic-imaging-url-structure": {
+    "summary": "Explains the /dw/image/v2/ transformation URL path shape, how file extensions set output format, and the fixed order Dynamic Imaging Service applies multiple transforms (crop before scale).",
+    "keywords": [
+      "dynamic imaging service",
+      "DIS URL structure",
+      "/dw/image/v2 path",
+      "image transformation order",
+      "crop then scale",
+      "image output format extension",
+      "webp avif URL",
+      "sfrm parameter",
+      "MediaFile URLUtils image URL",
+      "B2C Commerce image URL"
+    ]
+  },
   "b2c-commerce/b2c-enable-apple-pay-in-your-storefront": {
     "summary": "Enable Apple Pay payment method in B2C Commerce storefronts using PSP integration or LINK cartridge with merchant ID and certificate setup.",
     "keywords": [
@@ -4336,6 +4417,21 @@
       "messaging-mode"
     ]
   },
+  "b2c-commerce/customize-commerce-client": {
+    "summary": "Explains the three ways to customize the Agentforce Commerce Client widget (configuration, custom CSS, Component Override SDK) across SFRA, PWA Kit, and Storefront Next storefronts.",
+    "keywords": [
+      "Agentforce Commerce Client customization",
+      "commerce client theming",
+      "cim-widget CSS",
+      "globalClassName",
+      "configuration object",
+      "Component Override SDK",
+      "restyle widget",
+      "SFRA PWA Kit Storefront Next",
+      "brand colors fonts",
+      "custom CSS"
+    ]
+  },
   "b2c-commerce/demandwarejavascript": {
     "summary": "Learn to use B2C Commerce JavaScript with Rhino engine to customize storefronts, add business logic, validate input, and integrate back-end systems.",
     "keywords": [
@@ -4351,6 +4447,22 @@
       "compatibility mode",
       "JavaScript API",
       "ecommerce scripting"
+    ]
+  },
+  "b2c-commerce/deploy-commerce-client-overrides": {
+    "summary": "Shows how to deploy Commerce Client overrides via a hosted script or inline map per storefront type, and how multiple override sources are resolved.",
+    "keywords": [
+      "commerce client overrides",
+      "deploy overrides",
+      "CimulateOverrides",
+      "cc_overridesUrl",
+      "cc_overrides inline map",
+      "hosted override script",
+      "custom elements overrides",
+      "SFRA overrides",
+      "PWA Kit overrides",
+      "injectMessagingWidget",
+      "override resolution order"
     ]
   },
   "b2c-commerce/developer-workflow": {
@@ -4404,6 +4516,23 @@
       "API specs"
     ]
   },
+  "b2c-commerce/fraud": {
+    "summary": "Explains how to build a beta fraud Commerce App that runs risk assessments via server hooks around payment authorization, with optional Storefront Next device-data extensions.",
+    "keywords": [
+      "fraud commerce app",
+      "fraud detection",
+      "risk assessment",
+      "beforePayment hook",
+      "payment authorization",
+      "Payments Orchestration",
+      "ScapiHookExecutionEnabled",
+      "PaymentFraudOrchestrationEnabled",
+      "commerce-app.json",
+      "Storefront Next device data",
+      "beta",
+      "SCAPI hooks"
+    ]
+  },
   "b2c-commerce/get-set-up": {
     "summary": "Learn prerequisites and initial setup steps for building B2C Commerce sites, including user access, sandboxes, and Einstein Activities.",
     "keywords": [
@@ -4435,6 +4564,21 @@
       "ecommerce platform structure",
       "Salesforce Commerce Cloud",
       "instance configuration"
+    ]
+  },
+  "b2c-commerce/giftcard": {
+    "summary": "Explains how to build a beta Gift Card Commerce App that connects B2C Commerce to an external gift-card processor via sfcc.app.giftcard hooks and Storefront Next components.",
+    "keywords": [
+      "gift card commerce app",
+      "giftcard domain",
+      "sfcc.app.giftcard hooks",
+      "getBalance capture refund",
+      "COMMERCE_APP_GIFT_CARD",
+      "commerce-app.json",
+      "Storefront Next gift card",
+      "gift card processor integration",
+      "beta gift card app",
+      "PaymentFraudOrchestrationEnabled"
     ]
   },
   "b2c-commerce/hybrid-auth-environment-matrix": {
@@ -4582,6 +4726,23 @@
       "messaging widget",
       "SFRA",
       "PWA Kit"
+    ]
+  },
+  "b2c-commerce/integrate-client-widget-custom-app": {
+    "summary": "Shows how to embed the Agentforce client widget in a custom React app by passing a CopilotWidgetProps config (messaging connection, appearance, component settings) instead of using the Commerce Client",
+    "keywords": [
+      "CopilotWidgetProps",
+      "client widget",
+      "React widget integration",
+      "Agentforce widget",
+      "messagingConfig",
+      "SCRT2 messaging",
+      "custom storefront chat",
+      "embed copilot widget",
+      "Agentforce Commerce",
+      "widget configuration",
+      "scrt2Url",
+      "esDeveloperName"
     ]
   },
   "b2c-commerce/integratingwithapplications": {
@@ -5734,6 +5895,39 @@
       "localization"
     ]
   },
+  "b2c-commerce/payment": {
+    "summary": "Explains how to build a Payment Commerce App (beta) that connects B2C Commerce to a payment provider via server hooks and Storefront Next extensions, including prerequisites and beta breaking-change c",
+    "keywords": [
+      "payment commerce app",
+      "payment app beta",
+      "Payments Orchestration",
+      "PSP integration",
+      "payment service provider hooks",
+      "authorization capture refund reversal",
+      "commerce-app.json",
+      "Storefront Next payment extension",
+      "PaymentFraudOrchestrationEnabled",
+      "SCAPI hook execution",
+      "payment method claims"
+    ]
+  },
+  "b2c-commerce/payments-orchestration": {
+    "summary": "Explains how the platform orchestrates payment, fraud, and gift card Commerce Apps during checkout and what a developer's Commerce App is responsible for in that sequence.",
+    "keywords": [
+      "payments orchestration",
+      "commerce apps",
+      "B2C Commerce checkout",
+      "payment app",
+      "fraud app",
+      "gift card app",
+      "split tender",
+      "checkout sequence",
+      "rollback",
+      "beta payments",
+      "payment hooks",
+      "PO"
+    ]
+  },
   "b2c-commerce/post-publication": {
     "summary": "Manage Commerce App updates, replication workflows, and production deployment after installation from the registry or WebDAV.",
     "keywords": [
@@ -5849,6 +6043,21 @@
       "commerce-app.json",
       "release wave",
       "adapter interface"
+    ]
+  },
+  "b2c-commerce/test-commerce-client-install": {
+    "summary": "Steps to verify an Agentforce Commerce Client deployment on a storefront by checking the widget bundle load, console logs, and chat launcher placement.",
+    "keywords": [
+      "Agentforce Commerce Client",
+      "test deployment",
+      "messaging.umd.js",
+      "chat widget",
+      "CommerceClient console",
+      "cc_isDevelopment",
+      "chat launcher",
+      "storefront debugging",
+      "Agentforce testing",
+      "browser dev tools"
     ]
   },
   "b2c-commerce/test-launch": {
@@ -6015,6 +6224,23 @@
       "webhook sync"
     ]
   },
+  "b2c-commerce/ucp-order-built-from-shopper-order": {
+    "summary": "Explains how B2C Commerce builds the complete UCP order payload in each post-processing update from the shopper order document, and which order fields populate each part.",
+    "keywords": [
+      "UCP order",
+      "shopper order document",
+      "UCP order payload",
+      "post-processing update",
+      "agentic commerce",
+      "Google Gemini order",
+      "order mapping",
+      "order fields to UCP",
+      "OMS system of record",
+      "order update payload",
+      "UCP order build",
+      "agent platform order sync"
+    ]
+  },
   "b2c-commerce/ucp-order-post-processing-events": {
     "summary": "Guide to how order post-processing events (shipments, cancellations, returns) trigger UCP order-lifecycle updates for agentic-commerce channels via Salesforce OMS or third-party OMS integration.",
     "keywords": [
@@ -6030,6 +6256,23 @@
       "shipment cancellation return",
       "cryptographic signature",
       "agent platform"
+    ]
+  },
+  "b2c-commerce/ucp-salesforce-oms-order-updates": {
+    "summary": "Explains which Salesforce OMS order item changes trigger UCP shipment, delivery, cancellation, and return updates sent to the agent platform.",
+    "keywords": [
+      "UCP order updates",
+      "Salesforce OMS",
+      "Salesforce Order Management",
+      "order item summary",
+      "shipment update",
+      "ShipmentItem",
+      "fulfillment data mapping",
+      "order cancellation",
+      "return update",
+      "B2C Commerce integration",
+      "agent platform",
+      "order lifecycle events"
     ]
   },
   "b2c-commerce/ucp-technical-audit": {
@@ -10739,6 +10982,40 @@
       "SCAPI"
     ]
   },
+  "sfnext/sfnext-automate-development-workflow": {
+    "summary": "Explains how to automate the Storefront Next dev workflow (create storefront, generate code, deploy to MRT) using the B2C CLI or SCAPI, including provisioning clients, MRT, and eCDN.",
+    "keywords": [
+      "Storefront Next automation",
+      "B2C CLI",
+      "SCAPI",
+      "Managed Runtime",
+      "MRT deployment",
+      "create storefront",
+      "provision SLAS client",
+      "Account Manager API client",
+      "eCDN setup",
+      "bundle upload",
+      "Business Manager",
+      "CLI scripts"
+    ]
+  },
+  "sfnext/sfnext-b2ccli-create-storefront": {
+    "summary": "Shows how to use the B2C CLI in bash scripts to create a Storefront Next storefront, generate code locally, and deploy a bundle to a Managed Runtime environment.",
+    "keywords": [
+      "B2C CLI",
+      "Storefront Next",
+      "create storefront",
+      "deploy storefront",
+      "Managed Runtime",
+      "MRT",
+      "MRT API key",
+      "SLAS client",
+      "bash script",
+      "sfnext CLI setup",
+      "eCDN",
+      "Business Manager storefront"
+    ]
+  },
   "sfnext/sfnext-base-path": {
     "summary": "Route requests to specific MRT environments using environment base paths for multi-environment storefronts on a single domain.",
     "keywords": [
@@ -11512,6 +11789,21 @@
       "AI assistant integration",
       "storefront development",
       "skill collections"
+    ]
+  },
+  "sfnext/sfnext-migration-tool": {
+    "summary": "Explains how to use the Storefront Next Migration Tool, an AI-assisted CLI in developer preview, to analyze and migrate SiteGenesis, SFRA, or PWA Kit storefronts to Storefront Next.",
+    "keywords": [
+      "Storefront Next migration",
+      "migrate SFRA to Storefront Next",
+      "migrate SiteGenesis",
+      "PWA Kit migration",
+      "Storefront Next Migration Tool",
+      "sfnext migration CLI",
+      "composable storefront migration",
+      "B2C Commerce storefront upgrade",
+      "AI migration tool",
+      "developer preview"
     ]
   },
   "sfnext/sfnext-modern-exp": {
@@ -12551,6 +12843,23 @@
       "config.server.ts",
       "CSP directives",
       "Business Manager"
+    ]
+  },
+  "sfnext/sfnext-scapi-create-storefront": {
+    "summary": "Explains how to use SCAPI with Account Manager OAuth2 scopes to create a Storefront Next storefront, generate code, and deploy a bundle to an MRT environment.",
+    "keywords": [
+      "Storefront Next SCAPI",
+      "create storefront API",
+      "SCAPI automation",
+      "Managed Runtime deploy",
+      "MRT environment",
+      "Account Manager API client",
+      "SLAS client setup",
+      "eCDN configuration",
+      "sfcc.storefront scopes",
+      "bot user authorization",
+      "storefront bundle upload",
+      "headless storefront provisioning"
     ]
   },
   "sfnext/sfnext-scapi-request-identification": {

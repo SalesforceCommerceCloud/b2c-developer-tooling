@@ -1,19 +1,19 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-12T17:29:48.091Z",
+  "generatedAt": "2026-10-20T16:41:55.203Z",
   "source": {
-    "sha": "350d99e7d16728a4e7ddcab9e586fb938cc3330b",
-    "committedAt": "2026-10-12T10:55:29+05:30",
+    "sha": "1188e7d3771c19f6f6a448f35cecc9d86d208160",
+    "committedAt": "2026-10-20T09:35:13-07:00",
     "ref": "main"
   },
   "entries": [
     {
       "id": "b2c-commerce/agentforce-commerce-client-overview",
-      "title": "Agentforce Commerce Client Overview",
+      "title": "Agentforce Commerce Client",
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/agentforce-commerce-client-overview.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/agentforce-commerce-client-overview.md",
-      "headings": "When you need this guide • How the client connects • Architecture at a glance • Related resources",
+      "headings": "Architecture of the Commerce Client",
       "summary": "Embed an AI-powered shopping agent widget on B2C Commerce storefronts using the Agentforce Commerce Client npm package or CDN bundles.",
       "keywords": [
         "Agentforce Commerce Client",
@@ -34,10 +34,11 @@
         "b2c-commerce/install-on-sfra",
         "b2c-commerce/install-on-pwa-kit",
         "b2c-commerce/install-on-sfnext",
-        "b2c-commerce/configure-the-commerce-client",
-        "b2c-commerce/style-and-theme-the-widget",
-        "b2c-commerce/customization-decision-guide",
-        "b2c-commerce/component-override-sdk"
+        "b2c-commerce/test-commerce-client-install",
+        "b2c-commerce/customize-commerce-client",
+        "b2c-commerce/component-override-sdk",
+        "b2c-commerce/deploy-commerce-client-overrides",
+        "b2c-commerce/integrate-client-widget-custom-app"
       ]
     },
     {
@@ -1817,6 +1818,136 @@
       ],
       "relatedEntries": [
         "b2c-commerce/quick-start-landing-page"
+      ]
+    },
+    {
+      "id": "b2c-commerce/b2c-dynamic-imaging-avif-webp",
+      "title": "AVIF and WebP",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-avif-webp.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-avif-webp.md",
+      "headings": "Which Image Format Should I Use? • How Do I Use the Picture Element? • Performance and Cache Hygiene • See Also",
+      "summary": "Explains when to serve AVIF, WebP, or JPEG/PNG images in B2C Commerce storefronts and how to structure picture and source elements with Dynamic Imaging Service URLs.",
+      "keywords": [
+        "AVIF",
+        "WebP",
+        "picture element",
+        "source element",
+        "image format",
+        "JPEG fallback",
+        "PNG transparency",
+        "Dynamic Imaging Service",
+        "responsive images",
+        "image optimization",
+        "B2C Commerce images",
+        "modern image formats"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dynamic-imaging-service"
+      ]
+    },
+    {
+      "id": "b2c-commerce/b2c-dynamic-imaging-community-wrapper",
+      "title": "Community Product Image Wrapper",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-community-wrapper.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-community-wrapper.md",
+      "headings": "What the Project Provides • Repository and Access • SFRA Enablement • SiteGenesis Enablement • See Also",
+      "summary": "Explains the community open-source dis-product-image-wrapper cartridge for centralizing product image parameters in SFRA/SiteGenesis B2C Commerce projects, and how it relates to URLUtils and MediaFile",
+      "keywords": [
+        "dis-product-image-wrapper",
+        "product image wrapper",
+        "ProductImageDIS",
+        "plugin_dis cartridge",
+        "B2C Commerce product images",
+        "SFRA product image",
+        "SiteGenesis images",
+        "Dynamic Imaging Service alternative",
+        "URLUtils MediaFile",
+        "ISML product image helper"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dynamic-imaging-service"
+      ]
+    },
+    {
+      "id": "b2c-commerce/b2c-dynamic-imaging-service",
+      "title": "Dynamic Imaging Service",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-service.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-service.md",
+      "headings": "How Do I Create an Image Transformation URL for B2C Commerce Images? • Sample Calls • Which Transformations Are Supported? • What Limits and Caching Rules Apply? • Dynamic Imaging Caching • See Also",
+      "summary": "Explains how to use the B2C Commerce Dynamic Imaging Service to request resized, cropped, or reformatted images via URLUtils or MediaFile instead of uploading multiple image variants.",
+      "keywords": [
+        "Dynamic Imaging Service",
+        "image transformation",
+        "URLUtils",
+        "MediaFile",
+        "image resize",
+        "image crop",
+        "image format",
+        "on-the-fly image",
+        "B2C Commerce images",
+        "image URL",
+        "dynamic image URL",
+        "image parameters"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/build-your-site",
+        "b2c-commerce/b2c-dynamic-imaging-url-structure",
+        "b2c-commerce/b2c-dynamic-imaging-avif-webp",
+        "b2c-commerce/b2c-dynamic-imaging-community-wrapper",
+        "b2c-commerce/b2c-dynamic-imaging-troubleshooting"
+      ]
+    },
+    {
+      "id": "b2c-commerce/b2c-dynamic-imaging-troubleshooting",
+      "title": "Troubleshooting and Migration",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-troubleshooting.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-troubleshooting.md",
+      "headings": "How Do I Troubleshoot a Broken, Slow, or Missing Image? • Slowness or Timeouts • How Do I Migrate from Another Image Host? • DAM and Bulk Migration • See Also",
+      "summary": "Steps to troubleshoot broken, slow, or missing Dynamic Imaging Service images in B2C Commerce and to migrate image URLs from other hostnames or external DAM services.",
+      "keywords": [
+        "troubleshoot image",
+        "broken image",
+        "Dynamic Imaging Service",
+        "B2C Commerce images",
+        "image 4xx error",
+        "image timeout",
+        "image URL debugging",
+        "migrate image hostname",
+        "DAM migration",
+        "dw/image/v2",
+        "image not loading",
+        "slow image"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dynamic-imaging-service"
+      ]
+    },
+    {
+      "id": "b2c-commerce/b2c-dynamic-imaging-url-structure",
+      "title": "URL Structure and Order of Operations",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-url-structure.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-dynamic-imaging-url-structure.md",
+      "headings": "What Does the Transformation URL Path Look Like? • How Does the File Extension Set the Output Format? • In What Order Are Transformations Applied? • What Causes a 400 Response? • See Also",
+      "summary": "Explains the /dw/image/v2/ transformation URL path shape, how file extensions set output format, and the fixed order Dynamic Imaging Service applies multiple transforms (crop before scale).",
+      "keywords": [
+        "dynamic imaging service",
+        "DIS URL structure",
+        "/dw/image/v2 path",
+        "image transformation order",
+        "crop then scale",
+        "image output format extension",
+        "webp avif URL",
+        "sfrm parameter",
+        "MediaFile URLUtils image URL",
+        "B2C Commerce image URL"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/b2c-dynamic-imaging-service"
       ]
     },
     {
@@ -4384,6 +4515,7 @@
         "b2c-commerce/b2c-webservices",
         "b2c-commerce/b2c-dev-for-page-designer",
         "b2c-commerce/b2c-content-assets-for-developers",
+        "b2c-commerce/b2c-dynamic-imaging-service",
         "b2c-commerce/b2c-third-party",
         "b2c-commerce/b2c-velocity-templates",
         "b2c-commerce/b2c-troubleshooting",
@@ -4397,7 +4529,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/building-your-app.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/building-your-app.md",
-      "headings": "Getting Started with Claude Code • Backend-Only Apps • Extension Points • Example: non-blocking error (returning `Status.ERROR`) • Example: blocking error (throwing an exception) • Implementation best practices • Optional: delivering Storefront Next components • Connection Health Check • Registering the hook • Implementing the hook • Status codes • Status details • Localizing health check messages • Best practices • Apps without a health check • UI-Only and Fullstack Apps • Building your Storefront Next extension • target-config.json • How UITarget replacement works at build time • Extension routes • Extension localization • Extension installation • Injecting External SDK Scripts • How script injection works in Storefront Next • Choosing the right mechanism • Example: Global SDK via contextProvider • Example: Checkout-scoped SDK via components • Handling SPA re-initialization • Script placement decision guide • Storefront Action Hooks • Available action hooks • Declaring and writing action hooks • Listing available extension points • Building the back-end • Extension Points • Custom SCAPI • Backend Development Notes • Example Apps in the Registry • Anti-patterns to avoid",
+      "headings": "Getting Started with Claude Code • Backend-Only Apps • Extension Points • Payment Extension Points • Fraud Extension Points • Gift Card Extension Points • Hook Configuration and Conventions • Example: non-blocking error (returning `Status.ERROR`) • Example: blocking error (throwing an exception) • Implementation best practices • Optional: delivering Storefront Next components • Connection Health Check • Registering the hook • Implementing the hook • Status codes • Status details • Localizing health check messages • Best practices • Apps without a health check • UI-Only and Fullstack Apps • Building your Storefront Next extension • target-config.json • How UITarget replacement works at build time • Extension routes • Extension localization • Extension installation • Injecting External SDK Scripts • How script injection works in Storefront Next • Choosing the right mechanism • Example: Global SDK via contextProvider • Example: Checkout-scoped SDK via components • Handling SPA re-initialization • Script placement decision guide • Storefront Action Hooks • Available action hooks • Declaring and writing action hooks • Listing available extension points • Building the back-end • Extension Points • Custom SCAPI • Backend Development Notes • Example Apps in the Registry • Anti-patterns to avoid",
       "summary": "Build Commerce Apps across three architectures (UI-only, Backend-only, Fullstack) using extension points, hooks, and Storefront Next components.",
       "keywords": [
         "Commerce App architecture",
@@ -4476,11 +4608,11 @@
     },
     {
       "id": "b2c-commerce/component-override-sdk",
-      "title": "Component Override SDK",
+      "title": "Override Commerce Client UI Components",
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/component-override-sdk.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/component-override-sdk.md",
-      "headings": "How overrides work • Overridable slots • The props contract • The override API • Precedence • Author an override • Escape agent-supplied values • Guard your registration • Custom agent-action blocks • Error handling • Deploy overrides • On SFRA • On PWA Kit • Related resources",
+      "headings": "How Overrides Receive Data • Customizable Components on the Commerce Client Widget UI • Create Overrides • Safely Render Agent and Catalog Data • Register Your Custom Element Safely • Create Overrides for Custom Agent Actions • Handle Override Errors",
       "summary": "Replace widget product and agent-action rendering with custom markup using framework-agnostic custom elements and override contracts.",
       "keywords": [
         "Component Override SDK",
@@ -4495,31 +4627,6 @@
         "output_name",
         "OverrideElement",
         "messaging-mode"
-      ],
-      "relatedEntries": [
-        "b2c-commerce/agentforce-commerce-client-overview"
-      ]
-    },
-    {
-      "id": "b2c-commerce/configure-the-commerce-client",
-      "title": "Configure the Agentforce Commerce Client",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/configure-the-commerce-client.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/configure-the-commerce-client.md",
-      "headings": "Connection • Content and behavior • Component presentation • Observe product results • Observe widget state • Control the widget from your storefront • Related resources",
-      "summary": "Configure the Agentforce Commerce Client widget with connection settings, content behavior, component presentation, and product result callbacks.",
-      "keywords": [
-        "Agentforce Commerce Client",
-        "CopilotWidgetProps",
-        "messagingConfig",
-        "SCRT2 connection",
-        "widget configuration",
-        "product results",
-        "componentConfig",
-        "dialog positioning",
-        "transcript download",
-        "escalation to agent",
-        "embedded service messaging"
       ],
       "relatedEntries": [
         "b2c-commerce/agentforce-commerce-client-overview"
@@ -4578,24 +4685,24 @@
       ]
     },
     {
-      "id": "b2c-commerce/customization-decision-guide",
-      "title": "Choose a Customization Approach",
+      "id": "b2c-commerce/customize-commerce-client",
+      "title": "Customize the Agentforce Commerce Client",
       "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/customization-decision-guide.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/customization-decision-guide.md",
-      "headings": "Decision guide • What each level can and can't do • What overrides do not cover • Related resources",
-      "summary": "Choose between configuration, custom CSS, or component overrides to customize the Agentforce Commerce Client based on your needs.",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/customize-commerce-client.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/customize-commerce-client.md",
+      "headings": "Style the Commerce Client Presentation for Your Brand • Modify the Client Widget Theme • Style the Client Widget Header • Other Properties to Adjust the Client Widget's Appearance • CSS Custom Properties • Custom CSS for Pixel-Perfect Control • Related resources",
+      "summary": "Explains the three ways to customize the Agentforce Commerce Client widget (configuration, custom CSS, Component Override SDK) across SFRA, PWA Kit, and Storefront Next storefronts.",
       "keywords": [
-        "customization approach",
-        "Agentforce Commerce Client",
-        "configuration",
-        "custom CSS",
-        "component overrides",
-        "theme properties",
+        "Agentforce Commerce Client customization",
+        "commerce client theming",
+        "cim-widget CSS",
+        "globalClassName",
+        "configuration object",
         "Component Override SDK",
-        "styling",
-        "widget customization",
-        "messaging-mode"
+        "restyle widget",
+        "SFRA PWA Kit Storefront Next",
+        "brand colors fonts",
+        "custom CSS"
       ],
       "relatedEntries": [
         "b2c-commerce/agentforce-commerce-client-overview"
@@ -4629,6 +4736,31 @@
         "b2c-commerce/thescriptingpipeletexplained",
         "b2c-commerce/b2c-sending-email-via-scripts-or-hooks",
         "b2c-commerce/integratingwithapplications"
+      ]
+    },
+    {
+      "id": "b2c-commerce/deploy-commerce-client-overrides",
+      "title": "Deploy Commerce Client Overrides",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/deploy-commerce-client-overrides.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/deploy-commerce-client-overrides.md",
+      "headings": "Deploy Overrides to SFRA Using a Hosted Script • Deploy Overrides for PWA Kit Using an Inline Map • Deploy Overrides for PWA Kit Using a Hosted Script • Deploy Overrides for Storefront Next • Use an Inline Map When You Call injectMessagingWidget",
+      "summary": "Shows how to deploy Commerce Client overrides via a hosted script or inline map per storefront type, and how multiple override sources are resolved.",
+      "keywords": [
+        "commerce client overrides",
+        "deploy overrides",
+        "CimulateOverrides",
+        "cc_overridesUrl",
+        "cc_overrides inline map",
+        "hosted override script",
+        "custom elements overrides",
+        "SFRA overrides",
+        "PWA Kit overrides",
+        "injectMessagingWidget",
+        "override resolution order"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/agentforce-commerce-client-overview"
       ]
     },
     {
@@ -4716,6 +4848,32 @@
       ]
     },
     {
+      "id": "b2c-commerce/fraud",
+      "title": "Fraud Commerce Apps (Beta)",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/fraud.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/fraud.md",
+      "headings": "Prerequisites • Overview • Extension Points • sfcc.app.fraud.beforePayment (pre-authorization) • sfcc.app.fraud.afterPayment (post-authorization) • Time Budget • Failure Handling • Matching Status to the Decision • beforePayment Example • afterPayment Example (synchronous) • Asynchronous Post-Authorization Review • Provider-Specific Data on Custom Attributes • Data Model • PaymentTransaction Fraud Decision Constants • Fields Read From the Payment Domain • Flow Patterns • Payment and Fraud Interaction • Device Data Handoff • Outcomes and Limits • Storefront Presence • Mounting the Beacon • Handing the Session Identifier to beforePayment • Testing Your App • See Also",
+      "summary": "Explains how to build a beta fraud Commerce App that runs risk assessments via server hooks around payment authorization, with optional Storefront Next device-data extensions.",
+      "keywords": [
+        "fraud commerce app",
+        "fraud detection",
+        "risk assessment",
+        "beforePayment hook",
+        "payment authorization",
+        "Payments Orchestration",
+        "ScapiHookExecutionEnabled",
+        "PaymentFraudOrchestrationEnabled",
+        "commerce-app.json",
+        "Storefront Next device data",
+        "beta",
+        "SCAPI hooks"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/supported-domains"
+      ]
+    },
+    {
       "id": "b2c-commerce/get-set-up",
       "title": "Get Set Up",
       "category": "b2c-commerce",
@@ -4765,6 +4923,30 @@
       ],
       "relatedEntries": [
         "b2c-commerce/understand-b2c"
+      ]
+    },
+    {
+      "id": "b2c-commerce/giftcard",
+      "title": "Gift Card Commerce Apps (Beta)",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/giftcard.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/giftcard.md",
+      "headings": "Architecture • What Merchants Get • Shopper APIs • Look up balance • Apply a gift card to a basket • Update a gift-card instrument • Place the order • Apply validation • Checkout Lifecycle • Fail, Cancel, and Refund • Extension Points • sfcc.app.giftcard.getBalance • sfcc.app.giftcard.capture • sfcc.app.giftcard.refund • Data Model • GiftCardTransactionDetails • GiftCardPaymentDetails • Interaction With Payment and Fraud Apps • Gift Card UI Targets • Storefront checklist • Beta Limitations • See Also",
+      "summary": "Explains how to build a beta Gift Card Commerce App that connects B2C Commerce to an external gift-card processor via sfcc.app.giftcard hooks and Storefront Next components.",
+      "keywords": [
+        "gift card commerce app",
+        "giftcard domain",
+        "sfcc.app.giftcard hooks",
+        "getBalance capture refund",
+        "COMMERCE_APP_GIFT_CARD",
+        "commerce-app.json",
+        "Storefront Next gift card",
+        "gift card processor integration",
+        "beta gift card app",
+        "PaymentFraudOrchestrationEnabled"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/supported-domains"
       ]
     },
     {
@@ -4900,7 +5082,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-on-pwa-kit.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-on-pwa-kit.md",
-      "headings": "Enable the client • Deploy • Roll back with config alone • Component overrides on PWA Kit • Inline map route • Hosted script route • Content Security Policy • Related resources",
+      "headings": "Configure the Managed Runtime (MRT) Environment for the Client • Deploy the PWA Kit Client Bundle • Disable the Commerce Client for a PWA Kit Storefront",
       "summary": "Enable and configure the Agentforce Commerce Client on PWA Kit using the COMMERCE_AGENT_SETTINGS environment variable with component override support.",
       "keywords": [
         "Agentforce Commerce Client",
@@ -4926,7 +5108,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-on-sfnext.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-on-sfnext.md",
-      "headings": "Prerequisites • Enable the Client • Roll Back Commerce Client • Related resources",
+      "headings": "Enable the Client for Storefront Next • Disable Agentforce Commerce Client • Related resources",
       "summary": "Enable and configure Agentforce Commerce Client on Storefront Next using the PUBLIC__app__cimulateAgent environment variable.",
       "keywords": [
         "Agentforce Commerce Client",
@@ -4950,7 +5132,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-on-sfra.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-on-sfra.md",
-      "headings": "Prerequisites • Get access to the cartridge repository • Install the cartridge • Add the cartridge to the site path • Import the site metadata • Configure the widget • Choose a bundle loading mode • CDN mode (default) • Static mode • Verify the deployment • Content Security Policy • Related resources",
+      "headings": "Get Access to the SFRA Cartridge Repository • Related Resources • Install the SFRA Cartridge for the Agentforce Commerce Client • Configure the Client Site Custom Preferences for SFRA Storefronts",
       "summary": "Install and configure the Agentforce Commerce Client cartridge on SFRA storefronts using plugin_commerce_client with CDN or static bundle loading.",
       "keywords": [
         "Agentforce Commerce Client",
@@ -4975,7 +5157,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-the-commerce-client.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/install-the-commerce-client.md",
-      "headings": "CDN install • npm install • Pin and track versions • Related resources",
+      "headings": "Record Connection Channel Settings for Client Installation",
       "summary": "Install the Agentforce Commerce Client via CDN script tag or npm package for React applications.",
       "keywords": [
         "Agentforce Commerce Client",
@@ -4989,6 +5171,32 @@
         "messaging widget",
         "SFRA",
         "PWA Kit"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/agentforce-commerce-client-overview"
+      ]
+    },
+    {
+      "id": "b2c-commerce/integrate-client-widget-custom-app",
+      "title": "Integrate the Client Widget into Your Custom Application",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/integrate-client-widget-custom-app.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/integrate-client-widget-custom-app.md",
+      "headings": "Client Connection Properties • Widget Appearance and Behavior • Widget Component Configuration • Open and Close the Widget Programmatically • Manage Client Chat Sessions Programmatically • Related resources",
+      "summary": "Shows how to embed the Agentforce client widget in a custom React app by passing a CopilotWidgetProps config (messaging connection, appearance, component settings) instead of using the Commerce Client",
+      "keywords": [
+        "CopilotWidgetProps",
+        "client widget",
+        "React widget integration",
+        "Agentforce widget",
+        "messagingConfig",
+        "SCRT2 messaging",
+        "custom storefront chat",
+        "embed copilot widget",
+        "Agentforce Commerce",
+        "widget configuration",
+        "scrt2Url",
+        "esDeveloperName"
       ],
       "relatedEntries": [
         "b2c-commerce/agentforce-commerce-client-overview"
@@ -6780,6 +6988,57 @@
       ]
     },
     {
+      "id": "b2c-commerce/payment",
+      "title": "Payment Commerce Apps (Beta)",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/payment.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/payment.md",
+      "headings": "Prerequisites • Architecture • Payment UI Targets • Order Placement From Your Extension • Redirect Return • Pending Orders • PSP SDK Loading • Configuration and Credentials • Payment Methods • What Counts as a Method • Method Identifiers • Claimed Method Declaration • Payment Method Records • Method-Specific Behavior • Method Eligibility • Registering and Installing Your App • Extension Points • Hook Sequence During Checkout • Choosing Where to Authorize • Extension Point Contracts • Platform Semantics • Error Model • Transaction Type vs. Status • Authorization • Asynchronous Authorization • Pre-Authorization Fraud Decision • Transaction Details Population • Multi-Currency Amount Handling • Split Tender • Retry After Decline • Post-Authorize Operations • Capture at Fulfillment • Void Before Capture • Refund After Capture • Reversal on Order Failure • Data Model • OrderPaymentInstrument • PaymentTransaction • SalesforceCardTransactionDetails • SalesforceCardPaymentDetails • Non-Card Payment Details Classes • Order • Where to Put PSP Data • Provider-Specific Data on Custom Attributes • Flow Patterns • Abandoned Orders • Synchronous Card Authorization • Redirect Flows • Async Payment Flows • Webhook Handling • Custom SCAPI Resources • Order Transition Endpoint • Testing Your App • Best Practices • Interaction With a Fraud Commerce App • See Also",
+      "summary": "Explains how to build a Payment Commerce App (beta) that connects B2C Commerce to a payment provider via server hooks and Storefront Next extensions, including prerequisites and beta breaking-change c",
+      "keywords": [
+        "payment commerce app",
+        "payment app beta",
+        "Payments Orchestration",
+        "PSP integration",
+        "payment service provider hooks",
+        "authorization capture refund reversal",
+        "commerce-app.json",
+        "Storefront Next payment extension",
+        "PaymentFraudOrchestrationEnabled",
+        "SCAPI hook execution",
+        "payment method claims"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/supported-domains"
+      ]
+    },
+    {
+      "id": "b2c-commerce/payments-orchestration",
+      "title": "Payments Orchestration Overview",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/payments-orchestration.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/payments-orchestration.md",
+      "headings": "Why Platform Orchestration • The Three Domains • What Each App Builds • Payment Apps • The Payment App's Extra Role • Fraud Apps • Gift Card Apps • How an Order Is Placed • What the Platform Fixes and What You Decide • Payment Flow Patterns • Example • Split Tender With a Fraud Challenge • Domain Guides",
+      "summary": "Explains how the platform orchestrates payment, fraud, and gift card Commerce Apps during checkout and what a developer's Commerce App is responsible for in that sequence.",
+      "keywords": [
+        "payments orchestration",
+        "commerce apps",
+        "B2C Commerce checkout",
+        "payment app",
+        "fraud app",
+        "gift card app",
+        "split tender",
+        "checkout sequence",
+        "rollback",
+        "beta payments",
+        "payment hooks",
+        "PO"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/supported-domains"
+      ]
+    },
+    {
       "id": "b2c-commerce/post-publication",
       "title": "Post-Install Maintenance",
       "category": "b2c-commerce",
@@ -6886,31 +7145,6 @@
       ]
     },
     {
-      "id": "b2c-commerce/style-and-theme-the-widget",
-      "title": "Style and Theme the Widget",
-      "category": "b2c-commerce",
-      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/style-and-theme-the-widget.html",
-      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/style-and-theme-the-widget.md",
-      "headings": "Theme properties • Header configuration • Other presentation options • CSS custom properties • Custom CSS for pixel-perfect control • Related resources",
-      "summary": "Style the Agentforce Commerce Client widget using theme properties, header configuration, and custom CSS with scoped class names.",
-      "keywords": [
-        "Agentforce Commerce Client",
-        "widget styling",
-        "theme properties",
-        "CSS customization",
-        "cim-widget classes",
-        "headerConfig",
-        "primaryColor",
-        "secondaryColor",
-        "CSS custom properties",
-        "component theming",
-        "storefront styling"
-      ],
-      "relatedEntries": [
-        "b2c-commerce/agentforce-commerce-client-overview"
-      ]
-    },
-    {
       "id": "b2c-commerce/submission-review",
       "title": "Publish to the App Registry",
       "category": "b2c-commerce",
@@ -6942,7 +7176,7 @@
       "category": "b2c-commerce",
       "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/supported-domains.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/supported-domains.md",
-      "headings": "Domain Registry • Release Timeline Overview • Tax Domain • Extension Point Flows • `sfcc.app.tax.calculate` • `sfcc.app.tax.commit` • `sfcc.app.tax.cancel` • Tax UI Targets • OMS Domain • Ratings & Reviews Domain • Ratings & Reviews UI Targets • Loyalty Domain (Wave 1, Fullstack) • Loyalty UI Targets • Additional Wave 1 Domains (Fullstack) • Wave 2 Domains (264, Backend-Only: Extension Points) • Wave 4 and Beyond",
+      "headings": "Domain Registry • Release Timeline Overview • Tax Domain • Extension Point Flows • `sfcc.app.tax.calculate` • `sfcc.app.tax.commit` • `sfcc.app.tax.cancel` • Tax UI Targets • OMS Domain • Ratings & Reviews Domain • Ratings & Reviews UI Targets • Loyalty Domain (Wave 1, Fullstack) • Loyalty UI Targets • Additional Wave 1 Domains (Fullstack) • Wave 2 Domains (264, Backend-Only: Extension Points) • Payment, Fraud, and Gift Card Domains • Wave 4 and Beyond",
       "summary": "Reference guide to Commerce Apps framework domains, their hub organization, extension points, UI targets, and release timeline.",
       "keywords": [
         "Commerce Apps domains",
@@ -6960,7 +7194,34 @@
       ],
       "relatedEntries": [
         "b2c-commerce/commerce-apps-overview",
+        "b2c-commerce/payments-orchestration",
+        "b2c-commerce/payment",
+        "b2c-commerce/fraud",
+        "b2c-commerce/giftcard",
         "b2c-commerce/connect-third-party-oms"
+      ]
+    },
+    {
+      "id": "b2c-commerce/test-commerce-client-install",
+      "title": "Test the Agentforce Commerce Client Deployment",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/test-commerce-client-install.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/test-commerce-client-install.md",
+      "summary": "Steps to verify an Agentforce Commerce Client deployment on a storefront by checking the widget bundle load, console logs, and chat launcher placement.",
+      "keywords": [
+        "Agentforce Commerce Client",
+        "test deployment",
+        "messaging.umd.js",
+        "chat widget",
+        "CommerceClient console",
+        "cc_isDevelopment",
+        "chat launcher",
+        "storefront debugging",
+        "Agentforce testing",
+        "browser dev tools"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/agentforce-commerce-client-overview"
       ]
     },
     {
@@ -7198,7 +7459,35 @@
         "b2c-commerce/ucp-implementation-considerations",
         "b2c-commerce/ucp-transaction-management",
         "b2c-commerce/ucp-google-gmc-configuration",
-        "b2c-commerce/ucp-order-post-processing-events"
+        "b2c-commerce/ucp-order-post-processing-events",
+        "b2c-commerce/ucp-salesforce-oms-order-updates",
+        "b2c-commerce/ucp-order-built-from-shopper-order"
+      ]
+    },
+    {
+      "id": "b2c-commerce/ucp-order-built-from-shopper-order",
+      "title": "How the UCP Order Is Built from the Shopper Order Document",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/ucp-order-built-from-shopper-order.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/ucp-order-built-from-shopper-order.md",
+      "headings": "Why the UCP Order Is Built from the Shopper Order • Example: The UCP Order Right After Placement • How Each Section Is Filled • `ucp` — Protocol Metadata • Order Identity • `line_items` — What Was Ordered • `line_items[].item` — The Product • `line_items[].quantity` — Ordered vs. Fulfilled • `line_items[].totals` — Line-Level Amounts • `fulfillment.expectations` — How and Where the Order Ships • `fulfillment.events` — The `processing` Event • `totals` — Order-Level Amounts • How the UCP Order Grows as the OMS Processes the Order • Where the Growing Data Comes From • Removing Duplicate Events",
+      "summary": "Explains how B2C Commerce builds the complete UCP order payload in each post-processing update from the shopper order document, and which order fields populate each part.",
+      "keywords": [
+        "UCP order",
+        "shopper order document",
+        "UCP order payload",
+        "post-processing update",
+        "agentic commerce",
+        "Google Gemini order",
+        "order mapping",
+        "order fields to UCP",
+        "OMS system of record",
+        "order update payload",
+        "UCP order build",
+        "agent platform order sync"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/ucp-index"
       ]
     },
     {
@@ -7222,6 +7511,32 @@
         "shipment cancellation return",
         "cryptographic signature",
         "agent platform"
+      ],
+      "relatedEntries": [
+        "b2c-commerce/ucp-index"
+      ]
+    },
+    {
+      "id": "b2c-commerce/ucp-salesforce-oms-order-updates",
+      "title": "UCP Order Updates from Salesforce Order Management",
+      "category": "b2c-commerce",
+      "url": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/ucp-salesforce-oms-order-updates.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/ucp-salesforce-oms-order-updates.md",
+      "headings": "Events Triggered by Salesforce OMS Updates • Fulfillment • Shipment Started • Shipment Completed • Fulfillment Data Mapping • Adjustments • Cancellation • Return • Event Batching and Timing • Related Reading",
+      "summary": "Explains which Salesforce OMS order item changes trigger UCP shipment, delivery, cancellation, and return updates sent to the agent platform.",
+      "keywords": [
+        "UCP order updates",
+        "Salesforce OMS",
+        "Salesforce Order Management",
+        "order item summary",
+        "shipment update",
+        "ShipmentItem",
+        "fulfillment data mapping",
+        "order cancellation",
+        "return update",
+        "B2C Commerce integration",
+        "agent platform",
+        "order lifecycle events"
       ],
       "relatedEntries": [
         "b2c-commerce/ucp-index"
@@ -9034,7 +9349,7 @@
       "category": "commerce-api",
       "url": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/commerce-api/guide/server-side-web-tier-caching.md",
-      "headings": "What Is Cached • Categories • Products • Availability • Product Search • Search Suggestions • Promotions • Campaigns • SEO URL Mapping • Stores • Preferences • Site Custom Preferences • Global Custom Preferences • Shopper Experience (Page Designer) • Shopper Configurations • Caching Summary by API • Enable Caching • Default Cache Expiration and Personalization Settings • \"expand\" Parameter Impact on Cache Hit Rates • Improve the Cache Hit Ratio • Personalized Caching • The `personalized=none` Query Parameter • Personalization and Custom Code • Personalization Changes in Hooks • Response Body Customization • Cache Expiration for Objects with a Validity Period • Change Cache Settings Programmatically • Change Cache Time-to-Live • Constraints • Apply Personalization • Cache Invalidation • Manual Invalidation • Automated Invalidation (Replication) • Cache Tags • Cache-Control HTTP Header • Cache Status Response Headers • sfdc_cache_status (Web Tier) • Applicability • Header Values • Understand the [N/M] Notation • cf-cache-status (CDN Edge) • Example: How a Request Travels Through Both Cache Tiers • View Cache Statistics • Troubleshoot Personalized Caching • Logout and Cached Responses • Alter Cache Key",
+      "headings": "What Is Cached • Categories • Products • Availability • Product Search • Search Suggestions • Promotions • Campaigns • SEO URL Mapping • Stores • Preferences • Site Custom Preferences • Global Custom Preferences • Shopper Experience (Page Designer) • Shopper Configurations • Caching Summary by API • Enable Caching • Default Cache Expiration and Personalization Settings • \"expand\" Parameter Impact on Cache Hit Rates • Improve the Cache Hit Ratio • Personalized Caching • The `personalized=none` Query Parameter • Personalization and Custom Code • Personalization Changes in Hooks • Response Body Customization • Cache Expiration for Objects with a Validity Period • Change Cache Settings Programmatically • Change Cache Time-to-Live • Constraints • Apply Personalization • Cache Invalidation • Manual Invalidation • Automated Invalidation (Replication) • Cache Tags • Targeted CDN Cache Purge • Cache-Control HTTP Header • Cache Status Response Headers • sfdc_cache_status (Web Tier) • Applicability • Header Values • Understand the [N/M] Notation • sfdc_cdn_cache_status (CDN Edge) • Example: How a Request Travels Through Both Cache Tiers • View Cache Statistics • Troubleshoot Personalized Caching • Logout and Cached Responses • Alter Cache Key",
       "summary": "Implement two-tier caching (web-tier and CDN edge) for SCAPI GET requests to reduce latency and origin load.",
       "keywords": [
         "SCAPI caching",
@@ -12815,7 +13130,7 @@
       "category": "pwa-kit-managed-runtime",
       "url": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/page-designer.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/page-designer.md",
-      "headings": "Prerequisites • Considerations • Architecture Overview • Understanding Page Designer Components • Pages • Regions • Components • Component Lifecycle and Data Flow • Component Registry • Building Layout Components • React Component Structure • Component Metadata • Key Points for Layout Components • Building Leaf Components • React Component Structure • Component Metadata • Key Points for Leaf Components • Migrating from PWA Kit with ISML to Headless • Understanding the Transformation • Migration Steps • Step 1: Install Required Dependency • Step 2: Update Component Metadata to Headless • Step 3: Update Page Metadata with Routes • Step 4: Update Aspect Type Metadata • Step 5: Migrate from Manual Mapping to Registry • Step 6: Set Up PageDesignerProvider in App Component • Step 7: Create PageDesignerInit Component • Step 8: Create useGlobalAnchorBlock Hook • Step 9: Add PageDesignerInit to App • Step 10: Deploy and Test • Common Migration Challenges • New Features • Design Metadata • Design Mode Detection • Page Component API • Updated Region API • Component Registry API • Component (Internal) • Complete Migration Example • Configure Page Designer • 1. Install Dependencies • 2. Create Component Registry • 3. Set Up App Integration • 4. Create PageDesignerInit Component • 5. Create useGlobalAnchorBlock Hook • 6. How It Works • See Also",
+      "headings": "Prerequisites • Considerations • Architecture Overview • Understanding Page Designer Components • Pages • Regions • Components • Component Lifecycle and Data Flow • Component Registry • Building Layout Components • React Component Structure • Component Metadata • Key Points for Layout Components • Building Leaf Components • React Component Structure • Component Metadata • Key Points for Leaf Components • Migrating from PWA Kit with ISML to Headless • Understanding the Transformation • Migration Steps • Step 1: Install Required Dependency • Step 2: Update Component Metadata to Headless • Step 3: Update Page Metadata with Routes • Step 4: Update Aspect Type Metadata • Step 5: Migrate from Manual Mapping to Registry • Step 6: Set Up PageDesignerProvider in App Component • Step 7: Create PageDesignerInit Component • Step 8: Create useGlobalAnchorBlock Hook • Step 9: Add PageDesignerInit to App • Step 10: Deploy and Test • Common Migration Challenges • New Features • Design Metadata • Design Mode Detection • Page Component API • Updated Region API • Component Registry API • Component (Internal) • Complete Migration Example • Configure Page Designer • 1. Install Dependencies • 2. Create Component Registry • 3. Set Up App Integration • 4. Create PageDesignerInit Component • 5. Create useGlobalAnchorBlock Hook • 6. Configure Content Security Policy • 7. How It Works • See Also",
       "summary": "Configure PWA Kit to render dynamic Page Designer pages using React components in Business Manager.",
       "keywords": [
         "Page Designer integration",
@@ -14294,7 +14609,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-aeo-geo.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-aeo-geo.md",
-      "headings": "How It Works • Where It Is Implemented • Product Detail Page (PDP) • What Gets Emitted • Product Listing Page (PLP) • What Gets Emitted • Pricing • Availability • `BreadcrumbList` • `SeoMeta` • URL Construction • Example: Multisite URL Preservation • Rendering • Tests and Stories • Customizing the Schema • Add Aggregate Ratings (PDP) • Add FAQ Structured Data • Enrich Catalog Fields • Validation • See Also",
+      "headings": "How It Works • Where It Is Implemented • Product Detail Page (PDP) • What Gets Emitted • Product Listing Page (PLP) • What Gets Emitted • Pricing • Availability • `BreadcrumbList` • `SeoMeta` • URL Construction and Multi-Site • Rendering • Tests and Stories • Customizing the Schema • Add Aggregate Ratings (PDP) • Add FAQ Structured Data • Enrich Catalog Fields • Validation • See Also",
       "summary": "Implement Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) using JSON-LD and SeoMeta on PDPs and PLPs for rich search results and AI grounding.",
       "keywords": [
         "AEO",
@@ -14320,7 +14635,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-analytics.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-analytics.md",
-      "headings": "How It Works • Tracking Consent • Configure Consent Categories • Require a Consent Category per Adapter • Set Up Einstein Activities • Set Up Active Data • Prerequisites • Step 1: Enable Data Collection • Step 2: Confirm That Sites Are Online • Step 3: Confirm that Tracking (Default for New Storefront Session) Is Enabled • Step 4: Configure Active Data • Set Up Data 360 • Analytics Events • Adding More Event Types • Engagement Adapters • Adding More Adapters • See Also",
+      "headings": "How It Works • Tracking Consent • Configure Consent Categories • Require a Consent Category per Adapter • Set Up Einstein Activities • Set Up Active Data • Prerequisites • Step 1: Enable Data Collection • Step 2: Confirm That Sites Are Online • Step 3: Confirm that Tracking (Default for New Storefront Session) Is Enabled • Step 4: Configure Active Data • Set Up Data 360 • Multisite Event Context • Analytics Events • Adding More Event Types • Engagement Adapters • Adding More Adapters • See Also",
       "summary": "Implement analytics tracking in Storefront Next using built-in hooks, events, and adapters for Einstein, Active Data, and Data 360 with consent management.",
       "keywords": [
         "analytics",
@@ -14398,6 +14713,7 @@
         "sfnext/sfnext-storage-sessions",
         "sfnext/sfnext-server-routes",
         "sfnext/sfnext-multi-site",
+        "sfnext/sfnext-seo-url-rules-best-practices",
         "sfnext/sfnext-intl",
         "sfnext/sfnext-adapters",
         "sfnext/sfnext-security-headers"
@@ -14409,7 +14725,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-base-path.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-base-path.md",
-      "headings": "Configure Base Paths • See Also",
+      "headings": "Configure Base Paths • Validation Rules • How Base Paths Work • Environment Variable • Routes and Assets • Resource Routes and Multisite Detection • `getBasePath()` • Behavior by Environment • React Router `basename` • Known Limitation • See Also",
       "summary": "Route requests to specific MRT environments using environment base paths for multi-environment storefronts on a single domain.",
       "keywords": [
         "environment base paths",
@@ -15064,7 +15380,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-get-started.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-get-started.md",
-      "headings": "1. Get Started • 2. Customize and Build the Storefront • 3. Deploy, Test, and Monitor Storefront Next • 4. Use Storefront Next in a Hybrid Implementation • 5. Go Live • 6. PWA Kit to Storefront Next Migration Reference",
+      "headings": "1. Get Started • 2. Customize and Build the Storefront • 3. Deploy, Test, and Monitor Storefront Next • 4. Use Storefront Next in a Hybrid Implementation • 5. Go Live • 6. Storefront Next Migration Reference",
       "summary": "Build modern, high-performance storefronts using Storefront Next with React 19, server-side rendering, and personalization capabilities.",
       "keywords": [
         "Storefront Next",
@@ -15122,9 +15438,11 @@
         "sfnext/sfnext-release-notes",
         "sfnext/sfnext-mrt-release-notes",
         "sfnext/sfnext-architecture",
+        "sfnext/sfnext-migration-tool",
         "sfnext/sfnext-browser-comp",
         "sfnext/sfnext-template-compare",
         "sfnext/sfnext-quick-start-choice",
+        "sfnext/sfnext-scapi-create-storefront",
         "sfnext/sfnext-link-storefront",
         "sfnext/sfnext-github-connect"
       ]
@@ -15316,7 +15634,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-images.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-images.md",
-      "headings": "Dynamic Imaging Service (DIS) • Why Use DIS • DIS URL Anatomy • Configuration • Vanity Domains and Custom Realm Mappings • Image Filtering on Product Listing Pages • Keeping Role-Named Values Aligned with Consumers • `DynamicImage` Component • Basic Usage • The src Prop and Placeholder Syntax • Responsive Widths • Server-Side Scaling with Heights • Loading Priority and Preloading • `DynamicImageProvider` Context • How It Works • Example: Product Grid with Critical and Non-Critical Images • Example: Capping High-Priority Images with a Single Provider • Example: Selective Registration in Product Tile • Dynamic Image Utility Functions • `toImageUrl()` • `toDisImageUrl()` • `toDisBaseUrl()` • `transformHtmlImageUrls()` • `replaceImageFormat()` • Performance Checklist • Alt Text Strategy • Source of Truth • Fallback Order • Rules • See Also",
+      "headings": "Dynamic Imaging Service (DIS) • Why Use DIS • DIS URL Anatomy • Configuration • Vanity Domains and Custom Realm Mappings • Image Filtering on Product Listing Pages • Keeping Role-Named Values Aligned with Consumers • Non-Native Swatch Axes (Swatch Products) • `DynamicImage` Component • Basic Usage • The src Prop and Placeholder Syntax • Responsive Widths • Server-Side Scaling with Heights • Loading Priority and Preloading • `DynamicImageProvider` Context • How It Works • Example: Product Grid with Critical and Non-Critical Images • Example: Capping High-Priority Images with a Single Provider • Example: Selective Registration in Product Tile • Dynamic Image Utility Functions • `toImageUrl()` • `toDisImageUrl()` • `toDisBaseUrl()` • `transformHtmlImageUrls()` • `replaceImageFormat()` • Performance Checklist • Alt Text Strategy • Source of Truth • Fallback Order • Rules • See Also",
       "summary": "Optimize storefront images using Dynamic Imaging Service (DIS) and the DynamicImage component for responsive, format-converted, server-resized delivery.",
       "keywords": [
         "DynamicImage component",
@@ -15569,6 +15887,30 @@
       ]
     },
     {
+      "id": "sfnext/sfnext-migration-tool",
+      "title": "Migrate Your Storefront to Storefront Next",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-migration-tool.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-migration-tool.md",
+      "headings": "When to Use the Storefront Next Migration Tool • Prepare a Storefront Next Migration • Connect and Analyze the Source Storefront • Generate and Verify Storefront Next Routes • Finish Storefront Next Work the Tool Leaves Behind",
+      "summary": "Explains how to use the Storefront Next Migration Tool, an AI-assisted CLI in developer preview, to analyze and migrate SiteGenesis, SFRA, or PWA Kit storefronts to Storefront Next.",
+      "keywords": [
+        "Storefront Next migration",
+        "migrate SFRA to Storefront Next",
+        "migrate SiteGenesis",
+        "PWA Kit migration",
+        "Storefront Next Migration Tool",
+        "sfnext migration CLI",
+        "composable storefront migration",
+        "B2C Commerce storefront upgrade",
+        "AI migration tool",
+        "developer preview"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
+      ]
+    },
+    {
       "id": "sfnext/sfnext-modern-exp",
       "title": "Modernized Storefront Experience in Storefront Next",
       "category": "sfnext",
@@ -15627,7 +15969,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-api.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-api.md",
-      "headings": "Administer Your Storefront with SCAPI • SCAPI Authorization • Example SCAPI Requests • Create a Storefront Next Store • Create an Environment • Create an Environment Variable • Upload a Bundle • Managed Runtime API • Read-Only Mode During Maintenance",
+      "headings": "Administer Your Storefront with SCAPI • SCAPI Authorization • Example SCAPI Requests • Create a Storefront Next Store • Create an Environment • Create an Environment Variable • Managed Runtime API • Read-Only Mode During Maintenance",
       "summary": "Automate storefront administration tasks like creating, updating, and deploying storefronts using SCAPI or MRT APIs.",
       "keywords": [
         "storefront automation",
@@ -15968,7 +16310,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-multi-site.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-multi-site.md",
-      "headings": "How Multisite URLs Work • Default Template Behavior • Define Your Sites • MRT Data Store Sites • Configure URL Patterns • Use Alias Maps for Clean URLs • Configure Site and Locale Detection • Configure Site-Context Cookies • URL Pattern Use Cases • Site and Locale in the Path (Default) • Locale Only in the Path • Site in the Path, Locale in Query Params • Everything in Query Params • Locale Only in Query Params • No Prefix (Single Site) • Switch Sites, Locales, and Currencies • Site Switcher • Locale Switcher • Currency Switcher • Access Site Context in React Components • Navigate with Site Context • Link and NavLink • useNavigate • useCurrentSiteAndLocaleRef • React Router Form Actions • Important Considerations • See Also",
+      "headings": "How Multisite URLs Work • Default Template Behavior • Define Your Sites • MRT Data Store Sites • Configure URL Patterns • Shopper SEO URL Rules Fallback • Use Alias Maps for Clean URLs • Configure Site and Locale Detection • Configure Site-Context Cookies • URL Pattern Use Cases • Site and Locale in the Path (Default) • Locale Only in the Path • Site in the Path, Locale in Query Params • Everything in Query Params • Locale Only in Query Params • No Prefix (Single Site) • Switch Sites, Locales, and Currencies • Site Switcher • Locale Switcher • Currency Switcher • Access Site Context in React Components • Navigate with Site Context • Link and NavLink • useNavigate • useCurrentSiteAndLocaleRef • React Router Form Actions • Server-Side Redirects • Engagement Data and Site Context • Important Considerations • See Also",
       "summary": "Configure how site and locale identifiers appear in Storefront Next URLs using path segments, query parameters, or cookies, and set up multisite detection.",
       "keywords": [
         "multisite URLs",
@@ -16292,8 +16634,7 @@
       "relatedEntries": [
         "sfnext/sfnext-get-started",
         "sfnext/sfnext-performance",
-        "sfnext/sfnext-perf-tools",
-        "sfnext/sfnext-seo-url-rules-best-practices"
+        "sfnext/sfnext-perf-tools"
       ]
     },
     {
@@ -16385,7 +16726,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-project-config.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-project-config.md",
-      "headings": "Quick Start • For Loaders, Actions, Utilities: `getConfig()` • For React Components: `useConfig()` • Configuration File • How Configuration Works • Required vs Optional Variables • Required for the app to start • Required for `pnpm push` (Managed Runtime deploy) • Server-only secrets (never prefix with `PUBLIC__`) • Optional `PUBLIC__*` overrides (defaults in `config.server.ts`) • Optional non-`PUBLIC__` runtime/deploy variables • Environment Variable Overrides • Understanding the Path Syntax • Value Types • Important Notes • Security: PUBLIC\\_\\_ vs Non-Prefixed • Merge Behavior • Adding Configuration • 1. Update the type (`src/types/config.ts`) • 2. Add default value (`config.server.ts`) • 3. Override via environment variables • 4. Use it in your code • 5. Add a new config value during app creation • Security: Public vs. Private Configuration • Commerce Sites Configuration • Per-Site Cookie Domain Override • Accessing Configuration • In Loaders and Actions • In React Components • In Client Loaders • In Custom Middleware • Adding New Configuration • 1. Update the Type • 2. Add Default Value • 3. Override via Environment Variables • 4. Use in Your Code • 5. Add to config-meta.json (Optional) • Extension Configuration • Extension Config Auto-Discovery • Server-Only Extension Config • Testing • Marketing Cloud Configuration (Server-Only) • Environment Variables • Deployment • Common Issues • Changed `.env` but Nothing Happened? • Environment Variable Not Working? • Type Errors After Adding Configuration? • App Won't Start—Missing Credentials? • Path Validation Error? • Locale or Translation Not Working? • Optional Configuration Variables • Commerce API Settings • Feature Flags • Site Configuration • Security • Engagement Adapters • Enabling Optional Features • Multi-site / `commerce.sites` • Live Sites from the Data Access Layer (`commerce.sitesFromDal`) • Hybrid Proxy (local development only) • Passwordless Login (Marketing Cloud) • Turnstile Bot Protection • Commerce Client (Cimulate) • Cookie Domain • Refresh-Token Expiry Overrides • Google Cloud API Key (Address Autocomplete) • Logging • Managed Runtime deployment vars • Server-Only SLAS Secret • JSON configuration pattern • Configuration Options Reference • Notable Configuration Options • Passkey (WebAuthn) Feature Flags • Guest Checkout • Social Share • Shopper Context Source Code Suffix • Category Page Pagination (`src/lib/config.ui.ts`) • Engagement Adapter Options",
+      "headings": "Quick Start • For Loaders, Actions, Utilities: `getConfig()` • For React Components: `useConfig()` • Configuration File • How Configuration Works • Required vs Optional Variables • Required for the app to start • Required for `pnpm push` (Managed Runtime deploy) • Server-only secrets (never prefix with `PUBLIC__`) • Optional `PUBLIC__*` overrides (defaults in `config.server.ts`) • Optional non-`PUBLIC__` runtime/deploy variables • Environment Variable Overrides • Understanding the Path Syntax • Value Types • Important Notes • Security: PUBLIC\\_\\_ vs Non-Prefixed • Merge Behavior • Adding Configuration • 1. Update the type (`src/types/config.ts`) • 2. Add default value (`config.server.ts`) • 3. Override via environment variables • 4. Use it in your code • 5. Add a new config value during app creation • Security: Public vs. Private Configuration • Commerce Sites Configuration • Per-Site Cookie Domain Override • Accessing Configuration • In Loaders and Actions • In React Components • In Client Loaders • In Custom Middleware • Adding New Configuration • 1. Update the Type • 2. Add Default Value • 3. Override via Environment Variables • 4. Use in Your Code • 5. Add to config-meta.json (Optional) • Extension Configuration • Extension Config Auto-Discovery • Server-Only Extension Config • Testing • Marketing Cloud Configuration (Server-Only) • Environment Variables • Deployment • Common Issues • Changed `.env` but Nothing Happened? • Environment Variable Not Working? • Type Errors After Adding Configuration? • App Won't Start—Missing Credentials? • Path Validation Error? • Locale or Translation Not Working? • Optional Configuration Variables • Commerce API Settings • Feature Flags • Site Configuration • Security • Engagement Adapters • Enabling Optional Features • Multi-site / `commerce.sites` • Live Sites from the MRT Data Store (`commerce.sitesFromDal`) • Hybrid Proxy (local development only) • Passwordless Login (Marketing Cloud) • Turnstile Bot Protection • Shopper Agent (Commerce Client messaging widget) • Cookie Domain • Refresh-Token Expiry Overrides • Google Cloud API Key (Address Autocomplete) • Logging • Managed Runtime deployment vars • Server-Only SLAS Secret • JSON configuration pattern • Configuration Options Reference • Notable Configuration Options • Passkey (WebAuthn) Feature Flags • Guest Checkout • Social Share • Shopper Context Source Code Suffix • Category Page Pagination (`src/lib/config.ui.ts`) • Engagement Adapter Options",
       "summary": "Set up type-safe configuration in Storefront Next using config.server.ts, environment variables with PUBLIC__ prefix, and APIs like getConfig() and useConfig().",
       "keywords": [
         "config.server.ts",
@@ -16513,7 +16854,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-push-mrt-auto.md",
-      "headings": "Prerequisites • Steps • Deploy Bundles in Business Manager (Beta) • Create and Deploy Bundles via the B2C CLI • See Also",
+      "headings": "Prerequisites • Get the Storefront and Environment IDs • Deploy Using MRT API Key Authorization • Deploy Using SCAPI Authorization • Deploy Bundles in Business Manager (Beta) • Create and Deploy Bundles via the B2C CLI • See Also",
       "summary": "Deploy a Storefront Next application to Managed Runtime using the Storefront Next CLI with MRT project and environment credentials.",
       "keywords": [
         "deploy storefront next MRT",
@@ -17124,7 +17465,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-release-notes.md",
-      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • October 13, 2026 - Storefront Next 1.4.0 • Cache Shared SCAPI Responses for Faster Storefront Pages • September 29, 2026 - B2C Commerce 26.10 • Start Faster with Footwear, Furniture, and Foundations Templates • September 1, 2026 - Storefront Next 1.3.0 • Show Estimated Delivery Dates on Your Storefront • Guest Shoppers Can Look Up Orders Quickly Without Registration • Show Delivery Estimates for a Product • August 18, 2026 - B2C Commerce 26.9 • Link Your Storefront to a GitHub Repository in Business Manager • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
+      "headings": "<Date> - vx.y.z • <Date> - B2C Commerce 26.x • <Release note title> • October 13, 2026 - Storefront Next 1.4.0 • Use SCAPI Authorization with B2C and sfnext CLI Commands • Let Shoppers Manage Their Saved Payment Methods from My Account • Cache Shared SCAPI Responses for Faster Storefront Pages • Publish Descriptive URLs for Shoppers and Search Engines • September 29, 2026 - B2C Commerce 26.10 • Start Faster with Footwear, Furniture, and Foundations Templates • September 1, 2026 - Storefront Next 1.3.0 • Show Estimated Delivery Dates on Your Storefront • Guest Shoppers Can Look Up Orders Quickly Without Registration • Show Delivery Estimates for a Product • August 18, 2026 - B2C Commerce 26.9 • Link Your Storefront to a GitHub Repository in Business Manager • August 4, 2026 - Storefront Next 1.2.0 • Streamline Sign-In with Passkeys • Manage Sites for Storefront Next in Business Manager • Send Storefront Next Analytics Events to Data 360 • Integrate Storefront Next with Salesforce Order Management • Keep Shoppers Browsing with Load More Pagination • July 21, 2026 - B2C Commerce 26.8 • Speed Up Storefront Next Development with the Beauty Street Template • July 9, 2026 - Storefront Next 1.1.0 • Process Payments Natively in Storefront Next with Salesforce Payments • Maintain Shopper Sessions Across Subdomains in Storefront Next • Secure Your Storefront and Stabilize APIs by Upgrading to React Router 7.18",
       "summary": "Discover Storefront Next monthly release features, updates, and changes across versions.",
       "keywords": [
         "Storefront Next release notes",
@@ -17166,6 +17507,32 @@
       ],
       "relatedEntries": [
         "sfnext/sfnext-build-shopping-section"
+      ]
+    },
+    {
+      "id": "sfnext/sfnext-scapi-create-storefront",
+      "title": "Create Storefront Next with SCAPI",
+      "category": "sfnext",
+      "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-scapi-create-storefront.html",
+      "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-scapi-create-storefront.md",
+      "headings": "Prerequisites • 1. Configure SCAPI Authorization • 2. Create the Storefront with SCAPI • (Optional) Get the Environment File from Business Manager • 3. Build the Local Storefront Code • 4. Upload and Deploy the Bundle with SCAPI • Next Steps",
+      "summary": "Explains how to use SCAPI with Account Manager OAuth2 scopes to create a Storefront Next storefront, generate code, and deploy a bundle to an MRT environment.",
+      "keywords": [
+        "Storefront Next SCAPI",
+        "create storefront API",
+        "SCAPI automation",
+        "Managed Runtime deploy",
+        "MRT environment",
+        "Account Manager API client",
+        "SLAS client setup",
+        "eCDN configuration",
+        "sfcc.storefront scopes",
+        "bot user authorization",
+        "storefront bundle upload",
+        "headless storefront provisioning"
+      ],
+      "relatedEntries": [
+        "sfnext/sfnext-get-started-section"
       ]
     },
     {
@@ -17252,7 +17619,7 @@
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-seo-metadata.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-seo-metadata.md",
-      "headings": "Hreflang Alternate Links • Why It Matters • How It Works • Example Output • When You Need to Change `hreflang` Tags • Canonical URLs • Why It Matters • How It Works • Query Parameter Allowlist • Adding a Custom Query Parameter • Page Titles and Meta Tags (`SeoMeta`) • Why It Matters • What `SeoMeta` Renders • Basic Usage • Props • Title Modes • General Meta Tag Behavior • Why Each Meta Tag Helps • Open Graph and X Card Behavior • Why Social Tags Matter for SEO • Canonical URL Consistency for Social Tags • Changing the Site Name • Route Patterns • Adding Meta Tags to a New Page • Where `SeoMeta` Is Used • Why Some Pages Use `noIndex` • Why `noIndex` Helps",
+      "headings": "Hreflang Alternate Links • Why It Matters • How It Works • Example Output • When You Need to Change `hreflang` Tags • Canonical URLs • Why It Matters • How It Works • One Page URL Across Every Crawler-Visible Surface • Query Parameter Allowlist • Adding a Custom Query Parameter • Page Titles and Meta Tags (`SeoMeta`) • Why It Matters • What `SeoMeta` Renders • Basic Usage • Props • Title Modes • General Meta Tag Behavior • Why Each Meta Tag Helps • Open Graph and X Card Behavior • Why Social Tags Matter for SEO • Canonical URL Consistency for Social Tags • Changing the Site Name • Route Patterns • Adding Meta Tags to a New Page • Where `SeoMeta` Is Used • Why Some Pages Use `noIndex` • Why `noIndex` Helps • Crawler Rendering and Pagination • Full HTML for Crawlers • Crawlable Load-More Pagination",
       "summary": "Configure SEO features for Storefront Next including hreflang tags, canonical URLs, page titles, meta tags, and structured data to optimize search discoverability.",
       "keywords": [
         "hreflang",
@@ -17274,11 +17641,11 @@
     },
     {
       "id": "sfnext/sfnext-seo-url-rules-best-practices",
-      "title": "SEO URL Rules Best Practices for Storefront Next",
+      "title": "Configure SEO-Friendly Storefront URLs",
       "category": "sfnext",
       "url": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-seo-url-rules-best-practices.html",
       "sourceUrl": "https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-seo-url-rules-best-practices.md",
-      "headings": "Business Manager Is the Source of Truth • Configure `seoRoutes` • You Don't Rename Route Files • Every Active Site Needs an Entry, and Changes Require a Rebuild • URL Guidance by Content Type • URL Guidance for Products • Example • URL Guidance for Categories • Example • URL Guidance for Content Pages • Example • Prevent Broken Indexed URLs and Redirect Loops • Hybrid Deployments • Reference: Market Street",
+      "headings": "Before You Begin • Configure URL Rules • Choose a Category URL Mode • Understand URL Behavior • Use the Built-In Routes When SEO Routes Are Off • Configure SEO Routes Per Site • Use Product URLs and Variants • Choose a Category URL Pattern • Maintain Compatibility for Older and Content URLs • Keep SEO Signals and Performance Aligned • Roll Out URL Changes Safely • Maintain Crawler SEO Performance • Validate Your Storefront • Confirm the Configuration • Check for Performance Regressions • Check for SEO Regressions • Backwards Compatibility and Hybrid Storefronts",
       "summary": "Configure deterministic SEO URL rules in Storefront Next to match Business Manager settings for fast, predictable product, category, and content routing.",
       "keywords": [
         "SEO URL rules",
@@ -17295,7 +17662,7 @@
         "Storefront Next"
       ],
       "relatedEntries": [
-        "sfnext/sfnext-perf-section"
+        "sfnext/sfnext-architecture"
       ]
     },
     {

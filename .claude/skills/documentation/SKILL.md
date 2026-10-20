@@ -580,7 +580,7 @@ listed commits are the delta a regeneration will pick up. Always re-run
 `enrich:docs` (missing-only) after a guides refresh so new pages get
 summaries/keywords, then re-run `generate:guides-index` to merge them.
 
-The enrichment script defaults to `claude-haiku-4-5` (override with
+The enrichment script defaults to `claude-haiku-5-5` (override with
 `DOCS_ENRICH_MODEL`) and requires `ANTHROPIC_API_KEY`; without a key it skips
 enrichment. It only enriches Developer Center guides. Help summaries come from
 DITA `<shortdesc>` and are refreshed with the source content.

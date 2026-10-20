@@ -28,7 +28,7 @@
  * Env:
  *   ANTHROPIC_API_KEY      required to run (else no-op). Bearer token.
  *   ANTHROPIC_BASE_URL     default https://api.anthropic.com
- *   DOCS_ENRICH_MODEL      default claude-haiku-4-5
+ *   DOCS_ENRICH_MODEL      default claude-haiku-5-5
  *   GUIDES_CONTENT_DIR    local Developer Center source directory (required for guides)
  *   HELP_KB_CONTENT       help-kb article directory or tarball (default docs/help-kb-content.tar.gz)
  *   DOCS_ENRICH_CONCURRENCY default 6
@@ -66,7 +66,7 @@ if (CORPUS !== 'guides' && CORPUS !== 'help-kb') throw new Error(`Unknown --corp
 const DATA_DIR = path.resolve(__dirname, '../data', CORPUS);
 const ENRICHMENT_PATH = path.join(DATA_DIR, 'enrichment.json');
 
-const MODEL = process.env.DOCS_ENRICH_MODEL || 'claude-haiku-4-5';
+const MODEL = process.env.DOCS_ENRICH_MODEL || 'claude-haiku-5-5';
 const BASE_URL = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const CONCURRENCY = Number(process.env.DOCS_ENRICH_CONCURRENCY || 6);
@@ -175,7 +175,8 @@ const SYSTEM_PROMPT = CORPUS === 'help-kb' ? HELP_KB_SYSTEM_PROMPT : GUIDES_SYST
 async function enrichOne(src: GuideSource): Promise<EnrichmentEntry | null> {
   const body = {
     model: MODEL,
-    max_tokens: 400,
+    // Headroom for adaptive thinking, which counts toward max_tokens on Haiku 5.5.
+    max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [{role: 'user', content: `Title: ${src.title}\nCategory: ${src.category}\n\nExcerpt:\n${src.excerpt}`}],
   };
