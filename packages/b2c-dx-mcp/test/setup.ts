@@ -18,6 +18,10 @@ import {globalConfigSourceRegistry} from '@salesforce/b2c-tooling-sdk/config';
 // Prevent BaseCommand from running plugin hooks during tests
 process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 
+// Never send test runs to production telemetry. CI sets this too, but forks and
+// local runs don't, and their command tests would otherwise report real events.
+process.env.SFCC_DISABLE_TELEMETRY = 'true';
+
 export const mochaHooks = {
   beforeEach() {
     globalMiddlewareRegistry.clear();

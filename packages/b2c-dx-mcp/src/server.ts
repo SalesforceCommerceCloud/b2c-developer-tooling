@@ -32,6 +32,27 @@ import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
 
 /**
+ * Agent ids, matching environment agent detection, for MCP clients that name
+ * themselves in `clientInfo`. Keys are lowercase. Clients spawned with no
+ * agent environment markers (Codex, for one) are only identifiable this way.
+ */
+const CLIENT_AGENTS: Record<string, string> = {
+  'claude-code': 'claude-code',
+  'codex-mcp-client': 'codex',
+  'copilot-cli': 'copilot-cli',
+  cursor: 'cursor-agent',
+  'cursor-vscode': 'cursor-agent',
+  'gemini-cli-mcp-client': 'gemini-cli',
+  opencode: 'opencode',
+  pi: 'pi',
+  'q dev cli': 'amazon-q',
+  'visual studio code': 'vscode-copilot-agent',
+};
+
+/** Telemetry instances that already sent CLIENT_CONNECTED; stdio may build more than one server per process. */
+const reportedClients = new WeakSet<Telemetry>();
+
+/**
  * Extended server options.
  */
 export interface B2CDxMcpServerOptions extends ServerOptions {
@@ -74,14 +95,7 @@ export class B2CDxMcpServer extends McpServer {
 
     // Set up oninitialized handler
     this.server.oninitialized = (): void => {
-      const clientInfo = this.server.getClientVersion();
-      this.logClient(clientInfo);
-      if (clientInfo) {
-        this.telemetry?.addAttributes({
-          clientName: clientInfo.name,
-          clientVersion: clientInfo.version,
-        });
-      }
+      this.recordClient(this.server.getClientVersion());
     };
   }
 
@@ -89,7 +103,7 @@ export class B2CDxMcpServer extends McpServer {
   public addResourceReader(prefix: string, read: (uri: string) => Promise<ReadResourceResult>): void {
     this.resourceReaders.set(prefix, read);
     this.server.setRequestHandler('resources/read', async (request, context) => {
-      this.logRequestClient(context);
+      this.recordRequestClient(context);
       const uri = request.params.uri;
       for (const [registeredPrefix, reader] of this.resourceReaders) {
         if (uri.startsWith(registeredPrefix)) return reader(uri);
@@ -108,7 +122,7 @@ export class B2CDxMcpServer extends McpServer {
       'skills/list',
       {params: z.object({cursor: z.string().optional()}).loose().optional()},
       async (params, context) => {
-        this.logRequestClient(context);
+        this.recordRequestClient(context);
         // One page: an issued cursor never exists, so any cursor is invalid.
         if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid cursor.');
         const modern = Boolean(
@@ -121,7 +135,7 @@ export class B2CDxMcpServer extends McpServer {
       'skills/get',
       {params: z.object({uri: z.string()}).loose()},
       async (params, context) => {
-        this.logRequestClient(context);
+        this.recordRequestClient(context);
         return {skill: skills.get(params.uri)};
       },
     );
@@ -145,8 +159,7 @@ export class B2CDxMcpServer extends McpServer {
     metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
   ): void {
     const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
-      const clientInfo = this.logRequestClient(context);
-      if (clientInfo) this.telemetry?.addAttributes({clientName: clientInfo.name, clientVersion: clientInfo.version});
+      this.recordRequestClient(context);
       const startTime = Date.now();
       try {
         const envelope = context.mcpReq?.envelope as
@@ -261,28 +274,41 @@ export class B2CDxMcpServer extends McpServer {
     });
   }
 
-  private logClient(clientInfo?: Implementation, protocolVersion?: string): void {
-    if (this.clientLogged) return;
-    getLogger().debug(
-      {
-        protocolEra: protocolVersion ? 'modern' : 'legacy',
-        protocolVersion,
-        clientName: clientInfo?.name,
-        clientVersion: clientInfo?.version,
-      },
-      'MCP client connected',
-    );
-    this.clientLogged = true;
+  /**
+   * Record the client's identity once it is known, from `initialize` (legacy
+   * protocol) or any request envelope (modern protocol). Every later event
+   * carries the client name, and the first identification per process sends
+   * CLIENT_CONNECTED, so sessions that never call a tool still report which
+   * client and agent started them.
+   */
+  private recordClient(clientInfo?: Implementation, protocolVersion?: string): void {
+    const protocolEra = protocolVersion ? 'modern' : 'legacy';
+    if (!this.clientLogged) {
+      getLogger().debug(
+        {protocolEra, protocolVersion, clientName: clientInfo?.name, clientVersion: clientInfo?.version},
+        'MCP client connected',
+      );
+      this.clientLogged = true;
+    }
+    const {telemetry} = this;
+    if (!clientInfo?.name || !telemetry) return;
+    telemetry.addAttributes({clientName: clientInfo.name, clientVersion: clientInfo.version});
+    if (reportedClients.has(telemetry)) return;
+    reportedClients.add(telemetry);
+    const agent = CLIENT_AGENTS[clientInfo.name.toLowerCase()];
+    if (agent) telemetry.setAgentFallback(agent);
+    telemetry
+      .sendEventAndFlush('CLIENT_CONNECTED', {protocolEra, ...(protocolVersion && {protocolVersion})})
+      .catch((error_) => getLogger().debug({err: error_}, '[mcp] telemetry sendEventAndFlush failed'));
   }
 
-  private logRequestClient(context: ServerContext): Implementation | undefined {
+  private recordRequestClient(context: ServerContext): void {
     const envelope = context.mcpReq?.envelope as
       | undefined
       | {
           [CLIENT_INFO_META_KEY]?: Implementation;
           [PROTOCOL_VERSION_META_KEY]?: string;
         };
-    if (envelope) this.logClient(envelope[CLIENT_INFO_META_KEY], envelope[PROTOCOL_VERSION_META_KEY]);
-    return envelope?.[CLIENT_INFO_META_KEY];
+    if (envelope) this.recordClient(envelope[CLIENT_INFO_META_KEY], envelope[PROTOCOL_VERSION_META_KEY]);
   }
 }

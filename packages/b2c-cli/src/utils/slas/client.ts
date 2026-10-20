@@ -5,7 +5,7 @@
  */
 import {Command, Flags, ux} from '@oclif/core';
 import cliui from 'cliui';
-import {OAuthCommand, loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, OAuthCommand, loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {
   createSlasClient,
@@ -243,7 +243,8 @@ export abstract class SlasClientCommand<T extends typeof Command> extends OAuthC
         t(
           'error.shortCodeRequired',
           'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args} from '@oclif/core';
+import {ERROR_CODE} from '@salesforce/b2c-tooling-sdk/cli';
 import {getScapiOrigin} from '@salesforce/b2c-tooling-sdk/clients';
 import {ExistingSlasClientCommand} from '../../../utils/slas/client.js';
 import {t, withDocs} from '../../../i18n/index.js';
@@ -52,7 +53,8 @@ export default class SlasClientOpen extends ExistingSlasClientCommand<typeof Sla
         t(
           'error.shortCodeRequired',
           'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

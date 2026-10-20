@@ -15,6 +15,7 @@ import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
  * Mock telemetry for testing.
  */
 class MockTelemetry {
+  public agent?: string;
   public attributes: Record<string, unknown> = {};
   public events: Array<{name: string; attributes: Record<string, unknown>}> = [];
   public started = false;
@@ -35,6 +36,10 @@ class MockTelemetry {
   async sendEventAndFlush(name: string, attributes: Record<string, unknown> = {}): Promise<void> {
     this.sendEvent(name, attributes);
     await this.flush();
+  }
+
+  setAgentFallback(agent: string): void {
+    this.agent ??= agent;
   }
 
   async start(): Promise<void> {
@@ -464,6 +469,36 @@ describe('B2CDxMcpServer', () => {
       // Verify telemetry attributes were added
       expect(mockTelemetry.attributes.clientName).to.equal('test-client');
       expect(mockTelemetry.attributes.clientVersion).to.equal('2.0.0');
+    });
+
+    it('reports the client once and maps known clients to an agent', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+      server.server.getClientVersion = () => ({name: 'codex-mcp-client', version: '0.50.0'});
+
+      server.server.oninitialized?.();
+      server.server.oninitialized?.();
+
+      expect(mockTelemetry.agent).to.equal('codex');
+      expect(mockTelemetry.events.map((e) => e.name)).to.deep.equal(['CLIENT_CONNECTED']);
+      expect(mockTelemetry.events[0].attributes.protocolEra).to.equal('legacy');
+    });
+
+    it('does not set an agent for unknown clients', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+      server.server.getClientVersion = () => ({name: 'my-custom-client', version: '1.0.0'});
+
+      server.server.oninitialized?.();
+
+      expect(mockTelemetry.agent).to.be.undefined;
+      expect(mockTelemetry.events.map((e) => e.name)).to.deep.equal(['CLIENT_CONNECTED']);
     });
 
     it('should handle missing client info gracefully', () => {

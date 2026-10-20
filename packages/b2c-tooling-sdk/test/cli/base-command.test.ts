@@ -704,13 +704,22 @@ describe('cli/base-command', () => {
         const hint = command.testConfigDocsHint();
         expect(hint).to.include('configuration.html');
         expect(hint).to.include('No configuration was found');
+        expect(hint).to.include('setup inspect');
       });
 
-      it('returns empty string when a config source contributed', () => {
+      it('names the loaded sources without paths when a config source contributed', () => {
         command.setResolvedConfig({
-          sources: [{name: 'DwJsonSource'}],
+          sources: [
+            {name: 'DwJsonSource', location: '/home/user/project/dw.json'},
+            {name: 'SandboxHostname'},
+            {name: 'StorefrontNextEnvSource', location: 'environment variables'},
+          ],
         } as unknown as ReturnType<typeof command.getResolvedConfig>);
-        expect(command.testConfigDocsHint()).to.equal('');
+        const hint = command.testConfigDocsHint();
+        expect(hint).to.include('loaded from dw.json, Storefront Next environment variables, but it does not set');
+        expect(hint).to.include('setup inspect');
+        expect(hint).to.not.include('/home/user');
+        expect(hint).to.not.include('SandboxHostname');
       });
 
       it('returns empty string when resolvedConfig is unset', () => {

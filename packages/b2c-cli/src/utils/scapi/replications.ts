@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command} from '@oclif/core';
-import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createGranularReplicationsClient, type GranularReplicationsClient} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../i18n/index.js';
 
@@ -34,7 +34,8 @@ export abstract class GranularReplicationsCommand<T extends typeof Command> exte
           t(
             'error.shortCodeRequired',
             'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-          ),
+          ) + this.configDocsHint(),
+          {code: ERROR_CODE.VALIDATION},
         );
       }
 

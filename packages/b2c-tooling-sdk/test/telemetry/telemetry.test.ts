@@ -390,13 +390,14 @@ describe('telemetry/telemetry', () => {
         resetAgentContext();
       });
 
-      async function propertiesForEvent(): Promise<Record<string, string>> {
+      async function propertiesForEvent(setup?: (telemetry: Telemetry) => void): Promise<Record<string, string>> {
         resetAgentContext();
         const telemetry = new Telemetry({
           project: 'test-project',
           appInsightsKey: 'InstrumentationKey=00000000-0000-0000-0000-000000000000',
         });
         await telemetry.start();
+        setup?.(telemetry);
         telemetry.sendEvent('TEST_EVENT');
         return trackEventStub.lastCall.args[0].properties;
       }
@@ -418,6 +419,22 @@ describe('telemetry/telemetry', () => {
         expect(properties.agent).to.equal('claude-code');
         expect(properties.agentSessionKey).to.match(/^[0-9a-f]{32}$/);
         expect(JSON.stringify(properties)).to.not.include('raw-session-123');
+      });
+
+      it('uses a fallback agent when the environment detected none', async () => {
+        process.env.SFCC_AGENT = '0';
+        const properties = await propertiesForEvent((telemetry) => telemetry.setAgentFallback('codex'));
+        expect(properties.isAgent).to.equal('true');
+        expect(properties.agent).to.equal('codex');
+      });
+
+      it('keeps the environment-detected agent over a fallback', async () => {
+        delete process.env.SFCC_AGENT;
+        process.env.CLAUDECODE = '1';
+        process.env.CLAUDE_CODE_SESSION_ID = 'raw-session-123';
+        const properties = await propertiesForEvent((telemetry) => telemetry.setAgentFallback('codex'));
+        expect(properties.agent).to.equal('claude-code');
+        expect(properties.agentSessionKey).to.match(/^[0-9a-f]{32}$/);
       });
     });
 

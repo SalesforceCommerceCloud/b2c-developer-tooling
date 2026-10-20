@@ -76,6 +76,23 @@ const DOCS_BASE_URL = 'https://salesforcecommercecloud.github.io/b2c-developer-t
 /** Configuration guide — how to point the CLI at an instance and authenticate. */
 const DOCS_CONFIGURATION_URL = `${DOCS_BASE_URL}/guide/configuration.html`;
 
+/** User-facing names for the built-in config sources (plugin sources keep their own name). */
+const CONFIG_SOURCE_LABELS: Record<string, string> = {
+  DotenvFile: '.env file',
+  DwJsonSource: 'dw.json',
+  EnvSource: 'environment variables',
+  MobifySource: '~/.mobify',
+  PackageJsonSource: 'package.json',
+  StorefrontNextEnvSource: 'Storefront Next environment variables',
+};
+
+/** Sources that only derive a value from another source's field; not worth naming to the user. */
+const DERIVED_CONFIG_SOURCES = new Set(['SandboxHostname', 'SandboxTenantId']);
+
+function describeConfigSource(name: string): string {
+  return CONFIG_SOURCE_LABELS[name] ?? name;
+}
+
 /**
  * Classify a thrown command error for telemetry so analytics can exclude
  * expected validation/guardrail errors from reliability (defect-rate) metrics.
@@ -613,22 +630,34 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * When NO config source contributed any values (no dw.json found, no env
    * vars, no flags — the dominant cause of these errors in telemetry), the user
    * is almost certainly unconfigured rather than missing one specific field, so
-   * we point them at the configuration guide. When a source DID load, we stay
-   * quiet: the existing message already lists the precise flag/env var to set.
+   * we point them at the configuration guide. When a source DID load, we name
+   * the kinds of sources that loaded (never their paths or values, since error
+   * messages are reported to telemetry) so a user who expected a different
+   * file to apply can tell, and point at `setup inspect` for the details.
    *
-   * @returns A "\n\nSee: <url>" suffix, or '' when config is already partially present.
+   * @returns A "\n\n..." suffix, or '' when configuration has not been resolved yet.
    */
   protected configDocsHint(): string {
     // resolvedConfig may be unset if the error is thrown before loadConfiguration().
     const sources = this.resolvedConfig?.sources;
-    if (sources && sources.length === 0) {
+    if (!sources) return '';
+    const inspect = `${this.config?.bin ?? 'b2c'} setup inspect`;
+    if (sources.length === 0) {
       return t(
         'base.configDocsHint',
-        '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}',
-        {url: DOCS_CONFIGURATION_URL},
+        '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}\nRun "{{inspect}}" to see the resolved configuration and its sources.',
+        {url: DOCS_CONFIGURATION_URL, inspect},
       );
     }
-    return '';
+    const loaded = [
+      ...new Set(sources.filter((s) => !DERIVED_CONFIG_SOURCES.has(s.name)).map((s) => describeConfigSource(s.name))),
+    ];
+    if (loaded.length === 0) return '';
+    return t(
+      'base.configPartialHint',
+      '\n\nConfiguration was loaded from {{sources}}, but it does not set this value. Run "{{inspect}}" to see the resolved configuration.',
+      {sources: loaded.join(', '), inspect},
+    );
   }
 
   /**
