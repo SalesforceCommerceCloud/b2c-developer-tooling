@@ -1,5 +1,11 @@
 # @salesforce/b2c-cli
 
+## 2.8.2
+
+### Patch Changes
+
+- [#789](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/789) [`1dcbca3`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1dcbca3e3ff49dc58a2194d4afd1151b5101861f) - Refreshed the npm package pages with quick install steps and links to the documentation site (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.8.1
 
 ### Patch Changes
