@@ -106,6 +106,53 @@ function logAccessError(instance: B2CInstance, dir: string, error: unknown): Err
 }
 
 /**
+ * Checks whether a top-level log file is selected by any of the given prefix filters.
+ *
+ * A filter matches when the file's extracted category or its file name starts with
+ * the filter (case-insensitive). Matching the file name lets a filter select a custom
+ * logger whose name contains a dash, which the category alone cannot express.
+ *
+ * @param file - Log file (its `name` and extracted `prefix`)
+ * @param filters - Prefix filters (without `/`)
+ * @returns True when at least one filter matches
+ *
+ * @example
+ * matchesPrefixFilters({name: 'custom-My-Api-blade1-20250125.log', prefix: 'custom-My'}, ['custom-My-Api']) // true
+ * matchesPrefixFilters({name: 'customerror-blade1-20250125.log', prefix: 'customerror'}, ['custom-']) // false
+ */
+export function matchesPrefixFilters(file: Pick<LogFile, 'name' | 'prefix'>, filters: string[]): boolean {
+  const prefix = file.prefix.toLowerCase();
+  const name = file.name.toLowerCase();
+  return filters.some((filter) => {
+    const f = filter.toLowerCase();
+    return prefix.startsWith(f) || name.startsWith(f);
+  });
+}
+
+/**
+ * Returns the `custom-<name>` log categories in `files` that the given filters
+ * do not select, sorted by name.
+ *
+ * Custom logger files (`Logger.getLogger('<name>', ...)`) are not part of the
+ * default `error`/`customerror` read, so callers use this to point users at
+ * them when a read finds nothing. Path filters (containing `/`) are ignored.
+ *
+ * @param files - Top-level log files, e.g. from {@link listLogFiles} without filters
+ * @param filters - The filters that were used for the read
+ * @returns Custom logger categories that were not read
+ */
+export function unreadCustomPrefixes(files: LogFile[], filters: string[]): string[] {
+  const prefixFilters = filters.filter((f) => !f.includes('/'));
+  const prefixes = new Set<string>();
+  for (const file of files) {
+    if (file.prefix.startsWith('custom-') && !matchesPrefixFilters(file, prefixFilters)) {
+      prefixes.add(file.prefix);
+    }
+  }
+  return [...prefixes].sort((a, b) => a.localeCompare(b));
+}
+
+/**
  * Lists the `.log` files in a single Logs directory (depth 1, non-recursive).
  *
  * @param instance - B2C instance to list logs from
@@ -164,8 +211,9 @@ async function listLogFilesInDir(instance: B2CInstance, relativeDir: string): Pr
  *
  * Filters in {@link ListLogsOptions.prefixes} are matched in one of two ways:
  *
- * - **Prefix filters** (no `/`, e.g. `"error"`) match the extracted log-category
- *   prefix of files in the top-level `Logs/` directory.
+ * - **Prefix filters** (no `/`, e.g. `"error"`) match the start of the extracted
+ *   log-category prefix or of the file name of files in the top-level `Logs/`
+ *   directory (see {@link matchesPrefixFilters}).
  * - **Path filters** (contain a `/`, e.g. `"internal/server"`) recurse into the
  *   named subdirectory of `Logs/` and match against each file's path relative to
  *   `Logs/`. This is the only case that lists subdirectories — by default only the
@@ -216,18 +264,10 @@ export async function listLogFiles(instance: B2CInstance, options: ListLogsOptio
   if (allFilters.length === 0) {
     filtered = topLevel;
   } else {
-    const prefixSet = new Set(prefixFilters.map((p) => p.toLowerCase()));
     const pathSet = pathFilters.map((p) => p.toLowerCase());
 
-    // Top-level files match by category prefix (exact or startsWith, e.g. "custom" → "custom-mylog").
-    const matchedTopLevel = topLevel.filter((file) => {
-      const prefix = file.prefix.toLowerCase();
-      if (prefixSet.has(prefix)) return true;
-      for (const p of prefixSet) {
-        if (prefix.startsWith(p)) return true;
-      }
-      return false;
-    });
+    // Top-level files match by category or file name (startsWith, e.g. "custom" → "custom-mylog").
+    const matchedTopLevel = topLevel.filter((file) => matchesPrefixFilters(file, prefixFilters));
 
     // Nested files match by relative path (exact or startsWith, e.g. "internal/server").
     const matchedNested = nested.filter((file) => {

@@ -24,14 +24,18 @@
  *   (default)          enrich only docs MISSING from the existing enrichment.json
  *   --full             re-enrich every doc (overwrites existing enrichment)
  *   --corpus help-kb   enrich the Knowledge Articles in HELP_KB_CONTENT instead of the guides
+ *   --sample <n|ids>   dry run: enrich <n> random docs (or a comma-separated list of doc ids) and
+ *                      print the results; writes nothing to the sidecar
+ *   --out <file>       with --sample, also write the sampled enrichment (id -> entry) to <file>
+ *                      (use to iterate on the prompt without a full run)
  *
  * Env:
  *   ANTHROPIC_API_KEY      required to run (else no-op). Bearer token.
  *   ANTHROPIC_BASE_URL     default https://api.anthropic.com
- *   DOCS_ENRICH_MODEL      default claude-haiku-4-5
+ *   DOCS_ENRICH_MODEL      default claude-haiku-5-5
  *   GUIDES_CONTENT_DIR    local Developer Center source directory (required for guides)
  *   HELP_KB_CONTENT       help-kb article directory or tarball (default docs/help-kb-content.tar.gz)
- *   DOCS_ENRICH_CONCURRENCY default 6
+ *   DOCS_ENRICH_CONCURRENCY default 3
  *
  * Usage:
  *   ANTHROPIC_API_KEY=... pnpm --filter @salesforce/b2c-tooling-sdk run enrich:docs
@@ -66,10 +70,12 @@ if (CORPUS !== 'guides' && CORPUS !== 'help-kb') throw new Error(`Unknown --corp
 const DATA_DIR = path.resolve(__dirname, '../data', CORPUS);
 const ENRICHMENT_PATH = path.join(DATA_DIR, 'enrichment.json');
 
-const MODEL = process.env.DOCS_ENRICH_MODEL || 'claude-haiku-4-5';
+const MODEL = process.env.DOCS_ENRICH_MODEL || 'claude-haiku-5-5';
 const BASE_URL = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/$/, '');
 const API_KEY = process.env.ANTHROPIC_API_KEY;
-const CONCURRENCY = Number(process.env.DOCS_ENRICH_CONCURRENCY || 6);
+const CONCURRENCY = Number(process.env.DOCS_ENRICH_CONCURRENCY || 3);
+const MAX_ATTEMPTS = 6;
+const SUMMARY_MAX = 200;
 
 function resolveContentDir(): string {
   const configured = process.env.GUIDES_CONTENT_DIR;
@@ -153,34 +159,86 @@ function loadExisting(): Record<string, EnrichmentEntry> {
   }
 }
 
+const PURPOSE =
+  'Your output powers `b2c docs search`, a lexical (BM25) search used mostly by AI coding agents. ' +
+  "Only each doc's title, id, section headings, and the two fields you write are indexed; the body " +
+  'text is NOT. So:\n' +
+  '- "keywords" are the only way terms that appear in the body (but not the title or headings) become ' +
+  'searchable. Supply the words someone would actually type to land on this doc.\n' +
+  '- "summary" is shown under the title in a ranked result list; an agent reads it to decide whether ' +
+  'this doc is worth fetching. Every word should help that decision.\n';
+
+const SHARED_RULES =
+  'Rules:\n' +
+  '- "summary": ONE sentence of 18-30 words (never more than 30). The first clause must state the ' +
+  "doc's main purpose; add caveats, limits, or secondary details only if room remains (the keywords " +
+  'can carry the rest). Lead with the task or topic as an imperative or noun ' +
+  'phrase (e.g. "Configure Hybrid Auth so…", "Custom object instances in Business Manager: …"). Never ' +
+  'open with a meta phrase such as "Explains", "Describes", "Shows", "Covers", "Learn", "Learn that", ' +
+  'or "This article"; the reader already knows it is a doc.\n' +
+  '- "keywords": 8-15 short search terms (1-5 words each). Include (a) API, class, endpoint, setting, ' +
+  'field, and error names from the body, plus synonyms and acronyms, and (b) 2-3 plain-language ' +
+  'phrasings of the goal or problem as someone would ask it (e.g. "reset forgotten password", "sign ' +
+  'JWT instead of shared secret"). Favor terms NOT already in the title; skip generic terms like "B2C ' +
+  'Commerce" or "documentation" and near-duplicates.\n' +
+  '- Use ONLY facts in the provided content; do not invent APIs or features.\n' +
+  '- Output ONLY the JSON object {"summary": string, "keywords": string[]}: no prose, no code fences.';
+
 const GUIDES_SYSTEM_PROMPT =
-  'You enrich B2C Commerce developer documentation for a search index. Given one doc (title + text ' +
-  'excerpt), return a JSON object with exactly two fields: "summary" (ONE dense sentence, <=160 chars, ' +
-  'stating what task/topic the doc helps a developer accomplish) and "keywords" (5-12 short search ' +
-  'terms/synonyms/acronyms a developer or AI coding agent would type to find this doc, including common ' +
-  'alternate phrasings). Base everything ONLY on the provided content; do not invent APIs. Respond with ' +
-  'ONLY the JSON object, no prose, no code fences.';
+  'You write search-index metadata for Salesforce B2C Commerce developer documentation (Developer ' +
+  'Center guides). Given one doc (title + text excerpt), write a summary of what it lets a developer ' +
+  'do and the search keywords for it.\n' +
+  PURPOSE +
+  SHARED_RULES;
 
 const HELP_KB_SYSTEM_PROMPT =
-  'You enrich Salesforce B2C Commerce Help knowledge articles for a search index used by developers, ' +
-  'administrators, and AI coding agents. Given one article (title + text excerpt), return a JSON object ' +
-  'with exactly two fields: "summary" (ONE dense sentence, <=160 chars, stating the problem, question, or ' +
-  'task the article addresses and its key answer when short) and "keywords" (5-12 short search ' +
-  'terms/synonyms/acronyms/error strings someone would type to find it, including alternate phrasings). ' +
-  'Base everything ONLY on the provided content. Respond with ONLY the JSON object, no prose, no code fences.';
+  'You write search-index metadata for Salesforce B2C Commerce Help knowledge articles, read by ' +
+  'developers, administrators, and AI coding agents. Given one article (title + text excerpt), write a ' +
+  'summary of the problem, question, or task it addresses (with its key answer when short) and the ' +
+  'search keywords for it; include exact error strings when present.\n' +
+  PURPOSE +
+  SHARED_RULES;
 
 const SYSTEM_PROMPT = CORPUS === 'help-kb' ? HELP_KB_SYSTEM_PROMPT : GUIDES_SYSTEM_PROMPT;
 
-/** Calls the Anthropic Messages API for one doc; returns null on failure. */
-async function enrichOne(src: GuideSource): Promise<EnrichmentEntry | null> {
+/** Trims to SUMMARY_MAX at a word boundary (models occasionally overshoot the length rule). */
+function clampSummary(summary: string): string {
+  const text = summary.trim();
+  if (text.length <= SUMMARY_MAX) return text;
+  const cut = text.slice(0, SUMMARY_MAX - 1);
+  return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:]+$/, '')}…`;
+}
+
+/** Backoff for a retryable response: honors `retry-after`, else exponential with jitter. */
+function retryDelayMs(res: Response | null, attempt: number): number {
+  const retryAfter = Number(res?.headers.get('retry-after'));
+  if (retryAfter > 0) return retryAfter * 1000;
+  return Math.min(60_000, 2000 * 2 ** attempt) + Math.random() * 1000;
+}
+
+type ChatMessage = {role: 'assistant' | 'user'; content: string};
+
+/** Summary openers the prompt forbids; responses that use one get a correction turn. */
+const META_OPENER = /^(explains|describes|shows|covers|walks|learn|this (doc|article|guide|page))\b/i;
+
+/** Returns why a summary breaks the length/style rules, or null when it is acceptable. */
+function summaryProblem(summary: string): null | string {
+  if (META_OPENER.test(summary)) return 'it opens with a meta phrase; lead with the task or topic itself';
+  if (summary.length > SUMMARY_MAX) return `it is ${summary.length} characters; the limit is ${SUMMARY_MAX}`;
+  return null;
+}
+
+/** Calls the Anthropic Messages API, retrying rate limits/server errors; returns the text or null. */
+async function callModel(id: string, messages: ChatMessage[]): Promise<null | string> {
   const body = {
     model: MODEL,
-    max_tokens: 400,
+    // Headroom for adaptive thinking, which counts toward max_tokens on Haiku 5.5.
+    max_tokens: 1024,
     system: SYSTEM_PROMPT,
-    messages: [{role: 'user', content: `Title: ${src.title}\nCategory: ${src.category}\n\nExcerpt:\n${src.excerpt}`}],
+    messages,
   };
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
       const res = await fetch(`${BASE_URL}/v1/messages`, {
         method: 'POST',
@@ -192,31 +250,69 @@ async function enrichOne(src: GuideSource): Promise<EnrichmentEntry | null> {
         body: JSON.stringify(body),
       });
       if (res.status === 429 || res.status >= 500) {
-        if (attempt === 2) {
-          console.warn(`  ! ${src.id}: gave up after retries (last HTTP ${res.status})`);
+        if (attempt === MAX_ATTEMPTS - 1) {
+          console.warn(`  ! ${id}: gave up after retries (last HTTP ${res.status})`);
           return null;
         }
-        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, retryDelayMs(res, attempt)));
         continue;
       }
       if (!res.ok) {
-        console.warn(`  ! ${src.id}: HTTP ${res.status} ${await res.text().catch(() => '')}`.slice(0, 200));
+        console.warn(`  ! ${id}: HTTP ${res.status} ${await res.text().catch(() => '')}`.slice(0, 200));
         return null;
       }
       const json = (await res.json()) as {content?: {type: string; text?: string}[]};
-      const text = json.content?.find((c) => c.type === 'text')?.text ?? '';
-      const parsed = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, '')) as EnrichmentEntry;
-      if (typeof parsed.summary !== 'string' || !Array.isArray(parsed.keywords)) return null;
-      return {summary: parsed.summary.slice(0, 200), keywords: parsed.keywords.slice(0, 12).map(String)};
+      return json.content?.find((c) => c.type === 'text')?.text ?? '';
     } catch (err) {
-      if (attempt === 2) {
-        console.warn(`  ! ${src.id}: ${(err as Error).message}`);
+      if (attempt === MAX_ATTEMPTS - 1) {
+        console.warn(`  ! ${id}: ${(err as Error).message}`);
         return null;
       }
-      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      await new Promise((r) => setTimeout(r, retryDelayMs(null, attempt)));
     }
   }
   return null;
+}
+
+function parseEnrichment(text: string): EnrichmentEntry | null {
+  try {
+    const parsed = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, '')) as EnrichmentEntry;
+    if (typeof parsed.summary !== 'string' || !Array.isArray(parsed.keywords) || parsed.keywords.length === 0) {
+      return null;
+    }
+    return {summary: parsed.summary.trim(), keywords: parsed.keywords.slice(0, 15).map(String)};
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Enriches one doc; returns null on failure. A response that breaks the summary
+ * rules gets one correction turn (models follow "fix this" more reliably than
+ * up-front length limits); anything still over length is trimmed as a last resort.
+ */
+async function enrichOne(src: GuideSource): Promise<EnrichmentEntry | null> {
+  const messages: ChatMessage[] = [
+    {role: 'user', content: `Title: ${src.title}\nCategory: ${src.category}\n\nExcerpt:\n${src.excerpt}`},
+  ];
+  let entry: EnrichmentEntry | null = null;
+  for (let turn = 0; turn < 2; turn++) {
+    const text = await callModel(src.id, messages);
+    if (text === null) break;
+    const parsed = parseEnrichment(text);
+    if (parsed) entry = parsed;
+    const problem = parsed ? summaryProblem(parsed.summary) : 'it was not a JSON object with summary and keywords';
+    if (!problem) break;
+    messages.push(
+      {role: 'assistant', content: text},
+      {role: 'user', content: `Rewrite: ${problem}. Return the full corrected JSON object only.`},
+    );
+  }
+  if (!entry) {
+    console.warn(`  ! ${src.id}: no valid enrichment in response`);
+    return null;
+  }
+  return {...entry, summary: clampSummary(entry.summary)};
 }
 
 /** Runs `worker` over `items` with a fixed concurrency pool. */
@@ -233,6 +329,10 @@ async function pool<T>(items: T[], concurrency: number, worker: (item: T, i: num
 
 async function main(): Promise<void> {
   const full = process.argv.includes('--full');
+  const sampleArg = process.argv.indexOf('--sample');
+  const sample = sampleArg > 0 ? process.argv[sampleArg + 1] : undefined;
+  const outArg = process.argv.indexOf('--out');
+  const sampleOut = outArg > 0 ? process.argv[outArg + 1] : undefined;
 
   if (!API_KEY) {
     console.log(
@@ -244,6 +344,27 @@ async function main(): Promise<void> {
 
   const sources = CORPUS === 'help-kb' ? collectHelpKbSources() : collectSources(resolveContentDir());
   const existing = loadExisting();
+
+  if (sample) {
+    // Dry run: shuffle and enrich a few docs, printing them next to any existing enrichment.
+    const picked = /^\d+$/.test(sample)
+      ? [...sources].sort(() => Math.random() - 0.5).slice(0, Number(sample))
+      : sources.filter((s) => sample.split(',').includes(s.id));
+    console.log(`enrich:docs — sampling ${picked.length} ${CORPUS} docs (dry run); model=${MODEL}`);
+    const sampled: Record<string, EnrichmentEntry> = {};
+    await pool(picked, CONCURRENCY, async (src) => {
+      const e = await enrichOne(src);
+      if (e) sampled[src.id] = e;
+      const prior = existing[src.id];
+      console.log(
+        `\n### ${src.id} (${src.title})\n` +
+          (prior ? `  old: ${prior.summary}\n       [${prior.keywords.join(', ')}]\n` : '') +
+          (e ? `  new: ${e.summary} (${e.summary.length})\n       [${e.keywords.join(', ')}]` : '  new: FAILED'),
+      );
+    });
+    if (sampleOut) fs.writeFileSync(sampleOut, JSON.stringify(sampled, null, 2));
+    return;
+  }
 
   const todo = full ? sources : sources.filter((s) => !existing[s.id]);
   console.log(

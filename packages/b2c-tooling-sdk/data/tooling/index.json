@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-20T00:16:50.454Z",
+  "generatedAt": "2026-10-21T16:06:30.685Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -143,7 +143,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logs.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logs.md",
-      "headings": "Authentication • b2c logs get • Usage • Flags • Examples • Output • Path Normalization • b2c logs list • Usage • Flags • Examples • Output • b2c logs tail • Usage • Flags • Examples • Notes • Log File Types • Custom Logs (Script-Generated) • System Logs • Downloading Full Log Files • See Also",
+      "headings": "Authentication • b2c logs get • Usage • Flags • Examples • Output • Path Normalization • b2c logs list • Usage • Flags • Examples • Output • b2c logs tail • Usage • Flags • Examples • Notes • Log File Types • Custom Logs (Script-Generated) • Custom Logger Files • System Logs • Downloading Full Log Files • See Also",
       "preview": "Commands for retrieving and monitoring log files on B2C Commerce instances."
     },
     {
