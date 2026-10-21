@@ -100,7 +100,7 @@
     "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "2.3.1",
     "@oclif/core": "catalog:",
     "@salesforce/b2c-agent-plugins": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
@@ -117,8 +117,8 @@
   "devDependencies": {
     "@eslint/compat": "catalog:",
     "@eslint/js": "^9",
-    "@modelcontextprotocol/client": "2.2.0",
-    "@modelcontextprotocol/inspector": "2.2.0",
+    "@modelcontextprotocol/client": "2.3.1",
+    "@modelcontextprotocol/inspector": "2.11.0",
     "@oclif/prettier-config": "catalog:",
     "@salesforce/dev-config": "catalog:",
     "@types/chai": "catalog:",
