@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.6.2
+
+### Patch Changes
+
+- [#806](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/806) [`cca5471`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cca5471c868b61cb2016ed12e6f4f39896b84a15) - eCDN guidance now covers the SCAPI (API) zone: which rules it supports and how to scope rules per instance. The edge traffic runbook now covers API/SLAS abuse and edge error spikes as well as bots. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - Log `--filter` (and the MCP `prefixes` option) now also matches the start of the file name, so `--filter custom-MyIntegration-CustomApi` selects a custom logger whose name contains a dash. When `b2c logs get` or `logs_get_recent` finds no entries, it lists the `custom-*` logs that the filter skipped, and `--help` explains that `--filter` replaces the default `error,customerror`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#792](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/792) [`92be47d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/92be47d8d02d7daf4f20c799236524701fc32505) - Updated the bundled MCP SDK to 2.3.1 to pick up upstream security fixes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`cca5471`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cca5471c868b61cb2016ed12e6f4f39896b84a15), [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48), [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102), [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102), [`3ec643a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3ec643a588f85fb5c6e50601d2c006b052260099), [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48), [`48bc461`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/48bc461686ae1c8113c0a1fdfd8ded21d3e0032c), [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e), [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e)]:
+  - @salesforce/b2c-agent-plugins@1.12.4
+  - @salesforce/b2c-tooling-sdk@2.8.2
+
 ## 3.6.1
 
 ### Patch Changes

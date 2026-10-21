@@ -1,5 +1,19 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.8.2
+
+### Patch Changes
+
+- [#793](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/793) [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48) - Improve `b2c docs search` results for Developer Center guides with richer search summaries and keywords, so natural-language and task-style queries find the right guide more often. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - Log `--filter` (and the MCP `prefixes` option) now also matches the start of the file name, so `--filter custom-MyIntegration-CustomApi` selects a custom logger whose name contains a dash. When `b2c logs get` or `logs_get_recent` finds no entries, it lists the `custom-*` logs that the filter skipped, and `--help` explains that `--filter` replaces the default `error,customerror`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#802](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/802) [`3ec643a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3ec643a588f85fb5c6e50601d2c006b052260099) - `b2c logs list`, `logs get`, and `logs tail` now fail with a clear error when WebDAV refuses access to the Logs directory, instead of reporting "no logs" and exiting successfully. The error names the refused user or API client and how to fix it (a WebDAV access key, or WebDAV Client Permissions for `/logs`). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#793](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/793) [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48) - Refresh Developer Center and Salesforce Help content in `b2c docs` search. New guides cover Dynamic Imaging Service (now documented on the Developer Center), Agentforce Commerce Client customization and overrides, Payments Orchestration and Commerce Apps for payments, fraud, and gift cards (Beta), UCP order updates, and Storefront Next migration and SCAPI-based storefront creation. Help adds the Traffic Sources dashboard and updating authoritative DNS for eCDN zones. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#803](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/803) [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e) - Help for WebDAV-backed commands (`logs`, `webdav`, `code deploy/watch/download`) now explains which credentials apply, that Basic auth wins when both are configured, and how to switch to the API client. `--password` and the `setup instance create` prompt now consistently ask for a WebDAV access key (not the Account Manager password) and say how to create one. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.8.1
 
 ### Patch Changes
