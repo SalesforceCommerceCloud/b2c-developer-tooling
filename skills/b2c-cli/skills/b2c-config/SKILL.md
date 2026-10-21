@@ -289,9 +289,11 @@ b2c setup instance create staging --hostname staging.example.com \
 b2c setup instance create staging \
   --hostname staging.example.com \
   --username admin \
-  --password secret \
+  --password <access-key> \
   --force
 ```
+
+`create` writes `dw.json` in the current directory (or the `--config` / `--project-directory` target, or the global default when no local `dw.json` exists) and prints the path. Commands run from another directory won't see it unless they pass `--config` or `--project-directory`, or the file is registered with `b2c setup default-config set <path>`. `create` fails for an existing name; change an existing instance with `b2c setup set <key> <value> --instance <name>`.
 
 `shortCode` and `tenantId` are optional. When present with stateless OAuth, setup tries SCAPI first to detect the active code version; otherwise `auto` uses OCAPI. If detection fails, interactive setup reports the reason and allows manual code-version entry.
 
