@@ -92,7 +92,7 @@ Browse your sandbox's catalogs, libraries, and IMPEX folders right inside your e
 
 ### Log Tailing
 
-Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbox into your editor's output panel. Use **Start Tailing Logs** to begin and **Stop Tailing Logs** to end.
+Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbox into your editor's output panel. Use **Start Tailing Logs** to begin and **Stop Tailing Logs** to end. The prefix picker also lists the custom logger files (`custom-*.log`) found on the instance, plus `custom-` to tail all of them.
 
 ### Active Instance Status Bar
 

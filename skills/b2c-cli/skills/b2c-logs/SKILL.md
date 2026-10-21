@@ -193,7 +193,7 @@ The `<prefix>` segment is the **first argument** passed to `Logger.getLogger(pre
 
 (The second argument is the log _category_, used for configuration; it does not appear in the file name.) For the authoring side — how to create these loggers — see the `b2c:b2c-logging` skill.
 
-> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The category is extracted by taking everything up to the _second_ dash, so a custom logger name is treated as word characters only (no dashes): a file named `custom-payment-gateway-*.log` is seen as category `custom-payment`. To read one specific custom log, filter on its full extracted prefix (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`.
+> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The filter also matches the start of the file name. The category stops at the _second_ dash, so a file named `custom-payment-gateway-*.log` has the category `custom-payment`, but `--filter custom-payment-gateway` still selects it by file name. To read one specific custom log, filter on its logger name (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`. `--filter` replaces the default `error`/`customerror` set rather than adding to it, and when `b2c logs get` finds no entries it lists the `custom-*` logs that exist.
 
 ## Discovering Custom Log Files
 

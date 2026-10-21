@@ -8,7 +8,13 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {listLogFiles, extractPrefix} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {
+  listLogFiles,
+  extractPrefix,
+  matchesPrefixFilters,
+  unreadCustomPrefixes,
+  type LogFile,
+} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const TEST_HOST = 'test.demandware.net';
@@ -70,6 +76,71 @@ describe('operations/logs/list', () => {
 
     it('returns unknown for unrecognized format', () => {
       expect(extractPrefix('something-random.log')).to.equal('something');
+    });
+  });
+
+  describe('matchesPrefixFilters', () => {
+    const file = (name: string) => ({name, prefix: extractPrefix(name)});
+
+    it('matches the start of the extracted category', () => {
+      expect(matchesPrefixFilters(file('custom-PaymentProcessor-blade1-20250125.log'), ['custom-Payment'])).to.be.true;
+    });
+
+    it('matches the start of the file name for a dashed custom logger name', () => {
+      const api = file('custom-MyIntegration-CustomApi-blade1-appserver-20250125.log');
+      const backend = file('custom-MyIntegration-Backend-blade1-appserver-20250125.log');
+
+      expect(matchesPrefixFilters(api, ['custom-MyIntegration-CustomApi'])).to.be.true;
+      expect(matchesPrefixFilters(backend, ['custom-MyIntegration-CustomApi'])).to.be.false;
+    });
+
+    it('is case-insensitive', () => {
+      expect(matchesPrefixFilters(file('custom-MyIntegration-blade1-20250125.log'), ['CUSTOM-myintegration'])).to.be
+        .true;
+    });
+
+    it('keeps custom- separate from customerror', () => {
+      expect(matchesPrefixFilters(file('customerror-blade1-20250125.log'), ['custom-'])).to.be.false;
+    });
+  });
+
+  describe('unreadCustomPrefixes', () => {
+    const file = (name: string, prefix: string): LogFile => ({
+      name,
+      prefix,
+      size: 1,
+      lastModified: new Date(0),
+      path: `Logs/${name}`,
+    });
+    const files = [
+      file('error-blade1-20250125.log', 'error'),
+      file('customerror-blade1-20250125.log', 'customerror'),
+      file('custom-PimTaxImport-blade1-20250125.log', 'custom-PimTaxImport'),
+      file('custom-MyIntegration-CustomApi-blade1-20250125.log', 'custom-MyIntegration'),
+      file('custom-MyIntegration-Backend-blade1-20250125.log', 'custom-MyIntegration'),
+    ];
+
+    it('lists custom logger categories the default filters skip', () => {
+      expect(unreadCustomPrefixes(files, ['error', 'customerror'])).to.deep.equal([
+        'custom-MyIntegration',
+        'custom-PimTaxImport',
+      ]);
+    });
+
+    it('omits categories the filters already read', () => {
+      expect(unreadCustomPrefixes(files, ['custom-Pim'])).to.deep.equal(['custom-MyIntegration']);
+      expect(unreadCustomPrefixes(files, ['custom-'])).to.deep.equal([]);
+    });
+
+    it('keeps a category when only some of its files are read', () => {
+      expect(unreadCustomPrefixes(files, ['custom-MyIntegration-CustomApi'])).to.deep.equal([
+        'custom-MyIntegration',
+        'custom-PimTaxImport',
+      ]);
+    });
+
+    it('ignores path filters', () => {
+      expect(unreadCustomPrefixes(files, ['internal/custom-'])).to.have.length(2);
     });
   });
 
@@ -248,6 +319,30 @@ describe('operations/logs/list', () => {
       const files = await listLogFiles(instance as never, {prefixes: ['debug']});
 
       expect(files).to.have.length(0);
+    });
+
+    it('selects a custom logger whose name contains a dash by its full file prefix', async () => {
+      const now = new Date();
+
+      server.use(
+        http.all(`${BASE_URL}/*`, ({request}) => {
+          if (request.method === 'PROPFIND') {
+            return new HttpResponse(
+              generatePropfindXml([
+                {name: 'custom-MyIntegration-CustomApi-blade1-appserver-20250125.log', size: 10, date: now},
+                {name: 'custom-MyIntegration-Backend-blade1-appserver-20250125.log', size: 10, date: now},
+              ]),
+              {status: 207, headers: {'Content-Type': 'application/xml'}},
+            );
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+      );
+
+      const instance = createMockInstance();
+      const files = await listLogFiles(instance as never, {prefixes: ['custom-MyIntegration-CustomApi']});
+
+      expect(files.map((f) => f.name)).to.deep.equal(['custom-MyIntegration-CustomApi-blade1-appserver-20250125.log']);
     });
 
     /**
