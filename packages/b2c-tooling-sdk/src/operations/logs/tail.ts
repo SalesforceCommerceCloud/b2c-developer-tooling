@@ -500,6 +500,11 @@ export async function tailLogs(instance: B2CInstance, options: TailLogsOptions =
     resolveComplete();
   };
 
+  // Fail fast if the Logs directory can't be listed at all (refused credentials,
+  // missing WebDAV permissions) instead of polling silently. Later discovery
+  // failures are reported through onError and polling continues.
+  await listLogFiles(instance, {prefixes});
+
   // Start polling (don't await - runs in background)
   poll().catch((error) => {
     logger.error({error}, 'Polling error');

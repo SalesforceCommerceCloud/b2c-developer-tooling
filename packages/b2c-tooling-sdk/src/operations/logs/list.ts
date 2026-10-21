@@ -6,6 +6,7 @@
 /**
  * Log file listing operations.
  */
+import {HTTPError} from '../../errors/http-error.js';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import type {ListLogsOptions, LogFile} from './types.js';
@@ -74,6 +75,37 @@ export function extractPrefix(filename: string): string {
 }
 
 /**
+ * Wraps a failed Logs PROPFIND in an error that names the refused credential
+ * and what to fix. Mirrors the WebDAV auth precedence in B2CInstance
+ * (Basic auth when allowed and configured, otherwise OAuth).
+ */
+function logAccessError(instance: B2CInstance, dir: string, error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  const status = error instanceof HTTPError ? error.response.status : undefined;
+  if (status !== 401 && status !== 403) {
+    return new Error(`Cannot list ${dir}: ${message}`, {cause: error});
+  }
+
+  const {auth} = instance;
+  const methods = auth.authMethods ?? ['basic'];
+  let hint: string;
+  if (auth.basic && methods.includes('basic')) {
+    hint =
+      `The Basic auth credentials for user "${auth.basic.username}" were refused. ` +
+      'Use a WebDAV File Access access key of that Business Manager user as the password, ' +
+      'not the Account Manager password. Create one with "b2c bm access-key create" or at ' +
+      `https://${instance.config.hostname}/on/demandware.store/Sites-Site/default/ViewAccessKeys-List.`;
+  } else if (auth.oauth?.clientId) {
+    hint =
+      `API client ${auth.oauth.clientId} was refused. Grant it read access to "/logs" in Business Manager ` +
+      'under Administration > Organization > WebDAV Client Permissions.';
+  } else {
+    hint = 'Check the WebDAV credentials for this instance.';
+  }
+  return new Error(`Cannot list ${dir}: ${message}. ${hint}`, {cause: error});
+}
+
+/**
  * Lists the `.log` files in a single Logs directory (depth 1, non-recursive).
  *
  * @param instance - B2C instance to list logs from
@@ -93,9 +125,13 @@ async function listLogFilesInDir(instance: B2CInstance, relativeDir: string): Pr
     entries = await instance.webdav.propfind(propfindPath, '1');
   } catch (error) {
     // A non-existent subdirectory (e.g. a typo'd path filter) should not abort the
-    // whole listing — log and treat it as empty.
-    logger.debug({error, dir: propfindPath}, `Failed to list log directory: ${propfindPath}`);
-    return [];
+    // whole listing — log and treat it as empty. Anything else (auth/permission
+    // failures, token errors, the top-level Logs directory) must surface.
+    if (relativeDir && error instanceof HTTPError && error.response.status === 404) {
+      logger.debug({err: error, dir: propfindPath}, `Log directory not found: ${propfindPath}`);
+      return [];
+    }
+    throw logAccessError(instance, propfindPath, error);
   }
 
   return entries
