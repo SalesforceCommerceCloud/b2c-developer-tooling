@@ -74,7 +74,9 @@ export function createLogsGetRecentTool(
         prefixes: z
           .array(z.string())
           .optional()
-          .describe('Log prefixes. Default: ["error", "customerror"]; paths may include subdirectories.'),
+          .describe(
+            'Log prefixes. Default: ["error", "customerror"]; use ["custom-"] for custom logger files; paths may be subdirs.',
+          ),
         count: z.number().int().positive().optional().describe('Maximum entries. Default: 50.'),
         since: z
           .string()

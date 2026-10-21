@@ -77,7 +77,7 @@ export type {
 } from './types.js';
 
 // List operations
-export {extractPrefix, listLogFiles} from './list.js';
+export {extractPrefix, listLogFiles, matchesPrefixFilters} from './list.js';
 
 // Tail operations
 export {aggregateLogEntries, getRecentLogs, parseLogEntry, splitLines, tailLogs} from './tail.js';

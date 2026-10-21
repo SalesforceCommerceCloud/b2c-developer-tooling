@@ -4,13 +4,60 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {formatEntry, highlightLogText, setupPathNormalizer, DEFAULT_PREFIXES} from '../../../src/utils/logs/format.js';
+import type {LogFile} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {
+  formatEntry,
+  highlightLogText,
+  setupPathNormalizer,
+  unreadCustomPrefixes,
+  DEFAULT_PREFIXES,
+} from '../../../src/utils/logs/format.js';
 
 describe('utils/logs/format', () => {
   describe('DEFAULT_PREFIXES', () => {
     it('includes error and customerror', () => {
       expect(DEFAULT_PREFIXES).to.include('error');
       expect(DEFAULT_PREFIXES).to.include('customerror');
+    });
+  });
+
+  describe('unreadCustomPrefixes', () => {
+    const file = (name: string, prefix: string): LogFile => ({
+      name,
+      prefix,
+      size: 1,
+      lastModified: new Date(0),
+      path: `Logs/${name}`,
+    });
+    const files = [
+      file('error-blade1-20250125.log', 'error'),
+      file('customerror-blade1-20250125.log', 'customerror'),
+      file('custom-PimTaxImport-blade1-20250125.log', 'custom-PimTaxImport'),
+      file('custom-MyIntegration-CustomApi-blade1-20250125.log', 'custom-MyIntegration'),
+      file('custom-MyIntegration-Backend-blade1-20250125.log', 'custom-MyIntegration'),
+    ];
+
+    it('lists custom logger categories the default filters skip', () => {
+      expect(unreadCustomPrefixes(files, DEFAULT_PREFIXES)).to.deep.equal([
+        'custom-MyIntegration',
+        'custom-PimTaxImport',
+      ]);
+    });
+
+    it('omits categories the filters already read', () => {
+      expect(unreadCustomPrefixes(files, ['custom-Pim'])).to.deep.equal(['custom-MyIntegration']);
+      expect(unreadCustomPrefixes(files, ['custom-'])).to.deep.equal([]);
+    });
+
+    it('keeps a category when only some of its files are read', () => {
+      expect(unreadCustomPrefixes(files, ['custom-MyIntegration-CustomApi'])).to.deep.equal([
+        'custom-MyIntegration',
+        'custom-PimTaxImport',
+      ]);
+    });
+
+    it('ignores path filters', () => {
+      expect(unreadCustomPrefixes(files, ['internal/custom-'])).to.have.length(2);
     });
   });
 
