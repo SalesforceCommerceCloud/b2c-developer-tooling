@@ -59,6 +59,10 @@ b2c ecdn zones list --tenant-id zzxy_prd
 | Status | Zone status |
 | Zone ID | Zone ID (shown with `--extended`) |
 
+::: tip SCAPI zone
+The list includes `<realm>.api.commercecloud.salesforce.com` (Business Manager shows it as `<shortCode>.api.commercecloud.salesforce.com`), which fronts SCAPI and SLAS traffic. It supports only the `firewall` and `rate-limit` commands; other zone commands fail with `Forbidden`. All instances in the realm share this zone, so scope rules to one instance with the organization ID in the path, for example `http.request.uri.path contains "/organizations/f_ecom_zzxy_prd/"`.
+:::
+
 ---
 
 ### b2c ecdn zones create

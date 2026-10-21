@@ -1,13 +1,13 @@
 ---
 name: b2c-ecdn
-description: Manage eCDN zones, security settings, and edge configuration for B2C Commerce storefronts. Use this skill whenever the user needs to purge CDN cache, provision SSL certificates, configure WAF or firewall rules, set up rate limiting, enable logpush or Page Shield, manage MRT routing, configure mTLS or cipher suites, or optimize edge performance. Also use when troubleshooting CDN-layer issues or managing zone settings -- even if they just say 'clear the cache' or 'block bot traffic on our storefront'.
+description: Manage eCDN zones, security settings, and edge configuration for B2C Commerce storefronts. Use this skill whenever the user needs to purge CDN cache, provision SSL certificates, configure WAF or firewall rules, set up rate limiting, enable logpush or Page Shield, manage MRT routing, configure mTLS or cipher suites, or optimize edge performance. Also use when troubleshooting CDN-layer issues, managing zone settings, or adding rules to the SCAPI (API) zone -- even if they just say 'clear the cache' or 'block bot traffic on our storefront'.
 ---
 
 # B2C eCDN Skill
 
 Use the `b2c` CLI plugin to manage eCDN (embedded Content Delivery Network) zones, certificates, security settings, and more.
 
-To investigate bot or abusive traffic before changing rules (which sources matter, who runs them, which rules cover them), use the `b2c-ops:b2c-edge-traffic-triage` runbook (MCP: `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md`).
+To investigate edge traffic before changing rules (bots, abuse, edge 403/429 spikes, SCAPI/SLAS abuse; which sources matter, who runs them, which rules cover them), use the `b2c-ops:b2c-edge-traffic-triage` runbook (MCP: `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md`).
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli ecdn zones list`).
 
@@ -124,6 +124,20 @@ The `--zone` flag accepts either:
 
 - Zone ID (32-character hex string)
 - Zone name (human-readable, case-insensitive lookup across all zones in the org, including beyond the first 25)
+
+### Pitfalls
+
+- `Forbidden` = feature unavailable on that zone, or a `--zone` ID not in this org.
+- `waf groups` / `waf rules` (WAF v1) typically fail with `Not Found` (zones on WAF v2); use `waf rulesets`.
+- `firewall create --actions log` (or `--enabled false`) stages a rule without enforcing it; switch to `managed_challenge`/`block` after review.
+
+### SCAPI (API) Zone
+
+`zones list` includes `<realm>.api.commercecloud.salesforce.com` (BM labels it `<shortCode>.api...`). It fronts SCAPI/SLAS traffic, including headless storefronts.
+
+- Supported: `firewall`, `rate-limit`.
+- `Forbidden` (platform-managed, not a scope problem): `security`, `speed`, `waf rulesets`, `certificates`, `cipher-suites`, `mrt-rules`, `page-shield`, `logpush`, `origin-headers`.
+- Shared by every instance in the realm (dev/stg/prd). Scope each rule to one instance by org ID in the path, e.g. `(http.request.uri.path contains "/organizations/f_ecom_zzxy_prd/") and ...`. An unscoped rule applies to all instances.
 
 ### OAuth Scopes
 

@@ -122,7 +122,8 @@ describe('ecdn firewall list', () => {
     stubCdnClient(command, {
       GET: async () => ({
         data: undefined,
-        error: {title: 'Not Found', detail: 'Zone not found'},
+        error: {title: 'Internal Server Error', detail: 'Something went wrong'},
+        response: {status: 500},
       }),
     });
 
@@ -132,5 +133,25 @@ describe('ecdn firewall list', () => {
     } catch {
       expect(errorStub.calledOnce).to.equal(true);
     }
+  });
+
+  it('returns an empty list when the API returns 404 for a zone with no rules', async () => {
+    const command: any = await createCommand({'tenant-id': 'zzxy_prd', zone: 'my-zone'});
+    stubCommon(command, {jsonEnabled: true});
+
+    const errorStub = sinon.stub(command, 'error');
+
+    stubCdnClient(command, {
+      GET: async () => ({
+        data: undefined,
+        error: {title: 'Not Found', detail: 'Requested resource was not found'},
+        response: {status: 404},
+      }),
+    });
+
+    const result = await command.run();
+
+    expect(errorStub.called).to.equal(false);
+    expect(result).to.deep.equal({rules: [], total: 0});
   });
 });
