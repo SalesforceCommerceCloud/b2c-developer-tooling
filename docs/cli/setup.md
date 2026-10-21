@@ -403,6 +403,19 @@ If a plugin credential store (such as a keychain plugin) declares both halves
 of a credential pair, for example the client ID and secret, that pair is stored
 there instead. `b2c setup instance remove` removes them again.
 
+The command prints the dw.json it wrote. That is `dw.json` in the current
+directory (or the file selected with `--config` or `--project-directory`), or
+the [global default](#global-default-configuration) when no local `dw.json`
+exists. The CLI reads a project `dw.json` only from the directory it runs in
+and doesn't search parent directories, so to use the instance from elsewhere,
+pass `--config` or `--project-directory`, or register the file with
+`b2c setup default-config set <path>`.
+
+To change an existing instance, use [`b2c setup set`](#b2c-setup-get-set-unset)
+(for example `b2c setup set password <access-key> --instance staging`), or
+remove it with `b2c setup instance remove` and create it again. Running
+`create` with an existing name fails.
+
 ### Usage
 
 ```bash
@@ -427,7 +440,7 @@ b2c setup instance create [NAME] [FLAGS]
 | `--short-code`     | SCAPI short code (optional; enables SCAPI-first code-version detection)                 |                                           |
 | `--tenant-id`      | SCAPI tenant/organization ID (optional; enables SCAPI-first detection)                  |                                           |
 | `--api-backend`    | Saved API preference: `auto`, `scapi`, or `ocapi`                                       | `auto`                                    |
-| `--code-version`   | Code version                                                                            | Auto-detected or prompted                 |
+| `--code-version`   | Code version used by `code deploy` and `code watch` (optional)                          | Auto-detected or prompted                 |
 | `--active`         | Set as active instance                                                                  | `false`                                   |
 | `--force`          | Non-interactive mode                                                                    | `false`                                   |
 | `--source`         | Config source to store the instance in, by name (`b2c setup instance list` shows names) | Highest-priority source that can store it |
@@ -446,7 +459,7 @@ b2c setup instance create staging --hostname staging.example.com
 b2c setup instance create staging --hostname staging.example.com --active
 
 # Non-interactive mode (CI/CD)
-b2c setup instance create staging --hostname staging.example.com --username admin --password secret --force
+b2c setup instance create staging --hostname staging.example.com --username admin --password <access-key> --force
 ```
 
 ### Interactive Mode
