@@ -154,20 +154,28 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 - [API client development](./.claude/skills/api-client-development/SKILL.md) - OpenAPI clients, OAuth scopes, SCAPI patterns
 - [Testing](./.claude/skills/testing/SKILL.md) - Mocha, Chai, MSW patterns
 - [Documentation](./.claude/skills/documentation/SKILL.md) - user guides, CLI reference, API docs
+- [Review](./.claude/skills/review/SKILL.md) - reviewing a branch or pull request before merge
 
 ## Pull Requests
 
-GUS work-item prefixes in PR titles must include `@`, for example `@W-24337127: Support OpenShell sandboxes`.
+- GUS work-item prefixes in PR titles must include `@`, for example `@W-24337127: Support OpenShell sandboxes`.
+- Fill in `.github/PULL_REQUEST_TEMPLATE.md`. Describe the net change against the base branch, not the commit history.
+- State platform dependencies. If the change needs a particular B2C Commerce platform release, a feature toggle enabled on the instance, or an API that is not generally available yet, say which one and what users see without it. Validate against the platform release that is currently deployed, not only an upcoming one.
+- Keep `main` releasable. Every merge to `main` ships in the next release, which is usually within days (see [Releases](./CONTRIBUTING.md#releases)). Do not land part of a multi-step change (a backend migration, or a feature spanning several commands) in a state users should not get. Develop it on an integration branch and merge it as a whole, or keep the unfinished part behind an opt-in flag or configuration until it is complete.
+- This repository is public. PR titles and descriptions, commit messages, code comments, changesets, docs, and skills must not contain internal hostnames, URLs, repository names, chat channels, internal tool names, customer or instance names, or people's names. GUS work-item IDs are the only internal identifiers allowed. Use placeholders such as `my-sandbox` or `example.com`.
 
-## Pre-Commit Checks
+## Definition of Done
 
-Before committing code, always run lint to catch formatting and style issues:
+Before reporting a change as complete:
 
-```bash
-pnpm run lint:agent
-```
+1. Run `pnpm run lint:agent`. It catches prettier formatting, import ordering, class member ordering (`perfectionist/sort-classes`), and other issues that fail CI.
+2. Run `pnpm run typecheck:agent` and `test:agent` for each changed package (or from the root).
+3. Add or update tests for behavior changes (see [Testing](#testing)).
+4. When commands, flags, MCP tools, or output change, update docs, user-facing skills, and the tooling documentation index (below).
+5. Add a changeset for user-facing changes (see [Changesets](#changesets)).
+6. Review the diff (see the [review skill](./.claude/skills/review/SKILL.md)).
 
-This catches prettier formatting, import ordering, class member ordering (`perfectionist/sort-classes`), and other issues that will fail CI.
+If a check cannot run (missing credentials, no instance available, an environment problem), report which check and why instead of calling the work done. Do not describe a targeted test run as a full-suite pass.
 
 ### Tooling documentation index
 
@@ -189,6 +197,24 @@ See [testing skill](./.claude/skills/testing/SKILL.md) for patterns on writing t
 
 **Stdout in tests**: Command tests must not leak output to the console. `stubCommandConfigAndLogger()` silences `command.log`, `command.logToStderr`, and `ux.stdout` automatically. For other cases, use `runSilent()` from `test/helpers/test-setup.ts`.
 
+## Backward Compatibility
+
+Users depend on released CLI commands, MCP tools, and SDK exports in scripts, CI pipelines, and agent configurations. Each of these is a breaking change:
+
+- Removing or renaming a command, argument, flag, or short flag (`char`), or changing a flag's meaning or default.
+- Renaming or removing table column keys (used by `--columns`) or `--json` fields, or changing their type or shape.
+- Removing or renaming an MCP tool, a tool input, or an MCP server flag, or making an optional input required.
+- Removing an SDK export or `exports` entry, or changing the signature of an exported function, class, or type.
+
+Prefer a non-breaking path:
+
+- Keep the old name working as an alias (`aliases`, `charAliases`, or `deprecateAliases` on flags and commands).
+- Keep a removed flag as a hidden, deprecated option that warns and does nothing, instead of failing to parse. This matters most for MCP server flags, because a startup failure disables every tool for that user.
+- Add new `--json` fields instead of renaming existing ones.
+- Do not take a short flag away from an existing flag, and do not reuse a short flag with a different meaning in sibling commands.
+
+When a break is unavoidable, use a `major` changeset for the affected package and say how to migrate. MCP resource and skill URIs (`skill://...`) are not part of this contract, so renaming them is not breaking.
+
 ## Changesets
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management with **independent per-package versioning**. Each package versions independently based on its own changesets.
@@ -206,7 +232,7 @@ Changeset guidelines:
 - Use separate changesets for distinct user-facing features or fixes in a pull request. Describe the final change relative to the base branch, not the branch's implementation history; fold follow-up work on an unreleased feature into that feature's changeset.
 - Only list directly-changed packages in changeset frontmatter — do not include dependent packages (they get auto-bumped)
 - Select the appropriate semver bump: `patch` (bug fixes) or `minor` (new features)
-- Use `major` for breaking changes that require consumers to update their code
+- Use `major` for breaking changes that require consumers to update their code (see [Backward Compatibility](#backward-compatibility))
 - Good changesets explain:
   - WHAT the change is
   - WHY the change was made

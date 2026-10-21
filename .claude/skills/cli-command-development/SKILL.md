@@ -334,6 +334,29 @@ if (error) {
 
 See [API Client Development](../api-client-development/SKILL.md#error-handling) for supported error patterns.
 
+## Destructive Commands
+
+This applies to commands that delete or reset data, revoke access, or can widen exposure (for example, removing an access control header can leave an environment publicly reachable):
+
+- Call `this.assertDestructiveOperationAllowed('<operation>')` at the start of `run()` so that safe mode blocks the command with a clear message.
+- Add a `force` boolean flag (`char: 'f'`, "Skip confirmation prompt").
+- Prompt with `confirm()` (imported from `packages/b2c-cli/src/prompts.ts`) unless `--force` is set or JSON output is enabled. If the user declines, log a cancellation message and return without making the change.
+- Match the flags and prompt behavior of sibling commands in the same topic. `mrt env access-control delete` and `mrt env delete` are good references.
+
+```typescript
+if (!this.flags.force && !this.jsonEnabled()) {
+  const confirmed = await confirm(t('commands.topic.delete.confirm', 'Are you sure you want to delete "{{id}}"?', {id}));
+  if (!confirmed) {
+    this.log(t('commands.topic.delete.cancelled', 'Deletion cancelled.'));
+    return {id};
+  }
+}
+```
+
+## Changing Existing Commands
+
+Flags, short flags, column keys, and `--json` fields are public contracts. Before renaming or removing one, read [Backward Compatibility in AGENTS.md](../../../AGENTS.md#backward-compatibility). Keep the old name as an alias or as a deprecated option, or ship the change with a `major` changeset. When adding a short flag, check that it is not already used for something else in the same topic.
+
 ## Troubleshooting
 
 **Command not found after creating file**: Ensure the file is in the correct `packages/b2c-cli/src/commands/` subdirectory matching the intended command path. Run `pnpm --filter @salesforce/b2c-cli run build` to regenerate the oclif manifest. For new topics, add the topic to `package.json` under `oclif.topics`.
@@ -353,6 +376,7 @@ See [API Client Development](../api-client-development/SKILL.md#error-handling) 
 5. Implement `run()` method with proper return type
 6. Add topic to `package.json` if new
 7. Add i18n keys for all user-facing strings
-8. Update skill in `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` if exists
-9. Update CLI reference docs in `docs/cli/<topic>.md`
-10. Build and test: `pnpm run build && pnpm --filter @salesforce/b2c-cli run test`
+8. For destructive commands, add safe-mode, `--force`, and confirmation handling (see [Destructive Commands](#destructive-commands))
+9. Update skill in `skills/b2c-cli/skills/b2c-<topic>/SKILL.md` if exists
+10. Update CLI reference docs in `docs/cli/<topic>.md`
+11. Build and test: `pnpm run build && pnpm --filter @salesforce/b2c-cli run test`

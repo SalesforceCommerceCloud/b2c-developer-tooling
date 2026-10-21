@@ -88,20 +88,16 @@ You **don't need** a changeset for:
    pnpm changeset
    ```
 
-2. Select the packages affected by your change (usually all three are linked)
+2. Select only the packages you directly changed (packages that depend on them get a patch bump automatically)
 
 3. Choose the change type:
    - `patch` - Bug fixes, minor improvements
    - `minor` - New features, non-breaking changes
-   - `major` - Breaking changes
+   - `major` - Breaking changes (see "Backward Compatibility" in [AGENTS.md](./AGENTS.md#backward-compatibility))
 
 4. Write a brief summary of your change (this appears in the changelog)
 
 5. Commit the generated `.changeset/*.md` file with your PR
-
-## Release Process
-
-When changesets are merged to `main`, an automated PR is created that bumps versions and updates changelogs. This release PR requires approval from the B2C Developer Experience team before it can be merged. Once merged, packages are published automatically.
 
 ## Notes
 
@@ -109,6 +105,18 @@ When changesets are merged to `main`, an automated PR is created that bumps vers
 - Multiple changesets can exist for separate changes
 - For **release branches** (urgent patches while unrelated changesets are pending on `main`, or maintenance patches on older minors), see [PUBLISHING.md](./PUBLISHING.md#release-branches) for details
 - See [PUBLISHING.md](./PUBLISHING.md) for full release process details
+
+# Releases
+
+[PUBLISHING.md](./PUBLISHING.md) is the full release playbook. In short:
+
+- **`main` is the next release.** There is no separate integration branch. When changesets are merged to `main`, an automated "Next Release" PR collects them, bumps versions, and updates changelogs. That PR requires approval from the B2C Developer Experience team. Merging it publishes the packages, tags them, and creates a GitHub Release.
+- **Cadence.** Releases usually go out at least once a week, often more. See [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) or the [release notes page](https://salesforcecommercecloud.github.io/b2c-developer-tooling/releases/).
+- **Merged work ships within days.** Large multi-step changes should be developed on an integration branch and merged as a whole, or kept behind an opt-in flag until they are complete.
+- **Nightly builds** publish to the `@nightly` npm tag on weekdays, if you want to try unreleased changes.
+- **Urgent fixes** can ship from a release branch without waiting for everything pending on `main` (see [Release Branches](./PUBLISHING.md#release-branches)).
+- **Docs.** The documentation site root matches the latest release. `/dev/` reflects `main`, so changes merged but not yet released appear there first.
+- **Release freezes.** The developer tooling does not affect production storefronts, so it normally keeps releasing during company-wide release freezes. During a freeze, maintainers may hold breaking (`major`) releases and limit the CLI and SDK to bug fixes. The VS Code extension and agent plugins are not restricted. If you need a change released by a particular date, say so in the issue or PR.
 
 # Creating a Pull Request
 

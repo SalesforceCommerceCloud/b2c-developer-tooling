@@ -33,7 +33,7 @@ pnpm changeset
 ```
 
 1. Select the packages you directly changed
-2. Choose `patch` (bug fixes) or `minor` (new features) — no `major` bumps pre-1.0
+2. Choose `patch` (bug fixes) or `minor` (new features), or `major` for breaking changes (see "Backward Compatibility" in [AGENTS.md](./AGENTS.md#backward-compatibility))
 3. Write a brief user-facing summary (this goes in the changelog)
 4. Commit the generated `.changeset/*.md` file with your PR
 
