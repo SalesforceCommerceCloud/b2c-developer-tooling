@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.8
+
+### Patch Changes
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - **Start Tailing Logs** now offers the instance's custom logger files (`custom-*.log`), plus `custom-` to tail all of them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48), [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102), [`3ec643a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3ec643a588f85fb5c6e50601d2c006b052260099), [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48), [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e)]:
+  - @salesforce/b2c-tooling-sdk@2.8.2
+
 ## 1.5.7
 
 ### Patch Changes

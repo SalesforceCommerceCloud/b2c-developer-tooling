@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.9
+
+### Patch Changes
+
+- [#806](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/806) [`cca5471`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cca5471c868b61cb2016ed12e6f4f39896b84a15) - eCDN guidance now covers the SCAPI (API) zone: which rules it supports and how to scope rules per instance. The edge traffic runbook now covers API/SLAS abuse and edge error spikes as well as bots. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - The logs guide and the `b2c-logs` skill explain how to read custom logger files (`custom-*.log`) and how `--filter` matches them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#793](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/793) [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48) - Refresh Developer Center and Salesforce Help content in `b2c docs` search. New guides cover Dynamic Imaging Service (now documented on the Developer Center), Agentforce Commerce Client customization and overrides, Payments Orchestration and Commerce Apps for payments, fraud, and gift cards (Beta), UCP order updates, and Storefront Next migration and SCAPI-based storefront creation. Help adds the Traffic Sources dashboard and updating authoritative DNS for eCDN zones. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#804](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/804) [`48bc461`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/48bc461686ae1c8113c0a1fdfd8ded21d3e0032c) - Documented where `setup instance create` stores an instance, how to use it from other directories, and how to change an existing instance. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#803](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/803) [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e) - Corrected the WebDAV access key setup steps (user menu > Manage Access Keys, or `b2c bm access-key create`), clarified that the Account Manager password is not accepted for WebDAV or the script debugger, and added troubleshooting for 401 responses on WebDAV. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.8
 
 ### Patch Changes
