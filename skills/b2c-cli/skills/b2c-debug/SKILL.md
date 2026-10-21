@@ -23,7 +23,7 @@ For MCP debugging, pass `projectDirectory` to `debug_start_session` whenever the
 
 ## Prerequisites
 
-- Basic Auth credentials for a BM user with `WebDAV_Manage_Customization`: a username and either the account password or a `WebDAV File Access and UX Studio` access key
+- Basic Auth credentials for a BM user with `WebDAV_Manage_Customization`: a username and a `WebDAV File Access and UX Studio` access key used as the password (not the Account Manager password)
 
 ## Interactive Debugging
 

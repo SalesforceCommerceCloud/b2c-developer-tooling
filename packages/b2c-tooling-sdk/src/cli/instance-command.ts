@@ -32,8 +32,8 @@ import {BackendDispatcher, type ApiBackendPreference} from '../compat/dispatcher
  * - SFCC_SERVER: B2C instance hostname
  * - SFCC_WEBDAV_SERVER: Separate WebDAV hostname (optional)
  * - SFCC_CODE_VERSION: Code version
- * - SFCC_USERNAME: Username for Basic Auth
- * - SFCC_PASSWORD: Password/access key for Basic Auth
+ * - SFCC_USERNAME: Business Manager username for WebDAV Basic auth
+ * - SFCC_PASSWORD: WebDAV access key of that Business Manager user
  * - Plus all from OAuthCommand (SFCC_CLIENT_ID, SFCC_CLIENT_SECRET)
  *
  * Provides:
@@ -72,13 +72,13 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
     }),
     username: Flags.string({
       char: 'u',
-      description: 'Username for Basic Auth (WebDAV)',
+      description: 'Business Manager username for WebDAV Basic auth',
       env: 'SFCC_USERNAME',
       helpGroup: 'AUTH',
     }),
     password: Flags.string({
       char: 'p',
-      description: 'Password/access key for Basic Auth (WebDAV)',
+      description: 'WebDAV access key of the Business Manager user (not the Account Manager password)',
       env: 'SFCC_PASSWORD',
       helpGroup: 'AUTH',
     }),
