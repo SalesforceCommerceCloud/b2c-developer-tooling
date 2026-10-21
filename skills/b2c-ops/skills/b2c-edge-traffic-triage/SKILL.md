@@ -1,9 +1,9 @@
 ---
 name: b2c-edge-traffic-triage
-description: Investigate bot activity, scrapers, crawlers or abusive traffic hitting a B2C Commerce storefront through the eCDN (CDN edge). Review WAF, firewall and rate-limiting protections, correlate available traffic evidence, and propose narrowly scoped rule changes for approval.
+description: Investigate bots, scrapers, crawlers, credential or token abuse, API abuse, and edge 403/429 or error spikes hitting a B2C Commerce storefront or SCAPI through the eCDN (CDN edge). Review WAF, firewall and rate-limiting protections, correlate available traffic evidence, and propose narrowly scoped rule changes for approval.
 ---
 
-# Edge traffic and bot triage
+# eCDN edge traffic triage
 
 Outcome: identify which automated traffic matters, whether current edge
 protections cover it, and a proposed, approved next step. Inspection never
@@ -13,8 +13,10 @@ authorizes blocking, challenging, or changing zone settings.
 
 Resolve the instance with `config_inspect` (CLI: `b2c setup inspect`). List the
 tenant's zones first and focus on production storefront zones; ask when the
-target zone is ambiguous. Use a fixed UTC window (propose the last 7 days if
-none is given) and record the symptom: origin load or errors, scraping, login or
+target zone is ambiguous. Include the SCAPI zone
+(`<realm>.api.commercecloud.salesforce.com`) for headless storefronts, SLAS
+login/token abuse, or API symptoms; storefront zones do not see that traffic.
+Use a fixed UTC window (propose the last 7 days if none is given) and record the symptom: origin load or errors, scraping, login or
 token abuse, basket/inventory abuse, or a routine review. Record impact and
 owner; follow the team's incident process for live customer impact.
 
@@ -34,11 +36,21 @@ available to this tenant or client, say that edge attribution is unavailable
 through the toolkit and continue with protections, Logpush and origin evidence.
 Never infer traffic volume from rule configuration alone.
 
+Response pitfalls:
+
+- A 404 from a rule list (custom firewall, rate limiting, WAF v1 groups) means
+  none exist, not denied. 403 means unavailable on that zone or a zone ID
+  outside this org.
+- WAF v1 endpoints typically 404 (zones on WAF v2); read managed rulesets.
+- SCAPI zone exposes only custom firewall rules, rate-limiting rules and traffic
+  evidence. Settings, managed WAF, cache, certificates, Logpush and Page Shield
+  return 403 (platform-managed); do not report them as gaps or missing scopes.
+
 ## Checks and decisions
 
 1. Keep executions small: one or two zones per `scapi_execute`, fixed `from`/`to`,
-   small result limits. Executions stop at 30 s; split work rather than retry a
-   timed-out batch whole.
+   small result limits. Limits: 20 calls, 4 in flight, 30 s; run per-zone loops
+   sequentially, not `Promise.all`, and split rather than retry a failed batch.
 2. Classify sources by user agent, ASN, IP, host, path, status and cache result:
    verified crawlers and link previews, monitoring or integrations, unverified
    automation (headless browsers, HTTP libraries, empty user agents), and
@@ -54,8 +66,11 @@ Never infer traffic volume from rule configuration alone.
 ## Mitigation and recovery
 
 Propose the narrowest change (host, path, ASN or verified-bot condition) and a
-non-enforcing or challenge step before a block. Changes need explicit approval
-and are subject to Safety Mode. After a change, re-check the same evidence over
+non-enforcing (`log` action or disabled) or challenge step before a block. The
+SCAPI zone is shared by every instance in the realm: scope each rule to one
+instance with the org ID in the path
+(`http.request.uri.path contains "/organizations/f_ecom_zzxy_prd/"`). Changes
+need explicit approval and are subject to Safety Mode. After a change, re-check the same evidence over
 a fresh equivalent window and keep a rollback (previous rule state). Rule
 syntax and CLI options: native `b2c-ecdn`, MCP `skill://b2c-cli/b2c-ecdn/SKILL.md`
 and its `references/SECURITY.md`.
