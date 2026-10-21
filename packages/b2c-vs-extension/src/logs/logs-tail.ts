@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {
+  listLogFiles,
   tailLogs,
   type TailLogsResult,
   type LogEntry,
@@ -11,26 +12,10 @@ import {
 } from '@salesforce/b2c-tooling-sdk/operations/logs';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import * as vscode from 'vscode';
+import {customLoggerOptions, STANDARD_PREFIX_OPTIONS, type LogPrefixOption} from './prefix-options.js';
 
-const ALL_PREFIX_OPTIONS = [
-  {label: 'error', picked: true},
-  {label: 'customerror', picked: true},
-  {label: 'warn'},
-  {label: 'debug'},
-  {label: 'info'},
-  {label: 'fatal'},
-  {label: 'syserror'},
-  {label: 'analytics'},
-  {label: 'api'},
-  {label: 'customwarn'},
-  {label: 'customdebug'},
-  {label: 'custominfo'},
-  {label: 'deprecation'},
-  {label: 'migration'},
-  {label: 'performance'},
-  {label: 'quota'},
-  {label: 'staging'},
-];
+/** How long the tail picker waits for the instance's log listing before giving up on custom logger options. */
+const CUSTOM_LOGGER_DISCOVERY_TIMEOUT_MS = 10_000;
 
 /**
  * Manages the log tailing lifecycle: Output Channel, status bar, and SDK integration.
@@ -66,14 +51,8 @@ export class LogTailManager implements vscode.Disposable {
       return;
     }
 
-    const prefixPicks = await vscode.window.showQuickPick(ALL_PREFIX_OPTIONS, {
-      title: 'Select log prefixes to tail',
-      canPickMany: true,
-      placeHolder: 'Select one or more log file prefixes',
-    });
-    if (!prefixPicks || prefixPicks.length === 0) return;
-
-    const prefixes = prefixPicks.map((p) => p.label);
+    const prefixes = await this.pickPrefixes(instance);
+    if (!prefixes || prefixes.length === 0) return;
 
     // Try to create a path normalizer for clickable file links
     const workDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -160,6 +139,61 @@ export class LogTailManager implements vscode.Disposable {
    * VS Code prints (e.g. `[customerror]` for an ERROR entry, but nothing for an
    * `error` file).
    */
+  /**
+   * Shows the prefix picker right away with the standard prefixes, then adds the
+   * instance's custom logger categories once its Logs directory has been listed.
+   * If the listing fails or is slow, the picker keeps the standard options
+   * (which include "custom-" for all custom logger files).
+   */
+  private async pickPrefixes(instance: B2CInstance): Promise<string[] | undefined> {
+    const quickPick = vscode.window.createQuickPick<LogPrefixOption & vscode.QuickPickItem>();
+    quickPick.title = 'Select log prefixes to tail';
+    quickPick.placeholder = 'Select one or more log file prefixes';
+    quickPick.canSelectMany = true;
+    quickPick.matchOnDescription = true;
+    const standard = STANDARD_PREFIX_OPTIONS.map((option) => ({...option}));
+    quickPick.items = standard;
+    quickPick.selectedItems = standard.filter((option) => option.picked);
+    quickPick.busy = true;
+
+    let done = false;
+    let timer: NodeJS.Timeout | undefined;
+    const discovery = Promise.race([
+      listLogFiles(instance),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('timed out')), CUSTOM_LOGGER_DISCOVERY_TIMEOUT_MS);
+      }),
+    ]);
+    discovery
+      .then((files) => {
+        const custom = customLoggerOptions(files);
+        if (done || custom.length === 0) return;
+        const selected = quickPick.selectedItems;
+        quickPick.items = [
+          ...standard,
+          {label: 'Custom loggers on this instance', kind: vscode.QuickPickItemKind.Separator},
+          ...custom,
+        ];
+        quickPick.selectedItems = selected;
+      })
+      .catch(() => {
+        // Optional: tailLogs reports connection/auth problems once tailing starts.
+      })
+      .finally(() => {
+        clearTimeout(timer);
+        if (!done) quickPick.busy = false;
+      });
+
+    const result = await new Promise<string[] | undefined>((resolve) => {
+      quickPick.onDidAccept(() => resolve(quickPick.selectedItems.map((item) => item.label)));
+      quickPick.onDidHide(() => resolve(undefined));
+      quickPick.show();
+    });
+    done = true;
+    quickPick.dispose();
+    return result;
+  }
+
   private writeEntry(entry: LogEntry): void {
     const prefix = this.fileToPrefix.get(entry.file) ?? entry.file;
     // Skip the tag when it would just duplicate VS Code's level (e.g. an "error"

@@ -4,33 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import type {LogEntry, LogFile} from '@salesforce/b2c-tooling-sdk/operations/logs';
-import {
-  createPathNormalizer,
-  discoverAndCreateNormalizer,
-  matchesPrefixFilters,
-} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import type {LogEntry} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {createPathNormalizer, discoverAndCreateNormalizer} from '@salesforce/b2c-tooling-sdk/operations/logs';
 
 /**
  * Default log prefixes to retrieve/tail.
  */
 export const DEFAULT_PREFIXES = ['error', 'customerror'];
-
-/**
- * Returns the `custom-<name>` log categories present in `files` that the given
- * filters do not select, sorted by name. Used to point users at custom logger
- * files that a default `error,customerror` read skips.
- */
-export function unreadCustomPrefixes(files: LogFile[], filters: string[]): string[] {
-  const prefixFilters = filters.filter((f) => !f.includes('/'));
-  const prefixes = new Set<string>();
-  for (const file of files) {
-    if (file.prefix.startsWith('custom-') && !matchesPrefixFilters(file, prefixFilters)) {
-      prefixes.add(file.prefix);
-    }
-  }
-  return [...prefixes].sort((a, b) => a.localeCompare(b));
-}
 
 /**
  * ANSI color codes for log levels.

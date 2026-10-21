@@ -8,7 +8,13 @@ import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {WebDavClient} from '@salesforce/b2c-tooling-sdk/clients';
-import {listLogFiles, extractPrefix, matchesPrefixFilters} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {
+  listLogFiles,
+  extractPrefix,
+  matchesPrefixFilters,
+  unreadCustomPrefixes,
+  type LogFile,
+} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
 const TEST_HOST = 'test.demandware.net';
@@ -95,6 +101,46 @@ describe('operations/logs/list', () => {
 
     it('keeps custom- separate from customerror', () => {
       expect(matchesPrefixFilters(file('customerror-blade1-20250125.log'), ['custom-'])).to.be.false;
+    });
+  });
+
+  describe('unreadCustomPrefixes', () => {
+    const file = (name: string, prefix: string): LogFile => ({
+      name,
+      prefix,
+      size: 1,
+      lastModified: new Date(0),
+      path: `Logs/${name}`,
+    });
+    const files = [
+      file('error-blade1-20250125.log', 'error'),
+      file('customerror-blade1-20250125.log', 'customerror'),
+      file('custom-PimTaxImport-blade1-20250125.log', 'custom-PimTaxImport'),
+      file('custom-MyIntegration-CustomApi-blade1-20250125.log', 'custom-MyIntegration'),
+      file('custom-MyIntegration-Backend-blade1-20250125.log', 'custom-MyIntegration'),
+    ];
+
+    it('lists custom logger categories the default filters skip', () => {
+      expect(unreadCustomPrefixes(files, ['error', 'customerror'])).to.deep.equal([
+        'custom-MyIntegration',
+        'custom-PimTaxImport',
+      ]);
+    });
+
+    it('omits categories the filters already read', () => {
+      expect(unreadCustomPrefixes(files, ['custom-Pim'])).to.deep.equal(['custom-MyIntegration']);
+      expect(unreadCustomPrefixes(files, ['custom-'])).to.deep.equal([]);
+    });
+
+    it('keeps a category when only some of its files are read', () => {
+      expect(unreadCustomPrefixes(files, ['custom-MyIntegration-CustomApi'])).to.deep.equal([
+        'custom-MyIntegration',
+        'custom-PimTaxImport',
+      ]);
+    });
+
+    it('ignores path filters', () => {
+      expect(unreadCustomPrefixes(files, ['internal/custom-'])).to.have.length(2);
     });
   });
 

@@ -5,14 +5,18 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getRecentLogs, listLogFiles, type LogEntry} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {
+  getRecentLogs,
+  listLogFiles,
+  unreadCustomPrefixes,
+  type LogEntry,
+} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {t} from '../../i18n/index.js';
 import {
   DEFAULT_PREFIXES,
   formatEntry,
   setupPathNormalizer,
   parseSinceTime,
-  unreadCustomPrefixes,
   filterBySince,
   filterByLevel,
   filterBySearch,

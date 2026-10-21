@@ -98,6 +98,29 @@ export function matchesPrefixFilters(file: Pick<LogFile, 'name' | 'prefix'>, fil
 }
 
 /**
+ * Returns the `custom-<name>` log categories in `files` that the given filters
+ * do not select, sorted by name.
+ *
+ * Custom logger files (`Logger.getLogger('<name>', ...)`) are not part of the
+ * default `error`/`customerror` read, so callers use this to point users at
+ * them when a read finds nothing. Path filters (containing `/`) are ignored.
+ *
+ * @param files - Top-level log files, e.g. from {@link listLogFiles} without filters
+ * @param filters - The filters that were used for the read
+ * @returns Custom logger categories that were not read
+ */
+export function unreadCustomPrefixes(files: LogFile[], filters: string[]): string[] {
+  const prefixFilters = filters.filter((f) => !f.includes('/'));
+  const prefixes = new Set<string>();
+  for (const file of files) {
+    if (file.prefix.startsWith('custom-') && !matchesPrefixFilters(file, prefixFilters)) {
+      prefixes.add(file.prefix);
+    }
+  }
+  return [...prefixes].sort((a, b) => a.localeCompare(b));
+}
+
+/**
  * Lists the `.log` files in a single Logs directory (depth 1, non-recursive).
  *
  * @param instance - B2C instance to list logs from

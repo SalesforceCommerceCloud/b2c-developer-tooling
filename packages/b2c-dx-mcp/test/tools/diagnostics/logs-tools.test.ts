@@ -150,6 +150,43 @@ describe('tools/diagnostics/logs', () => {
       expect(result.isError).to.be.undefined;
     });
 
+    it('lists custom logger files the prefixes skipped when nothing is found', async () => {
+      const listStub = sinon
+        .stub()
+        .resolves([
+          makeFile('error-1.log'),
+          makeFile('custom-PimTaxImport-blade1-20260101.log', 'custom-PimTaxImport'),
+          makeFile('custom-Payment-blade1-20260101.log', 'custom-Payment'),
+        ]);
+      const tool = createLogsGetRecentTool(loadServices, serverContext, {
+        getRecentLogs: sinon.stub().resolves([]),
+        listLogFiles: listStub,
+      });
+      const result = await tool.handler({prefixes: ['error', 'custom-Payment']});
+      const json = getResultJson<{count: number; unreadCustomLogs?: string[]; hint?: string}>(result);
+      expect(json.count).to.equal(0);
+      expect(json.unreadCustomLogs).to.deep.equal(['custom-PimTaxImport']);
+      expect(json.hint).to.include('custom-');
+    });
+
+    it('omits the custom log hint when entries are found or listing fails', async () => {
+      const found = createLogsGetRecentTool(loadServices, serverContext, {
+        getRecentLogs: sinon.stub().resolves([makeEntry()]),
+        listLogFiles: sinon.stub().rejects(new Error('should not be called')),
+      });
+      expect(getResultJson<object>(await found.handler({}))).to.not.have.property('unreadCustomLogs');
+
+      const failing = createLogsGetRecentTool(loadServices, serverContext, {
+        getRecentLogs: sinon.stub().resolves([]),
+        listLogFiles: sinon.stub().rejects(new Error('401')),
+      });
+      const result = await failing.handler({});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{count: number}>(result);
+      expect(json.count).to.equal(0);
+      expect(json).to.not.have.property('unreadCustomLogs');
+    });
+
     it('errors on invalid --since', async () => {
       const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: sinon.stub().resolves([])});
       const result = await tool.handler({since: 'nonsense'});
