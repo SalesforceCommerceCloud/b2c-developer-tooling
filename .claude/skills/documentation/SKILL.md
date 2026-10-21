@@ -486,6 +486,30 @@ Developer Center guides corpus, only lightweight metadata is bundled
 and child relationships derived from the published TOCs; the page content
 itself is fetched live from developer.salesforce.com at read time.
 
+### Changesets for corpus refreshes
+
+A refresh of a bundled corpus (guides, Help, Script API, job steps) changes only
+files under `packages/b2c-tooling-sdk/data/`, but users see it through the CLI and
+MCP. List all three surfaces in the changeset rather than relying on the
+automatic dependency bump. A dependency-only bump appears in the CLI and MCP
+changelogs as "Updated dependencies", and the release notes page sorts SDK-only
+entries last:
+
+```md
+---
+'@salesforce/b2c-cli': patch
+'@salesforce/b2c-dx-mcp': patch
+'@salesforce/b2c-tooling-sdk': patch
+---
+
+Refresh Developer Center and Salesforce Help content in `b2c docs` search and the MCP docs tools. New guides cover …
+```
+
+The release notes page merges the identical entry into one item with CLI, MCP,
+and SDK badges. Skill content changes don't need this, because the
+`@salesforce/b2c-agent-plugins` changeset already appears under Agent Skills
+on the release notes page.
+
 ### Internal tooling corpus (`tooling`)
 
 The internal tooling corpus is generated from every Markdown page under

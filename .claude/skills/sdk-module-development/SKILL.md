@@ -444,6 +444,9 @@ datasets and search indexes (`build:job-steps-dataset`, `generate:job-steps-docs
   `content-schemas/*.json` rule), update the affected tests to match the new platform rule.
 - Run `pnpm --filter @salesforce/b2c-tooling-sdk run test:agent` and add a changeset when
   the refresh changes user-facing behavior (bump the platform version, note the change).
+  List `@salesforce/b2c-cli`, `@salesforce/b2c-dx-mcp`, and `@salesforce/b2c-tooling-sdk`
+  explicitly instead of relying on the automatic dependency bump, so the refresh appears in
+  the CLI and MCP changelogs and the unified release notes (see "Changesets" in `AGENTS.md`).
 
 The individual generation scripts can still be run standalone (see each script's header
 comment), but `refresh:docs-data` is the one-step path that keeps every corpus in sync
