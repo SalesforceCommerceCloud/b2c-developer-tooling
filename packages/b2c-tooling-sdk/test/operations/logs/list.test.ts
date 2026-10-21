@@ -458,5 +458,117 @@ describe('operations/logs/list', () => {
       expect(files).to.have.length(1);
       expect(files[0].name).to.equal('error-blade1-20250125.log');
     });
+
+    function createInstanceWithAuth(auth: Record<string, unknown>): unknown {
+      return {...createMockInstance(), auth, config: {hostname: TEST_HOST}};
+    }
+
+    function useStatus(status: number): void {
+      server.use(http.all(`${BASE_URL}/*`, () => new HttpResponse(null, {status})));
+    }
+
+    it('throws with an access key hint when Basic auth is refused on Logs', async () => {
+      useStatus(401);
+      const instance = createInstanceWithAuth({basic: {username: 'jdoe@example.com', password: 'x'}});
+
+      const error = await listLogFiles(instance as never).then(
+        () => expect.fail('expected listLogFiles to throw'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.include('Cannot list Logs: PROPFIND failed: 401');
+      expect(error.message).to.include('"jdoe@example.com"');
+      expect(error.message).to.include('access key');
+      expect(error.message).to.include(
+        `https://${TEST_HOST}/on/demandware.store/Sites-Site/default/ViewAccessKeys-List`,
+      );
+    });
+
+    it('throws with a WebDAV Client Permissions hint when an API client is refused', async () => {
+      useStatus(403);
+      const instance = createInstanceWithAuth({oauth: {clientId: 'my-client'}});
+
+      const error = await listLogFiles(instance as never).then(
+        () => expect.fail('expected listLogFiles to throw'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.include('Cannot list Logs: PROPFIND failed: 403');
+      expect(error.message).to.include('API client my-client');
+      expect(error.message).to.include('WebDAV Client Permissions');
+    });
+
+    it('uses the OAuth hint when Basic auth is configured but not allowed', async () => {
+      useStatus(401);
+      const instance = createInstanceWithAuth({
+        authMethods: ['client-credentials'],
+        basic: {username: 'jdoe@example.com', password: 'x'},
+        oauth: {clientId: 'my-client'},
+      });
+
+      const error = await listLogFiles(instance as never).then(
+        () => expect.fail('expected listLogFiles to throw'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.include('API client my-client');
+      expect(error.message).not.to.include('jdoe@example.com');
+    });
+
+    it('throws when the top-level Logs directory returns 404', async () => {
+      useStatus(404);
+      const instance = createInstanceWithAuth({});
+
+      const error = await listLogFiles(instance as never).then(
+        () => expect.fail('expected listLogFiles to throw'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.include('Cannot list Logs: PROPFIND failed: 404');
+    });
+
+    it('throws when the token request fails', async () => {
+      const instance = {
+        webdav: {
+          propfind: async () => {
+            throw new Error('Failed to get access token: 401 Unauthorized - {"error":"invalid_client"}');
+          },
+        },
+        auth: {oauth: {clientId: 'bad-client'}},
+        config: {hostname: TEST_HOST},
+      };
+
+      const error = await listLogFiles(instance as never).then(
+        () => expect.fail('expected listLogFiles to throw'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.equal(
+        'Cannot list Logs: Failed to get access token: 401 Unauthorized - {"error":"invalid_client"}',
+      );
+    });
+
+    it('throws when a path-filter subdirectory is refused', async () => {
+      server.use(
+        http.all(`${BASE_URL}/*`, ({request}) => {
+          const url = new URL(request.url);
+          if (url.pathname.endsWith('/Logs') || url.pathname.endsWith('/Logs/')) {
+            return new HttpResponse(generatePropfindXml([]), {
+              status: 207,
+              headers: {'Content-Type': 'application/xml'},
+            });
+          }
+          return new HttpResponse(null, {status: 403});
+        }),
+      );
+      const instance = createInstanceWithAuth({oauth: {clientId: 'my-client'}});
+
+      const error = await listLogFiles(instance as never, {prefixes: ['internal/server']}).then(
+        () => expect.fail('expected listLogFiles to throw'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.include('Cannot list Logs/internal');
+    });
   });
 });
