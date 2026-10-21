@@ -85,6 +85,25 @@ describe('B2CHelp', () => {
     expect(text).to.include('pass --force');
   });
 
+  it('explains WebDAV authentication for WebDAV-backed commands', async () => {
+    const logs = new TestHelp(config).setAgent({});
+    await logs.showHelp(['logs', 'get']);
+    const text = logs.output.join('\n');
+    expect(text).to.include('WEBDAV AUTHENTICATION');
+    expect(text).to.include('/logs in Business Manager');
+    expect(text).to.include('Basic auth is used when both are configured');
+
+    const deploy = new TestHelp(config).setAgent({});
+    await deploy.showHelp(['code', 'deploy']);
+    expect(deploy.output.join('\n')).to.include('/cartridges in Business Manager');
+  });
+
+  it('omits WebDAV authentication for other commands', async () => {
+    const help = new TestHelp(config).setAgent({});
+    await help.showHelp(['code', 'list']);
+    expect(help.output.join('\n')).to.not.include('WEBDAV AUTHENTICATION');
+  });
+
   it('omits the confirmation note for commands without --force/--yes', async () => {
     const help = new TestHelp(config).setAgent({SFCC_AGENT: 'test'});
     await help.showHelp(['code', 'list']);

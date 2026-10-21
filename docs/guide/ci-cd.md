@@ -38,7 +38,7 @@ Store credentials as GitHub [repository secrets](https://docs.github.com/en/acti
 | `SFCC_CLIENT_ID`     | OAuth Client ID            |
 | `SFCC_CLIENT_SECRET` | OAuth Client Secret        |
 | `SFCC_USERNAME`      | WebDAV username            |
-| `SFCC_PASSWORD`      | WebDAV password/access key |
+| `SFCC_PASSWORD`      | WebDAV access key          |
 | `MRT_API_KEY`        | MRT API key                |
 
 **Recommended variables:**

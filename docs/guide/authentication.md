@@ -560,11 +560,18 @@ WebDAV is required for file upload operations (`code deploy`, `code watch`, `web
 
 Use your Business Manager username and a WebDAV access key. This is the simplest option for interactive, user-based access during local development.
 
-1. In Business Manager, go to **Administration** > **Organization** > **Users**
-2. Select your user
-3. Generate or view your **WebDAV Access Key**
+The access key is used as the password. Your Account Manager password (the one you use to log in to Business Manager) is not accepted for WebDAV once unified authentication is enabled.
 
-See [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5) for detailed instructions.
+1. In Business Manager, click your username in the upper right corner and select **Manage Access Keys** (or open `https://<host>/on/demandware.store/Sites-Site/default/ViewAccessKeys-List`)
+2. Generate a key with the scope **WebDAV File Access and UX Studio**
+
+Or create the key with the CLI:
+
+```bash
+b2c bm access-key create --scope WEBDAV_AND_STUDIO
+```
+
+See [Create an Access Key for Logins](https://help.salesforce.com/s/articleView?id=cc.b2c_access_keys_for_business_manager.htm&type=5) and [Configure WebDAV File Access](https://help.salesforce.com/s/articleView?id=cc.b2c_account_manager_sso_use_webdav_file_access.htm&type=5) for detailed instructions.
 
 ```bash
 export SFCC_USERNAME=your-bm-username
@@ -605,6 +612,10 @@ Common paths for CLI operations:
 | `/libraries/<library-id>` | Content library access |
 
 **Note:** This configuration is only needed when using OAuth for WebDAV. It isn’t required when using basic authentication with username/access key.
+
+### Which credentials WebDAV uses
+
+When both a username/access key and an API client are configured, WebDAV commands use Basic authentication. To use the API client for WebDAV instead, pass `--auth-methods client-credentials` (or set `SFCC_AUTH_METHODS=client-credentials`). Avoid `--auth-methods basic` on commands that also call SCAPI or OCAPI, such as `code deploy`: it disables the API client for those calls too.
 
 ## Managed Runtime API Key
 
@@ -697,11 +708,13 @@ b2c scapi schemas list
 - Check that OCAPI is configured for your client ID
 - Ensure the API client has the required roles
 
-### "Forbidden" on WebDAV operations
+### "Unauthorized" (401) or "Forbidden" (403) on WebDAV operations
 
-- Check WebDAV Client Permissions in Business Manager
-- Verify your WebDAV access key is correct
-- Ensure the folder you're accessing is permitted
+Either status can mean the credentials were refused or the API client has no permission for the folder.
+
+- With Basic authentication, use a WebDAV access key (scope **WebDAV File Access and UX Studio**) as the password, not your Account Manager password. See [Option A](#option-a-basic-authentication-user-access).
+- With OAuth, check that the API client has an entry for the folder (for example `/logs` or `/cartridges`) in **Administration** > **Organization** > **WebDAV Client Permissions**.
+- If both are configured, Basic authentication is used. See [Which credentials WebDAV uses](#which-credentials-webdav-uses).
 
 ### "Invalid scope" errors
 

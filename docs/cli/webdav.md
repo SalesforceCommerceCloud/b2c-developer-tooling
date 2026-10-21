@@ -87,6 +87,12 @@ export SFCC_CLIENT_SECRET=my-secret
 b2c code deploy
 ```
 
+### Which credentials are used
+
+When both Basic Auth and OAuth credentials are configured, WebDAV requests use Basic Auth. To use the API client instead, pass `--auth-methods client-credentials`. With OAuth, the API client needs an entry for the folder in **Administration** > **Organization** > **WebDAV Client Permissions** (for example `/logs` for `b2c logs`, `/cartridges` for `b2c code deploy`).
+
+The `--password` value is a WebDAV access key of the Business Manager user, not the Account Manager password. Create one with `b2c bm access-key create`.
+
 For complete setup instructions, see the [Authentication Guide](/guide/authentication#webdav-access).
 
 ---

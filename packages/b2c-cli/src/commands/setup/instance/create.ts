@@ -77,10 +77,10 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       description: 'B2C instance hostname',
     }),
     username: Flags.string({
-      description: 'WebDAV username',
+      description: 'Business Manager username for WebDAV Basic auth',
     }),
     password: Flags.string({
-      description: 'WebDAV password',
+      description: 'WebDAV access key of the Business Manager user (not the Account Manager password)',
     }),
     'client-id': Flags.string({
       description: 'OAuth client ID',
@@ -213,7 +213,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
         config.username =
           this.flags.username ||
           (await input({
-            message: 'Enter WebDAV username:',
+            message: 'Enter Business Manager username:',
             validate: (v) => (v.trim() ? true : 'Username is required'),
           }));
 
@@ -221,8 +221,8 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
         config.password =
           this.flags.password ||
           (await password({
-            message: `Enter WebDAV password or access key (${accessKeyUrl}):`,
-            validate: (v) => (v.trim() ? true : 'Password or access key is required'),
+            message: `Enter WebDAV access key for this user, not your Account Manager password (create one at ${accessKeyUrl} or with "${this.config.bin} bm access-key create"):`,
+            validate: (v) => (v.trim() ? true : 'Access key is required'),
           }));
       }
 

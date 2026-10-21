@@ -61,8 +61,8 @@ Local download destinations use that machine's filesystem permissions.
 
 ## Debugger access {#debugger}
 
-Debugging requires a Business Manager username/password or access key with
-`WebDAV_Manage_Customization` permission. OAuth is not supported. Prefer a
+Debugging requires a Business Manager username and WebDAV access key (used as
+the password) with `WebDAV_Manage_Customization` permission. OAuth is not supported. Prefer a
 development sandbox: breakpoints can pause application requests, and expression
 evaluation can change application state.
 

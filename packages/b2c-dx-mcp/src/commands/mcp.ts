@@ -40,7 +40,7 @@
  * | `--server` | `SFCC_SERVER` | B2C instance hostname |
  * | `--code-version` | `SFCC_CODE_VERSION` | Code version for deployments |
  * | `--username` | `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
- * | `--password` | `SFCC_PASSWORD` | Password/access key for Basic auth |
+ * | `--password` | `SFCC_PASSWORD` | WebDAV access key for Basic auth |
  * | `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
  * | `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
  *
