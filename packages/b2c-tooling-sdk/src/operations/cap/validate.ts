@@ -384,7 +384,8 @@ function validateAdminComponentTranslations(
 }
 
 function adminComponentPairs(raw: unknown): Set<string> {
-  const configuration = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.configuration : undefined;
+  const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : undefined;
+  const configuration = record?.configuration;
   if (!Array.isArray(configuration)) return new Set();
 
   const pairs = new Set<string>();
