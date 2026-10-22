@@ -329,6 +329,25 @@ describe('operations/cap/validate', () => {
       );
     });
 
+    it('should error when an admin component is missing componentKey', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({configuration: [{attributes: [{id: 'show_banner'}]}]}),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'app-configuration/adminComponents.json: configuration[0] missing componentKey',
+          );
+        },
+      );
+    });
+
     it('should error when an admin attribute has no id', async () => {
       await withTempCap(
         (dir) => {
@@ -342,8 +361,9 @@ describe('operations/cap/validate', () => {
           const result = await validateCap(dir);
           expect(result.valid).to.be.false;
           expect(result.errors).to.include(
-            'adminComponents.json references componentKey/attribute pair(s) not present in translations/en-US.json: visibility/null',
+            'app-configuration/adminComponents.json: configuration[0] attribute[0] missing id',
           );
+          expect(result.errors.some((error) => error.includes('/null'))).to.be.false;
         },
       );
     });

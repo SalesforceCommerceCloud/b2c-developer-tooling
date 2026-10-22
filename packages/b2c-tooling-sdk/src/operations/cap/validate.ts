@@ -368,7 +368,7 @@ function validateAdminComponentTranslations(
     return;
   }
 
-  const requiredPairs = adminComponentPairs(raw);
+  const requiredPairs = adminComponentPairs(raw, errors);
   const enPairs = localeAdminPairs(enUs);
   const missingInEn = [...requiredPairs].filter((pair) => !enPairs.has(pair)).sort();
   if (missingInEn.length > 0) {
@@ -383,23 +383,36 @@ function validateAdminComponentTranslations(
   }
 }
 
-function adminComponentPairs(raw: unknown): Set<string> {
-  const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : undefined;
-  const configuration = record?.configuration;
+function adminComponentPairs(raw: unknown, errors: string[]): Set<string> {
+  const root = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : undefined;
+  const configuration = root?.configuration;
   if (!Array.isArray(configuration)) return new Set();
 
   const pairs = new Set<string>();
-  for (const entry of configuration) {
+  for (let index = 0; index < configuration.length; index++) {
+    const entry = configuration[index];
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
-    const record = entry as Record<string, unknown>;
-    if (!('componentKey' in record) || !Array.isArray(record.attributes)) continue;
-    const componentKey = jqInterpolate(record.componentKey);
-    for (const attribute of record.attributes) {
+    const component = entry as Record<string, unknown>;
+    const componentKey = component.componentKey;
+    if (!('componentKey' in component) || componentKey == null) {
+      errors.push(`app-configuration/adminComponents.json: configuration[${index}] missing componentKey`);
+      continue;
+    }
+    if (!Array.isArray(component.attributes)) continue;
+    const renderedKey = jqInterpolate(componentKey);
+    for (let attributeIndex = 0; attributeIndex < component.attributes.length; attributeIndex++) {
+      const attribute = component.attributes[attributeIndex];
       const attributeId =
         attribute && typeof attribute === 'object' && !Array.isArray(attribute) && 'id' in attribute
           ? (attribute as Record<string, unknown>).id
-          : null;
-      pairs.add(`${componentKey}/${jqInterpolate(attributeId)}`);
+          : undefined;
+      if (attributeId == null) {
+        errors.push(
+          `app-configuration/adminComponents.json: configuration[${index}] attribute[${attributeIndex}] missing id`,
+        );
+        continue;
+      }
+      pairs.add(`${renderedKey}/${jqInterpolate(attributeId)}`);
     }
   }
   return pairs;
