@@ -1,20 +1,20 @@
 {
   "tasks": {
     "verify_service_profile": {
-      "name": "Verify Avalara Service Profile",
-      "description": "Confirm the Avalara service profile is configured correctly in Operations > Services > Profiles."
+      "name": "Avalara 서비스 프로필 확인",
+      "description": "운영 > 서비스 > 프로필에서 Avalara 서비스 프로필이 올바르게 구성되었는지 확인합니다."
     },
     "verify_service_credentials": {
-      "name": "Verify Avalara Service Credentials",
-      "description": "Confirm the Avalara service credentials are configured correctly in Operations > Services > Credentials."
+      "name": "Avalara 서비스 자격 증명 확인",
+      "description": "운영 > 서비스 > 자격 증명에서 Avalara 서비스 자격 증명이 올바르게 구성되었는지 확인합니다."
     },
     "verify_service_definition": {
-      "name": "Verify Avalara Service Definition",
-      "description": "Confirm the Avalara service definition is configured correctly in Operations > Services."
+      "name": "Avalara 서비스 정의 확인",
+      "description": "운영 > 서비스에서 Avalara 서비스 정의가 올바르게 구성되었는지 확인합니다."
     },
     "verify_custom_site_preferences": {
-      "name": "Verify Custom Site Preferences",
-      "description": "Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools > Site Preferences."
+      "name": "사용자 지정 사이트 환경설정 확인",
+      "description": "판매자 도구 > 사이트 환경설정에서 Avalara 사용자 지정 사이트 환경설정(예: AvaTax 환경설정 그룹)을 확인합니다."
     }
   }
 }

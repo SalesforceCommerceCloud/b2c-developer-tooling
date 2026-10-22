@@ -1,20 +1,20 @@
 {
   "tasks": {
     "verify_service_profile": {
-      "name": "Verify Avalara Service Profile",
-      "description": "Confirm the Avalara service profile is configured correctly in Operations > Services > Profiles."
+      "name": "Avalara サービスプロファイルを確認",
+      "description": "オペレーション > サービス > プロファイルで、Avalara サービスプロファイルが正しく設定されていることを確認します。"
     },
     "verify_service_credentials": {
-      "name": "Verify Avalara Service Credentials",
-      "description": "Confirm the Avalara service credentials are configured correctly in Operations > Services > Credentials."
+      "name": "Avalara サービス資格情報を確認",
+      "description": "オペレーション > サービス > 資格情報で、Avalara サービス資格情報が正しく設定されていることを確認します。"
     },
     "verify_service_definition": {
-      "name": "Verify Avalara Service Definition",
-      "description": "Confirm the Avalara service definition is configured correctly in Operations > Services."
+      "name": "Avalara サービス定義を確認",
+      "description": "オペレーション > サービスで、Avalara サービス定義が正しく設定されていることを確認します。"
     },
     "verify_custom_site_preferences": {
-      "name": "Verify Custom Site Preferences",
-      "description": "Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools > Site Preferences."
+      "name": "カスタムサイト環境設定を確認",
+      "description": "マーチャントツール > サイト環境設定で、Avalara のカスタムサイト環境設定（AvaTax 環境設定グループなど）を確認します。"
     }
   }
 }

@@ -1,20 +1,20 @@
 {
   "tasks": {
     "verify_service_profile": {
-      "name": "Verify Avalara Service Profile",
-      "description": "Confirm the Avalara service profile is configured correctly in Operations > Services > Profiles."
+      "name": "驗證 Avalara 服務設定檔",
+      "description": "請確認在「作業 > 服務 > 設定檔」中已正確設定 Avalara 服務設定檔。"
     },
     "verify_service_credentials": {
-      "name": "Verify Avalara Service Credentials",
-      "description": "Confirm the Avalara service credentials are configured correctly in Operations > Services > Credentials."
+      "name": "驗證 Avalara 服務認證",
+      "description": "請確認在「作業 > 服務 > 認證」中已正確設定 Avalara 服務認證。"
     },
     "verify_service_definition": {
-      "name": "Verify Avalara Service Definition",
-      "description": "Confirm the Avalara service definition is configured correctly in Operations > Services."
+      "name": "驗證 Avalara 服務定義",
+      "description": "請確認在「作業 > 服務」中已正確設定 Avalara 服務定義。"
     },
     "verify_custom_site_preferences": {
-      "name": "Verify Custom Site Preferences",
-      "description": "Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools > Site Preferences."
+      "name": "驗證自訂網站偏好設定",
+      "description": "請在「商家工具 > 網站偏好設定」中確認 Avalara 自訂網站偏好設定（例如 AvaTax 偏好設定群組）。"
     }
   }
 }

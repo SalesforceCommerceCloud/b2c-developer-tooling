@@ -1,20 +1,20 @@
 {
   "tasks": {
     "verify_service_profile": {
-      "name": "Verify Avalara Service Profile",
-      "description": "Confirm the Avalara service profile is configured correctly in Operations > Services > Profiles."
+      "name": "التحقق من ملف تعريف خدمة Avalara",
+      "description": "تأكد من تكوين ملف تعريف خدمة Avalara بشكل صحيح في العمليات > الخدمات > ملفات التعريف."
     },
     "verify_service_credentials": {
-      "name": "Verify Avalara Service Credentials",
-      "description": "Confirm the Avalara service credentials are configured correctly in Operations > Services > Credentials."
+      "name": "التحقق من بيانات اعتماد خدمة Avalara",
+      "description": "تأكد من تكوين بيانات اعتماد خدمة Avalara بشكل صحيح في العمليات > الخدمات > بيانات الاعتماد."
     },
     "verify_service_definition": {
-      "name": "Verify Avalara Service Definition",
-      "description": "Confirm the Avalara service definition is configured correctly in Operations > Services."
+      "name": "التحقق من تعريف خدمة Avalara",
+      "description": "تأكد من تكوين تعريف خدمة Avalara بشكل صحيح في العمليات > الخدمات."
     },
     "verify_custom_site_preferences": {
-      "name": "Verify Custom Site Preferences",
-      "description": "Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools > Site Preferences."
+      "name": "التحقق من تفضيلات الموقع المخصصة",
+      "description": "تأكد من تفضيلات موقع Avalara المخصصة (مثل مجموعة تفضيلات AvaTax) في أدوات التاجر > تفضيلات الموقع."
     }
   }
 }
