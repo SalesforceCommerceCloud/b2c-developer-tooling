@@ -65,6 +65,10 @@ b2c cap validate PATH
 - `version` must be a valid semver string
 - `app-configuration/tasksList.json` must exist as a valid JSON array
 - Each task must have `taskNumber`, `name`, `description`, `link`
+- `app-configuration/translations/` is required when `tasksList.json` is present
+- Translation files must include every required default Business Manager locale (`ar-MA`, `de`, `en-US`, `es`, `fr`, `it`, `ja`, `ko`, `nl`, `pl`, `pt`, `zh-CN`, `zh-TW`), and any additional locale filename must use a BM-supported BCP-47 name such as `de.json` or `en-US.json`
+- `translations/en-US.json` must include every `taskKey` from `tasksList.json`, and every other locale file must list the same task keys
+- When `adminComponents.json` is present, `en-US.json` must include every component attribute, and every other locale must match that set
 - At least one of `cartridges/`, `storefront-next/`, or `impex/` must be present
 - No `pipeline/` directories in cartridges
 - No `*.ds` pipeline descriptor files

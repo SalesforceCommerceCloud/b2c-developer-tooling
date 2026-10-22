@@ -1,0 +1,20 @@
+{
+  "tasks": {
+    "verify_service_profile": {
+      "name": "Verify Avalara Service Profile",
+      "description": "Confirm the Avalara service profile is configured correctly in Operations > Services > Profiles."
+    },
+    "verify_service_credentials": {
+      "name": "Verify Avalara Service Credentials",
+      "description": "Confirm the Avalara service credentials are configured correctly in Operations > Services > Credentials."
+    },
+    "verify_service_definition": {
+      "name": "Verify Avalara Service Definition",
+      "description": "Confirm the Avalara service definition is configured correctly in Operations > Services."
+    },
+    "verify_custom_site_preferences": {
+      "name": "Verify Custom Site Preferences",
+      "description": "Confirm Avalara custom site preferences (e.g. AvaTax preference group) in Merchant Tools > Site Preferences."
+    }
+  }
+}

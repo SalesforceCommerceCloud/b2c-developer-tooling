@@ -54,6 +54,29 @@ export interface CapValidationResult {
 const SEMVER_RE = /^\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$/;
 
 /**
+ * Default Business Manager locales a CAP must ship under
+ * `app-configuration/translations/` when it includes `tasksList.json`.
+ * Kept in sync with commerce-apps `.github/config/required-bm-locales.txt`.
+ */
+const REQUIRED_BM_LOCALES = [
+  'ar-MA',
+  'de',
+  'en-US',
+  'es',
+  'fr',
+  'it',
+  'ja',
+  'ko',
+  'nl',
+  'pl',
+  'pt',
+  'zh-CN',
+  'zh-TW',
+] as const;
+
+const LOCALE_FILENAME_RE = /^[a-z]{2}(-[A-Z]{2})?\.json$/;
+
+/**
  * Validates a Commerce App Package (CAP) directory or zip file.
  *
  * Checks required files, manifest schema, and cartridge structure rules.
@@ -138,16 +161,19 @@ export async function validateCap(target: string): Promise<CapValidationResult> 
 
     // --- app-configuration/tasksList.json ---
     const tasksListPath = path.join(capDir, 'app-configuration', 'tasksList.json');
-    if (!fs.existsSync(tasksListPath)) {
+    const tasksListExists = fs.existsSync(tasksListPath);
+    let tasks: unknown[] | undefined;
+    if (!tasksListExists) {
       errors.push('Missing required file: app-configuration/tasksList.json');
     } else {
       try {
-        const tasks = JSON.parse(fs.readFileSync(tasksListPath, 'utf-8')) as unknown;
-        if (!Array.isArray(tasks)) {
+        const parsedTasks = JSON.parse(fs.readFileSync(tasksListPath, 'utf-8')) as unknown;
+        if (!Array.isArray(parsedTasks)) {
           errors.push('app-configuration/tasksList.json: must be a JSON array');
         } else {
-          for (let i = 0; i < tasks.length; i++) {
-            const task = tasks[i] as Record<string, unknown>;
+          tasks = parsedTasks;
+          for (let i = 0; i < parsedTasks.length; i++) {
+            const task = parsedTasks[i] as Record<string, unknown>;
             for (const field of ['taskNumber', 'name', 'description', 'link']) {
               if (!task[field]) {
                 errors.push(`app-configuration/tasksList.json: task[${i}] missing field "${field}"`);
@@ -159,6 +185,8 @@ export async function validateCap(target: string): Promise<CapValidationResult> 
         errors.push('app-configuration/tasksList.json: file exists but is not valid JSON');
       }
     }
+
+    validateConfigTaskTranslations(capDir, tasksListExists, tasks, errors);
 
     // --- At least one substantive directory ---
     const hasCartridges = fs.existsSync(path.join(capDir, 'cartridges'));
@@ -186,6 +214,260 @@ export async function validateCap(target: string): Promise<CapValidationResult> 
   }
 
   return {valid: errors.length === 0, errors, warnings, manifest};
+}
+
+/**
+ * Requires `app-configuration/translations/` when `tasksList.json` is present,
+ * then checks required Business Manager locales, locale filenames, task-key
+ * coverage in `en-US.json`, and locale key parity.
+ */
+function validateConfigTaskTranslations(
+  capDir: string,
+  tasksListExists: boolean,
+  tasks: unknown[] | undefined,
+  errors: string[],
+): void {
+  const translationsDir = path.join(capDir, 'app-configuration', 'translations');
+  if (!isDirectory(translationsDir)) {
+    if (tasksListExists) {
+      errors.push('app-configuration/translations/ is required when tasksList.json is present');
+    }
+    return;
+  }
+
+  const localeFiles = listJsonFiles(translationsDir);
+  const misformatted = localeFiles.map((file) => path.basename(file)).filter((name) => !LOCALE_FILENAME_RE.test(name));
+  if (misformatted.length > 0) {
+    errors.push(
+      `app-configuration/translations/ contains misformatted locale file(s): ${misformatted.join(' ')} (expected BM-supported BCP-47 filename such as de.json or en-US.json)`,
+    );
+  }
+
+  const present = new Set(localeFiles.map((file) => path.basename(file)));
+  const missingLocales = REQUIRED_BM_LOCALES.filter((locale) => !present.has(`${locale}.json`));
+  if (missingLocales.length > 0) {
+    errors.push(
+      `app-configuration/translations/ is missing required locale file(s): ${missingLocales.map((locale) => `${locale}.json`).join(' ')}`,
+    );
+  }
+
+  const parsed = new Map<string, unknown>();
+  for (const file of localeFiles) {
+    const filename = path.basename(file);
+    if (!LOCALE_FILENAME_RE.test(filename)) continue;
+    try {
+      parsed.set(filename, JSON.parse(fs.readFileSync(file, 'utf-8')) as unknown);
+    } catch {
+      errors.push(`app-configuration/translations/${filename}: not valid JSON`);
+    }
+  }
+
+  for (const [filename, raw] of parsed) {
+    validateLocaleFileShape(filename, raw, errors);
+  }
+
+  const enUs = parsed.get('en-US.json');
+  if (enUs !== undefined) {
+    if (tasks) {
+      validateTaskKeyCoverage(tasks, enUs, errors);
+    }
+    validateTaskKeyParity(parsed, enUs, errors);
+    validateAdminComponentTranslations(capDir, parsed, enUs, errors);
+  }
+}
+
+function validateLocaleFileShape(filename: string, raw: unknown, errors: string[]): void {
+  const tasks = readObjectProperty(raw, 'tasks');
+  if (!tasks) {
+    errors.push(`app-configuration/translations/${filename}: missing or non-object "tasks" key`);
+    return;
+  }
+
+  const invalidTasks = Object.entries(tasks).filter(([, value]) => !hasNonEmptyStrings(value, ['name', 'description']));
+  if (invalidTasks.length > 0) {
+    errors.push(
+      `app-configuration/translations/${filename}: tasks with missing/invalid name or description: ${invalidTasks.map(([key]) => key).join(', ')}`,
+    );
+  }
+
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !('adminComponents' in raw)) return;
+
+  const adminComponents = readObjectProperty(raw, 'adminComponents');
+  if (!adminComponents) {
+    errors.push(`app-configuration/translations/${filename}: "adminComponents" must be an object`);
+    return;
+  }
+
+  const invalidAdmin: string[] = [];
+  for (const [componentKey, component] of Object.entries(adminComponents)) {
+    if (!component || typeof component !== 'object' || Array.isArray(component)) {
+      invalidAdmin.push(`${componentKey}: must be an object`);
+      continue;
+    }
+    if (!('attributes' in component)) {
+      invalidAdmin.push(`${componentKey}: missing "attributes"`);
+      continue;
+    }
+    const attributes = readObjectProperty(component, 'attributes');
+    if (!attributes) {
+      invalidAdmin.push(`${componentKey}: "attributes" must be an object`);
+      continue;
+    }
+    for (const [attributeId, attribute] of Object.entries(attributes)) {
+      if (!hasNonEmptyStrings(attribute, ['label'])) {
+        invalidAdmin.push(`${componentKey}.attributes.${attributeId}: "label" missing or invalid`);
+      }
+    }
+  }
+  if (invalidAdmin.length > 0) {
+    errors.push(
+      `app-configuration/translations/${filename}: adminComponents shape invalid: ${invalidAdmin.join('; ')}`,
+    );
+  }
+}
+
+function validateTaskKeyCoverage(tasks: unknown[], enUs: unknown, errors: string[]): void {
+  const translated = new Set(Object.keys(readObjectProperty(enUs, 'tasks') ?? {}));
+  const missing: string[] = [];
+  for (const task of tasks) {
+    if (!task || typeof task !== 'object' || Array.isArray(task) || !('taskKey' in task)) continue;
+    const taskKey = (task as Record<string, unknown>).taskKey;
+    // jq's join drops null, matching a missing taskKey. Every other value is rendered and must be translated.
+    if (taskKey == null) continue;
+    const token = jqInterpolate(taskKey);
+    if (!translated.has(token)) missing.push(token);
+  }
+  if (missing.length > 0) {
+    errors.push(`tasksList.json references taskKey(s) not present in translations/en-US.json: ${missing.join(', ')}`);
+  }
+}
+
+function validateTaskKeyParity(locales: Map<string, unknown>, enUs: unknown, errors: string[]): void {
+  const enKeys = new Set(Object.keys(readObjectProperty(enUs, 'tasks') ?? {}));
+  for (const [filename, locale] of locales) {
+    if (filename === 'en-US.json') continue;
+    const localeKeys = new Set(Object.keys(readObjectProperty(locale, 'tasks') ?? {}));
+    reportKeyParity(filename, 'tasks', enKeys, localeKeys, errors);
+  }
+}
+
+function validateAdminComponentTranslations(
+  capDir: string,
+  locales: Map<string, unknown>,
+  enUs: unknown,
+  errors: string[],
+): void {
+  const adminPath = path.join(capDir, 'app-configuration', 'adminComponents.json');
+  if (!fs.existsSync(adminPath)) return;
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(fs.readFileSync(adminPath, 'utf-8')) as unknown;
+  } catch {
+    errors.push('app-configuration/adminComponents.json: file exists but is not valid JSON');
+    return;
+  }
+
+  const requiredPairs = adminComponentPairs(raw);
+  const enPairs = localeAdminPairs(enUs);
+  const missingInEn = [...requiredPairs].filter((pair) => !enPairs.has(pair)).sort();
+  if (missingInEn.length > 0) {
+    errors.push(
+      `adminComponents.json references componentKey/attribute pair(s) not present in translations/en-US.json: ${missingInEn.join(', ')}`,
+    );
+  }
+
+  for (const [filename, locale] of locales) {
+    if (filename === 'en-US.json') continue;
+    reportKeyParity(filename, 'adminComponents', enPairs, localeAdminPairs(locale), errors);
+  }
+}
+
+function adminComponentPairs(raw: unknown): Set<string> {
+  const configuration = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.configuration : undefined;
+  if (!Array.isArray(configuration)) return new Set();
+
+  const pairs = new Set<string>();
+  for (const entry of configuration) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    if (!('componentKey' in record) || !Array.isArray(record.attributes)) continue;
+    const componentKey = jqInterpolate(record.componentKey);
+    for (const attribute of record.attributes) {
+      const attributeId =
+        attribute && typeof attribute === 'object' && !Array.isArray(attribute) && 'id' in attribute
+          ? (attribute as Record<string, unknown>).id
+          : null;
+      pairs.add(`${componentKey}/${jqInterpolate(attributeId)}`);
+    }
+  }
+  return pairs;
+}
+
+/** Renders a value the way jq string interpolation does (`"\(.id)"`). */
+function jqInterpolate(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value === null || value === undefined) return 'null';
+  return JSON.stringify(value);
+}
+
+function localeAdminPairs(locale: unknown): Set<string> {
+  const adminComponents = readObjectProperty(locale, 'adminComponents') ?? {};
+  const pairs = new Set<string>();
+  for (const [componentKey, component] of Object.entries(adminComponents)) {
+    const attributes = readObjectProperty(component, 'attributes') ?? {};
+    for (const attributeId of Object.keys(attributes)) {
+      pairs.add(`${componentKey}/${attributeId}`);
+    }
+  }
+  return pairs;
+}
+
+function reportKeyParity(
+  filename: string,
+  namespace: 'tasks' | 'adminComponents',
+  expected: Set<string>,
+  actual: Set<string>,
+  errors: string[],
+): void {
+  const missing = [...expected].filter((key) => !actual.has(key)).sort();
+  const extra = [...actual].filter((key) => !expected.has(key)).sort();
+  if (missing.length === 0 && extra.length === 0) return;
+
+  let message = `${filename} ${namespace} key parity mismatch with en-US.json`;
+  if (missing.length > 0) message += ` — missing: ${missing.join(', ')}`;
+  if (extra.length > 0) message += ` — extra: ${extra.join(', ')}`;
+  errors.push(message);
+}
+
+function readObjectProperty(value: unknown, key: string): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const property = (value as Record<string, unknown>)[key];
+  if (!property || typeof property !== 'object' || Array.isArray(property)) return undefined;
+  return property as Record<string, unknown>;
+}
+
+function hasNonEmptyStrings(value: unknown, keys: string[]): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return keys.every((key) => typeof record[key] === 'string' && (record[key] as string).length > 0);
+}
+
+function listJsonFiles(dir: string): string[] {
+  return fs
+    .readdirSync(dir, {withFileTypes: true})
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+    .map((entry) => path.join(dir, entry.name))
+    .sort();
+}
+
+function isDirectory(target: string): boolean {
+  try {
+    return fs.statSync(target).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /**
