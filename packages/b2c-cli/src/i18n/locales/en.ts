@@ -125,8 +125,6 @@ export const en = {
         noCodeVersion: 'No code version specified, discovering active code version...',
         noActiveVersion: 'No active code version found. Specify one with --code-version.',
         noLocalCartridges: 'No local cartridges found in {{path}} for mirror mode',
-        oauthRequired:
-          'No code version specified. OAuth credentials are required to auto-discover the active code version.',
         skipped: 'Download skipped: {{reason}}',
         zipping: 'Archiving code version',
         downloadingZip: 'Downloading cartridges',

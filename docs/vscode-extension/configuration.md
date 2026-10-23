@@ -36,9 +36,9 @@ The extension's instance picker combines instances from the primary and global f
 
 Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any URL on the instance, such as a Business Manager link. The extension saves the hostname to `dw.json`.
 
-The first upload signs you in to Account Manager in a browser, and your Business Manager role authorizes it (see [WebDAV browser login](../guide/authentication#option-c-browser-login-account-manager-user)). Without an API client the extension can't look up the active code version, so it asks you to choose one. It lists the code versions on the instance over WebDAV and saves your choice as `code-version` in `dw.json`. Run **B2C DX - Code Sync: Select Code Version for Uploads** to change it later.
+The first upload signs you in to Account Manager in a browser, and your Business Manager role authorizes it (see [WebDAV browser login](../guide/authentication#option-c-browser-login-account-manager-user)). Without a `code-version`, code sync uploads to the active code version, which the extension reads from the instance over WebDAV. To upload to a different version, run **B2C DX - Code Sync: Select Code Version for Uploads**. It lists the versions on the instance, marks the active and rollback versions, and saves your choice as `code-version` in `dw.json`.
 
-Activating, creating, and deleting code versions, and the other features in the table below, still need an API client.
+Activating and deleting code versions, and the other features in the table below, still need an API client.
 
 ### Per-feature requirements
 

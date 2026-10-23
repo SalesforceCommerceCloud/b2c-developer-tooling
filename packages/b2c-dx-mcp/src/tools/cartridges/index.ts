@@ -161,10 +161,8 @@ function createCartridgeDeployTool(
               : await scriptsBackend.getActiveCodeVersion();
             if (!active?.id) {
               throw new Error(
-                'No code version specified and no active code version found. ' +
-                  'Specify a code version using one of: ' +
-                  '--code-version flag, SFCC_CODE_VERSION environment variable, ' +
-                  'or code-version field in dw.json configuration file.',
+                'No code version specified and the instance has no active code version. ' +
+                  'Pass codeVersion, or set code-version in dw.json or SFCC_CODE_VERSION.',
               );
             }
             codeVersion = active.id;

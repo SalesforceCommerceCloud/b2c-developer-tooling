@@ -35,7 +35,7 @@ describe('code list', () => {
   }
 
   function stubCommon(command: any) {
-    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com'}}));
     sinon.stub(command, 'instance').get(() => ({config: {hostname: 'example.com'}}));

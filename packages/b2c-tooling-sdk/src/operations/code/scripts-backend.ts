@@ -6,11 +6,18 @@
 import type {ScriptsBackend} from './scripts-types.js';
 import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 import {ScapiScriptsBackend} from './scapi-scripts-backend.js';
+import {WebDavScriptsBackend} from './webdav-scripts-backend.js';
 import {createDualBackend, type DualBackendConfig} from '../../clients/dual-backend-factory.js';
 
 export type ScriptsBackendConfig = DualBackendConfig;
 
+/**
+ * Creates the code-version backend for an instance: SCAPI or OCAPI per the
+ * `apiBackend` preference, or, without an API client, a WebDAV backend that
+ * lists versions and finds the active one but cannot activate.
+ */
 export function createScriptsBackend(config: ScriptsBackendConfig): ScriptsBackend {
+  if (!config.instance.hasOAuthCredentials) return new WebDavScriptsBackend(config.instance);
   return createDualBackend<ScriptsBackend>(config, {
     domainName: 'Scripts',
     Scapi: ScapiScriptsBackend,

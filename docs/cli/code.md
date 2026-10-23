@@ -36,10 +36,11 @@ The `code deploy`, `code download`, and `code watch` commands always use WebDAV 
 
 Code commands use different authentication depending on the operation:
 
-| Operation                                    | Auth Required                                                             |
-| -------------------------------------------- | ------------------------------------------------------------------------- |
-| `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth)                                              |
-| `code list`, `code activate`, `code delete`  | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
+| Operation                                    | Auth Required                                           |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth, OAuth, or browser login)            |
+| `code list`                                  | OAuth + `sfcc.scripts`, or WebDAV without an API client |
+| `code activate`, `code delete`               | OAuth + `sfcc.scripts.rw` + tenant scope                |
 
 ### WebDAV Operations (deploy, download, watch)
 
@@ -52,9 +53,11 @@ export SFCC_PASSWORD=your-webdav-access-key
 
 Staging instances also require a client certificate (two-factor mTLS). See [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload) to create one.
 
+Without an API client, the active code version (used when `--code-version` isn't set) is read from the instance over WebDAV, so these commands work with only WebDAV access. Activating (`--activate`, `--reload`) still needs an API client.
+
 ### Code Version Operations (list, activate, delete)
 
-These commands require OAuth authentication. Configure the `sfcc.scripts` / `sfcc.scripts.rw` scope on your API client in Account Manager, along with `shortCode` and `tenantId`.
+These commands require OAuth authentication. `code list` also works with only WebDAV access: it then reads the versions and the active and rollback versions from the instance's `Cartridges` folder, without cartridge lists or sizes. Configure the `sfcc.scripts` / `sfcc.scripts.rw` scope on your API client in Account Manager, along with `shortCode` and `tenantId`.
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
@@ -264,7 +267,7 @@ If a cartridge exists remotely but not locally, it is extracted to the output di
 
 ### Notes
 
-- If no `--code-version` is specified, the command auto-discovers the active code version (requires OAuth credentials)
+- If no `--code-version` is specified, the command uses the active code version (found over WebDAV when no API client is configured)
 - Existing file permissions are preserved when overwriting files
 - The server-side zip is cleaned up automatically after download
 

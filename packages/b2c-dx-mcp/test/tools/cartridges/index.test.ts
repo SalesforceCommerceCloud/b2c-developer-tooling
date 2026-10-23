@@ -557,10 +557,9 @@ describe('tools/cartridges', () => {
       expect(getActiveCodeVersionStub.calledOnce).to.be.true;
       expect(findAndDeployCartridgesStub.called).to.be.false;
       const text = getResultText(result);
-      expect(text).to.include('No code version specified and no active code version found');
-      expect(text).to.include('--code-version flag');
-      expect(text).to.include('SFCC_CODE_VERSION environment variable');
-      expect(text).to.include('dw.json configuration file');
+      expect(text).to.include('No code version specified and the instance has no active code version');
+      expect(text).to.include('Pass codeVersion');
+      expect(text).to.include('SFCC_CODE_VERSION');
     });
 
     it('should throw error when no codeVersion and active version has no id', async () => {
@@ -580,10 +579,9 @@ describe('tools/cartridges', () => {
       expect(getActiveCodeVersionStub.calledOnce).to.be.true;
       expect(findAndDeployCartridgesStub.called).to.be.false;
       const text = getResultText(result);
-      expect(text).to.include('No code version specified and no active code version found');
-      expect(text).to.include('--code-version flag');
-      expect(text).to.include('SFCC_CODE_VERSION environment variable');
-      expect(text).to.include('dw.json configuration file');
+      expect(text).to.include('No code version specified and the instance has no active code version');
+      expect(text).to.include('Pass codeVersion');
+      expect(text).to.include('SFCC_CODE_VERSION');
     });
   });
 

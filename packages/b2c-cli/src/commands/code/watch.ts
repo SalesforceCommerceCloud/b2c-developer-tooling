@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {createScriptsBackend, watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {watchCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -40,16 +40,6 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     const hostname = this.resolvedConfig.values.hostname!;
     const version = this.resolvedConfig.values.codeVersion;
 
-    // OAuth is only required if no code version is specified (backend discovery).
-    if (!version && !this.hasOAuthCredentials()) {
-      this.error(
-        t(
-          'commands.code.watch.oauthRequired',
-          'No code version specified. OAuth credentials are required to auto-discover the active code version.\n\nProvide --code-version to use WebDAV only, or configure an API client.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
-        ),
-      );
-    }
-
     this.log(t('commands.code.watch.starting', 'Starting watcher for {{path}}', {path: this.cartridgePath}));
     this.log(t('commands.code.watch.target', 'Target: {{hostname}}', {hostname}));
     if (version) {
@@ -67,7 +57,7 @@ export default class CodeWatch extends CartridgeCommand<typeof CodeWatch> {
     try {
       const result = await this.operations.watchCartridges(this.instance, this.cartridgePath, {
         ...this.cartridgeOptions,
-        scriptsBackend: createScriptsBackend({instance: this.instance}),
+        scriptsBackend: this.createScriptsBackend(),
         onUpload: (files) => {
           this.log(t('commands.code.watch.uploaded', '[UPLOAD] {{count}} file(s)', {count: files.length}));
         },

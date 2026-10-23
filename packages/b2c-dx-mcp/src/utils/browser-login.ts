@@ -30,9 +30,7 @@ const STATE_PREFIX = 'am-login.';
 const INPUT_KEY = 'account_manager_login';
 /** Pending entries whose client never retries are dropped this long after the call settles. */
 const RETENTION_MS = 10 * 60 * 1000;
-const LOGIN_MESSAGE =
-  'Sign in to Account Manager so the B2C DX MCP server can access your B2C Commerce instance. ' +
-  'Your Business Manager role on the instance decides what you can access.';
+const LOGIN_MESSAGE = 'Sign in to Account Manager to access your B2C Commerce instance.';
 
 interface StartedLogin {
   url: string;
@@ -98,7 +96,8 @@ export class BrowserLoginContinuations {
     this.pending.delete(requestState);
 
     const action = (inputResponses?.[INPUT_KEY] as undefined | {action?: unknown})?.action;
-    if (action === 'decline' || action === 'cancel') entry.login?.cancel('Account Manager login declined.');
+    if (action === 'decline') entry.login?.cancel('Account Manager login declined.');
+    if (action === 'cancel') entry.login?.cancel('Account Manager login cancelled.');
     const onAbort = () => entry.login?.cancel('Account Manager login cancelled.');
     signal?.addEventListener('abort', onAbort, {once: true});
     try {

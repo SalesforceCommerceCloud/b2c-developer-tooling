@@ -119,7 +119,7 @@ export class CodeSyncManager implements vscode.Disposable {
     }
     if (!this.codeVersion) {
       this.log(
-        '[Warning] No code version configured. Select one, set "code-version" in dw.json, or configure OAuth credentials. Code upload is disabled.',
+        '[Warning] No code version configured and the instance has no active code version. Select one or set "code-version" in dw.json. Code upload is disabled.',
       );
       this.updateStatusBar('warning');
       showNoCodeVersionMessage();

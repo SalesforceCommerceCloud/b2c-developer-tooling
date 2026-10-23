@@ -213,6 +213,15 @@ export class B2CInstance {
   }
 
   /**
+   * Whether an API client is available for OCAPI and SCAPI calls (configured
+   * OAuth credentials or a caller-provided OAuth strategy). Without one, only
+   * WebDAV can be used, with Basic auth or a browser login.
+   */
+  get hasOAuthCredentials(): boolean {
+    return Boolean(this.options.oauthStrategy || this.auth.oauth);
+  }
+
+  /**
    * Whether the WebDAV client authenticates as an Account Manager user (browser
    * login) rather than with Basic auth or an API client token. User tokens are
    * authorized by the user's Business Manager permissions. `false` until the

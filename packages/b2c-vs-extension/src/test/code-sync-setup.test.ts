@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {codeVersionsFromPropfind, dwJsonForHostname, saveCodeVersion} from '../code-sync/code-sync-setup.js';
+import {codeVersionItems, dwJsonForHostname, saveCodeVersion} from '../code-sync/code-sync-setup.js';
 import {instanceNameForHostname, parseServerHostname} from '../walkthrough/server-hostname.js';
 
 function resolvedConfig(sources: ResolvedB2CConfig['sources'], instanceName?: string): ResolvedB2CConfig {
@@ -36,14 +36,19 @@ suite('server-only code sync setup', () => {
     assert.strictEqual(instanceNameForHostname('.example.com'), 'dev');
   });
 
-  test('lists code versions from a Cartridges PROPFIND', () => {
-    const versions = codeVersionsFromPropfind([
-      {href: '/on/demandware.servlet/webdav/Sites/Cartridges/', displayName: 'Cartridges', isCollection: true},
-      {href: '/on/demandware.servlet/webdav/Sites/Cartridges/version2/', displayName: 'version2', isCollection: true},
-      {href: '/on/demandware.servlet/webdav/Sites/Cartridges/version1/', displayName: 'version1', isCollection: true},
-      {href: '/on/demandware.servlet/webdav/Sites/Cartridges/notes.txt', displayName: 'notes.txt', isCollection: false},
-    ]);
-    assert.deepStrictEqual(versions, ['version1', 'version2']);
+  test('labels code versions with their state', () => {
+    const items = codeVersionItems(
+      [{id: 'release_a', rollback: true}, {id: 'release_b', active: true}, {id: 'scratch'}],
+      'release_b',
+    );
+    assert.deepStrictEqual(
+      items.map((i) => [i.label, i.description]),
+      [
+        ['release_a', 'Rollback'],
+        ['release_b', 'Active · Current'],
+        ['scratch', undefined],
+      ],
+    );
   });
 
   test('saves the code version to the project dw.json that supplied the hostname', async () => {

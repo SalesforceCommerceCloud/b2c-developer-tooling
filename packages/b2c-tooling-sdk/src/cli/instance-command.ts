@@ -10,6 +10,9 @@ import {ERROR_CODE} from './base-command.js';
 import {loadConfig, extractInstanceFlags} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {B2CInstance} from '../instance/index.js';
+import {listAuthSessions} from '../auth/session-store.js';
+import {getDefaultPublicClientId} from '../defaults.js';
+import {createScriptsBackend, WebDavScriptsBackend, type ScriptsBackend} from '../operations/code/index.js';
 import {t} from '../i18n/index.js';
 import {
   B2CLifecycleRunner,
@@ -290,6 +293,29 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    */
   protected supportsDefaultWebDavClient(): boolean {
     return false;
+  }
+
+  /**
+   * For commands that support the built-in WebDAV client, whether an API
+   * client is available for OCAPI and SCAPI. Without a configured client ID,
+   * the OAuth resolver only reuses a stored session when it is the only one,
+   * and the built-in public client's session has no OCAPI or SCAPI access.
+   */
+  protected override hasOAuthCredentials(): boolean {
+    if (!this.supportsDefaultWebDavClient()) return super.hasOAuthCredentials();
+    if (this.resolvedConfig.hasOAuthConfig()) return true;
+    const sessions = listAuthSessions();
+    return sessions.length === 1 && sessions[0].clientId !== getDefaultPublicClientId(this.accountManagerHost);
+  }
+
+  /**
+   * Code-version backend: SCAPI or OCAPI with an API client, otherwise WebDAV,
+   * which lists versions and finds the active one but cannot activate.
+   */
+  protected createScriptsBackend(): ScriptsBackend {
+    return this.hasOAuthCredentials()
+      ? this.createBackend(createScriptsBackend)
+      : new WebDavScriptsBackend(this.instance);
   }
 
   /**

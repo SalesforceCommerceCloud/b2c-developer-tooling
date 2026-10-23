@@ -25,7 +25,7 @@ Use the CLI for watches, recursive downloads, and extra deployment flags.
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-With only a server configured (no access key or API client), these commands open an Account Manager browser login and the user's Business Manager role authorizes WebDAV access. A 403 names the user and the missing functional permission (for example `WebDAV_Manage_Customization` for `Cartridges`). This applies only with `--code-version` set; code-version discovery and activation still need an API client.
+With only a server configured (no access key or API client), these commands open an Account Manager browser login and the user's Business Manager role authorizes WebDAV access. A 403 names the user and the missing functional permission (for example `WebDAV_Manage_Customization` for `Cartridges`). Without an API client the active code version is read over WebDAV, so `--code-version` is optional and `code list` works; activation (`code activate`, `--activate`, `--reload`) still needs an API client.
 
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 

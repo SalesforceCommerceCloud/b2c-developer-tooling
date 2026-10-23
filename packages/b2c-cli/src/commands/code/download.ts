@@ -4,11 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
-import {
-  downloadCartridges,
-  createScriptsBackend,
-  type DownloadResult,
-} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {downloadCartridges, type DownloadResult} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {CartridgeCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {t, withDocs} from '../../i18n/index.js';
 
@@ -54,10 +50,9 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
 
   protected operations = {
     downloadCartridges,
-    // Active-version discovery goes through the dual backend (SCAPI with OCAPI
-    // fallback) so SCAPI-only instances can auto-discover without OCAPI.
-    getActiveCodeVersion: (instance: import('@salesforce/b2c-tooling-sdk/instance').B2CInstance) =>
-      createScriptsBackend({instance}).getActiveCodeVersion(),
+    // SCAPI with OCAPI fallback, or WebDAV without an API client.
+    getActiveCodeVersion: (_instance: import('@salesforce/b2c-tooling-sdk/instance').B2CInstance) =>
+      this.createScriptsBackend().getActiveCodeVersion(),
   };
 
   async run(): Promise<DownloadResult> {
@@ -65,16 +60,6 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
 
     const hostname = this.resolvedConfig.values.hostname!;
     let version = this.resolvedConfig.values.codeVersion;
-
-    const needsOAuth = !version;
-    if (needsOAuth && !this.hasOAuthCredentials()) {
-      this.error(
-        t(
-          'commands.code.download.oauthRequired',
-          'No code version specified. OAuth credentials are required to auto-discover the active code version.\n\nProvide --code-version to use WebDAV only, or configure an API client.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
-        ),
-      );
-    }
 
     // If no code version specified, discover the active one
     if (!version) {
@@ -153,7 +138,7 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
       };
 
       const result = await this.operations.downloadCartridges(this.instance, this.flags.output ?? 'cartridges', {
-        scriptsBackend: createScriptsBackend({instance: this.instance}),
+        scriptsBackend: this.createScriptsBackend(),
         include: this.cartridgeOptions.include,
         exclude: this.cartridgeOptions.exclude,
         mirror,

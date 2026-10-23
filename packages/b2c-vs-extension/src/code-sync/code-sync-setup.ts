@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {PropfindEntry} from '@salesforce/b2c-tooling-sdk/clients';
 import {updateInstanceConfig, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+import type {CodeVersionInfo} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
+import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 const NEW_VERSION = Symbol('new');
 const SELECT_ACTION = 'Select Code Version';
@@ -29,12 +30,15 @@ export function showNoCodeVersionMessage(message = 'B2C DX: Choose a code versio
   });
 }
 
-/** Code version names from a depth-1 PROPFIND of `Cartridges` (the folder itself excluded). */
-export function codeVersionsFromPropfind(entries: PropfindEntry[]): string[] {
-  return entries
-    .filter((e) => e.isCollection && e.displayName && e.displayName !== 'Cartridges')
-    .map((e) => e.displayName as string)
-    .sort((a, b) => a.localeCompare(b));
+/** Picker items for code versions, labelled with their state on the instance and in the configuration. */
+export function codeVersionItems(
+  versions: CodeVersionInfo[],
+  current: string | undefined,
+): (vscode.QuickPickItem & {version: string})[] {
+  return versions.map((v) => {
+    const tags = [v.active ? 'Active' : v.rollback ? 'Rollback' : undefined, v.id === current ? 'Current' : undefined];
+    return {label: v.id, description: tags.filter(Boolean).join(' · ') || undefined, version: v.id};
+  });
 }
 
 /**
@@ -50,18 +54,18 @@ export function dwJsonForHostname(config: ResolvedB2CConfig): string | undefined
 }
 
 /**
- * Lets the user choose the code version that code sync uploads to. Versions
- * are listed over WebDAV, so this works with only a browser login; no API
- * client is needed. Returns the chosen version, or undefined if cancelled.
+ * Lets the user choose the code version that code sync uploads to. Without an
+ * API client the versions (and which one is active) are read over WebDAV, so
+ * this works with only a browser login. Returns the chosen version, or
+ * undefined if cancelled.
  */
 export async function pickCodeVersion(instance: B2CInstance): Promise<string | undefined> {
   const versions = await vscode.window.withProgress(
     {location: vscode.ProgressLocation.Notification, title: 'B2C DX: Listing code versions...'},
-    async () => codeVersionsFromPropfind(await instance.webdav.propfind('Cartridges', '1')),
+    () => createScriptsBackendFromExtension(instance).listCodeVersions(),
   );
-  const current = instance.config.codeVersion;
   const items: (vscode.QuickPickItem & {version: string | typeof NEW_VERSION})[] = [
-    ...versions.map((v) => ({label: v, description: v === current ? 'Current' : undefined, version: v})),
+    ...codeVersionItems(versions, instance.config.codeVersion),
     {label: '$(add) New code version...', version: NEW_VERSION},
   ];
   const picked = await vscode.window.showQuickPick(items, {

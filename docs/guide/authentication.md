@@ -634,7 +634,7 @@ Requests are authorized by your Business Manager roles on the instance, not by W
 
 When access is refused, the error names your login and the missing permission. The login is reused until the session expires (the access token is refreshed silently for 24 hours).
 
-The built-in client works for WebDAV only. Commands that also call OCAPI or SCAPI, such as `code deploy` without `--code-version` or with `--activate`, still need an API client. The browser login is available in the CLI (`code deploy`, `code watch`, `code download`, `logs`, `webdav`), the MCP server's WebDAV, logs, and cartridge deploy tools, and VS Code code sync. MCP clients that support URL elicitation show the sign-in link themselves; with other clients the MCP server opens the system browser.
+The built-in client works for WebDAV only. Without an API client, the active code version is read from the instance over WebDAV, so `code deploy` works without `--code-version`. Activating a code version (`code activate`, `code deploy --activate`) still needs an API client. The browser login is available in the CLI (`code deploy`, `code watch`, `code download`, `logs`, `webdav`), the MCP server's WebDAV, logs, and cartridge deploy tools, and VS Code code sync. MCP clients that support URL elicitation show the sign-in link themselves; with other clients the MCP server opens the system browser.
 
 ### Which credentials WebDAV uses
 
