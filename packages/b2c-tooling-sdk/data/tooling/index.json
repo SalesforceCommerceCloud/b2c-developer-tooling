@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-21T17:04:42.910Z",
+  "generatedAt": "2026-10-23T22:54:31.592Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -305,7 +305,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md",
-      "headings": "Overview • Account Manager API Client • Authentication Methods • Creating an API Client • Assigning Roles • Understanding Roles and Tenant Filters • For Client Credentials (Roles on API Client) • For User Authentication (roles on User) • Configuring Scopes • Configuring Tenant Filter • Redirect URLs • JWT Authentication (Certificate-Based) • How It Works • Benefits • Setup Instructions • Step 1: Generate Certificate Pair • Step 2: Register Certificate in Account Manager • Step 3: Configure CLI • Authentication Priority • Troubleshooting • Security Best Practices • OCAPI Configuration • Configuring OCAPI in Business Manager • Example OCAPI Configuration • Minimal Configuration by Feature • SCAPI Authentication • Required Setup • Scopes by Command • Configuration • WebDAV Access • Option A: Basic Authentication (user access) • Option B: OAuth-based WebDAV (API client access) • Which credentials WebDAV uses • Managed Runtime API Key • Getting an MRT API Key • Configuring the API Key • Quick Start Example • 1. Create API Client in Account Manager • 2. (Optional) Configure OCAPI fallback • 3. Configure WebDAV Access (for code deploy/watch, webdav commands) • 4. Set Environment Variables • 5. Test the Configuration • Troubleshooting • \"Unauthorized\" errors • \"Unauthorized\" (401) or \"Forbidden\" (403) on WebDAV operations • \"Invalid scope\" errors • Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation} • What changed • You must use a public client • Transitional automatic fallback • Next Steps",
+      "headings": "Overview • Account Manager API Client • Authentication Methods • Creating an API Client • Assigning Roles • Understanding Roles and Tenant Filters • For Client Credentials (Roles on API Client) • For User Authentication (roles on User) • Configuring Scopes • Configuring Tenant Filter • Redirect URLs • JWT Authentication (Certificate-Based) • How It Works • Benefits • Setup Instructions • Step 1: Generate Certificate Pair • Step 2: Register Certificate in Account Manager • Step 3: Configure CLI • Authentication Priority • Troubleshooting • Security Best Practices • OCAPI Configuration • Configuring OCAPI in Business Manager • Example OCAPI Configuration • Minimal Configuration by Feature • SCAPI Authentication • Required Setup • Scopes by Command • Configuration • WebDAV Access • Option A: Basic Authentication (user access) • Option B: OAuth-based WebDAV (API client access) • Option C: Browser login (Account Manager user) • Which credentials WebDAV uses • Managed Runtime API Key • Getting an MRT API Key • Configuring the API Key • Quick Start Example • 1. Create API Client in Account Manager • 2. (Optional) Configure OCAPI fallback • 3. Configure WebDAV Access (for code deploy/watch, webdav commands) • 4. Set Environment Variables • 5. Test the Configuration • Troubleshooting • \"Unauthorized\" errors • \"Unauthorized\" (401) or \"Forbidden\" (403) on WebDAV operations • \"Invalid scope\" errors • Implicit Flow Deprecation (PKCE Migration) {#implicit-flow-deprecation} • What changed • You must use a public client • Transitional automatic fallback • Next Steps",
       "preview": "Set up authentication for the B2C CLI including Account Manager API clients, SCAPI scopes, OCAPI permissions, and WebDAV access keys."
     },
     {
@@ -557,7 +557,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {

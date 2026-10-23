@@ -99,8 +99,10 @@ export default class B2CHelp extends Help {
       `  password. Create one with: ${bin} bm access-key create`,
       '- OAuth: --client-id and --client-secret of an API client granted access to',
       `  ${folder} in Business Manager > Administration > Organization > WebDAV Client Permissions.`,
-      'Basic auth is used when both are configured. To use the API client instead, pass',
-      '--auth-methods client-credentials.',
+      '- Browser login: with neither configured, you sign in to Account Manager in a browser',
+      "  and your Business Manager role's WebDAV permissions on the instance authorize access.",
+      'Basic auth is used when both Basic auth and an API client are configured. To use the',
+      'API client instead, pass --auth-methods client-credentials.',
     ];
     return this.section('WEBDAV AUTHENTICATION', lines.join('\n')) + '\n';
   }

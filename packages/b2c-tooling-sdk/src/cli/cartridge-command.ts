@@ -7,6 +7,8 @@ import path from 'node:path';
 import {Args, Command, Flags} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import {byPluginName} from './hooks.js';
+import {listAuthSessions} from '../auth/session-store.js';
+import {getDefaultPublicClientId} from '../defaults.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from '../operations/code/cartridges.js';
 import {
   CartridgeProviderRunner,
@@ -64,6 +66,26 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
   public async init(): Promise<void> {
     await super.init();
     await this.collectCartridgeProviders();
+  }
+
+  /**
+   * Code version discovery and activation need OAuth; plain uploads to a
+   * known code version only need WebDAV.
+   */
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
+
+  /**
+   * Whether code version discovery and activation can authenticate. Without a
+   * configured client ID, the OAuth resolver only reuses a stored session when
+   * it is the only one, and the built-in public client used for WebDAV has no
+   * OCAPI or SCAPI access.
+   */
+  protected override hasOAuthCredentials(): boolean {
+    if (this.resolvedConfig.hasOAuthConfig()) return true;
+    const sessions = listAuthSessions();
+    return sessions.length === 1 && sessions[0].clientId !== getDefaultPublicClientId(this.accountManagerHost);
   }
 
   /**

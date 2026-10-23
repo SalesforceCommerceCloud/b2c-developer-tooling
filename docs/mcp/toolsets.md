@@ -237,7 +237,12 @@ from the machine running the MCP server.
 | `webdav_get`  | Read part of a text file or download a whole file.                       |
 | `webdav_put`  | Upload text or a local file; replace existing files only when requested. |
 
-Requires WebDAV access to the selected directory. Whole-file transfers are limited
+Requires WebDAV access to the selected directory. With only a hostname configured,
+the first WebDAV call opens an Account Manager [browser login](../guide/authentication#option-c-browser-login-account-manager-user)
+and your Business Manager role authorizes access; this also applies to logs and
+cartridge uploads. Clients that support URL elicitation show the sign-in link and
+finish the original call after you sign in; other clients open the system browser.
+A login that isn't completed within 5 minutes fails the call. Whole-file transfers are limited
 to 64 MiB. Upload folders must already exist; local downloads require a new filename.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).

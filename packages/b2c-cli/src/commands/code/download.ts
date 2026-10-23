@@ -71,7 +71,7 @@ export default class CodeDownload extends CartridgeCommand<typeof CodeDownload> 
       this.error(
         t(
           'commands.code.download.oauthRequired',
-          'No code version specified. OAuth credentials are required to auto-discover the active code version.\n\nProvide --code-version to use basic auth only, or configure OAuth credentials.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
+          'No code version specified. OAuth credentials are required to auto-discover the active code version.\n\nProvide --code-version to use WebDAV only, or configure an API client.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
         ),
       );
     }

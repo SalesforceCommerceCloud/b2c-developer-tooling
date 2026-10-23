@@ -73,8 +73,10 @@ export type {
   ApiKeyAuthConfig,
   AuthMethod,
   AuthCredentials,
+  BrowserLogin,
 } from './types.js';
 export {ALL_AUTH_METHODS} from './types.js';
+export {openUrlInBrowser} from './open-browser.js';
 
 // Client credential encoding (RFC 6749 §2.3.1)
 export {

@@ -8,7 +8,7 @@ The extension shares the [B2C CLI](../guide/configuration)'s configuration syste
 
 This page covers:
 
-- [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
+- [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature, and code sync with only a server.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
 - [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
 - [Safety Mode](#safety-mode) — restrict changes and require confirmation for selected actions.
@@ -32,6 +32,14 @@ The global default is the same fallback used by the CLI and MCP server. The exte
 
 The extension's instance picker combines instances from the primary and global files. Same-name primary entries shadow global entries, and each instance remains a complete entry rather than having fields merged across files. Switching an instance updates the file that owns it and clears the previous active selection across the catalog.
 
+### Code sync with only a server
+
+Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any URL on the instance, such as a Business Manager link. The extension saves the hostname to `dw.json`.
+
+The first upload signs you in to Account Manager in a browser, and your Business Manager role authorizes it (see [WebDAV browser login](../guide/authentication#option-c-browser-login-account-manager-user)). Without an API client the extension can't look up the active code version, so it asks you to choose one. It lists the code versions on the instance over WebDAV and saves your choice as `code-version` in `dw.json`. Run **B2C DX - Code Sync: Select Code Version for Uploads** to change it later.
+
+Activating, creating, and deleting code versions, and the other features in the table below, still need an API client.
+
 ### Per-feature requirements
 
 A summary by feature, regardless of which configuration source provides the values:
@@ -41,7 +49,7 @@ A summary by feature, regardless of which configuration source provides the valu
 | **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter.                                                                                              |
 | **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                                                                                                             |
 | **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                                                                                                                           |
-| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                                                                                                                           |
+| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations. Only `hostname` is required to upload code; see [Code sync with only a server](#code-sync-with-only-a-server).            |
 | **SCAPI API Browser**      | Account Manager access, `short-code`, and `tenant-id` to load schemas. Shopper requests also use `slas-client-id` and `site-id`; private clients need `slas-client-secret`. See [API Browser Setup](#api-browser-setup). |
 | **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                                                                                                             |
 | **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                                                                                                                     |

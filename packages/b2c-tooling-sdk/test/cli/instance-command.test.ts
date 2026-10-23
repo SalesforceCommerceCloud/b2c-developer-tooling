@@ -58,6 +58,18 @@ class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
   }
 }
 
+class DefaultWebDavCommand extends TestInstanceCommand {
+  static id = 'test:default-webdav';
+
+  public testHasWebDavCredentials() {
+    return this.hasWebDavCredentials();
+  }
+
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
+}
+
 describe('cli/instance-command', () => {
   let config: Config;
   let command: TestInstanceCommand;
@@ -194,6 +206,36 @@ describe('cli/instance-command', () => {
 
       void instance.ocapi;
       expect(command.oauthStrategyCalls).to.equal(1);
+    });
+  });
+
+  describe('default WebDAV client', () => {
+    it('is not offered to commands that do not opt in', async () => {
+      stubParse(command, {server: 'test.demandware.net'});
+      await command.init();
+      const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+      expect(() => command.testRequireWebDavCredentials()).to.throw('Expected error');
+      expect(errorStub.called).to.be.true;
+    });
+
+    it('satisfies WebDAV credentials for opted-in commands and logs in as a user', async () => {
+      const webdavCommand = new DefaultWebDavCommand([], config);
+      stubParse(webdavCommand, {server: 'test.demandware.net'});
+      await webdavCommand.init();
+
+      expect(webdavCommand.testHasWebDavCredentials()).to.equal(true);
+      const instance = webdavCommand.testInstance();
+      void instance.webdav;
+      expect(instance.webdavUsesUserAuth).to.equal(true);
+      // The command's OCAPI resolver is not involved in the WebDAV fallback.
+      expect(webdavCommand.oauthStrategyCalls).to.equal(0);
+    });
+
+    it('is not used when auth methods exclude user', async () => {
+      const webdavCommand = new DefaultWebDavCommand([], config);
+      stubParse(webdavCommand, {server: 'test.demandware.net', 'auth-methods': ['client-credentials']});
+      await webdavCommand.init();
+      expect(webdavCommand.testHasWebDavCredentials()).to.equal(false);
     });
   });
 

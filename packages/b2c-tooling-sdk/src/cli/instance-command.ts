@@ -273,17 +273,42 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       // B2CInstance. This preserves stored PKCE sessions, refresh tokens,
       // default public clients, and the transitional PKCE→implicit fallback.
       // Keep it lazy so Basic-only WebDAV commands never resolve OAuth.
-      this._instance = this.resolvedConfig.createB2CInstance({oauthStrategy: () => this.getOAuthStrategy()});
+      this._instance = this.resolvedConfig.createB2CInstance({
+        oauthStrategy: () => this.getOAuthStrategy(),
+        defaultWebDavClient: this.canUseDefaultWebDavClient(),
+      });
     }
     return this._instance;
   }
 
   /**
-   * Check if WebDAV credentials are available (Basic or OAuth including implicit).
+   * Whether this command can use WebDAV with a browser login through the
+   * built-in public client when neither Basic auth nor an API client is
+   * configured. The user's Business Manager permissions then authorize the
+   * requests. Override to return `true` in commands whose instance access is
+   * WebDAV-only; OCAPI and SCAPI calls never use the built-in client.
+   */
+  protected supportsDefaultWebDavClient(): boolean {
+    return false;
+  }
+
+  /**
+   * Check if WebDAV credentials are available (Basic, OAuth including implicit,
+   * or a browser login with the built-in client for commands that support it).
    */
   protected hasWebDavCredentials(): boolean {
     // Basic auth, or OAuth (client-credentials needs secret, implicit only needs clientId)
-    return this.resolvedConfig.hasBasicAuthConfig() || this.resolvedConfig.hasOAuthConfig();
+    return (
+      this.resolvedConfig.hasBasicAuthConfig() ||
+      this.resolvedConfig.hasOAuthConfig() ||
+      this.canUseDefaultWebDavClient()
+    );
+  }
+
+  private canUseDefaultWebDavClient(): boolean {
+    if (!this.supportsDefaultWebDavClient()) return false;
+    const authMethods = this.resolvedConfig.values.authMethods;
+    return !authMethods || authMethods.includes('user');
   }
 
   /**

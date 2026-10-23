@@ -26,6 +26,7 @@ import type {
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {BrowserLoginContinuations} from './utils/browser-login.js';
 import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 
 /** MCP skills extension identifier (SEP-2640). */
@@ -71,6 +72,7 @@ export interface B2CDxMcpServerOptions extends ServerOptions {
  * @augments {McpServer}
  */
 export class B2CDxMcpServer extends McpServer {
+  private readonly browserLogins = new BrowserLoginContinuations();
   private readonly cleanup?: () => Promise<void>;
   private clientLogged = false;
   private closePromise?: Promise<void>;
@@ -168,7 +170,7 @@ export class B2CDxMcpServer extends McpServer {
         const capabilities = envelope?.[CLIENT_CAPABILITIES_META_KEY] ?? this.server.getClientCapabilities();
         const elicitation = capabilities?.elicitation;
         const contentReads: ContentRead[] = [];
-        const result = await handler(args, {
+        const toolContext: ToolContext = {
           signal: context.mcpReq?.signal,
           requestState: context.mcpReq?.requestState?.(),
           inputResponses: context.mcpReq?.inputResponses,
@@ -176,7 +178,11 @@ export class B2CDxMcpServer extends McpServer {
             elicitation !== undefined && (elicitation.form !== undefined || Object.keys(elicitation).length === 0),
           keepCancellation: !envelope?.[PROTOCOL_VERSION_META_KEY],
           recordContentRead: (read) => contentReads.push(read),
-        });
+        };
+        // A retry after a browser login resumes the original call instead of running the handler again.
+        const result = this.browserLogins.isContinuation(toolContext.requestState)
+          ? await this.browserLogins.resume(toolContext.requestState, toolContext.inputResponses, toolContext.signal)
+          : await this.browserLogins.run(elicitation?.url !== undefined, () => handler(args, toolContext));
         const runTimeMs = Date.now() - startTime;
 
         // Extract error message from CallToolResult content when isError is true

@@ -12,7 +12,7 @@
  * @module config/types
  */
 import type {ClientAuthMethod} from '../auth/client-credentials.js';
-import type {AuthMethod, AuthStrategy} from '../auth/types.js';
+import type {AuthMethod, AuthStrategy, BrowserLogin} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import type {SafetyLevel} from '../safety/safety-middleware.js';
 import type {SafetyRule} from '../safety/types.js';
@@ -526,8 +526,8 @@ export interface CreateOAuthOptions {
   scopes?: string[];
   /** Override redirect URI for browser OAuth flows (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
-  openBrowser?: (url: string) => Promise<void>;
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL and, for PKCE logins, a handle to the pending login. */
+  openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
 }
 
 /** Options for constructing a B2C instance from resolved configuration. */
@@ -538,6 +538,21 @@ export interface CreateB2CInstanceOptions extends Pick<CreateOAuthOptions, 'redi
    * unless an OAuth-backed client is actually used.
    */
   oauthStrategy?: AuthStrategy | (() => AuthStrategy);
+  /**
+   * Let WebDAV fall back to a browser login with the built-in public client
+   * when neither Basic auth nor an API client is configured. The resulting user
+   * token is authorized by the user's Business Manager permissions, so no
+   * access key or WebDAV Client Permissions entry is needed. OCAPI and SCAPI
+   * are unaffected. Enable it only for WebDAV-only operations (file transfer,
+   * logs, code upload), since the login starts on the first WebDAV request.
+   */
+  defaultWebDavClient?: boolean;
+  /**
+   * WebDAV-only fallback strategy (or lazy factory). Takes precedence over
+   * {@link defaultWebDavClient}; used by callers that build their own browser
+   * login strategy.
+   */
+  webdavFallbackStrategy?: AuthStrategy | (() => AuthStrategy);
 }
 
 /**

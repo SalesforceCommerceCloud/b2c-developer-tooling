@@ -102,7 +102,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       this.error(
         t(
           'commands.code.deploy.oauthRequired',
-          '{{reason}}\n\nProvide --code-version to use basic auth only, or configure OAuth credentials.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
+          '{{reason}}\n\nProvide --code-version to use WebDAV only, or configure an API client.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
           {reason},
         ),
       );

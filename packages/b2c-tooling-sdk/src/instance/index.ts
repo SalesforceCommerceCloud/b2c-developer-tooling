@@ -42,10 +42,11 @@
  *
  * @module instance
  */
-import type {AuthConfig, AuthStrategy, AuthMethod, AuthCredentials} from '../auth/types.js';
+import type {AuthConfig, AuthStrategy, AuthMethod, AuthCredentials, UserAuthStrategy} from '../auth/types.js';
 import {BasicAuthStrategy} from '../auth/basic.js';
 import {resolveAuthStrategy, resolveSystemOAuthStrategy} from '../auth/resolve.js';
 import {WebDavClient} from '../clients/webdav.js';
+import {describeWebDavUserAccessFailure} from '../clients/webdav-access-hint.js';
 import {createOcapiClient, type OcapiClient} from '../clients/ocapi.js';
 import type {TlsOptions} from '../clients/tls-dispatcher.js';
 import {createWebDavDispatcher} from '../clients/http-transport.js';
@@ -76,6 +77,13 @@ export interface ScapiClientConfig {
  */
 export interface B2CInstanceOptions {
   oauthStrategy?: AuthStrategy | (() => AuthStrategy);
+  /**
+   * WebDAV-only strategy (or lazy factory) used when neither Basic auth nor an
+   * OAuth client is configured, typically a browser login with the built-in
+   * public client. OCAPI and SCAPI never use it. Ignored when `authMethods`
+   * excludes `user`.
+   */
+  webdavFallbackStrategy?: AuthStrategy | (() => AuthStrategy);
 }
 
 /**
@@ -132,6 +140,7 @@ export interface InstanceConfig {
  */
 export class B2CInstance {
   private _webdav?: WebDavClient;
+  private _webdavAuth?: AuthStrategy;
   private _ocapi?: OcapiClient;
   private _oauthStrategy?: AuthStrategy;
 
@@ -204,6 +213,16 @@ export class B2CInstance {
   }
 
   /**
+   * Whether the WebDAV client authenticates as an Account Manager user (browser
+   * login) rather than with Basic auth or an API client token. User tokens are
+   * authorized by the user's Business Manager permissions. `false` until the
+   * {@link webdav} client has been created.
+   */
+  get webdavUsesUserAuth(): boolean {
+    return this._webdavAuth ? isUserAuthStrategy(this._webdavAuth) : false;
+  }
+
+  /**
    * WebDAV client for file operations.
    *
    * Uses Basic auth if username/password are configured,
@@ -218,8 +237,14 @@ export class B2CInstance {
    */
   get webdav(): WebDavClient {
     if (!this._webdav) {
-      this._webdav = new WebDavClient(this.webdavHostname, this.getWebDavAuthStrategy(), {
+      const auth = this.getWebDavAuthStrategy();
+      this._webdavAuth = auth;
+      this._webdav = new WebDavClient(this.webdavHostname, auth, {
         dispatcher: createWebDavDispatcher(this.config.tlsOptions),
+        // The server answers 403 when the user lacks the permission or doesn't exist on the instance.
+        authFailureHint: isUserAuthStrategy(auth)
+          ? async (path, status) => (status === 403 ? describeUserAccessFailure(auth, path) : undefined)
+          : undefined,
       });
     }
     return this._webdav;
@@ -258,6 +283,15 @@ export class B2CInstance {
     // If basic auth is allowed and configured, use it directly
     if (webdavMethods.includes('basic') && this.auth.basic) {
       return new BasicAuthStrategy(this.auth.basic.username, this.auth.basic.password);
+    }
+
+    // Without a configured API client, a caller-provided WebDAV-only fallback
+    // (browser login with the built-in public client) may be used. User tokens
+    // are authorized by the user's Business Manager permissions, so no WebDAV
+    // Client Permissions entry is needed for the client.
+    const fallback = this.options.webdavFallbackStrategy;
+    if (!this.auth.oauth && fallback && webdavMethods.includes('user')) {
+      return typeof fallback === 'function' ? fallback() : fallback;
     }
 
     // Otherwise try OAuth methods
@@ -351,6 +385,23 @@ export class B2CInstance {
   private buildSystemOAuthStrategy(method: 'client-credentials' | 'jwt'): AuthStrategy | undefined {
     return this.auth.oauth ? resolveSystemOAuthStrategy(this.auth.oauth, [method]) : undefined;
   }
+}
+
+function isUserAuthStrategy(auth: AuthStrategy): auth is UserAuthStrategy {
+  const method = (auth as Partial<UserAuthStrategy>).authMethod;
+  return (method === 'user' || method === 'implicit') && typeof (auth as UserAuthStrategy).getJWT === 'function';
+}
+
+/** Names the signed-in user and the Business Manager permission a refused WebDAV path requires. */
+async function describeUserAccessFailure(auth: UserAuthStrategy, path: string): Promise<string> {
+  let username: string | undefined;
+  try {
+    const sub = (await auth.getJWT()).payload.sub;
+    username = typeof sub === 'string' && sub ? sub : undefined;
+  } catch {
+    // Name the requirement without the user when the token can't be decoded.
+  }
+  return describeWebDavUserAccessFailure(path, username);
 }
 
 // Re-export types for convenience

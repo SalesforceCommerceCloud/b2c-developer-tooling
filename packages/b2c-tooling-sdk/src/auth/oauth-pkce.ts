@@ -7,7 +7,8 @@ import {createHash, randomBytes} from 'node:crypto';
 import {createServer, type Server, type IncomingMessage, type ServerResponse} from 'node:http';
 import type {Socket} from 'node:net';
 import {URL} from 'node:url';
-import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import type {AuthStrategy, AccessTokenResponse, BrowserLogin, DecodedJWT, FetchInit} from './types.js';
+import {openUrlInBrowser} from './open-browser.js';
 import {dispatchFetch} from './dispatch-fetch.js';
 import {getApiFetch, type HttpTransportOptions} from '../clients/http-transport.js';
 import {wrapNetworkError} from '../errors/network-error.js';
@@ -97,8 +98,8 @@ export interface PkceOAuthConfig extends HttpTransportOptions {
   localPort?: number;
   /** Override redirect URI (default `http://localhost:${localPort}` or SFCC_REDIRECT_URI). */
   redirectUri?: string;
-  /** Custom browser opener. Receives the authorization URL. */
-  openBrowser?: (url: string) => Promise<void>;
+  /** Custom browser opener. Receives the authorization URL and a handle to cancel the pending login. */
+  openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
   /**
    * Persist tokens (access + refresh) to disk between CLI invocations,
    * keyed by clientId. When a refresh token is available it is used to
@@ -127,15 +128,6 @@ function parseOAuthErrorBody(text: string): {error?: string; errorDescription?: 
     };
   } catch {
     return {};
-  }
-}
-
-async function openBrowserDefault(url: string): Promise<void> {
-  try {
-    const open = await import('open');
-    await open.default(url);
-  } catch {
-    getLogger().debug('Could not automatically open browser');
   }
 }
 
@@ -485,11 +477,11 @@ export class PkceOAuthStrategy implements AuthStrategy {
     logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
     logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
 
-    const code = await this.waitForAuthCode(state, async () => {
+    const code = await this.waitForAuthCode(state, async (login) => {
       if (this.config.openBrowser) {
-        await this.config.openBrowser(authorizeUrl);
+        await this.config.openBrowser(authorizeUrl, login);
       } else {
-        await openBrowserDefault(authorizeUrl);
+        await openUrlInBrowser(authorizeUrl);
       }
     });
     logger.debug({codePrefix: code.slice(0, 8)}, '[Auth] Got authorization code, exchanging for token');
@@ -607,7 +599,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
     return tokenResponse;
   }
 
-  private waitForAuthCode(expectedState: string, openBrowser: () => Promise<void>): Promise<string> {
+  private waitForAuthCode(expectedState: string, openBrowser: (login: BrowserLogin) => Promise<void>): Promise<string> {
     const logger = getLogger();
     return new Promise<string>((resolve, reject) => {
       const sockets: Set<Socket> = new Set();
@@ -675,7 +667,9 @@ export class PkceOAuthStrategy implements AuthStrategy {
         logger.debug({port: this.localPort}, `[Auth] PKCE redirect server listening on port ${this.localPort}`);
         logger.info('Waiting for user to authenticate...');
         try {
-          await openBrowser();
+          await openBrowser({
+            cancel: (reason = 'Login cancelled') => settleAfterClose(() => reject(new Error(reason))),
+          });
         } catch (error) {
           const browserError = error instanceof Error ? error : new Error(String(error));
           settleAfterClose(() => reject(browserError));

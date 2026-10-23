@@ -51,6 +51,7 @@ import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {configSourceHint} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
+import {openBrowserForTool} from './utils/browser-login.js';
 import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
 import {
   createCustomApisClient,
@@ -205,8 +206,12 @@ export class Services {
       origin: config.values.mrtOrigin,
     };
 
-    // Build B2C instance using factory method
-    const b2cInstance = config.hasB2CInstanceConfig() ? config.createB2CInstance() : undefined;
+    // Build B2C instance using factory method. Without Basic auth or an API client,
+    // WebDAV tools fall back to a browser login with the built-in public client.
+    // Browser logins go through the calling tool so clients can open the URL themselves.
+    const b2cInstance = config.hasB2CInstanceConfig()
+      ? config.createB2CInstance({defaultWebDavClient: true, openBrowser: openBrowserForTool})
+      : undefined;
 
     return new Services({
       b2cInstance,

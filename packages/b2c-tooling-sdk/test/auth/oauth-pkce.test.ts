@@ -152,6 +152,28 @@ describe('auth/oauth-pkce', () => {
       strategy.invalidateToken();
     });
 
+    it('lets the browser opener cancel the pending login and frees the port', async () => {
+      const localPort = await getAvailablePort();
+      const strategy = new PkceOAuthStrategy({
+        clientId: 'pkce-cancel-login',
+        localPort,
+        persistSession: false,
+        async openBrowser(_url, login) {
+          login?.cancel('Login declined');
+        },
+      });
+
+      const error = await strategy.getTokenResponse().catch((error_: Error) => error_);
+      expect((error as Error).message).to.equal('Login declined');
+
+      const probe = createServer();
+      await new Promise<void>((resolve, reject) => {
+        probe.once('error', reject);
+        probe.listen(localPort, resolve);
+      });
+      await new Promise<void>((resolve) => probe.close(() => resolve()));
+    });
+
     it('does not expose access or refresh tokens in trace output', async () => {
       let logs = '';
       configureLogger({
