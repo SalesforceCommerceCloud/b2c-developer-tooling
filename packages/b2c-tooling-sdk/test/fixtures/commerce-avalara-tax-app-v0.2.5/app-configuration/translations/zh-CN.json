@@ -1,0 +1,20 @@
+{
+  "tasks": {
+    "verify_service_profile": {
+      "name": "验证 Avalara 服务配置文件",
+      "description": "请确认在“运营 > 服务 > 配置文件”中已正确配置 Avalara 服务配置文件。"
+    },
+    "verify_service_credentials": {
+      "name": "验证 Avalara 服务凭据",
+      "description": "请确认在“运营 > 服务 > 凭据”中已正确配置 Avalara 服务凭据。"
+    },
+    "verify_service_definition": {
+      "name": "验证 Avalara 服务定义",
+      "description": "请确认在“运营 > 服务”中已正确配置 Avalara 服务定义。"
+    },
+    "verify_custom_site_preferences": {
+      "name": "验证自定义站点首选项",
+      "description": "请在“商家工具 > 站点首选项”中确认 Avalara 自定义站点首选项（例如 AvaTax 首选项组）。"
+    }
+  }
+}

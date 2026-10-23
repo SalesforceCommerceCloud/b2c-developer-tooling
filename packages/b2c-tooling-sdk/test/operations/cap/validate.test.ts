@@ -26,6 +26,41 @@ async function withTempCap(setup: (dir: string) => void, callback: (dir: string)
   }
 }
 
+const REQUIRED_BM_LOCALES = ['ar-MA', 'de', 'en-US', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pl', 'pt', 'zh-CN', 'zh-TW'];
+
+function writeTaskTranslations(
+  dir: string,
+  tasks: Array<{taskKey: string; name: string; description: string}>,
+  locales: string[] = REQUIRED_BM_LOCALES,
+): void {
+  const translationsDir = path.join(dir, 'app-configuration', 'translations');
+  fs.mkdirSync(translationsDir, {recursive: true});
+  const translatedTasks = Object.fromEntries(
+    tasks.map((task) => [task.taskKey, {name: task.name, description: task.description}]),
+  );
+  const body = JSON.stringify({tasks: translatedTasks});
+  for (const locale of locales) {
+    fs.writeFileSync(path.join(translationsDir, `${locale}.json`), body);
+  }
+}
+
+function writeAdminTranslations(dir: string, components: Record<string, Record<string, string>>): void {
+  const translationsDir = path.join(dir, 'app-configuration', 'translations');
+  const adminComponents = Object.fromEntries(
+    Object.entries(components).map(([componentKey, attributes]) => [
+      componentKey,
+      {attributes: Object.fromEntries(Object.entries(attributes).map(([id, label]) => [id, {label}]))},
+    ]),
+  );
+  for (const file of fs.readdirSync(translationsDir)) {
+    if (!file.endsWith('.json')) continue;
+    const localePath = path.join(translationsDir, file);
+    const locale = JSON.parse(fs.readFileSync(localePath, 'utf-8')) as Record<string, unknown>;
+    locale.adminComponents = adminComponents;
+    fs.writeFileSync(localePath, JSON.stringify(locale));
+  }
+}
+
 function writeMinimalCap(dir: string, overrides: {manifest?: Record<string, unknown>} = {}): void {
   const manifest = {
     id: 'test-app',
@@ -37,8 +72,9 @@ function writeMinimalCap(dir: string, overrides: {manifest?: Record<string, unkn
   fs.writeFileSync(path.join(dir, 'commerce-app.json'), JSON.stringify(manifest));
   fs.writeFileSync(path.join(dir, 'README.md'), '# Test App');
   fs.mkdirSync(path.join(dir, 'app-configuration'));
-  const tasks = [{taskNumber: '1', name: 'Step 1', description: 'Do step 1', link: '/bm/step1'}];
+  const tasks = [{taskKey: 'step_1', taskNumber: '1', name: 'Step 1', description: 'Do step 1', link: '/bm/step1'}];
   fs.writeFileSync(path.join(dir, 'app-configuration', 'tasksList.json'), JSON.stringify(tasks));
+  writeTaskTranslations(dir, tasks);
   fs.mkdirSync(path.join(dir, 'impex', 'install'), {recursive: true});
 }
 
@@ -94,6 +130,277 @@ describe('operations/cap/validate', () => {
       );
     });
 
+    it('should error when tasksList.json is present without translations', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.rmSync(path.join(dir, 'app-configuration', 'translations'), {recursive: true, force: true});
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'app-configuration/translations/ is required when tasksList.json is present',
+          );
+        },
+      );
+    });
+
+    it('should error when a required BM locale translation is missing', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.unlinkSync(path.join(dir, 'app-configuration', 'translations', 'ja.json'));
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors.some((e) => e.includes('missing required locale file(s): ja.json'))).to.be.true;
+        },
+      );
+    });
+
+    it('should error when a locale filename is not BM-supported BCP-47', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'translations', 'zh_CN.json'),
+            fs.readFileSync(path.join(dir, 'app-configuration', 'translations', 'en-US.json')),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors.some((e) => e.includes('misformatted locale file(s): zh_CN.json'))).to.be.true;
+        },
+      );
+    });
+
+    it('should error when a taskKey is missing from en-US translations', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'tasksList.json'),
+            JSON.stringify([
+              {taskKey: 'missing_task', taskNumber: '1', name: 'Step 1', description: 'Do step 1', link: '/bm/step1'},
+            ]),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'tasksList.json references taskKey(s) not present in translations/en-US.json: missing_task',
+          );
+        },
+      );
+    });
+
+    it('should error when a non-default locale does not match en-US task keys', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'translations', 'de.json'),
+            JSON.stringify({tasks: {extra_task: {name: 'Extra', description: 'Extra task'}}}),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'de.json tasks key parity mismatch with en-US.json — missing: step_1 — extra: extra_task',
+          );
+        },
+      );
+    });
+
+    it('should accept admin component translations that cover every attribute', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          writeAdminTranslations(dir, {visibility: {show_banner: 'Show banner'}});
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({
+              configuration: [{componentKey: 'visibility', attributes: [{id: 'show_banner'}]}],
+            }),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.errors).to.deep.equal([]);
+          expect(result.valid).to.be.true;
+        },
+      );
+    });
+
+    it('should accept an additional BM-supported locale file', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          const translationsDir = path.join(dir, 'app-configuration', 'translations');
+          fs.copyFileSync(path.join(translationsDir, 'en-US.json'), path.join(translationsDir, 'pt-BR.json'));
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.errors).to.deep.equal([]);
+          expect(result.valid).to.be.true;
+        },
+      );
+    });
+
+    it('should error when a locale file is not valid JSON', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(path.join(dir, 'app-configuration', 'translations', 'fr.json'), '{');
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include('app-configuration/translations/fr.json: not valid JSON');
+        },
+      );
+    });
+
+    it('should error when a task translation name is empty', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          const localePath = path.join(dir, 'app-configuration', 'translations', 'en-US.json');
+          const locale = JSON.parse(fs.readFileSync(localePath, 'utf-8')) as {
+            tasks: Record<string, {name: string; description: string}>;
+          };
+          locale.tasks.step_1.name = '';
+          fs.writeFileSync(localePath, JSON.stringify(locale));
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'app-configuration/translations/en-US.json: tasks with missing/invalid name or description: step_1',
+          );
+        },
+      );
+    });
+
+    it('should error when an admin component attribute is missing from en-US translations', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({
+              configuration: [{componentKey: 'visibility', attributes: [{id: 'show_banner'}]}],
+            }),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'adminComponents.json references componentKey/attribute pair(s) not present in translations/en-US.json: visibility/show_banner',
+          );
+        },
+      );
+    });
+
+    it('should error when an admin component is missing componentKey', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({configuration: [{attributes: [{id: 'show_banner'}]}]}),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'app-configuration/adminComponents.json: configuration[0] missing componentKey',
+          );
+        },
+      );
+    });
+
+    it('should error when an admin attribute has no id', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({configuration: [{componentKey: 'visibility', attributes: [{}]}]}),
+          );
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'app-configuration/adminComponents.json: configuration[0] attribute[0] missing id',
+          );
+          expect(result.errors.some((error) => error.includes('/null'))).to.be.false;
+        },
+      );
+    });
+
+    it('should error when an admin attribute label is empty', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          writeAdminTranslations(dir, {visibility: {show_banner: 'Show banner'}});
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({
+              configuration: [{componentKey: 'visibility', attributes: [{id: 'show_banner'}]}],
+            }),
+          );
+          const localePath = path.join(dir, 'app-configuration', 'translations', 'en-US.json');
+          const locale = JSON.parse(fs.readFileSync(localePath, 'utf-8')) as {
+            adminComponents: Record<string, {attributes: Record<string, {label: string}>}>;
+          };
+          locale.adminComponents.visibility.attributes.show_banner.label = '';
+          fs.writeFileSync(localePath, JSON.stringify(locale));
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'app-configuration/translations/en-US.json: adminComponents shape invalid: visibility.attributes.show_banner: "label" missing or invalid',
+          );
+        },
+      );
+    });
+
+    it('should error when a non-default locale is missing an admin attribute', async () => {
+      await withTempCap(
+        (dir) => {
+          writeMinimalCap(dir);
+          writeAdminTranslations(dir, {visibility: {show_banner: 'Show banner'}});
+          fs.writeFileSync(
+            path.join(dir, 'app-configuration', 'adminComponents.json'),
+            JSON.stringify({
+              configuration: [{componentKey: 'visibility', attributes: [{id: 'show_banner'}]}],
+            }),
+          );
+          const localePath = path.join(dir, 'app-configuration', 'translations', 'de.json');
+          const locale = JSON.parse(fs.readFileSync(localePath, 'utf-8')) as {adminComponents?: unknown};
+          delete locale.adminComponents;
+          fs.writeFileSync(localePath, JSON.stringify(locale));
+        },
+        async (dir) => {
+          const result = await validateCap(dir);
+          expect(result.valid).to.be.false;
+          expect(result.errors).to.include(
+            'de.json adminComponents key parity mismatch with en-US.json — missing: visibility/show_banner',
+          );
+        },
+      );
+    });
+
     it('should error when tasksList.json is missing', async () => {
       await withTempCap(
         (dir) => {
@@ -108,6 +415,7 @@ describe('operations/cap/validate', () => {
           const result = await validateCap(dir);
           expect(result.valid).to.be.false;
           expect(result.errors.some((e) => e.includes('tasksList.json'))).to.be.true;
+          expect(result.errors.some((e) => e.includes('translations/'))).to.be.false;
         },
       );
     });
