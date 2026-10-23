@@ -123,9 +123,14 @@ export const outboundLoopTest = async (req: Request, res: Response) => {
 
   const baseUrl = /^https?:\/\//.test(externalDomain) ? externalDomain : `https://${externalDomain}`;
   const requestPath = typeof req.query.path === 'string' ? req.query.path : '/';
-  const target = new URL(requestPath, baseUrl).toString();
+  const base = new URL(baseUrl);
+  const target = new URL(requestPath, base);
+  // Only loop back to the external domain; an absolute or protocol-relative path could point anywhere.
+  if (target.origin !== base.origin) {
+    return res.status(400).json({error: 'path must stay on the external domain'});
+  }
 
-  const response = await fetch(target, {
+  const response = await fetch(target.toString(), {
     headers: {
       'x-mrt-loop': 'true',
     },

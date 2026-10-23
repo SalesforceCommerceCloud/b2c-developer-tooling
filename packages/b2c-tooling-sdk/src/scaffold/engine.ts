@@ -98,7 +98,7 @@ export function renderTemplate(template: string, context: TemplateContext): stri
  */
 export function renderPathTemplate(pathTemplate: string, context: TemplateContext): string {
   // Convert {{variable}} syntax to values
-  return pathTemplate.replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
+  return pathTemplate.replace(/\{\{([^{}]+)\}\}/g, (_, expr) => {
     const trimmed = expr.trim();
 
     // Handle function calls like {{kebabCase moduleName}}

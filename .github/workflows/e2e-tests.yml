@@ -34,6 +34,9 @@ on:
 env:
   SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
     # E2E tests run only on the current LTS Node version for stability and speed.
@@ -43,6 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: e2e-dev
     timeout-minutes: 40
+    permissions:
+      contents: read
+      # Opens an issue when a scheduled run fails.
+      issues: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6

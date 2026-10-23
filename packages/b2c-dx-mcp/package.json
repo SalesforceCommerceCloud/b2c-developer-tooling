@@ -108,7 +108,7 @@
     "postcss": "8.5.30",
     "ts-morph": "27.0.2",
     "yaml": "2.9.0",
-    "zod": "4.5.4"
+    "zod": "4.6.7"
   },
   "bundledDependencies": [
     "@modelcontextprotocol/server",
