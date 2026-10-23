@@ -44,6 +44,19 @@ function tokenSetupHint(apiType: ApiType): string {
 }
 
 /**
+ * Whether the webview may proxy a request to this URL: HTTPS to a Commerce Cloud API host only, matching the
+ * webview's `connect-src` policy so the proxy can't be used to reach other hosts.
+ */
+export function isCommerceCloudUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.commercecloud.salesforce.com');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Extract all OAuth scopes declared in the spec's security requirements.
  * Collects scopes from both global `security` and per-operation `security` entries.
  */
@@ -536,6 +549,16 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     const body = msg.body as string | undefined;
 
     this.log.appendLine(`[API Browser Proxy] ${method} ${url} (${requestId})`);
+
+    if (!isCommerceCloudUrl(url)) {
+      this.log.appendLine(`[API Browser Proxy] ${requestId} → rejected: not a Commerce Cloud API URL`);
+      this.safePostMessage(panel, {
+        type: 'proxyResponse',
+        requestId,
+        error: 'Only Commerce Cloud API URLs can be proxied.',
+      });
+      return;
+    }
 
     // Track the AbortController so panel disposal can abort in-flight fetches.
     const controllers = this.proxyControllers.get(panel);

@@ -37,8 +37,7 @@ class ApiKeyStrategy:
         self._header_name = header_name
         # Authorization uses the Bearer prefix (standard for MRT); other headers use the key directly.
         self._header_value = f"Bearer {key}" if header_name == "Authorization" else key
-        key_preview = f"{key[:8]}..." if len(key) > 8 else key
-        get_logger("auth.api_key").debug("[Auth] Using API Key authentication (%s): %s", header_name, key_preview)
+        get_logger("auth.api_key").debug("[Auth] Using API Key authentication (%s)", header_name)
 
     async def fetch(
         self,

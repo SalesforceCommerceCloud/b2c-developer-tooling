@@ -69,6 +69,22 @@ describe('scaffold/merge', () => {
 
       expect(result).to.deep.equal({a: 1, b: 2});
     });
+
+    it('should reject a jsonPath that reaches a prototype', () => {
+      expect(() => mergeJson('{}', '{"polluted": true}', {jsonPath: '__proto__'})).to.throw(/Unsafe JSON path/);
+      expect(() => mergeJson('{}', '{"polluted": true}', {jsonPath: 'constructor.prototype'})).to.throw(
+        /Unsafe JSON path/,
+      );
+      expect(({} as Record<string, unknown>).polluted).to.equal(undefined);
+    });
+
+    it('should skip __proto__ keys in merged content', () => {
+      const existing = JSON.stringify({config: {a: 1}});
+      const result = JSON.parse(mergeJson(existing, '{"config": {"__proto__": {"polluted": true}, "b": 2}}'));
+
+      expect(result.config).to.deep.equal({a: 1, b: 2});
+      expect(({} as Record<string, unknown>).polluted).to.equal(undefined);
+    });
   });
 
   describe('insertAfter', () => {
