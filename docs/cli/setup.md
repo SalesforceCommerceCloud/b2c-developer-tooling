@@ -585,7 +585,7 @@ b2c setup openshell [FLAGS]
 | `--mcp`             | Also install the B2C DX MCP server in the sandbox image                   | `false`                           |
 | `--image`           | Use this container image instead of building one                          |                                   |
 | `--[no-]sandbox`    | Create the sandbox. Use `--no-sandbox` to only store the credentials      | `true`                            |
-| `--recreate`        | Delete and recreate an existing sandbox                                   | `false`                           |
+| `--recreate`        | Delete and recreate an existing sandbox, removing anything added to it    | `false`                           |
 | `--force`           | Replace an edited `policy.yaml` with a newly generated one                | `false`                           |
 | `--dry-run`         | Write the files and print the commands without running them               | `false`                           |
 | `--json`            | Output results as JSON (never includes secrets)                           | `false`                           |
