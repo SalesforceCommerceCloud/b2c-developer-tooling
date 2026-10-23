@@ -6,11 +6,12 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
+import MrtBundleDeploy from '../../../../src/commands/mrt/bundle/deploy.js';
 import MrtBundleUploadV2 from '../../../../src/commands/mrt/bundle/upload-v2.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../../../helpers/stub-parse.js';
 
-describe('mrt bundle upload-v2', () => {
+describe('mrt bundle upload-v2 (deprecated alias of deploy --v2)', () => {
   let config: Config;
 
   beforeEach(async () => {
@@ -27,190 +28,151 @@ describe('mrt bundle upload-v2', () => {
     return new MrtBundleUploadV2([], config);
   }
 
-  function stubErrorToThrow(command: any): sinon.SinonStub {
-    return sinon.stub(command, 'error').throws(new Error('Expected error'));
-  }
-
-  function stubCommonAuth(command: any): void {
-    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
-    sinon.stub(command, 'getMrtAuth').returns({} as any);
-  }
-
-  const successResult = {
+  const pushResult = {
+    backend: 'legacy',
     bundleId: 456,
-    projectSlug: 'my-project',
     message: 'Test v2',
-    warnings: [],
-    matches: {'ssr.js': 'ssrOnly'},
+    deployed: false,
+    raw: {bundleId: 456, projectSlug: 'my-project', message: 'Test v2', warnings: [], matches: {}},
   };
 
-  it('calls command.error when project is missing', async () => {
+  /** Initializes the command with the given parsed flags and stubs everything outside the push call. */
+  async function initAlias(flags: Record<string, unknown>, args: Record<string, unknown> = {}) {
     const command = createCommand();
-
-    stubParse(command, {'ssr-param': [], 'cc-override': []}, {});
+    stubParse(command, {project: 'my-project', 'ssr-param': [], 'cc-override': [], wait: false, ...flags}, args);
     await command.init();
 
-    stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: undefined}}));
+    sinon.stub(command, 'requireMrtCredentials').returns(void 0);
+    sinon.stub(command, 'getMrtAuth').returns({} as any);
+    sinon
+      .stub(command, 'getMrtBackendContext')
+      .returns({preference: 'legacy', scapiConnection: undefined, legacyAuth: {}} as any);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+    sinon.stub(command, 'log').returns(void 0);
+    const warnStub = sinon.stub(command, 'warn').returns(void 0);
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
 
-    const errorStub = stubErrorToThrow(command);
+    const pushStub = sinon.stub().resolves(pushResult as any);
+    command.operations = {...command.operations, pushMrtBundle: pushStub};
+    return {command, pushStub, warnStub};
+  }
+
+  it('is a deploy command with --v2 forced on', () => {
+    expect(Object.getPrototypeOf(MrtBundleUploadV2)).to.equal(MrtBundleDeploy);
+    expect((MrtBundleUploadV2.flags as any).v2.default).to.equal(true);
+    // Every deploy flag is available, including the v2 metadata flags.
+    for (const name of Object.keys(MrtBundleDeploy.flags)) {
+      expect(MrtBundleUploadV2.flags, name).to.have.property(name);
+    }
+    expect(MrtBundleUploadV2.flags).to.have.property('dependencies');
+    expect(MrtBundleUploadV2.flags).to.have.property('cc-override');
+  });
+
+  it('warns that the command is deprecated in favor of deploy --v2 and still uploads', async () => {
+    const {command, pushStub, warnStub} = await initAlias({v2: true});
+
+    await command.run();
+
+    expect(warnStub.firstCall.args[0]).to.include('deprecated');
+    expect(warnStub.firstCall.args[0]).to.include('b2c mrt bundle deploy --v2');
+    expect(pushStub.calledOnce).to.equal(true);
+  });
+
+  it('runs the same push as deploy --v2 with identical options', async () => {
+    const flags = {
+      'build-dir': 'dist',
+      'root-dir': 'bld',
+      'config-path': '.mrt/config.json',
+      'match-mode': 'ignore_missing',
+      'ssr-only': 'ssr.js',
+      'ssr-shared': 'static/**/*',
+      'node-version': '20.x',
+      'ssr-param': ['EnvBasePath=/mobify'],
+      dependencies: '{"react":"18.0.0"}',
+      'cc-override': ['override-a'],
+      message: 'Test v2',
+      v2: true,
+    };
+
+    const alias = await initAlias(flags);
+    await alias.command.run();
+
+    const deployCommand: any = new MrtBundleDeploy([], config);
+    stubParse(deployCommand, {project: 'my-project', wait: false, ...flags}, {});
+    await deployCommand.init();
+    sinon.stub(deployCommand, 'requireMrtCredentials').returns(void 0);
+    sinon
+      .stub(deployCommand, 'getMrtBackendContext')
+      .returns({preference: 'legacy', scapiConnection: undefined, legacyAuth: {}} as any);
+    sinon.stub(deployCommand, 'jsonEnabled').returns(true);
+    sinon.stub(deployCommand, 'log').returns(void 0);
+    sinon.stub(deployCommand, 'warn').returns(void 0);
+    sinon
+      .stub(deployCommand, 'resolvedConfig')
+      .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
+    const deployPush = sinon.stub().resolves(pushResult as any);
+    deployCommand.operations = {...deployCommand.operations, pushMrtBundle: deployPush};
+    await deployCommand.run();
+
+    // onResolve is a per-instance closure; everything else must match exactly.
+    const {onResolve: _aliasResolve, ...aliasInput} = alias.pushStub.firstCall.args[0];
+    const {onResolve: _deployResolve, ...deployInput} = deployPush.firstCall.args[0];
+    expect(aliasInput).to.deep.equal(deployInput);
+    const [input] = alias.pushStub.firstCall.args;
+    expect(input.v2).to.equal(true);
+    expect(input.bundleMetadata).to.deep.equal({dependencies: {react: '18.0.0'}, ccOverrides: ['override-a']});
+    expect(input.matchMode).to.equal('ignore_missing');
+  });
+
+  it('omits bundleMetadata and v2 layout overrides when those flags are not given', async () => {
+    const {command, pushStub, warnStub} = await initAlias({v2: true});
+
+    await command.run();
+
+    const [input] = pushStub.firstCall.args;
+    expect(input.v2).to.equal(true);
+    expect(input.bundleMetadata).to.equal(undefined);
+    expect(input.rootDir).to.equal(undefined);
+    expect(input.matchMode).to.equal(undefined);
+    // Only the deprecation warning; nothing about ignored v2 flags.
+    expect(warnStub.callCount).to.equal(1);
+  });
+
+  it('deploys when an environment is given, like deploy --v2', async () => {
+    const {command, pushStub} = await initAlias({v2: true, environment: 'staging'});
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging'}}));
+
+    await command.run();
+
+    expect(pushStub.firstCall.args[0].targetSlug).to.equal('staging');
+  });
+
+  it('rejects a bundle ID and points to deploy', async () => {
+    const {command, pushStub} = await initAlias({v2: true}, {bundleId: 123});
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
 
     try {
       await command.run();
       expect.fail('Expected error');
     } catch {
-      expect(errorStub.calledOnce).to.equal(true);
+      expect(errorStub.firstCall.args[0]).to.include('b2c mrt bundle deploy <bundleId>');
+      expect(pushStub.called).to.equal(false);
     }
   });
 
-  it('maps every flag to the pushBundleV2 options and returns the result', async () => {
-    const command = createCommand();
-
-    stubParse(
-      command,
-      {
-        project: 'my-project',
-        'build-dir': 'dist',
-        'root-dir': 'bld',
-        'config-path': '.mrt/config.json',
-        'match-mode': 'ignore_missing',
-        'ssr-only': 'ssr.js',
-        'ssr-shared': 'static/**/*',
-        'node-version': '20.x',
-        'ssr-param': ['EnvBasePath=/mobify', 'Foo=bar'],
-        dependencies: '{"react":"18.0.0"}',
-        'cc-override': ['override-a', 'override-b'],
-        message: 'Test v2',
-      },
-      {},
-    );
-    await command.init();
-
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon
-      .stub(command, 'resolvedConfig')
-      .get(() => ({values: {mrtProject: 'my-project', mrtOrigin: 'https://example.com'}}));
-
-    const pushStub = sinon.stub().resolves(successResult as any);
-    command.operations = {...command.operations, pushBundleV2: pushStub};
-
-    const result = await command.run();
-
-    expect(pushStub.calledOnce).to.equal(true);
-    const [input] = pushStub.firstCall.args;
-    expect(input.projectSlug).to.equal('my-project');
-    expect(input.buildDirectory).to.equal('dist');
-    expect(input.rootDir).to.equal('bld');
-    expect(input.configPath).to.equal('.mrt/config.json');
-    expect(input.matchMode).to.equal('ignore_missing');
-    expect(input.ssrOnly).to.deep.equal(['ssr.js']);
-    expect(input.ssrShared).to.deep.equal(['static/**/*']);
-    expect(input.ssrParameters.EnvBasePath).to.equal('/mobify');
-    expect(input.ssrParameters.Foo).to.equal('bar');
-    expect(input.ssrParameters.SSRFunctionNodeVersion).to.equal('20.x');
-    expect(input.bundleMetadata.dependencies).to.deep.equal({react: '18.0.0'});
-    expect(input.bundleMetadata.ccOverrides).to.deep.equal(['override-a', 'override-b']);
-    expect(input.origin).to.equal('https://example.com');
-    expect(result.bundleId).to.equal(456);
-  });
-
-  it('applies server defaults when optional flags are omitted', async () => {
-    const command = createCommand();
-
-    stubParse(
-      command,
-      {
-        project: 'my-project',
-        'build-dir': 'build',
-        'root-dir': 'bld',
-        'config-path': '.mrt/config.json',
-        'match-mode': 'strict',
-        'ssr-param': [],
-        'cc-override': [],
-      },
-      {},
-    );
-    await command.init();
-
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
-
-    const pushStub = sinon.stub().resolves(successResult as any);
-    command.operations = {...command.operations, pushBundleV2: pushStub};
-
-    await command.run();
-
-    const [input] = pushStub.firstCall.args;
-    expect(input.matchMode).to.equal('strict');
-    expect(input.ssrOnly).to.equal(undefined);
-    expect(input.ssrShared).to.equal(undefined);
-    // No metadata flags provided -> bundleMetadata omitted entirely.
-    expect(input.bundleMetadata).to.equal(undefined);
-  });
-
-  it('prints warnings returned by pushBundleV2', async () => {
-    const command = createCommand();
-    const warning = 'x86 support ends January 31, 2027. Switch to ARM in environment settings to avoid disruptions';
-
-    stubParse(command, {project: 'my-project', 'ssr-param': [], 'cc-override': []}, {});
-    await command.init();
-
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(true);
-    sinon.stub(command, 'log').returns(void 0);
-    const warnStub = sinon.stub(command, 'warn').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
-
-    const pushStub = sinon.stub().resolves({...successResult, warnings: [warning]} as any);
-    command.operations = {...command.operations, pushBundleV2: pushStub};
-
-    await command.run();
-
-    expect(warnStub.calledWith(warning)).to.equal(true);
-  });
-
-  it('throws when ssr-param has invalid format', async () => {
-    const command = createCommand();
-
-    stubParse(command, {project: 'my-project', 'ssr-param': ['INVALID'], 'cc-override': []}, {});
-    await command.init();
-
-    stubCommonAuth(command);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
-
-    try {
-      await command.run();
-      expect.fail('Expected error');
-    } catch (error) {
-      expect(error).to.be.instanceOf(Error);
-    }
-  });
-
-  it('surfaces a 403 auth error with the project-list suggestion', async () => {
-    const command = createCommand();
-
-    stubParse(command, {project: 'my-project', 'ssr-param': [], 'cc-override': []}, {});
-    await command.init();
-
-    stubCommonAuth(command);
-    sinon.stub(command, 'jsonEnabled').returns(false);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project'}}));
-
-    const errorStub = stubErrorToThrow(command);
-    const pushStub = sinon.stub().rejects(new Error('403 Forbidden'));
-    command.operations = {...command.operations, pushBundleV2: pushStub};
+  it('reports a 403 as a push failure with the project-list suggestion', async () => {
+    const {command, pushStub} = await initAlias({v2: true});
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+    pushStub.rejects(new Error('403 Forbidden'));
 
     try {
       await command.run();
       expect.fail('Expected error');
     } catch {
       const [message] = errorStub.firstCall.args;
-      expect(message).to.include('Upload failed');
+      expect(message).to.include('Push failed');
       expect(message).to.include('b2c mrt project list');
     }
   });
