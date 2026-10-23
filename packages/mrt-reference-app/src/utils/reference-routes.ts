@@ -11,6 +11,7 @@ import {fileURLToPath} from 'url';
 import winston from 'winston';
 import crypto from 'crypto';
 import {SecretsManagerClient, GetSecretValueCommand} from '@aws-sdk/client-secrets-manager';
+import {EC2Client, DescribeNetworkInterfacesCommand} from '@aws-sdk/client-ec2';
 import {
   DataStore,
   DataStoreNotFoundError,
@@ -137,6 +138,17 @@ export const outboundLoopTest = async (req: Request, res: Response) => {
     res.set('Content-Type', contentType);
   }
   return res.send(body);
+};
+
+export const httpbinIpTest = async (_: Request, res: Response) => {
+  const response = await fetch('https://httpbin.org/ip');
+  const body = await response.text();
+  res.status(response.status);
+  const contentType = response.headers.get('content-type');
+  if (contentType) {
+    res.set('Content-Type', contentType);
+  }
+  res.send(body);
 };
 
 export const cacheTest = async (req: Request, res: Response) => {
@@ -487,6 +499,19 @@ export const secretsManagerTest = async (req: Request, res: Response) => {
         statusCode = 500;
     }
     return res.status(statusCode).json({success: false, error: errorMessage, errorCode, secretId});
+  }
+};
+
+export const describeNetworkInterfacesTest = async (req: Request, res: Response) => {
+  const client = new EC2Client({region: process.env.AWS_REGION});
+  try {
+    const response = await client.send(new DescribeNetworkInterfacesCommand({}));
+    return res.status(200).json({networkInterfaces: response.NetworkInterfaces ?? []});
+  } catch (error: unknown) {
+    const err = error as {name?: string; code?: string; message?: string};
+    const errorCode = err.name || err.code || 'UnknownError';
+    const errorMessage = err.message || 'Unknown error';
+    return res.status(400).json({success: false, errorCode, error: errorMessage});
   }
 };
 
