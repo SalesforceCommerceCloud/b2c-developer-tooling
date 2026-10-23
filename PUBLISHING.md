@@ -24,6 +24,8 @@ When a dependency is bumped (e.g., the SDK), dependent packages automatically re
 
 Publishing uses [npm OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers) — no npm tokens are needed. Provenance attestations are generated automatically.
 
+The publish job runs in the `publish` GitHub environment, which only allows `main` and `release/**` and requires approval from a reviewer. Every run, including nightlies and runs with nothing to publish, waits for that approval. The npm trusted publisher for each package requires this environment.
+
 ## Creating a Changeset
 
 Every PR with user-facing changes should include a changeset:
@@ -210,6 +212,6 @@ pnpm changeset version --dry-run
 
 **Packages not published after version PR merge** — Check the `publish.yml` workflow run. The workflow compares local versions against npm — if they already match, nothing is published. Verify `changesets.yml` successfully dispatched `publish.yml`.
 
-**OIDC publish fails** — Verify trusted publishers are configured on npmjs.com for each package (Settings → Publishing access → Trusted Publishers). The workflow filename must match exactly (`publish.yml`).
+**OIDC publish fails** — Verify trusted publishers are configured on npmjs.com for each package (Settings → Publishing access → Trusted Publishers). The workflow filename must match exactly (`publish.yml`), and the environment must be `publish`.
 
 **No changesets found** — Ensure changeset files exist in `.changeset/` and reference correct package names (`@salesforce/b2c-cli`, `@salesforce/b2c-tooling-sdk`, `@salesforce/b2c-dx-mcp`, `@salesforce/b2c-dx-docs`).
