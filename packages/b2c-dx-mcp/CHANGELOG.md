@@ -1,5 +1,15 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.6.3
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - Updated zod to 4.6.7 to fix excessive memory use when validating oversized tool inputs, and refreshed bundled dependencies with security fixes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d), [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d), [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d)]:
+  - @salesforce/b2c-tooling-sdk@2.8.3
+  - @salesforce/b2c-agent-plugins@1.12.5
+
 ## 3.6.2
 
 ### Patch Changes
