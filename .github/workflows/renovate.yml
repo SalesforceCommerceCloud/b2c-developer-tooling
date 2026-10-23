@@ -21,14 +21,16 @@ on:
           - info
           - debug
 
+# Renovate acts with RENOVATE_TOKEN; the GITHUB_TOKEN is only used for checkout.
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    # RENOVATE_TOKEN lives in the renovate environment (main only), so workflows on
+    # other branches can't read it.
+    environment: renovate
     steps:
       - name: Checkout
         uses: actions/checkout@v6
