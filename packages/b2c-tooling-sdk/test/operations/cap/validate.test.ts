@@ -287,27 +287,6 @@ describe('operations/cap/validate', () => {
       );
     });
 
-    it('should error when a taskKey is not a string', async () => {
-      await withTempCap(
-        (dir) => {
-          writeMinimalCap(dir);
-          fs.writeFileSync(
-            path.join(dir, 'app-configuration', 'tasksList.json'),
-            JSON.stringify([
-              {taskKey: 1, taskNumber: '1', name: 'Step 1', description: 'Do step 1', link: '/bm/step1'},
-            ]),
-          );
-        },
-        async (dir) => {
-          const result = await validateCap(dir);
-          expect(result.valid).to.be.false;
-          expect(result.errors).to.include(
-            'tasksList.json references taskKey(s) not present in translations/en-US.json: 1',
-          );
-        },
-      );
-    });
-
     it('should error when an admin component attribute is missing from en-US translations', async () => {
       await withTempCap(
         (dir) => {

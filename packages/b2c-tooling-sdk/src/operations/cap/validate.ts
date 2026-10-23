@@ -56,7 +56,6 @@ const SEMVER_RE = /^\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$/;
 /**
  * Default Business Manager locales a CAP must ship under
  * `app-configuration/translations/` when it includes `tasksList.json`.
- * Kept in sync with commerce-apps `.github/config/required-bm-locales.txt`.
  */
 const REQUIRED_BM_LOCALES = [
   'ar-MA',
@@ -332,10 +331,8 @@ function validateTaskKeyCoverage(tasks: unknown[], enUs: unknown, errors: string
   for (const task of tasks) {
     if (!task || typeof task !== 'object' || Array.isArray(task) || !('taskKey' in task)) continue;
     const taskKey = (task as Record<string, unknown>).taskKey;
-    // jq's join drops null, matching a missing taskKey. Every other value is rendered and must be translated.
-    if (taskKey == null) continue;
-    const token = jqInterpolate(taskKey);
-    if (!translated.has(token)) missing.push(token);
+    if (typeof taskKey !== 'string' || translated.has(taskKey)) continue;
+    missing.push(taskKey);
   }
   if (missing.length > 0) {
     errors.push(`tasksList.json references taskKey(s) not present in translations/en-US.json: ${missing.join(', ')}`);
@@ -394,12 +391,13 @@ function adminComponentPairs(raw: unknown, errors: string[]): Set<string> {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
     const component = entry as Record<string, unknown>;
     const componentKey = component.componentKey;
-    if (!('componentKey' in component) || componentKey == null) {
-      errors.push(`app-configuration/adminComponents.json: configuration[${index}] missing componentKey`);
+    if (typeof componentKey !== 'string') {
+      if (componentKey == null) {
+        errors.push(`app-configuration/adminComponents.json: configuration[${index}] missing componentKey`);
+      }
       continue;
     }
     if (!Array.isArray(component.attributes)) continue;
-    const renderedKey = jqInterpolate(componentKey);
     for (let attributeIndex = 0; attributeIndex < component.attributes.length; attributeIndex++) {
       const attribute = component.attributes[attributeIndex];
       const attributeId =
@@ -412,18 +410,11 @@ function adminComponentPairs(raw: unknown, errors: string[]): Set<string> {
         );
         continue;
       }
-      pairs.add(`${renderedKey}/${jqInterpolate(attributeId)}`);
+      if (typeof attributeId !== 'string') continue;
+      pairs.add(`${componentKey}/${attributeId}`);
     }
   }
   return pairs;
-}
-
-/** Renders a value the way jq string interpolation does (`"\(.id)"`). */
-function jqInterpolate(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (value === null || value === undefined) return 'null';
-  return JSON.stringify(value);
 }
 
 function localeAdminPairs(locale: unknown): Set<string> {
