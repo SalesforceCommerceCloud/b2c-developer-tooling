@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.5.9
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - The API Browser now only proxies requests to Commerce Cloud API hosts over HTTPS. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d), [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d), [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d)]:
+  - @salesforce/b2c-tooling-sdk@2.8.3
+
 ## 1.5.8
 
 ### Patch Changes

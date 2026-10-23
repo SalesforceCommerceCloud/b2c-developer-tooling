@@ -1,5 +1,15 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.8.3
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - Debug logs no longer include the first characters of an API key (or the whole key when it is short). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#807](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/807) [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d) - `b2c cap validate` now requires `app-configuration/translations/` when a CAP includes `tasksList.json`. Add the required Business Manager locales, and make sure `en-US.json` covers every config task key. Install runs this check unless you pass `--skip-validate`. (Thanks [@shauryemahajanSF](https://github.com/shauryemahajanSF)!)
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - Hardened skill, scaffold, and API filter parsing against crafted input that could stall processing or modify object prototypes. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.8.2
 
 ### Patch Changes
