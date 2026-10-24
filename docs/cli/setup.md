@@ -471,7 +471,7 @@ When run without `--force`, the command provides an interactive experience:
 2. Prompts for hostname (if not provided)
 3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
 4. Prompts for credentials based on selection
-5. Tries SCAPI-first/OCAPI-compatible active code-version detection when OAuth is configured, then prompts for manual entry if detection is unavailable
+5. Finds the active code version, or prompts for it if it can't be found
 6. Asks whether to set as active instance
 7. Shows summary and confirms before creating
 

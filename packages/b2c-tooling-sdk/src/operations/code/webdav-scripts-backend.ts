@@ -79,6 +79,15 @@ export function parseCodeVersionFile(content: string): CodeVersionFileEntry[] | 
   return entries;
 }
 
+/**
+ * Why activating or reloading a code version fails without an API client, and
+ * what to do instead. Completes a sentence such as `Activating code version "x" …`.
+ */
+export const ACTIVATION_NEEDS_API_CLIENT =
+  'needs an API client: configure client-id and client-secret for a client with the sfcc.scripts.rw scope, ' +
+  'plus short-code and tenant-id. Signing in with your account covers code uploads only. ' +
+  'Or activate the version in Business Manager (Administration > Site Development > Code Deployment).';
+
 /** Reads code versions from the `Cartridges` WebDAV folder; see the module docs. */
 export class WebDavScriptsBackend implements ScriptsBackend {
   readonly name = 'webdav' as const;
@@ -86,11 +95,7 @@ export class WebDavScriptsBackend implements ScriptsBackend {
   constructor(private instance: B2CInstance) {}
 
   async activateCodeVersion(codeVersionId: string): Promise<CodeVersionActivationResult> {
-    throw new Error(
-      `Activating code version "${codeVersionId}" needs an API client (OCAPI or SCAPI); ` +
-        'it is not available with only WebDAV access. Configure client-id and client-secret, ' +
-        'or activate it in Business Manager (Administration > Site Development > Code Deployment).',
-    );
+    throw new Error(`Activating code version "${codeVersionId}" ${ACTIVATION_NEEDS_API_CLIENT}`);
   }
 
   async createCodeVersion(codeVersionId: string): Promise<void> {

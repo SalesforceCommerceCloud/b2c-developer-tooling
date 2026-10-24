@@ -43,16 +43,17 @@ function getResultJson<T>(result: ToolResult): T {
 /**
  * Create a mock B2CInstance for testing.
  */
-function createMockB2CInstance(options?: {codeVersion?: string}): B2CInstance {
+function createMockB2CInstance(options?: {codeVersion?: string; hasOAuthCredentials?: boolean}): B2CInstance {
   // If codeVersion is explicitly provided (including undefined), use it; otherwise default to 'v1'
   const codeVersion = options && 'codeVersion' in options ? options.codeVersion : 'v1';
   return {
     config: {
       codeVersion,
     },
+    hasOAuthCredentials: options?.hasOAuthCredentials ?? true,
     webdav: {} as unknown as WebDavClient,
     ocapi: {} as unknown as OcapiClient,
-  } as B2CInstance;
+  } as unknown as B2CInstance;
 }
 
 /**
@@ -289,6 +290,23 @@ describe('tools/cartridges', () => {
       const args = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
       const options = args[2];
       expect(options.reload).to.be.true;
+    });
+
+    it('refuses to reload without an API client before uploading anything', async () => {
+      const mockInstance = createMockB2CInstance({hasOAuthCredentials: false});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
+        findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
+
+      const result = await tool.handler({reload: true});
+
+      expect(result.isError).to.be.true;
+      expect(getResultText(result)).to.include('Nothing was uploaded');
+      expect(getResultText(result)).to.include('sfcc.scripts.rw');
+      expect(getResultText(result)).not.to.include('OCAPI');
+      expect(findAndDeployCartridgesStub.called).to.be.false;
     });
 
     it('should pass all options together', async () => {

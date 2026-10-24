@@ -90,7 +90,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     if (needsOAuth && !this.hasOAuthCredentials()) {
       const reason = t(
         'commands.code.deploy.oauthRequiredForActivate',
-        'The --activate/--reload flag requires OAuth credentials to manage the code version via SCAPI or the temporary OCAPI fallback.',
+        'Activating or reloading the code version (--activate/--reload) needs an API client: configure client-id and client-secret for a client with the sfcc.scripts.rw scope, plus short-code and tenant-id.',
       );
       this.error(
         t(

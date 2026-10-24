@@ -13,13 +13,13 @@ These flags are available on all Account Manager commands:
 | Flag | Environment Variable | Description |
 |------|---------------------|-------------|
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (e.g., `account.demandware.com`) |
-| `--user-auth` | — | Use browser-based user authentication (Authorization Code + PKCE flow) |
+| `--user-auth` | — | Sign in with your Account Manager account in the browser |
 
 ## Authentication
 
-Account Manager commands work out of the box using the CLI's built-in public client, which authenticates via browser login (Authorization Code + PKCE flow). No API client configuration is required for interactive use.
+Account Manager commands work without any API client configuration: you sign in with your Account Manager account in the browser.
 
-For automation or CI/CD, you can provide your own API client credentials. Use `--user-auth` to force browser-based authentication when you have client credentials configured but want to use your user account's roles instead.
+For automation or CI/CD, provide your own API client credentials. With client credentials configured, pass `--user-auth` to use your account's roles instead.
 
 ### Required Roles by Subtopic
 

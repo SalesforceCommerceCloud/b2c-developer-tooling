@@ -164,6 +164,7 @@ describe('operations/code/webdav-scripts-backend', () => {
     it('explains that activation needs an API client', async () => {
       const error = await new WebDavScriptsBackend(instance).activateCodeVersion('release_a').catch((e: Error) => e);
       expect((error as Error).message).to.include('needs an API client');
+      expect((error as Error).message).to.include('sfcc.scripts.rw');
     });
   });
 

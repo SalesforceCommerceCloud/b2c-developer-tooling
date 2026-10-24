@@ -85,7 +85,7 @@ export {createScriptsBackend, reloadCodeVersion} from './scripts-backend.js';
 export type {ScriptsBackendConfig} from './scripts-backend.js';
 export {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 export {ScapiScriptsBackend} from './scapi-scripts-backend.js';
-export {WebDavScriptsBackend, parseCodeVersionFile} from './webdav-scripts-backend.js';
+export {ACTIVATION_NEEDS_API_CLIENT, WebDavScriptsBackend, parseCodeVersionFile} from './webdav-scripts-backend.js';
 export type {CodeVersionFileEntry} from './webdav-scripts-backend.js';
 export type {ScapiScriptsBackendConfig} from './scapi-scripts-backend.js';
 export type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';

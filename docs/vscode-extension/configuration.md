@@ -66,7 +66,7 @@ A summary by feature, regardless of which configuration source provides the valu
   "password": "your-webdav-access-key",
   "code-version": "version1",
 
-  // OCAPI / OAuth (Sandbox API, Code Versions, CAP)
+  // API client (Sandbox API, code versions, CAP)
   "client-id": "...",
   "client-secret": "...",
 

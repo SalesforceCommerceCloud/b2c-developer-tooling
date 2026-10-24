@@ -220,8 +220,8 @@ sandbox and end sessions when finished. See [debugger access](./security#debugge
 | `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. |
 
 Uploading cartridges needs only your instance hostname; code goes to the active
-code version. Activating or reloading a code version needs an API client with SCAPI
-(`sfcc.scripts` / `sfcc.scripts.rw`) or OCAPI access.
+code version. Activating or reloading a code version needs an API client with the
+`sfcc.scripts.rw` scope, plus `short-code` and `tenant-id`.
 Check [deployment permissions](./security#deployments) before connecting.
 
 ## Instance files {#webdav}

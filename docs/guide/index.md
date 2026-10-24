@@ -84,6 +84,7 @@ Add more as you need it:
 
 | To                                                | Add                                                                                  |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Working with Storefront Next                      | See [Storefront Next](./storefront-next)                                             |
 | Run jobs, manage sites, or activate code versions | An [API client](./authentication#account-manager-api-client)                         |
 | Deploy from CI or scripts without a browser       | An [access key or API client](./authentication#webdav-access)                        |
 | Work with several instances                       | [Named instances](./configuration#multiple-instances)                                |

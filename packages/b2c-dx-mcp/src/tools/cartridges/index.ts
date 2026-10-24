@@ -19,6 +19,7 @@ import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 import {
+  ACTIVATION_NEEDS_API_CLIENT,
   createScriptsBackend,
   findAndDeployCartridges,
   getActiveCodeVersion,
@@ -152,6 +153,13 @@ function createCartridgeDeployTool(
 
         try {
           const scriptsBackend = createScriptsBackend({instance});
+          // Fail before uploading: reloading switches the active version, which needs an API client.
+          if (args.reload && scriptsBackend.name === 'webdav') {
+            throw new Error(
+              `Nothing was uploaded. Reloading the code version ${ACTIVATION_NEEDS_API_CLIENT} ` +
+                'Deploy without reload to upload with your sign-in.',
+            );
+          }
           // If no code version specified, get the active one
           let codeVersion = args.codeVersion ?? instance.config.codeVersion;
           if (!codeVersion) {
