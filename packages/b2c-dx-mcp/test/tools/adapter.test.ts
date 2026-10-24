@@ -10,7 +10,7 @@ import {createToolAdapter, textResult, jsonResult, errorResult, attachResolution
 import {Services} from '../../src/services.js';
 import type {ToolExecutionContext} from '../../src/tools/adapter.js';
 import type {ToolResult} from '../../src/utils/types.js';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {InMemoryAuthSessionBackend, setAuthSessionBackend, type AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {resolveConfig, type ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import {createMockResolvedConfig} from '../test-helpers.js';
 
@@ -641,6 +641,47 @@ describe('tools/adapter', () => {
 
         expect(result.isError).to.be.true;
         expect(getResultText(result)).to.include('B2C instance error');
+      });
+
+      it('reports how the instance authenticated, including a browser sign-in', async () => {
+        const sessions = new InMemoryAuthSessionBackend();
+        setAuthSessionBackend(sessions);
+        const config = await resolveConfig({hostname: 'my-sandbox.example.com'});
+        const services = Services.fromResolvedConfig(config);
+        const tool = createToolAdapter(
+          {
+            name: 'instance_auth_tool',
+            description: 'Reports auth',
+            effect: 'read',
+            idempotent: true,
+            openWorld: false,
+            toolsets: ['CARTRIDGES'],
+            requiresInstance: true,
+            inputSchema: {},
+            async execute() {
+              // A browser sign-in during the call is reflected in the result.
+              sessions.save({
+                clientId: services.getInstanceAuth().webdav.clientId!,
+                flow: 'pkce',
+                accessToken: 'opaque',
+                refreshToken: 'refresh',
+                sub: 'dev@example.com',
+                expiresAt: new Date(Date.now() + 600_000).toISOString(),
+              });
+              return {ok: true};
+            },
+            formatOutput: (output) => jsonResult(output),
+          },
+          () => services,
+        );
+
+        const result = await tool.handler({});
+        const output = JSON.parse(getResultText(result)) as {resolution: {auth: unknown}};
+        expect(output.resolution.auth).to.deep.equal({
+          ocapi: {method: 'none'},
+          scapi: {method: 'none'},
+          webdav: {method: 'browser-login', client: 'built-in', session: 'signed-in', user: 'dev@example.com'},
+        });
       });
     });
 

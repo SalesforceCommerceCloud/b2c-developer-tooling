@@ -127,8 +127,8 @@ export interface OAuthAuthConfig {
   jwtPassphrase?: string;
   /** Override redirect URI for browser OAuth flows (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
-  openBrowser?: (url: string) => Promise<void>;
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL and, for PKCE logins, a handle to the pending login. */
+  openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
   /**
    * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and MRT requests.
    * @internal
@@ -198,6 +198,16 @@ export type AuthMethod = 'client-credentials' | 'jwt' | 'user' | 'implicit' | 'b
 export const ALL_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'user', 'implicit', 'basic', 'api-key'];
 
 /**
+ * Pending browser login passed to a custom `openBrowser` callback by the
+ * Authorization Code + PKCE flow. Lets a caller that shows the URL some other
+ * way (for example, asking an MCP client to open it) give up on the login.
+ */
+export interface BrowserLogin {
+  /** Stops waiting for the redirect and fails the login with `reason`. No-op once the login has finished. */
+  cancel(reason?: string): void;
+}
+
+/**
  * Configuration for resolving an auth strategy.
  * Combines all possible credential types.
  */
@@ -222,8 +232,8 @@ export interface AuthCredentials {
   apiKeyHeaderName?: string;
   /** Override redirect URI for implicit OAuth flow (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for implicit OAuth flow. Receives the authorization URL. */
-  openBrowser?: (url: string) => Promise<void>;
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL and, for PKCE logins, a handle to the pending login. */
+  openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
   /** @internal See {@link AuthStrategy.selfSignedApi}. */
   selfSignedApi?: boolean;
 }

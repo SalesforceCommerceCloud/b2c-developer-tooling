@@ -10,9 +10,15 @@
  * - Skips plugin hook collection so real plugins installed on the developer's
  *   machine don't pollute the test environment
  * - Clears all SDK global registries before each test to prevent state leakage
+ * - Gives each test an empty in-memory auth-session store, so results never
+ *   reflect the developer's real Account Manager sessions
  */
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
-import {globalAuthMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  globalAuthMiddlewareRegistry,
+  InMemoryAuthSessionBackend,
+  setAuthSessionBackend,
+} from '@salesforce/b2c-tooling-sdk/auth';
 import {globalConfigSourceRegistry} from '@salesforce/b2c-tooling-sdk/config';
 
 // Prevent BaseCommand from running plugin hooks during tests
@@ -27,5 +33,6 @@ export const mochaHooks = {
     globalMiddlewareRegistry.clear();
     globalAuthMiddlewareRegistry.clear();
     globalConfigSourceRegistry.clear();
+    setAuthSessionBackend(new InMemoryAuthSessionBackend());
   },
 };

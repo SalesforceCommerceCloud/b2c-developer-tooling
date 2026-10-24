@@ -166,4 +166,8 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
 
     this.log(t('commands.logs.tail.stopped', 'Log tailing stopped.'));
   }
+
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
 }

@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {Services} from '../src/services.js';
+import {openBrowserForTool} from '../src/utils/browser-login.js';
 import {createMockResolvedConfig} from './test-helpers.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -76,6 +77,17 @@ describe('services', () => {
       const services = Services.fromResolvedConfig(config);
 
       expect(services.b2cInstance).to.equal(mockB2CInstance);
+    });
+
+    it('should let WebDAV tools fall back to the built-in client', () => {
+      const config = createMockResolvedConfig();
+      stub(config, 'hasB2CInstanceConfig').returns(true);
+      const create = stub(config, 'createB2CInstance').returns(mockB2CInstance);
+      stub(config, 'hasMrtConfig').returns(false);
+
+      Services.fromResolvedConfig(config);
+
+      expect(create.firstCall.args[0]).to.deep.equal({defaultWebDavClient: true, openBrowser: openBrowserForTool});
     });
 
     it('should create Services without B2C instance when config lacks instance', () => {

@@ -170,6 +170,7 @@ async function detectWorkingDirectory(log: vscode.OutputChannel): Promise<string
 export class B2CExtensionConfig implements vscode.Disposable {
   private config: ResolvedB2CConfig | null = null;
   private instance: B2CInstance | null = null;
+  private codeSyncInstance: B2CInstance | null = null;
   private configError: string | null = null;
   private resolved = false;
   private detectedDirectory = '';
@@ -251,6 +252,17 @@ export class B2CExtensionConfig implements vscode.Disposable {
 
   getInstance(): B2CInstance | null {
     return this.instance;
+  }
+
+  /**
+   * Instance for code sync (watch, upload, deploy). Unlike {@link getInstance},
+   * its WebDAV client falls back to an Account Manager browser login with the
+   * built-in public client when neither Basic auth nor an API client is
+   * configured. The login starts on the first WebDAV request, so use this only
+   * where the user asked to upload code, not for views that load on their own.
+   */
+  getCodeSyncInstance(): B2CInstance | null {
+    return this.codeSyncInstance;
   }
 
   getConfigError(): string | null {
@@ -387,6 +399,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
     this.log.appendLine('[Config] Resetting cached config (will re-resolve asynchronously)');
     this.config = null;
     this.instance = null;
+    this.codeSyncInstance = null;
     this.configError = null;
     this.resolved = false;
     this.detectedDirectory = '';
@@ -527,12 +540,14 @@ export class B2CExtensionConfig implements vscode.Disposable {
       if (!config.hasB2CInstanceConfig()) {
         this.configError = 'No B2C Commerce instance configured.';
         this.instance = null;
+        this.codeSyncInstance = null;
         this.log.appendLine('[Config] No B2C Commerce instance configured');
         return;
       }
 
       const implicitAuthOpts = await this.getImplicitAuthOptions();
       this.instance = config.createB2CInstance(implicitAuthOpts);
+      this.codeSyncInstance = config.createB2CInstance({...implicitAuthOpts, defaultWebDavClient: true});
       this.configError = null;
       this.log.appendLine(`[Config] Resolved instance: ${this.instance.config.hostname}`);
     } catch (err) {
@@ -540,6 +555,7 @@ export class B2CExtensionConfig implements vscode.Disposable {
       this.configError = message;
       this.config = null;
       this.instance = null;
+      this.codeSyncInstance = null;
       this.log.appendLine(`[Config] Resolution failed: ${message}`);
     }
   }

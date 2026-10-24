@@ -36,14 +36,14 @@ The `code deploy`, `code download`, and `code watch` commands always use WebDAV 
 
 Code commands use different authentication depending on the operation:
 
-| Operation                                    | Auth Required                                                             |
-| -------------------------------------------- | ------------------------------------------------------------------------- |
-| `code deploy`, `code download`, `code watch` | WebDAV (Basic Auth or OAuth)                                              |
-| `code list`, `code activate`, `code delete`  | OAuth + `sfcc.scripts` (read) or `sfcc.scripts.rw` (write) + tenant scope |
+| Operation                                                 | Auth Required                                                                 |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `code deploy`, `code download`, `code watch`, `code list` | None beyond the hostname: sign in when asked (or an access key or API client) |
+| `code activate`, `code delete`, `--activate`, `--reload`  | API client + `sfcc.scripts.rw` + tenant scope                                 |
 
 ### WebDAV Operations (deploy, download, watch)
 
-File transfer operations require WebDAV access. Basic authentication is recommended:
+These commands need only your instance hostname. The first time, your browser opens so you can sign in with your Account Manager account. Code is uploaded to the instance's active code version unless you pass `--code-version`. For scripts and CI, use an access key instead:
 
 ```bash
 export SFCC_USERNAME=your-bm-username
@@ -52,9 +52,11 @@ export SFCC_PASSWORD=your-webdav-access-key
 
 Staging instances also require a client certificate (two-factor mTLS). See [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload) to create one.
 
+Activating a code version (`--activate`, `--reload`) needs an API client.
+
 ### Code Version Operations (list, activate, delete)
 
-These commands require OAuth authentication. Configure the `sfcc.scripts` / `sfcc.scripts.rw` scope on your API client in Account Manager, along with `shortCode` and `tenantId`.
+`code activate` and `code delete` need an API client. `code list` works with just the hostname, but shows cartridge lists and sizes only with an API client. Configure the `sfcc.scripts` / `sfcc.scripts.rw` scope on your API client in Account Manager, along with `shortCode` and `tenantId`.
 
 ```bash
 export SFCC_CLIENT_ID=your-client-id
@@ -264,7 +266,7 @@ If a cartridge exists remotely but not locally, it is extracted to the output di
 
 ### Notes
 
-- If no `--code-version` is specified, the command auto-discovers the active code version (requires OAuth credentials)
+- If no `--code-version` is specified, the command uses the active code version (found over WebDAV when no API client is configured)
 - Existing file permissions are preserved when overwriting files
 - The server-side zip is cleaned up automatically after download
 

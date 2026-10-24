@@ -119,6 +119,7 @@
  */
 export {WebDavClient} from './webdav.js';
 export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
+export {describeWebDavUserAccessFailure, getWebDavRootPermission} from './webdav-access-hint.js';
 
 export {
   createAuthMiddleware,

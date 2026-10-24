@@ -165,6 +165,10 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
     return result;
   }
 
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
+
   /**
    * Points to custom-<name> logger files that the current filters skip, since
    * integrations usually log there rather than to error/customerror.

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "pnpm --filter @salesforce/b2c-cli run dev",
+    "sandbox": "tsx scripts/sandbox.mts",
     "test": "pnpm -r test",
     "test:unit": "pnpm -r run test:unit",
     "test:agent": "pnpm -r --parallel run test:agent",

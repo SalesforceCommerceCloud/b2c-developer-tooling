@@ -15,6 +15,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {findCartridgesSafe} from '../workspace-discovery.js';
+import {showNoCodeVersionMessage} from './code-sync-setup.js';
 import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 const DEBOUNCE_MS = 150;
@@ -118,9 +119,10 @@ export class CodeSyncManager implements vscode.Disposable {
     }
     if (!this.codeVersion) {
       this.log(
-        '[Warning] No code version configured. Set "codeVersion" in dw.json or configure OAuth credentials. Code upload is disabled.',
+        '[Warning] No code version configured and the instance has no active code version. Select one or set "code-version" in dw.json. Code upload is disabled.',
       );
       this.updateStatusBar('warning');
+      showNoCodeVersionMessage();
       return;
     }
 
@@ -293,8 +295,8 @@ export class CodeSyncManager implements vscode.Disposable {
       }
     }
     if (!codeVersion) {
-      vscode.window.showErrorMessage(
-        'B2C DX: No code version configured. Set code-version in dw.json or activate a code version.',
+      showNoCodeVersionMessage(
+        'B2C DX: No code version configured. Select one, set code-version in dw.json, or activate a code version.',
       );
       return;
     }
@@ -332,7 +334,7 @@ export class CodeSyncManager implements vscode.Disposable {
       }
     }
     if (!codeVersion) {
-      vscode.window.showErrorMessage('B2C DX: No code version configured.');
+      showNoCodeVersionMessage('B2C DX: No code version configured.');
       return;
     }
 
