@@ -476,9 +476,9 @@ describe('setup inspect', () => {
   });
 
   describe('effective authentication', () => {
-    function inspect(values: Partial<NormalizedConfig>, json: boolean) {
+    function inspect(values: Partial<NormalizedConfig>, json: boolean, verbose = false) {
       const command = new SetupInspect([], {} as any);
-      (command as any).flags = {unmask: false};
+      (command as any).flags = {unmask: false, verbose};
       stubJsonEnabled(command, json);
       stubCommandConfigAndLogger(command);
       stubResolvedConfig(command, values);
@@ -504,8 +504,28 @@ describe('setup inspect', () => {
       });
       expect(result.auth?.ocapi.method).to.equal('none');
       const output = (stdoutStub.firstCall.args[0] as string).replaceAll(/\s+/g, ' ');
+      expect(output).to.include('auth WebDAV: signed in as dev@example.com');
+      expect(output).not.to.include('Effective Authentication');
+    });
+
+    it('summarizes unconfigured sign-in and API clients on one line', async () => {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      await inspect({hostname: 'my-sandbox.example.com'}, false).run();
+      await inspect(
+        {hostname: 'my-sandbox.example.com', username: 'u', password: 'p', clientId: 'c', clientSecret: 's'},
+        false,
+      ).run();
+      const [signIn, configured] = stdoutStub.args.map((args) => String(args[0]).replaceAll(/\s+/g, ' '));
+      expect(signIn).to.include('auth WebDAV: browser sign-in (not signed in)');
+      expect(configured).to.include('auth WebDAV: access key · OCAPI: API client');
+    });
+
+    it('shows authentication details with --verbose', async () => {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      await inspect({hostname: 'my-sandbox.example.com'}, false, true).run();
+      const output = (stdoutStub.firstCall.args[0] as string).replaceAll(/\s+/g, ' ');
       expect(output).to.include('Effective Authentication');
-      expect(output).to.include('browser login (built-in client) — signed in as dev@example.com');
+      expect(output).to.include('browser login (built-in client) — not signed in');
       expect(output).to.include('b2c auth status');
     });
 

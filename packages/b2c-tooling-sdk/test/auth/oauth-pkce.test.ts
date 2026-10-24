@@ -573,6 +573,34 @@ describe('auth/oauth-pkce', () => {
       strategy.invalidateToken();
     });
 
+    it('renews a still-valid access token with forceRefresh', async () => {
+      const clientId = 'pkce-force-refresh';
+      saveAuthSession({
+        clientId,
+        flow: 'pkce',
+        accessToken: 'still-valid',
+        refreshToken: 'rt-valid',
+        scopes: [],
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      });
+
+      const strategy = new PkceOAuthStrategy({clientId, forceRefresh: true});
+      const flowStub = stubRunFlow(strategy, async () => {
+        throw new Error('Browser flow should not run when a refresh token is available');
+      });
+      globalThis.fetch = async () =>
+        new Response(JSON.stringify({access_token: 'at-renewed', refresh_token: 'rt-rotated', expires_in: 1800}), {
+          status: 200,
+          headers: {'Content-Type': 'application/json'},
+        });
+
+      const tokenResponse = await strategy.getTokenResponse();
+      expect(tokenResponse.accessToken).to.equal('at-renewed');
+      expect(flowStub.calls).to.equal(0);
+
+      strategy.invalidateToken();
+    });
+
     it('falls back to the browser flow when refresh fails (e.g. invalid_grant)', async () => {
       const clientId = 'pkce-refresh-fail';
       saveAuthSession({

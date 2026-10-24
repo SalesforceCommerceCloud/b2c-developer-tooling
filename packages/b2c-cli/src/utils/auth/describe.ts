@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {InstanceAuthPath, InstanceAuthSession} from '@salesforce/b2c-tooling-sdk/auth';
+import type {InstanceAuthPath, InstanceAuthSession, InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import {t} from '../../i18n/index.js';
 
 /** Client label: the built-in public client by name, others by ID. */
@@ -52,4 +52,32 @@ export function describeAccessToken(session: Pick<InstanceAuthSession, 'accessTo
   return session.accessTokenValid
     ? t('auth.describe.validUntil', 'valid until {{when}}', {when})
     : t('auth.describe.expiredAt', 'expired {{when}}', {when});
+}
+
+/**
+ * One-line summary of how an instance authenticates, grouping request types
+ * that authenticate the same way and leaving out unconfigured ones, e.g.
+ * "WebDAV: signed in as dev@example.com" or "WebDAV: access key · OCAPI: API client".
+ */
+export function summarizeInstanceAuth(auth: InstanceAuthSummary): string {
+  const groups = new Map<string, string[]>();
+  for (const [label, path] of [
+    ['WebDAV', auth.webdav],
+    ['OCAPI', auth.ocapi],
+    ['SCAPI', auth.scapi],
+  ] as const) {
+    if (path.method === 'none') continue;
+    const session = path.clientId ? auth.sessions.find((s) => s.clientId === path.clientId) : undefined;
+    let how: string;
+    if (path.method === 'basic') how = t('auth.summary.basic', 'access key');
+    else if (path.method === 'user') {
+      how =
+        session?.user && (session.accessTokenValid || session.canRefresh)
+          ? t('auth.summary.signedIn', 'signed in as {{user}}', {user: session.user})
+          : t('auth.summary.signIn', 'browser sign-in (not signed in)');
+    } else how = t('auth.summary.apiClient', 'API client');
+    groups.set(how, [...(groups.get(how) ?? []), label]);
+  }
+  if (groups.size === 0) return t('auth.summary.none', 'none configured');
+  return [...groups].map(([how, labels]) => `${labels.join(', ')}: ${how}`).join(' · ');
 }

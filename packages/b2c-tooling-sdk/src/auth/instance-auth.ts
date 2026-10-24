@@ -197,3 +197,48 @@ export function describeAuthSession(
 ): Omit<InstanceAuthSession, 'usedFor'> {
   return summarizeSession(session, getDefaultPublicClientId(accountManagerHost));
 }
+
+/** What a sign-in message describes. */
+export interface SignInMessageOptions {
+  clientId: string;
+  accountManagerHost?: string;
+  /** Account Manager user (JWT `sub`), when known. */
+  user?: string | null;
+  /** When the access token expires. */
+  expiresAt: Date;
+  /** Refresh token, when the sign-in renews; its expiry is when the user has to sign in again. */
+  refreshToken?: string | null;
+  /** What happened: a new sign-in (default), a silent renewal, or an existing sign-in still in use. */
+  action?: 'renewed' | 'reused' | 'signed-in';
+}
+
+/** When a sign-in stops working: the refresh token's expiry when it has one, else the access token's. */
+function signInExpiry(accessExpiresAt: Date, refreshToken?: string | null): Date {
+  if (!refreshToken) return accessExpiresAt;
+  try {
+    const {expires} = decodeJwtTokenInfo(refreshToken);
+    return expires.getTime() > accessExpiresAt.getTime() ? expires : accessExpiresAt;
+  } catch {
+    // Opaque refresh token; its expiry is unknown.
+    return accessExpiresAt;
+  }
+}
+
+/** Short summary of a sign-in, e.g. "Signed in to Account Manager as dev@example.com, expires 3:45 PM." */
+export function describeSignIn(options: SignInMessageOptions): string {
+  const builtIn =
+    options.clientId === getDefaultPublicClientId(options.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST);
+  const who = [options.user, builtIn ? undefined : `client ${options.clientId}`].filter(Boolean).join(', ');
+  const until = signInExpiry(options.expiresAt, options.refreshToken);
+  const expires = until.toLocaleString(undefined, {
+    ...(until.toDateString() === new Date().toDateString() ? {} : {dateStyle: 'medium'}),
+    timeStyle: 'short',
+  });
+  const lead =
+    options.action === 'renewed'
+      ? 'Renewed Account Manager sign-in'
+      : options.action === 'reused'
+        ? 'Already signed in to Account Manager'
+        : 'Signed in to Account Manager';
+  return `${lead}${who ? ` ${options.action === 'renewed' ? 'for' : 'as'} ${who}` : ''}, expires ${expires}.`;
+}

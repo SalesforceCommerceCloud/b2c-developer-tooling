@@ -36,7 +36,7 @@ The extension's instance picker combines instances from the primary and global f
 
 Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any URL on the instance, such as a Business Manager link. The extension saves the hostname to `dw.json`.
 
-The first upload signs you in to Account Manager in a browser, and your Business Manager role authorizes it (see [WebDAV browser login](../guide/authentication#option-c-browser-login-account-manager-user)). Without a `code-version`, code sync uploads to the active code version, which the extension reads from the instance over WebDAV. To upload to a different version, run **B2C DX - Code Sync: Select Code Version for Uploads**. It lists the versions on the instance, marks the active and rollback versions, and saves your choice as `code-version` in `dw.json`.
+The first upload asks you to sign in with your Account Manager account, and your Business Manager roles decide what you can upload. Code sync uploads to the instance's active code version. To upload to a different version, run **B2C DX - Code Sync: Select Code Version for Uploads**.
 
 Activating and deleting code versions, and the other features in the table below, still need an API client.
 
@@ -49,7 +49,7 @@ A summary by feature, regardless of which configuration source provides the valu
 | **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter.                                                                                              |
 | **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                                                                                                             |
 | **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                                                                                                                           |
-| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations. Only `hostname` is required to upload code; see [Code sync with only a server](#code-sync-with-only-a-server).            |
+| **Cartridge Code Sync**    | Only `hostname`; you sign in when asked (see [Code sync with only a server](#code-sync-with-only-a-server)). An API client (`client-id` + `client-secret`) to activate or delete code versions.                          |
 | **SCAPI API Browser**      | Account Manager access, `short-code`, and `tenant-id` to load schemas. Shopper requests also use `slas-client-id` and `site-id`; private clients need `slas-client-secret`. See [API Browser Setup](#api-browser-setup). |
 | **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                                                                                                             |
 | **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                                                                                                                     |

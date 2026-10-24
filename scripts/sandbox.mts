@@ -239,10 +239,41 @@ function run(cmd: string, args: string[], options: {cwd?: string; detached?: boo
   else child.on('exit', (code) => process.exit(code ?? 0));
 }
 
+/**
+ * The user's shell, set up to put the sandbox `bin` first on PATH after their
+ * startup files run, since those often prepend version-manager paths (fnm, nvm)
+ * that hold a globally installed `b2c`.
+ */
+function interactiveShell(): [string, string[]] {
+  const shell = process.env.SHELL ?? '/bin/sh';
+  const prepend = `export PATH='${paths.bin.replaceAll("'", `'\\''`)}':"$PATH"; hash -r 2>/dev/null\n`;
+  const rcDir = join(stateDir, 'rc');
+  mkdirSync(rcDir, {recursive: true});
+  if (shell.endsWith('/zsh')) {
+    // zsh reads startup files from ZDOTDIR; source the user's own, then prepend.
+    const userDir = process.env.ZDOTDIR ?? homedir();
+    env.SANDBOX_USER_ZDOTDIR = userDir;
+    writeFileSync(join(rcDir, '.zshenv'), '[ -f "$SANDBOX_USER_ZDOTDIR/.zshenv" ] && . "$SANDBOX_USER_ZDOTDIR/.zshenv"\n');
+    writeFileSync(
+      join(rcDir, '.zshrc'),
+      'ZDOTDIR="$SANDBOX_USER_ZDOTDIR"\n[ -f "$ZDOTDIR/.zshrc" ] && . "$ZDOTDIR/.zshrc"\n' + prepend,
+    );
+    env.ZDOTDIR = rcDir;
+    return [shell, ['-i']];
+  }
+  if (shell.endsWith('/bash')) {
+    const rcFile = join(rcDir, 'bashrc');
+    writeFileSync(rcFile, '[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n' + prepend);
+    return [shell, ['--rcfile', rcFile, '-i']];
+  }
+  return [shell, ['-i']];
+}
+
 switch (command) {
   case 'shell': {
     console.error('`b2c` and `b2c-dx-mcp` run from the checkout. Exit the shell to leave the sandbox.\n');
-    run(process.env.SHELL ?? '/bin/sh', ['-i']);
+    const [shell, args] = interactiveShell();
+    run(shell, args);
     break;
   }
 

@@ -12,12 +12,12 @@ For help obtaining credentials and assigning access, see [Authentication](./auth
 
 | Task                                                 | What to configure                                                                                                                                                   |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Manage code versions, jobs, sites, or Admin API data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.    |
-| Upload cartridges, browse files, or read logs        | `hostname` plus `username` and `password` (a WebDAV access key), or [OAuth WebDAV access](./authentication#option-b-oauth-based-webdav-api-client-access).          |
+| Upload cartridges, browse files, or read logs        | Just `hostname`. You sign in with your Account Manager account the first time. For automation, use an [access key or API client](./authentication#webdav-access) instead. |
+| Activate code versions, run jobs, manage sites or data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.    |
 | Obtain shopper tokens                                | `short-code`, `tenant-id`, `slas-client-id`, and `site-id`. Add `slas-client-secret` for a private SLAS client.                                                     |
 | Work with Managed Runtime                            | An MRT API key and project/environment defaults. Supported SCAPI MRT operations can use Account Manager credentials instead. See [MRT configuration](#mrt-api-key). |
 | Analyze sales, searches, or performance with CIP     | Account Manager `client-id`, `client-secret`, and `tenant-id`, plus [CIP access](./analytics-reports-cip-ccac#authentication-and-access).                           |
-| Manage sandboxes, SLAS clients, or Account Manager   | These CLI commands support browser sign-in with a built-in public client. Your user still needs the appropriate roles and tenant access.                            |
+| Manage sandboxes, SLAS clients, or Account Manager   | Nothing; these CLI commands sign you in with your Account Manager account. Your user still needs the appropriate roles and tenant access. |
 
 Account Manager and SLAS clients serve different purposes. `client-id` / `client-secret` are for administrative access; `slas-client-id` / `slas-client-secret` are for shopper authentication. Configuring one does not configure the other.
 
@@ -43,6 +43,10 @@ This example supports Admin APIs and WebDAV on a sandbox:
 ```
 
 Use your instance's short code and an existing code version. `tenant-id` accepts both the tenant form (`abcd_001`) and organization form (`f_ecom_abcd_001`). Staging and production tenants typically use `abcd_stg` and `abcd_prd`.
+
+::: tip Only uploading code or reading logs?
+`hostname` is the only required field for code upload, files, and logs: you sign in with your Account Manager account when asked. Add the other fields as you need the tasks in [Choose Your Connection](#choose-your-connection).
+:::
 
 ::: warning Keep credentials out of version control
 Add `dw.json` and `.env` to `.gitignore`. These files store secrets as plain text. For encrypted credential storage, see the [macOS Keychain](./third-party-plugins#macos-keychain-plugin) and [Password Store](./third-party-plugins#password-store-plugin) plugins. Non-secret project defaults can go in [package.json](#project-configuration-package-json).
@@ -96,7 +100,7 @@ Use a `configs` array and give each entry a name. Each entry contains its own co
 }
 ```
 
-Here, `sandbox` is the default. The `dev` entry uses OAuth only; WebDAV access requires the corresponding API client permissions. Each entry can also define [Safety Mode](./safety#per-instance-configuration) restrictions.
+Here, `sandbox` is the default. The `dev` entry uses only an API client, which needs [WebDAV Client Permissions](./authentication#option-b-oauth-based-webdav-api-client-access) for WebDAV. Each entry can also define [Safety Mode](./safety#per-instance-configuration) restrictions.
 
 Select an instance for one CLI command:
 

@@ -13,7 +13,7 @@ Use the `b2c` CLI to retrieve and monitor log files on Salesforce B2C Commerce i
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
-With only a server configured (no access key or API client), these commands open an Account Manager browser login and the user's Business Manager role authorizes WebDAV access. A 403 names the user and the missing functional permission (for example `WebDAV_Manage_Customization` for `Cartridges`).
+With only a server configured, the first command opens a browser for the user to sign in with their Account Manager account and waits until they do; tell the user to finish signing in. Their Business Manager roles decide access, and a 403 names the missing permission (for example `WebDAV_Manage_Customization` for `Cartridges`).
 
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 

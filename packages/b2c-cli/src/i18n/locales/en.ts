@@ -16,12 +16,12 @@ export const en = {
         description: 'Get an OAuth access token',
       },
       login: {
-        description: 'Log in via browser and save session (stateful auth)',
-        success: 'Login succeeded. Session saved for stateful auth.',
+        description: 'Sign in to Account Manager in your browser and stay signed in',
       },
       logout: {
-        description: 'Clear stored session (stateful auth)',
-        success: 'Logged out. Stored session cleared.',
+        description: 'Sign out of Account Manager and clear saved sign-ins',
+        none: 'You were not signed in.',
+        success: 'Signed out {{names}}.',
       },
       client: {
         description: 'Authenticate an API client and save session',

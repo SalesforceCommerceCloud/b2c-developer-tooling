@@ -6,4 +6,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Find the active code version without an API client: `code deploy`, `download`, `watch`, and `list`, the MCP `cartridge_deploy` tool, and VS Code code sync now read it from the instance over WebDAV, so a server and a browser login are enough to upload to the active version. Activating a code version still needs an API client.
+`code deploy`, `download`, `watch`, and `list`, the MCP `cartridge_deploy` tool, and VS Code code sync now find the instance's active code version without an API client, so you can upload with just your server and no `--code-version`. Activating a code version still needs an API client.

@@ -43,7 +43,8 @@ and manual setup, see [installation](../mcp/#setup). For Claude Desktop
 (Cowork) and the ChatGPT desktop app (ChatGPT Work), see [Desktop Assistants](./desktop-assistants).
 
 Documentation and skills work immediately without B2C Commerce credentials.
-Connected tasks use your [existing B2C configuration](../mcp/configuration).
+Connected tasks use your [existing B2C configuration](../mcp/configuration); code
+deploys and logs need only your [instance hostname](#connect-to-your-instance).
 
 The MCP includes the B2C Commerce, B2C CLI, and Storefront Next skills from our
 [agent skills plugins](./agent-skills). No need to install those skills plugins separately.
@@ -53,6 +54,40 @@ The MCP includes the B2C Commerce, B2C CLI, and Storefront Next skills from our
 The Salesforce B2C Commerce IDE Extension brings sandbox management, code sync, content libraries, the SCAPI explorer, and a server-side debugger into VS Code, Cursor, and other compatible editors. Open the Extensions view in your editor and search for **Salesforce B2C Commerce** — VS Code installs from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Salesforce.b2c-vs-extension), while Cursor, VSCodium, Windsurf, and other VS Code–compatible editors install from the [Open VSX Registry](https://open-vsx.org/extension/salesforce/b2c-vs-extension).
 
 See the [IDE Extension](/vscode-extension/) section for the full overview, [installation](/vscode-extension/installation), and [configuration](/vscode-extension/configuration).
+
+## Connect to Your Instance
+
+To start, all you need is your instance hostname, in a `dw.json` or `.env` in your project:
+
+::: code-group
+
+```json [dw.json]
+{
+  "hostname": "abcd-001.dx.commercecloud.salesforce.com"
+}
+```
+
+```bash [.env]
+SFCC_SERVER=abcd-001.dx.commercecloud.salesforce.com
+```
+
+:::
+
+Then deploy code or read logs. The first time, your browser opens so you can sign in with your Account Manager account:
+
+```bash
+b2c code deploy
+b2c logs get
+```
+
+Add more as you need it:
+
+| To                                                | Add                                                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Run jobs, manage sites, or activate code versions | An [API client](./authentication#account-manager-api-client)                         |
+| Deploy from CI or scripts without a browser       | An [access key or API client](./authentication#webdav-access)                        |
+| Work with several instances                       | [Named instances](./configuration#multiple-instances)                                |
+| Everything else                                   | See [Configuration](./configuration#choose-your-connection) for each task's settings |
 
 ## Next Steps
 

@@ -12,8 +12,8 @@ The CLI uses different authentication mechanisms depending on the operation:
 
 | Operation                                                                                          | Auth Method                                                           | Setup Required                                                                                                       |
 | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| [Code](/cli/code) deploy, watch (file upload)                                                      | WebDAV (Basic Auth or OAuth)                                          | [WebDAV Access](#webdav-access)                                                                                      |
-| [Code](/cli/code) list, activate, delete                                                           | OAuth + SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`), OCAPI fallback    | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
+| [Code](/cli/code) deploy, watch, download; [logs](/cli/logs); [WebDAV](/cli/webdav)                | WebDAV: sign in with your account, access key, or API client          | None ([sign in when asked](#webdav-access))                                                                          |
+| [Code](/cli/code) activate, delete                                                                 | OAuth + SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`), OCAPI fallback    | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
 | [Jobs](/cli/jobs)                                                                                  | OAuth + SCAPI (`sfcc.jobs` / `sfcc.jobs.rw`), OCAPI fallback          | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
 | [BM users / roles](/cli/bm)                                                                        | OAuth + SCAPI (`sfcc.users(.rw)` / `sfcc.roles(.rw)`), OCAPI fallback | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
 | [Sites](/cli/sites) list, cartridge path (read)                                                    | OAuth + SCAPI (`sfcc.sites` / `sfcc.sites.rw`), OCAPI fallback        | [API Client](#account-manager-api-client) + [SCAPI Scopes](#scapi-authentication) (or [OCAPI](#ocapi-configuration)) |
@@ -26,8 +26,8 @@ The CLI uses different authentication mechanisms depending on the operation:
 | [MRT](/cli/mrt) commands (most)                                                                    | MRT API Key                                                           | [MRT API Key](#managed-runtime-api-key)                                                                              |
 | [MRT](/cli/mrt) `bundle history`, `bundle deploy <id>`                                             | MRT API Key, or OAuth + SCAPI (`sfcc.storefront.deployments` / `.rw`) | [MRT API Key](#managed-runtime-api-key) or [SCAPI Scopes](#scapi-authentication)                                     |
 
-::: tip Zero-Config for Platform Commands
-Sandbox, SLAS, and Account Manager commands work out of the box without any client configuration. The CLI includes a built-in public client that authenticates via browser login (Authorization Code + PKCE). You only need to configure an API client if you want to use client credentials for automation/CI or need specific scopes.
+::: tip Commands that need no setup
+Code upload, file, and log commands can sign you in with your Account Manager account, so they need only your instance hostname. Sandbox, SLAS, and Account Manager commands work the same way. Configure an API client for the other commands, and for automation and CI.
 :::
 
 ::: tip
@@ -36,7 +36,7 @@ Each CLI command page documents its specific authentication requirements. See th
 
 ## Account Manager API Client
 
-Most CLI operations require an Account Manager API Client. This is configured in the Salesforce Commerce Cloud Account Manager.
+Jobs, sites, code version activation, and other API commands use an Account Manager API client. This is configured in the Salesforce Commerce Cloud Account Manager.
 
 ### Authentication Methods
 
@@ -551,15 +551,37 @@ b2c scapi schemas list
 
 ## WebDAV Access
 
-WebDAV is required for file operations (`code deploy`, `code watch`, `logs`, `webdav` commands). There are three ways to authenticate, depending on who (or what) is connecting:
+Code upload, file, and log commands (`code deploy`, `code watch`, `logs`, `webdav`) use WebDAV. Choose how they connect:
 
-- **Basic Authentication** — for individual developers using their own Business Manager account and a WebDAV access key.
-- **OAuth** — for API clients and automation (CI/CD pipelines, scripts) where no human is logging in.
-- **Browser login** — for individual developers who sign in to Account Manager in a browser. Nothing needs to be configured except the instance hostname.
+| Option                                                                    | Best for                                    | Setup                                    |
+| ------------------------------------------------------------------------- | ------------------------------------------- | ---------------------------------------- |
+| [Sign in with your account](#option-c-browser-login-account-manager-user) | Getting started and interactive development | None beyond the hostname                 |
+| [Access key](#option-a-basic-authentication-user-access)                  | Scripts, or working without a browser       | A Business Manager access key            |
+| [API client](#option-b-oauth-based-webdav-api-client-access)              | CI/CD and shared automation                 | WebDAV Client Permissions for the client |
 
-### Option A: Basic Authentication (user access)
+### Sign in with your account {#option-c-browser-login-account-manager-user}
 
-Use your Business Manager username and a WebDAV access key. This is the simplest option for interactive, user-based access during local development.
+```bash
+b2c code deploy --server my-sandbox.dx.commercecloud.salesforce.com
+b2c logs list --server my-sandbox.dx.commercecloud.salesforce.com
+```
+
+You stay signed in, so later commands don't ask again. The same sign-in works in the MCP server and the VS Code extension.
+
+What you can do depends on your Business Manager roles on the instance. If a request is refused, the error names the permission you need:
+
+| Folder                                                                                     | Business Manager permission   |
+| ------------------------------------------------------------------------------------------ | ----------------------------- |
+| `Cartridges`                                                                               | `WebDAV_Manage_Customization` |
+| `Impex`, `Logs`, `Temp`, `Static`, `Catalogs`, `Libraries`, `Dynamic`, `CustomerSnapshots` | `WebDAV_Transfer_Files`       |
+| `Securitylogs`                                                                             | `WebDAV_Security_Logs_Access` |
+| `Realmdata`                                                                                | `WebDAV_Realm_Access`         |
+
+Code uploads go to the instance's active code version. Activating a different code version (`code activate`, `code deploy --activate`) needs an [API client](#account-manager-api-client).
+
+### Access key (Basic authentication) {#option-a-basic-authentication-user-access}
+
+Use your Business Manager username and a WebDAV access key instead of signing in, for example in scripts.
 
 The access key is used as the password. Your Account Manager password (the one you use to log in to Business Manager) is not accepted for WebDAV once unified authentication is enabled.
 
@@ -579,7 +601,7 @@ export SFCC_USERNAME=your-bm-username
 export SFCC_PASSWORD=your-webdav-access-key
 ```
 
-### Option B: OAuth-based WebDAV (API client access)
+### API client (OAuth) {#option-b-oauth-based-webdav-api-client-access}
 
 For API clients and automation (CI/CD), use OAuth credentials instead of a user's basic auth. This requires configuring WebDAV Client Permissions for the API client:
 
@@ -612,33 +634,11 @@ Common paths for CLI operations:
 | `/catalogs/<catalog-id>`  | Catalog file access    |
 | `/libraries/<library-id>` | Content library access |
 
-**Note:** This configuration is only needed when an API client authenticates with its own credentials (client ID and secret, or JWT). It isn’t required for Basic authentication or a browser login.
-
-### Option C: Browser login (Account Manager user)
-
-When neither a username/access key nor an API client is configured, WebDAV commands sign you in to Account Manager in a browser with the toolkit's built-in public client. The same applies when you configure your own public client ID without a secret. Only the hostname is required:
-
-```bash
-b2c code deploy --server my-sandbox.dx.commercecloud.salesforce.com --code-version version1
-b2c logs list --server my-sandbox.dx.commercecloud.salesforce.com
-```
-
-Requests are authorized by your Business Manager roles on the instance, not by WebDAV Client Permissions. Your Account Manager user must exist on the instance and have a role with the functional permission each folder requires:
-
-| Folder                                                                                     | Business Manager permission   |
-| ------------------------------------------------------------------------------------------ | ----------------------------- |
-| `Cartridges`                                                                               | `WebDAV_Manage_Customization` |
-| `Impex`, `Logs`, `Temp`, `Static`, `Catalogs`, `Libraries`, `Dynamic`, `CustomerSnapshots` | `WebDAV_Transfer_Files`       |
-| `Securitylogs`                                                                             | `WebDAV_Security_Logs_Access` |
-| `Realmdata`                                                                                | `WebDAV_Realm_Access`         |
-
-When access is refused, the error names your login and the missing permission. The login is reused until the session expires (the access token is refreshed silently for 24 hours).
-
-The built-in client works for WebDAV only. Without an API client, the active code version is read from the instance over WebDAV, so `code deploy` works without `--code-version`. Activating a code version (`code activate`, `code deploy --activate`) still needs an API client. The browser login is available in the CLI (`code deploy`, `code watch`, `code download`, `logs`, `webdav`), the MCP server's WebDAV, logs, and cartridge deploy tools, and VS Code code sync. MCP clients that support URL elicitation show the sign-in link themselves; with other clients the MCP server opens the system browser.
+**Note:** This configuration is only needed when an API client authenticates with its own credentials (client ID and secret, or JWT). It isn’t needed when you sign in with your account or use an access key.
 
 ### Which credentials WebDAV uses
 
-WebDAV commands use Basic authentication when a username/access key is configured, then a configured API client, then a browser login with the built-in client. To use the API client for WebDAV instead, pass `--auth-methods client-credentials` (or set `SFCC_AUTH_METHODS=client-credentials`). Avoid `--auth-methods basic` on commands that also call SCAPI or OCAPI, such as `code deploy`: it disables the API client for those calls too.
+An access key is used when configured, then an API client, then signing in with your account. To use the API client for WebDAV when an access key is also configured, pass `--auth-methods client-credentials` (or set `SFCC_AUTH_METHODS=client-credentials`). Avoid `--auth-methods basic` on commands that also call SCAPI or OCAPI, such as `code deploy`: it disables the API client for those calls too.
 
 ## Managed Runtime API Key
 
@@ -663,7 +663,7 @@ export MRT_API_KEY=your-mrt-api-key
 
 ## Quick Start Example
 
-Here's a complete example for setting up CLI access:
+To upload code and read logs, you only need your instance hostname; see [WebDAV Access](#webdav-access). Here's a complete example for setting up API access as well:
 
 ### 1. Create API Client in Account Manager
 
@@ -683,12 +683,9 @@ Here's a complete example for setting up CLI access:
 
 With the SCAPI scopes above configured, `code`, `jobs`, `bm users/roles`, `sites`, and catalog discovery run over SCAPI. Configure OCAPI only for operations with no live equivalent as of release 26.8 — inventory-list enumeration, BM `whoami`, access keys, and raw `bm users search --query` — or as the temporary `auto` fallback. Explicit SCAPI mode raises a capability error before contacting OCAPI. Note that OCAPI is [deprecated](#ocapi-configuration) and disabled on newer instances. To set it up, add the JSON configuration shown in [OCAPI Configuration](#ocapi-configuration).
 
-### 3. Configure WebDAV Access (for code deploy/watch, webdav commands)
+### 3. (Optional) Configure WebDAV access for automation
 
-Either:
-
-- Use your BM username + WebDAV access key (for user-based, interactive development), or
-- Configure WebDAV Client Permissions for OAuth (for API clients and CI/CD)
+Code upload, logs, and `webdav` commands work by signing in with your account. For CI/CD, use an [access key](#option-a-basic-authentication-user-access) or [WebDAV Client Permissions](#option-b-oauth-based-webdav-api-client-access) for the API client.
 
 ### 4. Set Environment Variables
 
@@ -735,9 +732,10 @@ b2c scapi schemas list
 
 Either status can mean the credentials were refused or the API client has no permission for the folder.
 
-- With Basic authentication, use a WebDAV access key (scope **WebDAV File Access and UX Studio**) as the password, not your Account Manager password. See [Option A](#option-a-basic-authentication-user-access).
+- When you signed in with your account, the error names the Business Manager permission you need; ask an administrator to add it to one of your roles. See [Sign in with your account](#option-c-browser-login-account-manager-user).
+- With an access key, use the key (scope **WebDAV File Access and UX Studio**) as the password, not your Account Manager password. See [Access key](#option-a-basic-authentication-user-access).
 - With OAuth, check that the API client has an entry for the folder (for example `/logs` or `/cartridges`) in **Administration** > **Organization** > **WebDAV Client Permissions**.
-- If both are configured, Basic authentication is used. See [Which credentials WebDAV uses](#which-credentials-webdav-uses).
+- If both are configured, the access key is used. See [Which credentials WebDAV uses](#which-credentials-webdav-uses).
 
 ### "Invalid scope" errors
 

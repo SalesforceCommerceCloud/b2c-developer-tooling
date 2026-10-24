@@ -48,21 +48,17 @@ plugins, `dw.json`, `~/.mobify` (MRT key), low-priority config plugins, then
 ## Browser sign-in
 
 Empty credential fields do not mean the instance is unreachable. With only a
-server configured, WebDAV tools (code upload, logs, files) sign in through
-Account Manager with the built-in client: the first such call asks the user to
-open a sign-in link, or opens a browser, and completes once they sign in. An API
-client configured without a secret signs in the same way. The built-in client
-covers WebDAV only; OCAPI and SCAPI tools still need a configured API client.
+server configured, WebDAV tools (code upload, logs, files) ask the user to sign
+in with their Account Manager account on the first call, then complete. OCAPI
+and SCAPI tools still need a configured API client.
 
-- `resolution.auth` on instance tool results, and `auth` in `config_inspect`,
-  show the method per request type (`webdav`, `ocapi`, `scapi`), the client,
-  and the sign-in state (`none` means the next call prompts).
-- A sign-in belongs to the Account Manager client, not the instance. Later calls
-  reuse it without prompting, including for other instances that use the same
-  client; each instance's Business Manager roles decide what the user can do.
-  A permission error after sign-in names the missing Business Manager role.
+- `resolution.auth` on instance tool results and `auth` in `config_inspect`
+  show how each request type authenticates; `session: "none"` means the next
+  call asks the user to sign in.
+- The user's Business Manager roles decide access. A permission error names the
+  missing permission.
 - If the user declines or cancels, the call fails; call again to retry.
-- To sign out, the user runs `b2c auth logout` (CLI and MCP share sessions).
+- To sign out or switch users, the user runs `b2c auth logout`.
 
 ## Setup and access
 

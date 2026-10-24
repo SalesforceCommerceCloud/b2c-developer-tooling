@@ -120,7 +120,8 @@ Most commands that interact with a B2C Commerce instance require authentication.
 - **Browser-based (implicit OAuth):** Use `--user-auth` on any OAuth-enabled command to authenticate interactively via the browser. This opens Account Manager in your default browser for login.
 - **Basic auth:** Configure `username` and `password` for WebDAV operations.
 - **Stateful sessions:** Use `b2c auth login` for persistent browser-based login sessions or `b2c auth client` for persistent client authentication. Later commands reuse the valid saved session when no other client is configured.
-- **Check what's in use:** `b2c setup inspect` shows how the instance authenticates WebDAV, OCAPI, and SCAPI requests; `b2c auth status` lists stored sessions. Sessions are stored per Account Manager client and shared across instances.
+- **Just a server:** code upload, logs, and `webdav` commands need only the hostname; the user signs in with their Account Manager account in the browser when asked.
+- **Check what's in use:** `b2c setup inspect` shows how the instance authenticates; `b2c auth status` shows who is signed in.
 
 ### `--user-auth` Flag
 

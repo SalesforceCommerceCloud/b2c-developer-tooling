@@ -4,7 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
-import {describeAuthSession, describeInstanceAuth, type AuthSession} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  describeAuthSession,
+  describeInstanceAuth,
+  describeSignIn,
+  type AuthSession,
+} from '@salesforce/b2c-tooling-sdk/auth';
 import {DEFAULT_PUBLIC_CLIENT_ID} from '../../src/defaults.js';
 
 function jwt(expSecondsFromNow: number): string {
@@ -103,5 +108,31 @@ describe('auth/instance-auth', () => {
       session('legacy', {flow: 'implicit', accessToken: jwt(-60), refreshToken: null}),
     );
     expect(summary).to.include({accessTokenValid: false, canRefresh: false, builtInClient: false});
+  });
+
+  describe('describeSignIn', () => {
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    const time = expiresAt.toLocaleString(undefined, {timeStyle: 'short'});
+
+    it('names the user and when access expires', () => {
+      expect(describeSignIn({clientId: DEFAULT_PUBLIC_CLIENT_ID, user: 'dev@example.com', expiresAt})).to.equal(
+        `Signed in to Account Manager as dev@example.com, expires ${time}.`,
+      );
+    });
+
+    it('reports when the refresh token expires, since that ends the sign-in', () => {
+      const refreshToken = jwt(26 * 60 * 60);
+      const until = new Date((Math.floor(Date.now() / 1000) + 26 * 60 * 60) * 1000);
+      const expected = until.toLocaleString(undefined, {dateStyle: 'medium', timeStyle: 'short'});
+      expect(
+        describeSignIn({clientId: DEFAULT_PUBLIC_CLIENT_ID, user: 'dev@example.com', expiresAt, refreshToken}),
+      ).to.equal(`Signed in to Account Manager as dev@example.com, expires ${expected}.`);
+    });
+
+    it('describes renewals and names other clients', () => {
+      expect(describeSignIn({clientId: 'my-client', user: 'dev@example.com', expiresAt, action: 'renewed'})).to.equal(
+        `Renewed Account Manager sign-in for dev@example.com, client my-client, expires ${time}.`,
+      );
+    });
   });
 });

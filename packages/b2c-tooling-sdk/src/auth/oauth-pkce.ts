@@ -16,6 +16,7 @@ import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {findAuthSession, saveAuthSession, type AuthSession} from './session-store.js';
+import {describeSignIn} from './instance-auth.js';
 
 const DEFAULT_LOCAL_PORT = 8080;
 
@@ -107,6 +108,12 @@ export interface PkceOAuthConfig extends HttpTransportOptions {
    * Defaults to `true`.
    */
   persistSession?: boolean;
+  /**
+   * Renew a stored sign-in with its refresh token even when the access token
+   * is still valid, so it gets a new expiry (used by `b2c auth login`). Falls
+   * back to the browser flow when there is no refresh token or renewal fails.
+   */
+  forceRefresh?: boolean;
 }
 
 function base64url(buf: Buffer): string {
@@ -190,7 +197,9 @@ export class PkceOAuthStrategy implements AuthStrategy {
       if (!stored || stored.flow !== 'pkce') return;
       this._sub = stored.sub ?? '';
       this._refreshToken = stored.refreshToken ?? null;
-      if (!ACCESS_TOKEN_CACHE.has(this.config.clientId) && stored.accessToken) {
+      if (this.config.forceRefresh && this._refreshToken) {
+        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
+      } else if (!ACCESS_TOKEN_CACHE.has(this.config.clientId) && stored.accessToken) {
         const expires = stored.expiresAt ? new Date(stored.expiresAt) : new Date(0);
         ACCESS_TOKEN_CACHE.set(this.config.clientId, {
           accessToken: stored.accessToken,
@@ -411,6 +420,18 @@ export class PkceOAuthStrategy implements AuthStrategy {
     }
     this.persistTokens(tokenResponse);
     logger.debug({clientId: this.config.clientId}, '[Auth] PKCE token refreshed silently');
+    if (this.config.forceRefresh) {
+      logger.info(
+        describeSignIn({
+          action: 'renewed',
+          clientId: this.config.clientId,
+          accountManagerHost: this.accountManagerHost,
+          user: this._sub,
+          expiresAt: tokenResponse.expires,
+          refreshToken: this._refreshToken,
+        }),
+      );
+    }
     return tokenResponse;
   }
 
@@ -595,6 +616,15 @@ export class PkceOAuthStrategy implements AuthStrategy {
       // access token is not a JWT; nothing to trace
     }
     this.persistTokens(tokenResponse);
+    logger.info(
+      describeSignIn({
+        clientId: this.config.clientId,
+        accountManagerHost: this.accountManagerHost,
+        user: this._sub,
+        expiresAt: tokenResponse.expires,
+        refreshToken: this._refreshToken,
+      }),
+    );
 
     return tokenResponse;
   }

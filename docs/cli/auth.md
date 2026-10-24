@@ -27,14 +27,17 @@ Log in via browser (Authorization Code + PKCE) and save the session for stateful
 ### Usage
 
 ```bash
-b2c auth login [CLIENTID]
+b2c auth login [--client-id <id>]
 ```
 
-`CLIENTID` is an optional positional argument. When omitted, the `SFCC_CLIENT_ID` environment variable is used as a fallback.
+Pass the client ID with `--client-id` or as the `CLIENTID` argument. When omitted, the configured client ID (`SFCC_CLIENT_ID` or `dw.json`) is used. With no client configured, you sign in with the CLI's built-in client, the same sign-in that file, log, sandbox, and Account Manager commands use, so they won't ask again.
 
 ```bash
-# Using a positional argument
-b2c auth login your-client-id
+# Sign in with your Account Manager account
+b2c auth login
+
+# With your own API client
+b2c auth login --client-id your-client-id
 
 # Using environment variable
 export SFCC_CLIENT_ID=your-client-id
@@ -47,6 +50,7 @@ After a successful login, subsequent commands reuse and refresh the stored token
 
 | Flag                     | Environment Variable        | Description                                                                                        |
 | ------------------------ | --------------------------- | -------------------------------------------------------------------------------------------------- |
+| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID (default: the configured client, then the built-in client)                               |
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname                                                                           |
 | `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                          |
 | `--auth-methods`         | `SFCC_AUTH_METHODS`         | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
@@ -57,10 +61,10 @@ After a successful login, subsequent commands reuse and refresh the stored token
 
 ```bash
 # Default: Authorization Code + PKCE
-b2c auth login your-client-id
+b2c auth login --client-id your-client-id
 
-# Legacy implicit flow (emits a deprecation warning)
-b2c auth login your-client-id --auth-methods implicit
+# Deprecated implicit flow, for clients not yet migrated (emits a deprecation warning)
+b2c auth login --client-id your-client-id --auth-methods implicit
 ```
 
 OAuth 2.1 deprecates the implicit flow for public clients. Configure your Account Manager API client as a public client and use the default PKCE flow when possible.
@@ -73,7 +77,7 @@ If a client is still registered as implicit-only, the `user` flow automatically 
 
 ## b2c auth logout
 
-Clear the stored OAuth session (stateful auth). After logout, commands use stateless auth when configured.
+Sign out of Account Manager and clear all saved sign-ins. Commands that need Account Manager ask you to sign in again; commands with a configured client secret, JWT, or access key keep working.
 
 ```bash
 b2c auth logout
@@ -81,7 +85,7 @@ b2c auth logout
 
 ## b2c auth status
 
-Show stored sessions and how the configured instance authenticates. Sessions are stored per Account Manager client, not per instance, so one sign-in can serve several instances; each instance's Business Manager roles decide what you can do there.
+Show who you're signed in as and how the configured instance authenticates.
 
 ```bash
 # Sessions, plus how the configured instance authenticates
@@ -94,7 +98,7 @@ b2c auth status --server my-sandbox.example.com
 b2c auth status --json
 ```
 
-When an instance is configured, the command first lists how its WebDAV, OCAPI, and SCAPI requests authenticate (Basic, client credentials, JWT, or browser login) and whether you're signed in. The session table then shows each stored session's client (`built-in client` for the toolkit's public client), user, flow, access-token expiry, whether it renews silently, and what the configured instance uses it for. Sign out with [`b2c auth logout`](#b2c-auth-logout).
+When an instance is configured, the command shows how file and API requests to it authenticate and whether you're signed in, followed by your saved sign-ins. One sign-in can work for several instances. Sign out with [`b2c auth logout`](#b2c-auth-logout).
 
 ## b2c auth client
 

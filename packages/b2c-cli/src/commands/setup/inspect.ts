@@ -19,7 +19,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/safety';
 import {t, withDocs} from '../../i18n/index.js';
 import {createEnvironmentSources} from '../../utils/setup/config-field-command.js';
-import {describeAuthPath, describeSessionState} from '../../utils/auth/describe.js';
+import {describeAuthPath, describeSessionState, summarizeInstanceAuth} from '../../utils/auth/describe.js';
 
 /**
  * JSON output structure for the inspect command.
@@ -113,7 +113,10 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
   static flags = {
     ...BaseCommand.baseFlags,
     verbose: Flags.boolean({
-      description: t('commands.setup.inspect.verbose', 'Show the full ordered safety ruleset'),
+      description: t(
+        'commands.setup.inspect.verbose',
+        'Show the full ordered safety ruleset and authentication details',
+      ),
       default: false,
     }),
     unmask: Flags.boolean({
@@ -300,6 +303,9 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       fieldSources,
       unmask,
     );
+    if (auth && !this.flags.verbose) {
+      ui.div({text: '  auth', width: 22}, {text: summarizeInstanceAuth(auth)});
+    }
 
     // Auth (Basic) section
     this.renderSection(
@@ -438,7 +444,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     );
 
     this.renderSafety(ui, safety);
-    if (auth) this.renderAuth(ui, auth);
+    if (auth && this.flags.verbose) this.renderAuth(ui, auth);
 
     // Sources section
     if (sources.length > 0) {

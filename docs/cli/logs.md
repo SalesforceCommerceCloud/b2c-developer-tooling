@@ -8,7 +8,7 @@ Commands for retrieving and monitoring log files on B2C Commerce instances. Thes
 
 ## Authentication
 
-All logs commands require WebDAV credentials. See the [WebDAV Authentication](/cli/webdav#authentication) section for details on Basic Auth and OAuth options.
+Logs commands need only your instance hostname. The first time, your browser opens so you can sign in with your Account Manager account. You can also use an access key or API client; see [WebDAV Authentication](/cli/webdav#authentication).
 
 ---
 
