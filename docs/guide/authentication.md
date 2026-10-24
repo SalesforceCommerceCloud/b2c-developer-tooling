@@ -38,11 +38,11 @@ Jobs, sites, code version activation, and other API commands use an Account Mana
 
 An API client can authenticate in three ways:
 
-| Method                    | Best for                           | Configure                                        | Permissions come from  |
-| ------------------------- | ---------------------------------- | ------------------------------------------------ | ---------------------- |
-| Sign in with your account | Interactive development            | `client-id`                                      | Your user's roles      |
-| Client credentials        | CI/CD and automation               | `client-id` and `client-secret`                  | The API client's roles |
-| JWT                       | Automation without a stored secret | `client-id`, `jwt-cert-path`, and `jwt-key-path` | The API client's roles |
+| Method                                       | Best for                           | Configure                                        | Permissions come from  |
+| -------------------------------------------- | ---------------------------------- | ------------------------------------------------ | ---------------------- |
+| Sign in with your account                    | Interactive development            | `client-id`                                      | Your user's roles      |
+| Client credentials                           | CI/CD and automation               | `client-id` and `client-secret`                  | The API client's roles |
+| [JWT](#jwt-authentication-certificate-based) | Automation without a stored secret | `client-id`, `jwt-cert-path`, and `jwt-key-path` | The API client's roles |
 
 With a client secret configured, the CLI uses client credentials. Pass `--user-auth` to sign in with your account instead.
 
@@ -124,130 +124,6 @@ Create the client as a **public client** (no secret). A client's type can't be c
 ::: info Running behind a proxy
 If the browser can't reach `localhost:8080`, set `SFCC_REDIRECT_URI` to the proxy URL (for example, `https://proxy.example.com:8080`) and add it to the client's redirect URLs. The proxy forwards to the CLI's local server; change that server's port with `SFCC_OAUTH_LOCAL_PORT`.
 :::
-
-## JWT Authentication (Certificate-Based)
-
-JWT authentication uses a certificate instead of a client secret. You register a certificate in Account Manager, and the CLI signs requests with your private key, so there's no secret to store and certificates can be rotated.
-
-### Setup Instructions
-
-#### Step 1: Generate Certificate Pair
-
-Generate an RSA certificate pair using OpenSSL:
-
-```bash
-openssl req -x509 -newkey rsa:4096 \
-  -keyout key.pem \
-  -out cert.pem \
-  -days 365 \
-  -nodes \
-  -subj "/CN=B2C CLI"
-```
-
-This creates two files:
-
-- `cert.pem` - Public certificate (upload to Account Manager)
-- `key.pem` - Private key (keep secure on your machine)
-
-::: tip Encrypted Keys
-For additional security, generate an encrypted private key by omitting `-nodes` and adding a passphrase when prompted. You'll provide the passphrase via `--jwt-passphrase` when using the CLI.
-:::
-
-#### Step 2: Register Certificate in Account Manager
-
-1. Log in to [Account Manager](https://account.demandware.com)
-2. Navigate to **API Client** and select your client
-3. Set **Token Endpoint Auth Method** to `private_key_jwt`
-4. Upload `cert.pem` in the **Certificates** section
-5. Save changes
-
-::: tip Multiple certificates
-You can register several certificates on one client, so each developer can use their own key and you can rotate keys without downtime.
-:::
-
-#### Step 3: Configure CLI
-
-You can provide JWT credentials via CLI flags, environment variables, or configuration files.
-
-**Using CLI flags:**
-
-```bash
-b2c code list \
-  --client-id your-client-id \
-  --jwt-cert ./cert.pem \
-  --jwt-key ./key.pem
-```
-
-**Using environment variables:**
-
-```bash
-export SFCC_CLIENT_ID=your-client-id
-export SFCC_JWT_CERT=/path/to/cert.pem
-export SFCC_JWT_KEY=/path/to/key.pem
-
-b2c code list
-```
-
-**Using dw.json:**
-
-```json
-{
-  "hostname": "your-instance.demandware.net",
-  "client-id": "your-client-id",
-  "jwt-cert-path": "./cert.pem",
-  "jwt-key-path": "./key.pem"
-}
-```
-
-**For encrypted keys:**
-
-```bash
-b2c code list \
-  --client-id your-client-id \
-  --jwt-cert ./cert.pem \
-  --jwt-key ./key.pem \
-  --jwt-passphrase "your-passphrase"
-
-# Or via environment variable
-export SFCC_JWT_PASSPHRASE=your-passphrase
-```
-
-### Which method is used
-
-With a client secret, the CLI uses client credentials; otherwise it uses JWT when a certificate is configured, then browser sign-in. To force JWT even when a client secret is configured:
-
-```bash
-b2c code list --auth-methods jwt
-```
-
-### Troubleshooting
-
-**"JWT certificate file not found"**
-
-- Verify the certificate path is correct
-- Use absolute paths or paths relative to current directory
-
-**"Invalid JWT private key"**
-
-- Check that the key file is in PEM format
-- If encrypted, ensure you provide the correct passphrase via `--jwt-passphrase`
-
-**"JWT authentication failed (401)"**
-
-- Verify the certificate is registered in Account Manager
-- Ensure the Token Endpoint Auth Method is set to `private_key_jwt`
-- Check that the client ID matches the API client with the registered certificate
-
-**"Invalid certificate format"**
-
-- The certificate must be in PEM format (starts with `-----BEGIN CERTIFICATE-----`)
-- Regenerate the certificate using the OpenSSL command above
-
-### Security Best Practices
-
-- Never commit private keys; add `*.pem` and `*.key` to `.gitignore`.
-- Use encrypted keys with passphrases (kept in a secret manager) for production and CI/CD.
-- Rotate certificates regularly.
 
 ## SCAPI Authentication
 
@@ -587,6 +463,130 @@ b2c mrt save-credentials --user your-email@example.com --api-key your-mrt-api-ke
 # Or use an environment variable
 export MRT_API_KEY=your-mrt-api-key
 ```
+
+## JWT Authentication (Certificate-Based)
+
+JWT authentication uses a certificate instead of a client secret. You register a certificate in Account Manager, and the CLI signs requests with your private key, so there's no secret to store and certificates can be rotated.
+
+### Setup Instructions
+
+#### Step 1: Generate Certificate Pair
+
+Generate an RSA certificate pair using OpenSSL:
+
+```bash
+openssl req -x509 -newkey rsa:4096 \
+  -keyout key.pem \
+  -out cert.pem \
+  -days 365 \
+  -nodes \
+  -subj "/CN=B2C CLI"
+```
+
+This creates two files:
+
+- `cert.pem` - Public certificate (upload to Account Manager)
+- `key.pem` - Private key (keep secure on your machine)
+
+::: tip Encrypted Keys
+For additional security, generate an encrypted private key by omitting `-nodes` and adding a passphrase when prompted. You'll provide the passphrase via `--jwt-passphrase` when using the CLI.
+:::
+
+#### Step 2: Register Certificate in Account Manager
+
+1. Log in to [Account Manager](https://account.demandware.com)
+2. Navigate to **API Client** and select your client
+3. Set **Token Endpoint Auth Method** to `private_key_jwt`
+4. Upload `cert.pem` in the **Certificates** section
+5. Save changes
+
+::: tip Multiple certificates
+You can register several certificates on one client, so each developer can use their own key and you can rotate keys without downtime.
+:::
+
+#### Step 3: Configure CLI
+
+You can provide JWT credentials via CLI flags, environment variables, or configuration files.
+
+**Using CLI flags:**
+
+```bash
+b2c code list \
+  --client-id your-client-id \
+  --jwt-cert ./cert.pem \
+  --jwt-key ./key.pem
+```
+
+**Using environment variables:**
+
+```bash
+export SFCC_CLIENT_ID=your-client-id
+export SFCC_JWT_CERT=/path/to/cert.pem
+export SFCC_JWT_KEY=/path/to/key.pem
+
+b2c code list
+```
+
+**Using dw.json:**
+
+```json
+{
+  "hostname": "your-instance.demandware.net",
+  "client-id": "your-client-id",
+  "jwt-cert-path": "./cert.pem",
+  "jwt-key-path": "./key.pem"
+}
+```
+
+**For encrypted keys:**
+
+```bash
+b2c code list \
+  --client-id your-client-id \
+  --jwt-cert ./cert.pem \
+  --jwt-key ./key.pem \
+  --jwt-passphrase "your-passphrase"
+
+# Or via environment variable
+export SFCC_JWT_PASSPHRASE=your-passphrase
+```
+
+### Which method is used
+
+With a client secret, the CLI uses client credentials; otherwise it uses JWT when a certificate is configured, then browser sign-in. To force JWT even when a client secret is configured:
+
+```bash
+b2c code list --auth-methods jwt
+```
+
+### Troubleshooting
+
+**"JWT certificate file not found"**
+
+- Verify the certificate path is correct
+- Use absolute paths or paths relative to current directory
+
+**"Invalid JWT private key"**
+
+- Check that the key file is in PEM format
+- If encrypted, ensure you provide the correct passphrase via `--jwt-passphrase`
+
+**"JWT authentication failed (401)"**
+
+- Verify the certificate is registered in Account Manager
+- Ensure the Token Endpoint Auth Method is set to `private_key_jwt`
+- Check that the client ID matches the API client with the registered certificate
+
+**"Invalid certificate format"**
+
+- The certificate must be in PEM format (starts with `-----BEGIN CERTIFICATE-----`)
+- Regenerate the certificate using the OpenSSL command above
+
+### Security Best Practices
+
+- Never commit private keys; add `*.pem` and `*.key` to `.gitignore`.
+- Use encrypted keys with passphrases (kept in a secret manager) for production and CI/CD.
+- Rotate certificates regularly.
 
 ## Quick Start Example
 
