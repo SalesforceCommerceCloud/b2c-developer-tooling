@@ -73,6 +73,7 @@ The command displays configuration organized by category:
 - **Project**: configured deployment, content, and documentation defaults
 - **Metadata**: siteId, instanceName, and projectDirectory (when configured)
 - **Safety**: safety configuration (when configured)
+- **Effective Authentication**: how WebDAV, OCAPI, and SCAPI requests to the instance authenticate, and whether you're signed in (when an instance is configured). Run [`b2c auth status`](./auth#b2c-auth-status) for session details
 - **Sources**: List of configuration sources that contributed values
 
 Each value shows its source in brackets (e.g., `[dw.json]`, `[SFCC_CLIENT_ID]`, `[~/.mobify]`).

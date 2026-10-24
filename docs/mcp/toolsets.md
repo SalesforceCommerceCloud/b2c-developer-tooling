@@ -242,7 +242,11 @@ the first WebDAV call opens an Account Manager [browser login](../guide/authenti
 and your Business Manager role authorizes access; this also applies to logs and
 cartridge uploads. Clients that support URL elicitation show the sign-in link and
 finish the original call after you sign in; other clients open the system browser.
-A login that isn't completed within 5 minutes fails the call. Whole-file transfers are limited
+A login that isn't completed within 5 minutes fails the call. The sign-in belongs to
+the Account Manager client, so later calls reuse it, including for other instances
+that use the same client; run `b2c auth logout` to sign out. Instance tool results
+include `resolution.auth`, and `config_inspect` includes `auth`, showing how each
+request type authenticates and whether you're signed in. Whole-file transfers are limited
 to 64 MiB. Upload folders must already exist; local downloads require a new filename.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).
@@ -297,9 +301,9 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
 **Toolsets:** `DIAGNOSTICS`, `CIP`
 
-| Tool             | Capability                                                               |
-| ---------------- | ------------------------------------------------------------------------ |
-| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. |
+| Tool             | Capability                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| `config_inspect` | Check resolved configuration, targets, and authentication; secrets are masked by default. |
 
 ## Toolsets for customization
 

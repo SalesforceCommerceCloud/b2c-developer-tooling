@@ -47,7 +47,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {describeInstanceAuth, type AuthStrategy, type InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import {configSourceHint} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
@@ -305,6 +305,15 @@ export class Services {
    */
   public getHomeDir(): string {
     return os.homedir();
+  }
+
+  /**
+   * Describe how the configured instance authenticates and which stored
+   * Account Manager sessions it uses. Reflects the session store at call
+   * time, so a sign-in during a tool call shows up afterwards.
+   */
+  public getInstanceAuth(): InstanceAuthSummary {
+    return describeInstanceAuth(this.resolvedConfig.values, {defaultWebDavClient: true});
   }
 
   /**

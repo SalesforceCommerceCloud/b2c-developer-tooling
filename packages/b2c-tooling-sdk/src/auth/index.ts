@@ -123,6 +123,16 @@ export {
   resetAuthSessionStoreForTesting,
 } from './session-store.js';
 export type {AuthSession, AuthSessionBackend, AuthSessionFlow} from './session-store.js';
+export {describeAuthSession, describeInstanceAuth} from './instance-auth.js';
+export type {
+  DescribeInstanceAuthOptions,
+  InstanceAuthConfig,
+  InstanceAuthMethod,
+  InstanceAuthPath,
+  InstanceAuthSession,
+  InstanceAuthSummary,
+  InstanceAuthTarget,
+} from './instance-auth.js';
 
 // Resolution helpers
 export {resolveAuthStrategy, checkAvailableAuthMethods, resolveSystemOAuthStrategy} from './resolve.js';

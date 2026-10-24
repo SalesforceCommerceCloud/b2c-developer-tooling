@@ -79,6 +79,23 @@ Clear the stored OAuth session (stateful auth). After logout, commands use state
 b2c auth logout
 ```
 
+## b2c auth status
+
+Show stored sessions and how the configured instance authenticates. Sessions are stored per Account Manager client, not per instance, so one sign-in can serve several instances; each instance's Business Manager roles decide what you can do there.
+
+```bash
+# Sessions, plus how the configured instance authenticates
+b2c auth status
+
+# For a specific instance
+b2c auth status --server my-sandbox.example.com
+
+# As JSON
+b2c auth status --json
+```
+
+When an instance is configured, the command first lists how its WebDAV, OCAPI, and SCAPI requests authenticate (Basic, client credentials, JWT, or browser login) and whether you're signed in. The session table then shows each stored session's client (`built-in client` for the toolkit's public client), user, flow, access-token expiry, whether it renews silently, and what the configured instance uses it for. Sign out with [`b2c auth logout`](#b2c-auth-logout).
+
 ## b2c auth client
 
 Authenticate an API client using client credentials or resource owner password credentials and save the **access token** for stateful auth. The client secret is **never** persisted: when the access token expires, re-run this command with the same credentials. There is no automatic refresh for client_credentials sessions — for refresh-capable user authentication, use `b2c auth login` (PKCE) instead.
@@ -177,20 +194,20 @@ b2c auth token
 
 ### Flags
 
-| Flag                     | Environment Variable        | Description                                                                                                       |
-| ------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID for OAuth                                                                                               |
-| `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client Secret for OAuth                                                                                           |
-| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                                         |
+| Flag                     | Environment Variable        | Description                                                                                                                                                             |
+| ------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID for OAuth                                                                                                                                                     |
+| `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client Secret for OAuth                                                                                                                                                 |
+| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                                                                                               |
 | `--client-auth-method`   | `SFCC_CLIENT_AUTH_METHOD`   | How client credentials are sent: `basic` (default), `basic-unencoded`, or `body`. See [client authentication method](/guide/configuration#client-authentication-method) |
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com)                                                        |
-| `--short-code`           | `SFCC_SHORTCODE`            | SCAPI short code                                                                                                  |
-| `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                            |
-| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key |
-| `--user-auth`            |                             | Use browser-based user authentication (Authorization Code + PKCE flow)                                            |
-| `--jwt-cert`             | `SFCC_JWT_CERT`             | Path to JWT certificate file (cert.pem) for JWT Bearer authentication                                             |
-| `--jwt-key`              | `SFCC_JWT_KEY`              | Path to JWT private key file (key.pem) for JWT Bearer authentication                                              |
-| `--jwt-passphrase`       | `SFCC_JWT_PASSPHRASE`       | Passphrase for encrypted JWT private key                                                                          |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com)                                                                                                              |
+| `--short-code`           | `SFCC_SHORTCODE`            | SCAPI short code                                                                                                                                                        |
+| `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                                                                                  |
+| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key                                                       |
+| `--user-auth`            |                             | Use browser-based user authentication (Authorization Code + PKCE flow)                                                                                                  |
+| `--jwt-cert`             | `SFCC_JWT_CERT`             | Path to JWT certificate file (cert.pem) for JWT Bearer authentication                                                                                                   |
+| `--jwt-key`              | `SFCC_JWT_KEY`              | Path to JWT private key file (key.pem) for JWT Bearer authentication                                                                                                    |
+| `--jwt-passphrase`       | `SFCC_JWT_PASSPHRASE`       | Passphrase for encrypted JWT private key                                                                                                                                |
 
 ### Examples
 

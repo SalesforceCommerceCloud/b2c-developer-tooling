@@ -31,6 +31,10 @@ const INPUT_KEY = 'account_manager_login';
 /** Pending entries whose client never retries are dropped this long after the call settles. */
 const RETENTION_MS = 10 * 60 * 1000;
 const LOGIN_MESSAGE = 'Sign in to Account Manager to access your B2C Commerce instance.';
+/** Appended to the result of a call that completed after a browser login. */
+export const SIGNED_IN_NOTE =
+  'Signed in to Account Manager in the browser. Later calls reuse this sign-in without prompting, ' +
+  "including for other instances that use the same client; each instance's Business Manager roles decide access.";
 
 interface StartedLogin {
   url: string;
@@ -103,7 +107,8 @@ export class BrowserLoginContinuations {
     try {
       const outcome = await entry.outcome;
       if (!outcome.ok) throw outcome.error;
-      return outcome.result;
+      if (outcome.result.isError || action === 'decline' || action === 'cancel') return outcome.result;
+      return {...outcome.result, content: [...outcome.result.content, {type: 'text', text: SIGNED_IN_NOTE}]};
     } finally {
       signal?.removeEventListener('abort', onAbort);
     }

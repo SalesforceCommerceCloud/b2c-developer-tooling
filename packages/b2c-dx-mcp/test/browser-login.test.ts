@@ -9,7 +9,7 @@ import {Client} from '@modelcontextprotocol/client';
 import {InMemoryTransport, type ElicitResult} from '@modelcontextprotocol/server';
 import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {B2CDxMcpServer} from '../src/server.js';
-import {BrowserLoginContinuations, openBrowserForTool} from '../src/utils/browser-login.js';
+import {BrowserLoginContinuations, openBrowserForTool, SIGNED_IN_NOTE} from '../src/utils/browser-login.js';
 
 const LOGIN_URL = 'https://account.example.com/dwsso/oauth2/authorize?client_id=test';
 
@@ -85,7 +85,10 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
 
       const result = await client.callTool({name: 'webdav_list', arguments: {}});
 
-      expect(result.content).to.deep.equal([{type: 'text', text: 'listed with user-token'}]);
+      expect(result.content).to.deep.equal([
+        {type: 'text', text: 'listed with user-token'},
+        {type: 'text', text: SIGNED_IN_NOTE},
+      ]);
       expect(prompts).to.have.length(1);
       expect(prompts[0].mode).to.equal('url');
       expect(prompts[0].url).to.equal(LOGIN_URL);

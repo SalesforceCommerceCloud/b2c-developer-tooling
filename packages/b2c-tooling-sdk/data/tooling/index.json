@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-23T22:54:31.592Z",
+  "generatedAt": "2026-10-24T00:02:44.954Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -17,7 +17,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/auth.md",
-      "headings": "Stateful vs stateless auth • b2c auth login • Usage • Flags • Choosing a flow • Account Manager prerequisites • b2c auth logout • b2c auth client • Usage • Flags • Grant type auto-detection • Examples • b2c auth client token • Usage • Output • b2c auth token • Usage • Flags • Examples • Output • Use Cases • Scripting • CI/CD Pipelines • Testing API Calls • Authentication Overview • Quick Reference",
+      "headings": "Stateful vs stateless auth • b2c auth login • Usage • Flags • Choosing a flow • Account Manager prerequisites • b2c auth logout • b2c auth status • b2c auth client • Usage • Flags • Grant type auto-detection • Examples • b2c auth client token • Usage • Output • b2c auth token • Usage • Flags • Examples • Output • Use Cases • Scripting • CI/CD Pipelines • Testing API Calls • Authentication Overview • Quick Reference",
       "preview": "Authentication commands for obtaining OAuth tokens and configuring Account Manager API clients, OCAPI, and WebDAV access."
     },
     {
