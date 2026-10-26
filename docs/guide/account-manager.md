@@ -12,14 +12,14 @@ For the full command reference with all flags and options, see [Account Manager 
 
 ## Authentication
 
-Account Manager commands work out of the box&mdash;no configuration is required. The CLI uses a built&mdash;in public client that authenticates via browser login. For automation, you can provide your own API client credentials.
+Account Manager commands work without any configuration: you sign in with your Account Manager account in the browser. For automation, provide your own API client credentials.
 
 ### Zero-Config (Default)
 
-Just run the commands without configuring any settings. The CLI opens a browser for login using the built-in client.
+Run the commands; you're asked to sign in when needed.
 
 ```bash
-# Works immediately — opens browser for login
+# Asks you to sign in the first time
 b2c am users list
 b2c am orgs list
 ```
@@ -28,10 +28,10 @@ Your user account's roles determine what operations you can perform (see [Role R
 
 ### User Authentication (`--user-auth`)
 
-When you have client credentials configured but want browser-based login instead, use `--user-auth`:
+When you have client credentials configured but want to sign in with your account instead, use `--user-auth`:
 
 ```bash
-# Force browser login even with SFCC_CLIENT_SECRET set
+# Sign in with your account even with SFCC_CLIENT_SECRET set
 b2c am users list --user-auth
 
 # Manage organizations (requires user auth)
@@ -53,7 +53,7 @@ Requirements:
 
 ### Authentication Order
 
-By default, the CLI tries client credentials first (if `--client-secret` is provided), then falls back to browser-based user authentication by using either your configured `--client-id` or the built-in public client. To force browser-based login, pass `--user-auth`.
+With a client secret, the CLI uses client credentials; otherwise you sign in with your account (using your configured `--client-id`, if any). Pass `--user-auth` to sign in even when a secret is configured.
 
 ### Role Requirements
 
@@ -75,7 +75,7 @@ If authentication fails, the CLI provides contextual error messages recommending
 
 ### For Interactive Use
 
-No setup required. Account Manager commands use the CLI's built-in public client by default.
+No setup required. You're asked to sign in when needed.
 
 ```bash
 b2c am users list

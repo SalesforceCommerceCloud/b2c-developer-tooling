@@ -5,18 +5,19 @@
  */
 import {Command} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
-import {createScriptsBackend, type ScriptsBackend} from '../operations/code/index.js';
 
 /**
  * Base command for code-version (Scripts) operations.
  *
- * Provides `createScriptsBackend()` which selects between OCAPI and SCAPI
- * based on the `--api-backend` flag and `apiBackend` config field. In auto
- * mode, prefers SCAPI when its coordinates and supported auth are available,
- * falling back to OCAPI on safe capability/auth/request rejections.
+ * `createScriptsBackend()` (from {@link InstanceCommand}) selects between
+ * OCAPI and SCAPI based on the `--api-backend` flag and `apiBackend` config
+ * field, or uses WebDAV without an API client. In auto mode, it prefers SCAPI
+ * when its coordinates and supported auth are available, falling back to OCAPI
+ * on safe capability/auth/request rejections.
  */
 export abstract class CodeCommand<T extends typeof Command> extends InstanceCommand<T> {
-  protected createScriptsBackend(): ScriptsBackend {
-    return this.createBackend(createScriptsBackend);
+  /** Listing, creating, and deleting code versions also work over WebDAV with a browser login. */
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
   }
 }

@@ -4,12 +4,23 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
-import {BaseCommand, ERROR_CODE, listFromEnv, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
-import {ImplicitOAuthStrategy, createUserAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
-import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
+import {BaseCommand, listFromEnv, loadConfig} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  ImplicitOAuthStrategy,
+  createUserAuthStrategy,
+  describeSignIn,
+  findAuthSession,
+  type AccessTokenResponse,
+} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  DEFAULT_ACCOUNT_MANAGER_HOST,
+  getDefaultPublicClientId,
+  getLegacyImplicitPublicClientId,
+} from '@salesforce/b2c-tooling-sdk';
 import {t, withDocs} from '../../i18n/index.js';
 
 const LOGIN_AUTH_METHODS = ['user', 'implicit'] as const;
+
 type LoginAuthMethod = (typeof LOGIN_AUTH_METHODS)[number];
 
 /**
@@ -20,23 +31,35 @@ type LoginAuthMethod = (typeof LOGIN_AUTH_METHODS)[number];
 export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   static args = {
     clientId: Args.string({
-      description: 'Client ID for OAuth (falls back to SFCC_CLIENT_ID env var)',
+      description: 'Client ID for OAuth (same as --client-id)',
       required: false,
     }),
   };
 
   static description = withDocs(
-    t('commands.auth.login.description', 'Log in via browser and save session (stateful auth)'),
+    t('commands.auth.login.description', 'Sign in to Account Manager in your browser and stay signed in'),
     '/cli/auth.html#b2c-auth-login',
   );
 
   static examples = [
-    '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> your-client-id',
-    '<%= config.bin %> <%= command.id %> --auth-methods implicit',
+    {description: 'Sign in with your Account Manager account', command: '<%= config.bin %> <%= command.id %>'},
+    {
+      description: 'Sign in with your own API client',
+      command: '<%= config.bin %> <%= command.id %> --client-id your-client-id',
+    },
+    {
+      description: 'Use the deprecated implicit flow for a client not yet migrated to PKCE',
+      command: '<%= config.bin %> <%= command.id %> --client-id your-client-id --auth-methods implicit',
+    },
   ];
 
   static flags = {
+    'client-id': Flags.string({
+      description: 'Client ID for OAuth (default: configured client, then the built-in client)',
+      env: 'SFCC_CLIENT_ID',
+      default: async () => process.env.SFCC_OAUTH_CLIENT_ID || undefined,
+      helpGroup: 'AUTH',
+    }),
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
@@ -73,7 +96,8 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
     );
     return loadConfig(
       {
-        clientId: this.args.clientId ?? process.env.SFCC_CLIENT_ID,
+        // The positional argument predates --client-id and wins when both are given.
+        clientId: this.args.clientId ?? (this.flags['client-id'] as string | undefined),
         accountManagerHost: this.flags['account-manager-host'] as string | undefined,
         scopes: scopes && scopes.length > 0 ? scopes : undefined,
         authMethods: authMethods && authMethods.length > 0 ? authMethods : undefined,
@@ -83,21 +107,20 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   }
 
   async run(): Promise<void> {
-    const clientId = this.resolvedConfig.values.clientId;
-    if (!clientId) {
-      this.error(
-        t(
-          'error.oauthClientIdRequired',
-          'OAuth client ID required. Provide a client ID argument or set SFCC_CLIENT_ID.',
-        ) + this.configDocsHint(),
-        {code: ERROR_CODE.VALIDATION},
-      );
-    }
-
     const accountManagerHost = this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
     const {scopes, selfSignedApi} = this.resolvedConfig.values;
     const method = this.selectMethod();
+    // Without a configured client, sign in with the built-in client that WebDAV, sandbox, and
+    // Account Manager commands use, so they don't prompt again.
+    const clientId =
+      this.resolvedConfig.values.clientId ??
+      (method === 'implicit'
+        ? getLegacyImplicitPublicClientId(accountManagerHost)
+        : getDefaultPublicClientId(accountManagerHost));
 
+    // The SDK reports new and renewed sign-ins; only a still-valid sign-in that can't renew is reported here.
+    const previous = findAuthSession(clientId);
+    let token: AccessTokenResponse;
     if (method === 'implicit') {
       this.warn(
         t(
@@ -108,15 +131,32 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
         ),
       );
       const strategy = new ImplicitOAuthStrategy({clientId, scopes, accountManagerHost, selfSignedApi});
-      await strategy.getTokenResponse();
+      token = await strategy.getTokenResponse();
     } else {
       // PKCE with an automatic, WARN-logged fallback to the implicit flow for
       // clients not yet registered for PKCE (see oauth-pkce-fallback in the SDK).
-      const strategy = createUserAuthStrategy({clientId, scopes, accountManagerHost, selfSignedApi});
-      await strategy.getTokenResponse();
+      const strategy = createUserAuthStrategy({
+        clientId,
+        scopes,
+        accountManagerHost,
+        selfSignedApi,
+        forceRefresh: true,
+      });
+      token = await strategy.getTokenResponse();
     }
 
-    this.log(t('commands.auth.login.success', 'Login succeeded. Session saved for stateful auth.'));
+    if (previous && token.accessToken === previous.accessToken) {
+      this.log(
+        describeSignIn({
+          action: 'reused',
+          clientId,
+          accountManagerHost,
+          user: previous.sub,
+          expiresAt: token.expires,
+          refreshToken: previous.refreshToken,
+        }),
+      );
+    }
   }
 
   private selectMethod(): LoginAuthMethod {

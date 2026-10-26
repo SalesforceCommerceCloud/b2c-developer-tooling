@@ -70,7 +70,8 @@ export default class CodeList extends CodeCommand<typeof CodeList> {
   static hiddenAliases = ['code:list'];
 
   async run(): Promise<CodeListResult> {
-    this.requireOAuthCredentials();
+    // Without an API client, versions are listed over WebDAV.
+    if (!this.hasOAuthCredentials()) this.requireWebDavCredentials();
 
     const hostname = this.resolvedConfig.values.hostname!;
     const backend = this.createScriptsBackend();

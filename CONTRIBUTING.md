@@ -46,6 +46,21 @@ Issues labelled `good first contribution`.
 
 For information on running the MCP server from source and local development, see [packages/b2c-dx-mcp/CONTRIBUTING.md](packages/b2c-dx-mcp/CONTRIBUTING.md).
 
+# Manual testing sandbox
+
+`pnpm sandbox` runs the CLI, MCP server, and VS Code extension from source against a real instance, isolated from your normal setup: no installed CLI plugins, no shared default `dw.json`, no stored sessions, and no `SFCC_*` or `MRT_*` variables. By default it uses a scratch project with a demo cartridge and a `dw.json` holding only the server.
+
+```bash
+pnpm sandbox shell --server my-sandbox.example.com   # shell with `b2c` and `b2c-dx-mcp` from this checkout
+pnpm sandbox claude                                  # Claude Code with only this checkout's MCP server
+pnpm sandbox vscode                                  # isolated VS Code window with this checkout's extension
+pnpm sandbox vscode --empty                          # ...with nothing configured
+pnpm sandbox probe                                   # scripted MCP client: sign in through URL elicitation
+pnpm sandbox check                                   # automated checks that need no sign-in
+```
+
+Every run starts signed out, so each surface shows its first sign-in; pass `--keep-session` to reuse the previous run's sessions, for example to test silent refresh. The server is remembered between runs. Use `--project <dir>` to open an existing project (its `dw.json` is ignored when `--server` is given) and `--repo <dir>` to run another checkout or worktree. Run `pnpm sandbox --help` for all options.
+
 # Contribution Checklist
 
 - [x] Clean, simple, well styled code

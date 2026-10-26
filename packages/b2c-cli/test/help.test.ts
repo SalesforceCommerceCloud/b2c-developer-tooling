@@ -91,7 +91,8 @@ describe('B2CHelp', () => {
     const text = logs.output.join('\n');
     expect(text).to.include('WEBDAV AUTHENTICATION');
     expect(text).to.include('/logs in Business Manager');
-    expect(text).to.include('Basic auth is used when both are configured');
+    expect(text).to.include('Browser login');
+    expect(text).to.include('Basic auth is used when both Basic auth and an API client are configured');
 
     const deploy = new TestHelp(config).setAgent({});
     await deploy.showHelp(['code', 'deploy']);

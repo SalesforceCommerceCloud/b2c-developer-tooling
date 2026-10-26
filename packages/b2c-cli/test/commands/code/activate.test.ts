@@ -58,9 +58,11 @@ describe('code activate', () => {
     const command: any = await createCommand({}, {codeVersion: 'v1'});
 
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(true);
     const logStub = sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
     sinon.stub(command, 'instance').get(() => ({
+      hasOAuthCredentials: true,
       ocapi: {
         PATCH: sinon.stub().resolves({
           data: undefined,

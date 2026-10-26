@@ -76,9 +76,15 @@ export interface WebDavClientOptions {
    * Use createTlsDispatcher() to create one with client certificates.
    */
   dispatcher?: Dispatcher;
+  /**
+   * Returns text appended to the error of a request refused with 401 or 403,
+   * e.g. the permission the authenticated user lacks for the path.
+   */
+  authFailureHint?: (path: string, status: 401 | 403) => Promise<string | undefined>;
 }
 
 export class WebDavClient {
+  private authFailureHint?: (path: string, status: 401 | 403) => Promise<string | undefined>;
   private baseUrl: string;
   private middlewareRegistry: MiddlewareRegistry;
   private dispatcher?: Dispatcher;
@@ -98,6 +104,7 @@ export class WebDavClient {
     this.baseUrl = `https://${hostname}/on/demandware.servlet/webdav/Sites`;
     this.middlewareRegistry = options?.middlewareRegistry ?? globalMiddlewareRegistry;
     this.dispatcher = options?.dispatcher;
+    this.authFailureHint = options?.authFailureHint;
   }
 
   /**
@@ -109,6 +116,18 @@ export class WebDavClient {
   buildUrl(path: string): string {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     return `${this.baseUrl}/${cleanPath}`;
+  }
+
+  /**
+   * Builds the error for a failed request, appending the auth failure hint to 401/403 responses.
+   */
+  private async failure(method: string, path: string, response: Response, hint?: string): Promise<HTTPError> {
+    let suffix = hint ? ` ${hint}` : '';
+    if ((response.status === 401 || response.status === 403) && this.authFailureHint) {
+      const authHint = await this.authFailureHint(path, response.status).catch(() => undefined);
+      if (authHint) suffix += `. ${authHint}`;
+    }
+    return new HTTPError(`${method} failed: ${response.status} ${response.statusText}${suffix}`, response, method);
   }
 
   /**
@@ -302,7 +321,7 @@ export class WebDavClient {
 
     // 201 = created, 405 = already exists (acceptable)
     if (!response.ok && response.status !== 405) {
-      throw new HTTPError(`MKCOL failed: ${response.status} ${response.statusText}`, response, 'MKCOL');
+      throw await this.failure('MKCOL', path, response);
     }
   }
 
@@ -328,12 +347,7 @@ export class WebDavClient {
       const hints: Record<number, string> = {
         413: '(sandbox may be stopped or unavailable)',
       };
-      const hint = hints[response.status];
-      throw new HTTPError(
-        `PUT failed: ${response.status} ${response.statusText}${hint ? ` ${hint}` : ''}`,
-        response,
-        'PUT',
-      );
+      throw await this.failure('PUT', path, response, hints[response.status]);
     }
   }
 
@@ -350,7 +364,7 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'GET'});
 
     if (!response.ok) {
-      throw new HTTPError(`GET failed: ${response.status} ${response.statusText}`, response, 'GET');
+      throw await this.failure('GET', path, response);
     }
 
     return response.arrayBuffer();
@@ -369,7 +383,7 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'DELETE'});
 
     if (!response.ok) {
-      throw new HTTPError(`DELETE failed: ${response.status} ${response.statusText}`, response, 'DELETE');
+      throw await this.failure('DELETE', path, response);
     }
   }
 
@@ -406,7 +420,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      throw new HTTPError(`PROPFIND failed: ${response.status} ${response.statusText}`, response, 'PROPFIND');
+      throw await this.failure('PROPFIND', path, response);
     }
 
     const xml = await response.text();
@@ -434,7 +448,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      throw new HTTPError(`COPY failed: ${response.status} ${response.statusText}`, response, 'COPY');
+      throw await this.failure('COPY', source, response);
     }
   }
 
@@ -459,7 +473,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      throw new HTTPError(`MOVE failed: ${response.status} ${response.statusText}`, response, 'MOVE');
+      throw await this.failure('MOVE', source, response);
     }
   }
 

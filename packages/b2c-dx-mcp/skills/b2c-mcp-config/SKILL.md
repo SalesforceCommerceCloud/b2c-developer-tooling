@@ -45,6 +45,21 @@ plugins, `dw.json`, `~/.mobify` (MRT key), low-priority config plugins, then
   Restart MCP after changing launch flags or its process environment. Existing
   debugger sessions retain their selected target.
 
+## Browser sign-in
+
+Empty credential fields do not mean the instance is unreachable. With only a
+server configured, WebDAV tools (code upload, logs, files) ask the user to sign
+in with their Account Manager account on the first call, then complete. OCAPI
+and SCAPI tools still need a configured API client.
+
+- `resolution.auth` on instance tool results and `auth` in `config_inspect`
+  show how each request type authenticates; `session: "none"` means the next
+  call asks the user to sign in.
+- The user's Business Manager roles decide access. A permission error names the
+  missing permission.
+- If the user declines or cancels, the call fails; call again to retry.
+- To sign out or switch users, the user runs `b2c auth logout`.
+
 ## Setup and access
 
 Separate missing local values from missing external grants. `config_inspect`

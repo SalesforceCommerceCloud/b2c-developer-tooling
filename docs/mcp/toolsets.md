@@ -155,7 +155,7 @@ Logs may contain sensitive data; see [data handling](./security#protect-credenti
 | `logs_watch`      | Start, list, or stop instance log watches.   |
 | `logs_watch_poll` | Retrieve entries from an instance log watch. |
 
-Instance logs require WebDAV log-read access.
+Instance logs need only your instance hostname; you'll be asked to sign in the first time.
 
 <ExamplePrompt>
 
@@ -219,8 +219,9 @@ sandbox and end sessions when finished. See [debugger access](./security#debugge
 | ------------------ | ------------------------------------------------------------------------------------- |
 | `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. |
 
-Cartridges require WebDAV write access. Code-version discovery and reload use
-SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
+Uploading cartridges needs only your instance hostname; code goes to the active
+code version. Activating or reloading a code version needs an API client with the
+`sfcc.scripts.rw` scope, plus `short-code` and `tenant-id`.
 Check [deployment permissions](./security#deployments) before connecting.
 
 ## Instance files {#webdav}
@@ -237,7 +238,10 @@ from the machine running the MCP server.
 | `webdav_get`  | Read part of a text file or download a whole file.                       |
 | `webdav_put`  | Upload text or a local file; replace existing files only when requested. |
 
-Requires WebDAV access to the selected directory. Whole-file transfers are limited
+With only a hostname configured, the first call asks you to
+[sign in](../guide/authentication#webdav-access) with your Account Manager account,
+and your Business Manager roles decide what you can access. This also applies to logs
+and cartridge uploads. Run `b2c auth logout` to sign out. Whole-file transfers are limited
 to 64 MiB. Upload folders must already exist; local downloads require a new filename.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).
@@ -292,9 +296,9 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 
 **Toolsets:** `DIAGNOSTICS`, `CIP`
 
-| Tool             | Capability                                                               |
-| ---------------- | ------------------------------------------------------------------------ |
-| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. |
+| Tool             | Capability                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| `config_inspect` | Check resolved configuration, targets, and authentication; secrets are masked by default. |
 
 ## Toolsets for customization
 

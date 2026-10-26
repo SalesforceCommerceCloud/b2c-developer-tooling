@@ -122,4 +122,8 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
 
     return result;
   }
+
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
 }

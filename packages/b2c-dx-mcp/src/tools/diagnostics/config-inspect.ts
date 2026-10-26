@@ -5,6 +5,7 @@
  */
 
 import {z} from 'zod';
+import type {InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import {redactConfigValues, type ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
@@ -21,6 +22,12 @@ interface ConfigInspectOutput {
   config: Record<string, unknown>;
   /** Configuration sources that contributed, in precedence order. */
   sources: ConfigSourceInfo[];
+  /**
+   * How the instance authenticates WebDAV, OCAPI, and SCAPI requests, and the
+   * stored Account Manager sessions those use. Sessions belong to a client,
+   * not an instance, so one sign-in can serve several instances.
+   */
+  auth?: InstanceAuthSummary;
   /** Resolution warnings, if any. */
   warnings?: string[];
   skillReferences?: SkillReference[];
@@ -43,7 +50,7 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       idempotent: true,
       openWorld: false,
       description:
-        'Inspect resolved B2C configuration, sources, warnings, and paths; usually no need to read dw.json. ' +
+        'Inspect resolved B2C configuration, sources, warnings, paths, and how the instance authenticates; usually no need to read dw.json. ' +
         'Secrets are masked by default.',
       toolsets: ['DIAGNOSTICS', 'CIP'],
       requiresInstance: false,
@@ -60,6 +67,7 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
         return {
           config: redactConfigValues(resolved.values, {unmask: args.unmask ?? false}),
           sources: resolved.sources,
+          auth: resolved.values.hostname ? services.getInstanceAuth() : undefined,
           warnings: resolved.warnings.length > 0 ? resolved.warnings.map((w) => w.message) : undefined,
           skillReferences: resolved.warnings.length > 0 ? [MCP_SKILL_REFERENCES.configSources] : undefined,
         };

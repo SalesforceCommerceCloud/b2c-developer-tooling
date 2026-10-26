@@ -1,8 +1,8 @@
 # Set Up OAuth Credentials
 
-OAuth credentials unlock features that talk to Account Manager and SCAPI: **Sandbox Explorer**, **API Browser**, **Code Versions**, and most CLI/CI flows. WebDAV and basic cartridge deploys do *not* need OAuth.
+OAuth credentials unlock features that talk to Account Manager and SCAPI: **Sandbox Explorer**, **API Browser**, **Code Versions**, and most CLI/CI flows. Deploying cartridges and Code Sync do *not* need OAuth.
 
-> **Optional.** Skip this step if you only need WebDAV browsing or cartridge deploys via username/password.
+> **Optional.** Skip this step if you only need to deploy cartridges: your hostname is enough.
 
 ## What you need in `dw.json`
 

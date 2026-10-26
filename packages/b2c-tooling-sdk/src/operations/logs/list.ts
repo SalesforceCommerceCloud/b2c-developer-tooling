@@ -95,6 +95,10 @@ function logAccessError(instance: B2CInstance, dir: string, error: unknown): Err
       'Use a WebDAV File Access access key of that Business Manager user as the password, ' +
       'not the Account Manager password. Create one with "b2c bm access-key create" or at ' +
       `https://${instance.config.hostname}/on/demandware.store/Sites-Site/default/ViewAccessKeys-List.`;
+  } else if (instance.webdavUsesUserAuth) {
+    // A 403 already names the user and the missing Business Manager permission.
+    if (status === 403) return new Error(`Cannot list ${dir}: ${message}`, {cause: error});
+    hint = 'The Account Manager login was refused. Sign in again.';
   } else if (auth.oauth?.clientId) {
     hint =
       `API client ${auth.oauth.clientId} was refused. Grant it read access to "/logs" in Business Manager ` +

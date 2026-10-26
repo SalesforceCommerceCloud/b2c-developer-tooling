@@ -11,12 +11,14 @@ import type {ServicesResolutionInputs} from '../../../src/services.js';
 import {createMockResolvedConfig, createMockLoadServices} from '../../test-helpers.js';
 import type {ToolResult} from '../../../src/utils/types.js';
 import type {NormalizedConfig, ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
+import type {InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import type {SkillReference} from '../../../src/skill-references.js';
 
 interface ConfigInspectOutput {
   config: Record<string, unknown>;
   resolution: {projectDirectory: {path: string; source: 'argument' | 'config' | 'cwd'}};
   sources: ConfigSourceInfo[];
+  auth?: InstanceAuthSummary;
   warnings?: string[];
   skillReferences?: SkillReference[];
 }
@@ -41,6 +43,26 @@ function createServices(
 }
 
 describe('config_inspect tool', () => {
+  it('reports how the instance authenticates', async () => {
+    const services = createServices({hostname: 'example.demandware.net', username: 'u', password: 'p'});
+    const tool = createConfigInspectTool(createMockLoadServices(services));
+
+    const result = getResultJson<ConfigInspectOutput>(await tool.handler({}));
+
+    expect(result.auth).to.deep.equal({
+      ocapi: {method: 'none'},
+      scapi: {method: 'none'},
+      webdav: {method: 'basic'},
+      sessions: [],
+    });
+  });
+
+  it('omits auth without an instance', async () => {
+    const tool = createConfigInspectTool(createMockLoadServices(createServices()));
+    const result = getResultJson<ConfigInspectOutput>(await tool.handler({}));
+    expect(result).not.to.have.property('auth');
+  });
+
   it('is registered in the DIAGNOSTICS toolset and does not require an instance', () => {
     const tool = createConfigInspectTool(createMockLoadServices(createServices()));
     expect(tool.name).to.equal('config_inspect');

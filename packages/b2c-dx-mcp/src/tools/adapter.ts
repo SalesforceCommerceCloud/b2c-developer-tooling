@@ -84,6 +84,7 @@ import {
   type ProjectContextInput,
   type ProjectContextKind,
   type ToolResolution,
+  toAuthResolution,
 } from './project-context.js';
 
 /** Services loader enriched with registration-time project fallback provenance. */
@@ -377,11 +378,22 @@ export function createToolAdapter<TInput, TOutput>(
       }
       const args = parseResult.data as TInput;
       let resolution: ToolResolution | undefined;
+      let services: Services | undefined;
+      // Instance tools report how they authenticated, after the call so a sign-in during it shows up.
+      const withAuth = (target: ToolResolution): ToolResolution => {
+        if (!requiresInstance || !services?.b2cInstance) return target;
+        try {
+          target.auth = toAuthResolution(services.getInstanceAuth());
+        } catch {
+          // Auth reporting is informational; never fail the call over it.
+        }
+        return target;
+      };
 
       try {
         // 2. Load Services to get fresh configuration (re-reads config files)
         const projectContext = projectContextKind ? (args as ProjectContextInput) : undefined;
-        const services = await loadServices(projectContext);
+        services = await loadServices(projectContext);
         const executionResolution = services.getResolution();
         if (projectContextKind === 'project') {
           delete executionResolution.configuration;
@@ -440,12 +452,12 @@ export function createToolAdapter<TInput, TOutput>(
 
         // 6. Format output
         const result = formatOutput(output);
-        return resolution ? attachResolution(result, executionResolution) : result;
+        return resolution ? attachResolution(result, withAuth(executionResolution)) : result;
       } catch (error) {
         // Handle execution errors
         const message = error instanceof Error ? error.message : String(error);
         const result = errorResult(`Execution error: ${message}`);
-        return resolution ? attachResolution(result, resolution) : result;
+        return resolution ? attachResolution(result, withAuth(resolution)) : result;
       }
     },
   };
