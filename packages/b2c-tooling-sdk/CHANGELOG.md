@@ -1,5 +1,21 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.9.0
+
+### Minor Changes
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - `b2c auth login` now accepts `--client-id` like other commands, and without a client ID signs you in with the built-in client instead of failing. Signing in and out now names the signed-in user, for example "Signed in to Account Manager as dev@example.com, expires 3:45 PM." (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - New `b2c auth status` command lists stored Account Manager sessions and how the configured instance authenticates, and `b2c setup inspect` now shows whether WebDAV, OCAPI, and SCAPI use Basic auth, an API client, or a browser login, and whether you're signed in. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - `code deploy`, `download`, `watch`, and `list`, the MCP `cartridge_deploy` tool, and VS Code code sync now find the instance's active code version without an API client, so you can upload with just your server and no `--code-version`. Activating a code version still needs an API client. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - WebDAV commands (`webdav`, `logs`, and `code deploy`/`download`/`watch`), the MCP WebDAV, logs, and cartridge tools, and VS Code code sync now work with only a server configured: you sign in to Account Manager in a browser and your Business Manager role authorizes access. MCP clients that support URL elicitation show the sign-in link instead of the server opening a browser. A refused request names the user and the functional permission they need. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#811](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/811) [`d52f6e2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d52f6e220733dac2992ce5a2db460817e4a0339a) - `b2c setup openshell` now applies a changed safety level to the sandbox's network policy on re-run, instead of treating the generated policy as edited, and warns when a setting such as the CLI's safety level needs `--recreate` to take effect. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.8.3
 
 ### Patch Changes
