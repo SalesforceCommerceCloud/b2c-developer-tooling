@@ -1,5 +1,11 @@
 # @salesforce/mrt-utilities
 
+## 0.3.3
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - Updated http-proxy-middleware to 3.0.7 to pick up security fixes. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.3.2
 
 ### Patch Changes

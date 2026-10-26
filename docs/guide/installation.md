@@ -39,4 +39,5 @@ b2c --version
 
 ## Next Steps
 
+- [Connect to your instance](./#connect-to-your-instance) - Deploy code and read logs with just your hostname
 - [Configuration](./configuration) - Set up authentication and instance configuration

@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "publisher": "Salesforce",
   "icon": "media/icon.png",
   "license": "Apache-2.0",
@@ -1199,6 +1199,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.selectCodeVersion",
+        "title": "Select Code Version for Uploads",
+        "icon": "$(versions)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.scriptTypes.refresh",
         "title": "Refresh Script API IntelliSense",
         "icon": "$(refresh)",
@@ -1577,6 +1583,11 @@
         },
         {
           "command": "b2c-dx.codeSync.activateCodeVersion",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "1_versions"
+        },
+        {
+          "command": "b2c-dx.codeSync.selectCodeVersion",
           "when": "view == b2cCartridgeExplorer",
           "group": "1_versions"
         }

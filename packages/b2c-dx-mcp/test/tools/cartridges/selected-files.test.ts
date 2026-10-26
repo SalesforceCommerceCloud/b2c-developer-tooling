@@ -38,6 +38,7 @@ describe('selected cartridge uploads', () => {
     remove.resolves();
     const instance = {
       config: {codeVersion: 'configured'},
+      hasOAuthCredentials: true,
       webdav: {put, request, delete: remove},
     } as unknown as B2CInstance;
     const services = new Services({

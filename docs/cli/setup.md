@@ -12,7 +12,7 @@ Display the resolved configuration from all sources, showing which values are se
 
 The Safety section summarizes the settings in use, including your instance,
 global safety file, and environment variables. Add `--verbose` to see all rules
-in the order they are checked. `--json` always includes the complete settings.
+in the order they are checked, and authentication details. `--json` always includes the complete settings.
 
 The source column shows where each setting came from. `SafetyFile` refers to the
 global file listed in Sources; `SafetyEnv` refers to environment variables.
@@ -30,13 +30,13 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag                     | Description                                                   | Default                    |
-| ------------------------ | ------------------------------------------------------------- | -------------------------- |
-| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                    |
-| `--verbose`              | Show the full ordered safety ruleset                          | `false`                    |
-| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com`   |
-| `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
-| `--json`                 | Output results as JSON                                        | `false`                    |
+| Flag                     | Description                                                     | Default                    |
+| ------------------------ | --------------------------------------------------------------- | -------------------------- |
+| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys)   | `false`                    |
+| `--verbose`              | Show the full ordered safety ruleset and authentication details | `false`                    |
+| `--account-manager-host` | Account Manager hostname for OAuth                              | `account.demandware.com`   |
+| `--cloud-origin`         | MRT cloud origin URL                                            | `https://cloud.mobify.com` |
+| `--json`                 | Output results as JSON                                          | `false`                    |
 
 ### Examples
 
@@ -61,7 +61,7 @@ b2c setup inspect -i staging
 
 The command displays configuration organized by category:
 
-- **Instance**: hostname, webdavHostname, codeVersion
+- **Instance**: hostname, webdavHostname, codeVersion, and a one-line summary of how the instance authenticates (for example `WebDAV: signed in as dev@example.com`)
 - **Authentication (Basic)**: username, password
 - **Authentication (OAuth)**: clientId, clientSecret, and configured OAuth options
 - **Authentication (JWT Bearer)**: JWT certificate, key, and passphrase settings (when configured)
@@ -73,6 +73,7 @@ The command displays configuration organized by category:
 - **Project**: configured deployment, content, and documentation defaults
 - **Metadata**: siteId, instanceName, and projectDirectory (when configured)
 - **Safety**: safety configuration (when configured)
+- **Effective Authentication**: with `--verbose`, how file and API requests to the instance authenticate (see also [`b2c auth status`](./auth#b2c-auth-status))
 - **Sources**: List of configuration sources that contributed values
 
 Each value shows its source in brackets (e.g., `[dw.json]`, `[SFCC_CLIENT_ID]`, `[~/.mobify]`).
@@ -470,7 +471,7 @@ When run without `--force`, the command provides an interactive experience:
 2. Prompts for hostname (if not provided)
 3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
 4. Prompts for credentials based on selection
-5. Tries SCAPI-first/OCAPI-compatible active code-version detection when OAuth is configured, then prompts for manual entry if detection is unavailable
+5. Finds the active code version, or prompts for it if it can't be found
 6. Asks whether to set as active instance
 7. Shows summary and confirms before creating
 

@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {findCartridgesSafe} from '../workspace-discovery.js';
 import {getPostDeployActions} from './code-version-actions.js';
+import {showNoCodeVersionMessage, showNoInstanceError} from './code-sync-setup.js';
 import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 export function createDeployCommand(
@@ -15,9 +16,9 @@ export function createDeployCommand(
   outputChannel: vscode.OutputChannel,
 ): () => Promise<void> {
   return async () => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
 
@@ -39,8 +40,8 @@ export function createDeployCommand(
       // The configured version can still be deployed when discovery is unavailable.
     }
     if (!codeVersion) {
-      vscode.window.showErrorMessage(
-        'B2C DX: No code version configured. Set code-version in dw.json or activate a code version.',
+      showNoCodeVersionMessage(
+        'B2C DX: No code version configured. Select one, set code-version in dw.json, or activate a code version.',
       );
       return;
     }
@@ -150,9 +151,9 @@ export function createDeployOneCommand(
   context: vscode.ExtensionContext,
 ): () => Promise<void> {
   return async () => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
 
@@ -169,7 +170,7 @@ export function createDeployOneCommand(
       }
     }
     if (!codeVersion) {
-      vscode.window.showErrorMessage('B2C DX: No code version configured.');
+      showNoCodeVersionMessage('B2C DX: No code version configured.');
       return;
     }
 

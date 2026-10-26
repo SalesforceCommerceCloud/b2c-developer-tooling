@@ -11,7 +11,9 @@
  *
  * @module config/mapping
  */
-import type {AuthConfig, AuthMethod} from '../auth/types.js';
+import type {AuthConfig, AuthMethod, AuthStrategy} from '../auth/types.js';
+import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
+import {getDefaultPublicClientId} from '../defaults.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
 import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
@@ -785,5 +787,17 @@ export function createInstanceFromConfig(config: NormalizedConfig, options?: Cre
     };
   }
 
-  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy});
+  let webdavFallbackStrategy: AuthStrategy | (() => AuthStrategy) | undefined = options?.webdavFallbackStrategy;
+  if (!webdavFallbackStrategy && options?.defaultWebDavClient) {
+    webdavFallbackStrategy = () =>
+      createUserAuthStrategy({
+        clientId: getDefaultPublicClientId(config.accountManagerHost),
+        accountManagerHost: config.accountManagerHost,
+        redirectUri: options.redirectUri,
+        openBrowser: options.openBrowser,
+        selfSignedApi: config.selfSignedApi,
+      });
+  }
+
+  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy, webdavFallbackStrategy});
 }

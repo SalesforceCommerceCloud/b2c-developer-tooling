@@ -73,8 +73,10 @@ export type {
   ApiKeyAuthConfig,
   AuthMethod,
   AuthCredentials,
+  BrowserLogin,
 } from './types.js';
 export {ALL_AUTH_METHODS} from './types.js';
+export {openUrlInBrowser} from './open-browser.js';
 
 // Client credential encoding (RFC 6749 §2.3.1)
 export {
@@ -121,6 +123,17 @@ export {
   resetAuthSessionStoreForTesting,
 } from './session-store.js';
 export type {AuthSession, AuthSessionBackend, AuthSessionFlow} from './session-store.js';
+export {describeAuthSession, describeInstanceAuth, describeSignIn} from './instance-auth.js';
+export type {
+  DescribeInstanceAuthOptions,
+  InstanceAuthConfig,
+  InstanceAuthMethod,
+  InstanceAuthPath,
+  InstanceAuthSession,
+  InstanceAuthSummary,
+  InstanceAuthTarget,
+  SignInMessageOptions,
+} from './instance-auth.js';
 
 // Resolution helpers
 export {resolveAuthStrategy, checkAvailableAuthMethods, resolveSystemOAuthStrategy} from './resolve.js';

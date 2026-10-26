@@ -11,7 +11,7 @@ Use the `b2c am` commands to manage Account Manager resources: API clients, user
 
 ## Authentication
 
-Account Manager commands work out of the box with no configuration. The CLI uses a built-in public client and opens a browser for login.
+Account Manager commands work with no configuration: the user signs in with their Account Manager account in the browser.
 
 - **Zero-config (browser login):** Default. Just run the commands -- the CLI opens a browser for login.
 - **Client credentials:** For CI/CD and automation. The CLI auto-discovers `clientId`/`clientSecret` from `SFCC_*` env vars (including project `.env`), the selected project-local or shared `dw.json`, or configuration plugins — **passing `--client-id`/`--client-secret` flags is usually unnecessary**.

@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-dx-mcp",
   "description": "MCP server for B2C Commerce developer experience tools",
-  "version": "3.6.2",
+  "version": "3.6.3",
   "author": "Salesforce",
   "license": "Apache-2.0",
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
@@ -108,7 +108,7 @@
     "postcss": "8.5.30",
     "ts-morph": "27.0.2",
     "yaml": "2.9.0",
-    "zod": "4.5.4"
+    "zod": "4.6.7"
   },
   "bundledDependencies": [
     "@modelcontextprotocol/server",

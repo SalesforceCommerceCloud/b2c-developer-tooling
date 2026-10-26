@@ -29,6 +29,10 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    # Gates npm publishing: the environment limits runs to main and release/** and
+    # requires reviewer approval. npm trusted publishers require this environment, so
+    # a copy of this workflow without it cannot obtain a publish token.
+    environment: publish
     outputs:
       release_type: ${{ steps.release-type.outputs.type }}
       publish_vsx: ${{ steps.packages.outputs.publish_vsx }}

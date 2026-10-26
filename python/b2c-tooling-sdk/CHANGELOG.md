@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk-python
 
+## 0.4.2
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - Debug logs no longer include the first characters of an API key (or the whole key when it is short). (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.10
+
+### Patch Changes
+
+- [#807](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/807) [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d) - `b2c cap validate` now requires `app-configuration/translations/` when a CAP includes `tasksList.json`. Add the required Business Manager locales, and make sure `en-US.json` covers every config task key. Install runs this check unless you pass `--skip-validate`. (Thanks [@shauryemahajanSF](https://github.com/shauryemahajanSF)!)
+
 ## 0.4.9
 
 ### Patch Changes

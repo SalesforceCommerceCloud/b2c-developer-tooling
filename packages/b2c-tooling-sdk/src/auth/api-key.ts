@@ -47,9 +47,7 @@ export class ApiKeyStrategy implements AuthStrategy {
     // For other headers (like x-api-key), use the key directly
     this.headerValue = headerName === 'Authorization' ? `Bearer ${key}` : key;
 
-    // Show partial key for identification (first 8 chars)
-    const keyPreview = key.length > 8 ? `${key.slice(0, 8)}...` : key;
-    logger.debug({headerName, keyPreview}, `[Auth] Using API Key authentication (${headerName}): ${keyPreview}`);
+    logger.debug({headerName}, `[Auth] Using API Key authentication (${headerName})`);
   }
 
   async fetch(url: string, init: FetchInit = {}): Promise<Response> {

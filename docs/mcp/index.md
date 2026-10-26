@@ -105,6 +105,8 @@ report or a custom analysis without setting up the CLI or a separate SQL client.
 ## Configuration and access
 
 Connected tasks use your [B2C Commerce configuration](../guide/configuration) and account permissions.
+Deploying code and reading logs need only your instance hostname: your assistant asks you to
+sign in with your Account Manager account the first time.
 With [Safety Mode](../guide/safety), keep investigations read-only or review
 selected data changes before your assistant makes them. The CLI and IDE Extension
 use the same settings.

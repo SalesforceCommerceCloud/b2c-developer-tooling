@@ -9,9 +9,10 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {ImplicitOAuthStrategy, PkceOAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {ImplicitOAuthStrategy, PkceOAuthStrategy, saveAuthSession} from '@salesforce/b2c-tooling-sdk/auth';
+import {DEFAULT_PUBLIC_CLIENT_ID} from '@salesforce/b2c-tooling-sdk';
 import AuthLogin from '../../../src/commands/auth/login.js';
-import {createIsolatedConfigHooks, makeCommandThrowOnError} from '../../helpers/test-setup.js';
+import {createIsolatedConfigHooks} from '../../helpers/test-setup.js';
 
 describe('auth login', () => {
   const hooks = createIsolatedConfigHooks();
@@ -24,23 +25,62 @@ describe('auth login', () => {
     return new AuthLogin(args, hooks.getConfig());
   }
 
-  it('errors when no client ID is configured', async () => {
-    const command = createCommand([]);
-    await command.init();
-    makeCommandThrowOnError(command);
-    sinon.stub(command, 'log');
-
-    Object.defineProperty(command, 'resolvedConfig', {
-      value: {values: {clientId: undefined}, hasOAuthConfig: () => false},
-      configurable: true,
+  it('signs in with the built-in client when no client ID is configured', async () => {
+    let clientId: string | undefined;
+    sinon.stub(PkceOAuthStrategy.prototype, 'getTokenResponse').callsFake(async function (this: any) {
+      clientId = this.config.clientId;
+      return {accessToken: 'fake-access-token', expires: new Date(Date.now() + 30 * 60 * 1000), scopes: []};
     });
 
-    try {
+    const command = createCommand([]);
+    await command.init();
+    sinon.stub(command, 'log');
+
+    await command.run();
+
+    expect(clientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+  });
+
+  it('accepts --client-id, with the positional argument taking precedence', async () => {
+    const clientIds: string[] = [];
+    sinon.stub(PkceOAuthStrategy.prototype, 'getTokenResponse').callsFake(async function (this: any) {
+      clientIds.push(this.config.clientId);
+      return {accessToken: 'fake-access-token', expires: new Date(Date.now() + 30 * 60 * 1000), scopes: []};
+    });
+
+    async function login(args: string[]) {
+      const command = createCommand(args);
+      await command.init();
+      sinon.stub(command, 'log');
       await command.run();
-      expect.fail('expected error');
-    } catch (error: unknown) {
-      expect((error as Error).message).to.include('OAuth client ID required');
     }
+
+    await login(['--client-id', 'flag-client']);
+    await login(['arg-client', '--client-id', 'flag-client']);
+
+    expect(clientIds).to.deep.equal(['flag-client', 'arg-client']);
+  });
+
+  it('says so when a valid sign-in that cannot renew is reused', async () => {
+    saveAuthSession({
+      clientId: DEFAULT_PUBLIC_CLIENT_ID,
+      flow: 'pkce',
+      accessToken: 'stored',
+      refreshToken: null,
+      sub: 'dev@example.com',
+    });
+    sinon.stub(PkceOAuthStrategy.prototype, 'getTokenResponse').resolves({
+      accessToken: 'stored',
+      expires: new Date(Date.now() + 30 * 60 * 1000),
+      scopes: [],
+    });
+
+    const command = createCommand([]);
+    await command.init();
+    const logStub = sinon.stub(command, 'log');
+    await command.run();
+
+    expect(logStub.firstCall.args[0]).to.match(/^Already signed in to Account Manager as dev@example\.com, expires /);
   });
 
   it('runs the PKCE strategy and lets it persist the session', async () => {
@@ -61,8 +101,8 @@ describe('auth login', () => {
     await command.run();
 
     expect(getTokenResponseStub.calledOnce).to.be.true;
-    expect(logStub.calledOnce).to.be.true;
-    expect(logStub.firstCall.args[0]).to.include('Login succeeded');
+    // The strategy reports a new sign-in itself.
+    expect(logStub.called).to.be.false;
   });
 
   it('routes to ImplicitOAuthStrategy when --auth-methods implicit is passed', async () => {
