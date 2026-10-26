@@ -434,7 +434,7 @@ describe('operations/cap/validate', () => {
       );
     });
 
-    it('should error for site cartridges with controllers/', async () => {
+    it('should allow controllers/ in site cartridges', async () => {
       await withTempCap(
         (dir) => {
           writeMinimalCap(dir);
@@ -452,8 +452,8 @@ describe('operations/cap/validate', () => {
         },
         async (dir) => {
           const result = await validateCap(dir);
-          expect(result.valid).to.be.false;
-          expect(result.errors.some((e) => e.includes('controllers'))).to.be.true;
+          expect(result.errors).to.deep.equal([]);
+          expect(result.valid).to.be.true;
         },
       );
     });
