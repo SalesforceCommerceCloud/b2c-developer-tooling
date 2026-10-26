@@ -73,7 +73,6 @@ b2c cap validate PATH
 - At least one of `cartridges/`, `storefront-next/`, or `impex/` must be present
 - No `pipeline/` directories in cartridges
 - No `*.ds` pipeline descriptor files
-- Site cartridges (`cartridges/site_cartridges/`) must not contain `controllers/`
 - `README.md` must exist
 
 **Warnings** (advisory):
