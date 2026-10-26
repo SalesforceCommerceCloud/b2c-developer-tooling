@@ -218,6 +218,14 @@ export default class SetupOpenShell extends InstanceCommand<typeof SetupOpenShel
         sandbox: flags.sandbox,
         recreate: flags.recreate,
         onStep: (step) => this.log(`→ ${step.description}\n    ${step.command}`),
+        onEnvironmentChanged: (names) =>
+          this.warn(
+            t(
+              'commands.setup.openshell.envChanged',
+              'These sandbox settings changed but apply only when the sandbox is recreated: {{names}}. Run this command again with --recreate. Recreating also removes files and providers you added to the sandbox.',
+              {names: names.join(', ')},
+            ),
+          ),
       });
     } catch (error) {
       if (error instanceof OpenShellCommandError && error.command === 'openshell status') {
