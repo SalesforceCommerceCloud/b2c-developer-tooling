@@ -125,7 +125,9 @@ satisfy, use `check_available_auth_methods`.
 
 The auth-session store lives in the **same** `auth-sessions.json` file used by
 the `@salesforce/b2c-cli` application. Interactive strategies write their tokens
-there; you can also inspect it directly:
+there. Sessions the CLI keeps in a plugin's
+[auth session store](/guide/extending#auth-session-store) aren't in this file, so
+the Python SDK doesn't see them. You can also inspect the file directly:
 
 ```python
 from b2c_tooling_sdk.auth import (

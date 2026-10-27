@@ -277,6 +277,11 @@
           "default": true,
           "description": "Provide Script API IntelliSense (dw/*) in cartridge JavaScript via the bundled TypeScript Server plugin. No files are written to your workspace."
         },
+        "b2c-dx.auth.usePluginSessionStore": {
+          "type": "boolean",
+          "default": false,
+          "description": "Store sign-in sessions in the auth session store provided by an installed b2c-cli plugin (for example, an OS keychain plugin) instead of VS Code secret storage. Sessions are then shared with the b2c CLI. Takes effect after reloading the window."
+        },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",
           "default": true,

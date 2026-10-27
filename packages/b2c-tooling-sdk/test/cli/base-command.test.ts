@@ -14,6 +14,12 @@ import {
   serializeErrorCause,
 } from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  getAuthSessionBackend,
+  InMemoryAuthSessionBackend,
+  resetAuthSessionStoreForTesting,
+  setAuthSessionBackend,
+} from '@salesforce/b2c-tooling-sdk/auth';
 import {preloadEnvFile, takePreloadedEnvFile, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -74,6 +80,10 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
 
   public testGetBaseConfigOptions() {
     return this.getBaseConfigOptions();
+  }
+
+  public testCollectPluginAuthSessionStore() {
+    return this.collectPluginAuthSessionStore();
   }
 }
 
@@ -1001,6 +1011,89 @@ describe('cli/base-command', () => {
     it('returns undefined when neither is set', () => {
       command.setResolvedConfig({values: {}} as unknown as ResolvedB2CConfig);
       expect(command.testFlagOrConfig(undefined, 'siteId')).to.be.undefined;
+    });
+  });
+
+  describe('collectPluginAuthSessionStore', () => {
+    let savedSkip: string | undefined;
+
+    beforeEach(() => {
+      savedSkip = process.env.B2C_SKIP_PLUGIN_HOOKS;
+      delete process.env.B2C_SKIP_PLUGIN_HOOKS;
+      resetAuthSessionStoreForTesting();
+    });
+
+    afterEach(() => {
+      if (savedSkip === undefined) delete process.env.B2C_SKIP_PLUGIN_HOOKS;
+      else process.env.B2C_SKIP_PLUGIN_HOOKS = savedSkip;
+      resetAuthSessionStoreForTesting();
+    });
+
+    function stubHook(successes: Array<{plugin: string; result: unknown}>, failures: string[] = []) {
+      sinon.stub(config, 'runHook').resolves({
+        successes: successes.map((s) => ({plugin: {name: s.plugin}, result: s.result})),
+        failures: failures.map((name) => ({plugin: {name}, error: new Error('boom')})),
+      } as never);
+    }
+
+    it('installs the backend returned by a plugin', async () => {
+      stubParse(command);
+      await command.init();
+      const backend = new InMemoryAuthSessionBackend();
+      stubHook([{plugin: 'keychain-plugin', result: {backend}}]);
+
+      await command.testCollectPluginAuthSessionStore();
+
+      expect(getAuthSessionBackend()).to.equal(backend);
+    });
+
+    it('keeps the current backend when plugins return no backend', async () => {
+      stubParse(command);
+      await command.init();
+      const current = new InMemoryAuthSessionBackend();
+      setAuthSessionBackend(current);
+      stubHook([{plugin: 'other-plugin', result: {}}], ['broken-plugin']);
+
+      await command.testCollectPluginAuthSessionStore();
+
+      expect(getAuthSessionBackend()).to.equal(current);
+    });
+
+    it('uses the first plugin by name and warns about the others', async () => {
+      stubParse(command);
+      await command.init();
+      const first = new InMemoryAuthSessionBackend();
+      const second = new InMemoryAuthSessionBackend();
+      stubHook([
+        {plugin: 'z-plugin', result: {backend: second}},
+        {plugin: 'a-plugin', result: {backend: first}},
+      ]);
+      const warn = sinon.stub(command['logger'], 'warn');
+
+      await command.testCollectPluginAuthSessionStore();
+
+      expect(getAuthSessionBackend()).to.equal(first);
+      expect(warn.calledOnce).to.be.true;
+      expect(String(warn.firstCall.args[0])).to.match(
+        /z-plugin also provides an auth session store; using the one from a-plugin/,
+      );
+    });
+  });
+
+  describe('auth session flush', () => {
+    afterEach(() => resetAuthSessionStoreForTesting());
+
+    it('flushes the auth session store in finally()', async () => {
+      stubParse(command);
+      await command.init();
+      const backend = new InMemoryAuthSessionBackend();
+      const flush = sinon.stub().resolves();
+      Object.assign(backend, {flush});
+      setAuthSessionBackend(backend);
+
+      await command.testFinally(undefined);
+
+      expect(flush.calledOnce).to.be.true;
     });
   });
 });
