@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-27T18:57:04.271Z",
+  "generatedAt": "2026-10-27T19:37:08.308Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -287,7 +287,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing.md",
-      "headings": "OpenShell {#openshell} • Requirements • Create a sandbox • Choose what the sandbox can do • Allow more • Update a sandbox • Agents and the MCP server • Audit log {#audit-log} • Limitations",
+      "headings": "OpenShell {#openshell} • Requirements • Create a sandbox • Choose what the sandbox can do • Allow more • Update a sandbox • Work on a project {#project} • Remove a sandbox {#remove} • Agents and the MCP server • Run a coding agent {#coding-agent} • Audit log {#audit-log} • Limitations",
       "preview": "Run AI agents with the B2C CLI and MCP server in a sandbox, so they never see your secrets and can only reach the B2C Commerce hosts and operations you allow."
     },
     {

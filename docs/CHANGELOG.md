@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.11
+
+### Patch Changes
+
+- [#811](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/811) [`d52f6e2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d52f6e220733dac2992ce5a2db460817e4a0339a) - Expanded the Agent Sandboxing guide with running a coding agent such as Claude Code in an OpenShell sandbox, copying projects in and out, removing a sandbox and its providers, and private network tips. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.10
 
 ### Patch Changes
