@@ -18,7 +18,7 @@ check prerequisites → agree on pages → serve (background) → install + prep
   → evaluate AI rules in parallel batches → write summary.json → finalize → review with the user
 ```
 
-A full audit of three pages takes 30–50 minutes. Tell the user that before you start.
+A full audit of three pages takes about 30 minutes. Tell the user that before you start.
 
 ## Ground rules
 
