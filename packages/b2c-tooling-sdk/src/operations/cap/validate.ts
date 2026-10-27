@@ -479,7 +479,6 @@ function isDirectory(target: string): boolean {
  * Validates cartridge structure and rules.
  * - No pipeline/ directories
  * - No *.ds pipeline descriptor files
- * - Site cartridges must not have controllers/
  * - Every cartridge must have a .project file (empty or full Eclipse XML)
  */
 function validateCartridges(cartridgesDir: string, errors: string[]): void {
@@ -494,19 +493,6 @@ function validateCartridges(cartridgesDir: string, errors: string[]): void {
       errors.push(`Pipeline descriptor files not allowed in CAPs: cartridges/${rel}`);
     }
   });
-
-  // Site cartridges must not contain controllers/
-  const siteCartridgesDir = path.join(cartridgesDir, 'site_cartridges');
-  if (fs.existsSync(siteCartridgesDir)) {
-    walkDir(siteCartridgesDir, (filePath, name, isDir) => {
-      if (isDir && name === 'controllers') {
-        const rel = path.relative(siteCartridgesDir, filePath);
-        errors.push(
-          `Site cartridges must not contain controllers/ (use BM cartridges instead): site_cartridges/${rel}`,
-        );
-      }
-    });
-  }
 
   // Every cartridge directory must have a .project file (presence check only —
   // an existing non-empty Eclipse .project is just as valid as an empty one).
