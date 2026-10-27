@@ -2,4 +2,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Site archive and docs skills now validate XML with `b2c validate` instead of `xmllint`.
+Skills now check XML with `b2c validate`, replacing `xmllint` in the site archive and docs skills and validating `bm_extensions.xml` in the Business Manager extensions skill.
