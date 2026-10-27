@@ -44,7 +44,9 @@ minimumReleaseAgeExclude:
     # Renovate security update: pnpm@10.34.5
     pnpm@10.34.5,
     # Renovate security update: markdown-it@14.3.1 || 14.3.2 || 14.3.3
-    markdown-it@14.3.1 || 14.3.2 || 14.3.3
+    markdown-it@14.3.1 || 14.3.2 || 14.3.3,
+    # Renovate security update: node-forge@1.4.1
+    node-forge@1.4.1
   ]
 
 nodeLinker: hoisted
