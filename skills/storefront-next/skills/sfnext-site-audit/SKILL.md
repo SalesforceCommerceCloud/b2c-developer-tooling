@@ -96,10 +96,10 @@ Only these options change what is collected. Use them only when the user asks:
 Start the dashboard first so the user can watch collection. Run it as a background job, with its output going to a log file outside the project (for example in the system temp directory), and keep it running until the user is done reviewing:
 
 ```bash
-pnpm exec sfnext audit serve --no-open
+pnpm exec sfnext audit serve
 ```
 
-Read the local URL it prints from the log (default `http://localhost:8787`). If the job exits at once because the port is taken, start it again with `--port 8788`. Give the user that exact URL right away and ask them to open it. The workspace doesn't need to exist yet.
+It opens the dashboard in the user's browser. Read the local URL it prints from the log (default `http://localhost:8787`). If the job exits at once because the port is taken, start it again with `--port 8788`. Give the user that exact URL too, in case the browser didn't open. The workspace doesn't need to exist yet.
 
 Install the project's dependencies, even when `node_modules` exists. `prepare` builds the project, and a `node_modules` older than the lockfile is the usual reason a build fails:
 
