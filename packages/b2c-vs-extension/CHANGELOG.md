@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.7.0
+
+### Minor Changes
+
+- [#820](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/820) [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd) - New `b2c-dx.auth.usePluginSessionStore` setting keeps sign-in sessions in an installed B2C CLI plugin's auth session store instead of VS Code secret storage, so the extension and the CLI share sessions. Off by default. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`69afa8d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69afa8d250ded87639f9ae1a9ce320eefa3d6045), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304)]:
+  - @salesforce/b2c-tooling-sdk@2.10.0
+
 ## 1.6.0
 
 ### Minor Changes

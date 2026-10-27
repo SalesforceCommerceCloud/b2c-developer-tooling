@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.7
+
+### Patch Changes
+
+- [#824](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/824) [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304) - Skills now check XML with `b2c validate`, replacing `xmllint` in the site archive and docs skills and validating `bm_extensions.xml` in the Business Manager extensions skill. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.12.6
 
 ### Patch Changes
