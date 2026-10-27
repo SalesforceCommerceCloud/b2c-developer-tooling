@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-24T17:24:49.004Z",
+  "generatedAt": "2026-10-26T22:53:31.029Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -350,7 +350,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/extending.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/extending.md",
-      "headings": "Available Hooks • Plugin Architecture • Installing Plugins • Custom Configuration Sources • Hook: `b2c:config-sources` • Priority Ordering • Example: Custom Config Source Plugin • Plugin Structure • package.json • Hook Implementation • ConfigSource Implementation • Instance Management Methods • Credential Storage Methods • Field Write Methods • Error Handling • Plugin Configuration • NormalizedConfig Fields • HTTP Middleware • Hook: `b2c:http-middleware` • HttpMiddlewareProvider Interface • Example: Request Logging Middleware • SDK Usage (without CLI) • B2C Operation Lifecycle Hooks • Hook: `b2c:operation-lifecycle` • Supported Operations • B2COperationLifecycleProvider Interface • B2COperationContext • B2COperationResult • Example: Audit Logging Plugin • Example: Deployment Freeze Policy • Cartridge Providers • Hook: `b2c:cartridge-providers` • CartridgeProvider Interface • CartridgeTransformer Interface • CartridgeDiscoveryOptions • Example: Manifest-Based Discovery • Example: Environment-Based Filtering • Scaffold Providers • Hook: `b2c:scaffold-providers` • ScaffoldProvider Interface • ScaffoldTransformer Interface • SDK Usage (without CLI) • Adding Custom Commands • Base Command Classes • Testing Plugins • Next Steps",
+      "headings": "Available Hooks • Plugin Architecture • Installing Plugins • Custom Configuration Sources • Hook: `b2c:config-sources` • Priority Ordering • Example: Custom Config Source Plugin • Plugin Structure • package.json • Hook Implementation • ConfigSource Implementation • Instance Management Methods • Credential Storage Methods • Field Write Methods • Error Handling • Plugin Configuration • NormalizedConfig Fields • HTTP Middleware • Hook: `b2c:http-middleware` • HttpMiddlewareProvider Interface • Example: Request Logging Middleware • SDK Usage (without CLI) • Auth Session Store • Hook: `b2c:auth-session-store` • AuthSessionBackend Interface • Example: Auth Session Store Plugin • SDK and VS Code Usage • B2C Operation Lifecycle Hooks • Hook: `b2c:operation-lifecycle` • Supported Operations • B2COperationLifecycleProvider Interface • B2COperationContext • B2COperationResult • Example: Audit Logging Plugin • Example: Deployment Freeze Policy • Cartridge Providers • Hook: `b2c:cartridge-providers` • CartridgeProvider Interface • CartridgeTransformer Interface • CartridgeDiscoveryOptions • Example: Manifest-Based Discovery • Example: Environment-Based Filtering • Scaffold Providers • Hook: `b2c:scaffold-providers` • ScaffoldProvider Interface • ScaffoldTransformer Interface • SDK Usage (without CLI) • Adding Custom Commands • Base Command Classes • Testing Plugins • Next Steps",
       "preview": "Extend the B2C CLI with custom plugins, configuration sources, HTTP middleware, and lifecycle hooks."
     },
     {
@@ -557,7 +557,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • Authentication • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {

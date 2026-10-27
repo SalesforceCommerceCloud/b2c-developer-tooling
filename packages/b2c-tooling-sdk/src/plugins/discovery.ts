@@ -11,13 +11,19 @@ import type {Logger} from '../logging/types.js';
 /**
  * Hook names that the plugin system supports.
  */
-const SUPPORTED_HOOKS = ['b2c:config-sources', 'b2c:http-middleware', 'b2c:auth-middleware'] as const;
+const SUPPORTED_HOOKS = [
+  'b2c:config-sources',
+  'b2c:http-middleware',
+  'b2c:auth-middleware',
+  'b2c:auth-session-store',
+] as const;
 
 /**
  * Union type of all supported hook names in the plugin system.
  *
  * Represents any of the hook names that the plugin discovery system recognizes:
- * `b2c:config-sources`, `b2c:http-middleware`, or `b2c:auth-middleware`.
+ * `b2c:config-sources`, `b2c:http-middleware`, `b2c:auth-middleware`, or
+ * `b2c:auth-session-store`.
  */
 export type SupportedHookName = (typeof SUPPORTED_HOOKS)[number];
 
@@ -103,8 +109,8 @@ function resolvePluginName(entry: unknown): string | undefined {
  * Reads `<dataDir>/package.json` -> `oclif.plugins` array -> each plugin's
  * `package.json` -> `oclif.hooks` -> returns `DiscoveredPlugin[]`.
  *
- * Only hooks matching `b2c:config-sources`, `b2c:http-middleware`, and
- * `b2c:auth-middleware` are included.
+ * Only hooks matching `b2c:config-sources`, `b2c:http-middleware`,
+ * `b2c:auth-middleware`, and `b2c:auth-session-store` are included.
  */
 export function discoverPlugins(options: PluginDiscoveryOptions = {}): DiscoveredPlugin[] {
   const {logger} = options;
