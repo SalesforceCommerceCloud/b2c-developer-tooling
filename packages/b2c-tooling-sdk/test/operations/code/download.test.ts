@@ -15,7 +15,8 @@ import JSZip from 'jszip';
 import {WebDavClient} from '../../../src/clients/webdav.js';
 import {createOcapiClient} from '../../../src/clients/ocapi.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
-import {downloadCartridges} from '../../../src/operations/code/download.js';
+import {downloadCartridges, ZIP_WAIT} from '../../../src/operations/code/download.js';
+import {NetworkError} from '../../../src/errors/network-error.js';
 
 const TEST_HOST = 'test.demandware.net';
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
@@ -245,6 +246,88 @@ describe('operations/code/download', () => {
       } catch (error: any) {
         expect(error.message).to.include('Failed to create server-side zip');
       }
+    });
+
+    describe('when the zip request drops before the server answers', () => {
+      const saved = {...ZIP_WAIT};
+
+      beforeEach(() => {
+        Object.assign(ZIP_WAIT, {intervalMs: 1, timeoutMs: 2000});
+        const request = mockInstance.webdav.request.bind(mockInstance.webdav);
+        mockInstance.webdav.request = (p: string, init?: RequestInit) =>
+          init?.method === 'POST'
+            ? Promise.reject(new NetworkError('headers timeout', {kind: 'timeout'}))
+            : request(p, init);
+      });
+
+      afterEach(() => Object.assign(ZIP_WAIT, saved));
+
+      function serveGrowingZip(zipBuffer: Buffer, partialPolls: number) {
+        let polls = 0;
+        const ranges: string[] = [];
+        server.use(
+          http.all(`${WEBDAV_BASE}/*`, ({request}) => {
+            if (request.method === 'PROPFIND') {
+              polls++;
+              // Still being written: the first part of the file, without the central directory.
+              const size = polls <= partialPolls ? Math.floor(zipBuffer.length / 2) : zipBuffer.length;
+              return new HttpResponse(
+                `<?xml version="1.0"?><multistatus xmlns="DAV:"><response><href>/x/v1.zip</href><propstat><prop><getcontentlength>${size}</getcontentlength><resourcetype/></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>`,
+                {status: 207},
+              );
+            }
+            if (request.method === 'GET') {
+              const range = request.headers.get('Range');
+              const body = polls <= partialPolls ? zipBuffer.subarray(0, zipBuffer.length / 2) : zipBuffer;
+              if (!range) return new HttpResponse(body, {status: 200});
+              ranges.push(range);
+              const start = Number(/bytes=(\d+)-/.exec(range)![1]);
+              return new HttpResponse(body.subarray(start), {status: 206});
+            }
+            if (request.method === 'DELETE') return new HttpResponse(null, {status: 204});
+            return new HttpResponse(null, {status: 404});
+          }),
+        );
+        return {polls: () => polls, ranges};
+      }
+
+      it('waits for the server to finish the zip, then downloads it', async () => {
+        const zipBuffer = await createTestZip('v1', {app_storefront: {'main.js': 'content'}});
+        const state = serveGrowingZip(zipBuffer, 2);
+
+        const result = await downloadCartridges(mockInstance, tempDir);
+
+        expect(result.cartridges).to.deep.equal(['app_storefront']);
+        expect(state.polls()).to.equal(3);
+        expect(state.ranges).to.have.length(3);
+        expect(fs.readFileSync(path.join(tempDir, 'app_storefront/main.js'), 'utf8')).to.equal('content');
+      });
+
+      it('waits for a single cartridge zip too', async () => {
+        const zipBuffer = await createCartridgeZip('app_storefront', {'main.js': 'storefront'});
+        serveGrowingZip(zipBuffer, 1);
+
+        const result = await downloadCartridges(mockInstance, tempDir, {include: ['app_storefront']});
+
+        expect(result.cartridges).to.deep.equal(['app_storefront']);
+        expect(fs.readFileSync(path.join(tempDir, 'app_storefront/main.js'), 'utf8')).to.equal('storefront');
+      });
+
+      it('fails when the server deletes the zip', async () => {
+        server.use(http.all(`${WEBDAV_BASE}/*`, () => new HttpResponse(null, {status: 404})));
+
+        const error = (await downloadCartridges(mockInstance, tempDir).catch((e: Error) => e)) as Error;
+        expect(error.message).to.include('Failed to create server-side zip');
+        expect(error.message).to.include('is gone');
+      });
+
+      it('gives up when the zip never finishes', async () => {
+        Object.assign(ZIP_WAIT, {intervalMs: 1, timeoutMs: 50});
+        serveGrowingZip(await createTestZip('v1', {app: {'a.js': 'a'}}), Infinity);
+
+        const error = (await downloadCartridges(mockInstance, tempDir).catch((e: Error) => e)) as Error;
+        expect(error.message).to.include('was not finished');
+      });
     });
 
     it('should handle cleanup failure gracefully', async () => {

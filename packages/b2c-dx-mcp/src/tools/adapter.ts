@@ -75,6 +75,7 @@
 
 import {z, type ZodRawShape} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
+import {redactAccessTokens} from '@salesforce/b2c-tooling-sdk/clients';
 import type {McpTool, ToolContext, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
@@ -455,7 +456,7 @@ export function createToolAdapter<TInput, TOutput>(
         return resolution ? attachResolution(result, withAuth(executionResolution)) : result;
       } catch (error) {
         // Handle execution errors
-        const message = error instanceof Error ? error.message : String(error);
+        const message = redactAccessTokens(error instanceof Error ? error.message : String(error));
         const result = errorResult(`Execution error: ${message}`);
         return resolution ? attachResolution(result, withAuth(resolution)) : result;
       }

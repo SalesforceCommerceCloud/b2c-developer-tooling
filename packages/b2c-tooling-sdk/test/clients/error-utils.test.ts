@@ -12,13 +12,43 @@ import {
   OCAPI_DEPRECATED_MESSAGE,
   ocapiDeprecatedMessage,
   ocapiPermissionHint,
+  redactAccessTokens,
 } from '../../src/clients/error-utils.js';
+
+const JWT = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.c2lnbmF0dXJl-_x';
+
+describe('redactAccessTokens', () => {
+  it('replaces JWTs', () => {
+    expect(redactAccessTokens(`The access token '${JWT}' is invalid.`)).to.equal(
+      "The access token 'REDACTED' is invalid.",
+    );
+  });
+
+  it('replaces bearer credentials', () => {
+    expect(redactAccessTokens('Authorization: Bearer abc.def-123')).to.equal('Authorization: Bearer REDACTED');
+  });
+
+  it('leaves other text alone', () => {
+    expect(redactAccessTokens('Code version v1 not found')).to.equal('Code version v1 not found');
+  });
+});
 
 describe('getApiErrorMessage', () => {
   // Mock response object for testing
   const mockResponse = (status: number, statusText: string) => ({
     status,
     statusText,
+  });
+
+  it('does not echo the access token from an OCAPI fault', () => {
+    const error = {
+      fault: {
+        type: 'InvalidAccessTokenException',
+        message: `Unauthorized request! The access token '${JWT}' is invalid.`,
+      },
+    };
+    const message = getApiErrorMessage(error, mockResponse(401, 'Unauthorized'));
+    expect(message).to.equal("Unauthorized request! The access token 'REDACTED' is invalid.");
   });
 
   describe('ODS/SLAS error pattern', () => {
