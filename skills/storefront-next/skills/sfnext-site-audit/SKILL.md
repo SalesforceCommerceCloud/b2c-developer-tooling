@@ -6,10 +6,7 @@ description: >-
   performance, SEO, security and best-practice rules (scripts decide some, you evaluate the rest), and
   report launch readiness in a live local dashboard. Use when asked to "audit my storefront", "run a site audit",
   "pre-launch check", "go-live check", "launch readiness", or "is my storefront ready to launch". Needs
-  `@salesforce/storefront-next-dev` 1.4.1 or later in the project. Do not use to fix one known issue (use
-  `storefront-next:sfnext-performance`, `storefront-next:sfnext-seo` or `storefront-next:sfnext-security`),
-  to run lint, typecheck and test gates (use `storefront-next:sfnext-quality-gates`), or to deploy (use
-  `storefront-next:sfnext-deployment`).
+  `@salesforce/storefront-next-dev` 1.4.1 or later in the project.
 ---
 
 # Storefront Next Site Audit
@@ -40,7 +37,7 @@ A full audit of three pages takes 30–50 minutes. Tell the user that before you
    pnpm exec sfnext audit --help
    ```
 
-   It prints the five audit commands (`prepare`, `serve`, `progress`, `finalize`, `catalog`). `audit` may be missing from the top-level `sfnext --help` list, so don't use that list as the test. If it prints `Command audit not found`, or `pnpm exec sfnext --version` reports an older version, stop and tell the user the audit needs `@salesforce/storefront-next-dev` 1.4.1 or later. Upgrading changes `package.json` and the lockfile and can bring other SDK changes, so it is the user's decision: point them to `docs/COMPATIBILITY.md` in the project (and the `storefront-next:sfnext-deployment` skill, "Upgrading a project"), and run an upgrade only if they ask you to. If `node_modules` is missing, run step 3's install first and check again.
+   It prints the five audit commands (`prepare`, `serve`, `progress`, `finalize`, `catalog`). `audit` may be missing from the top-level `sfnext --help` list, so don't use that list as the test. If it prints `Command audit not found`, or `pnpm exec sfnext --version` reports an older version, stop and tell the user the audit needs `@salesforce/storefront-next-dev` 1.4.1 or later. Upgrading changes `package.json` and the lockfile and can bring other SDK changes, so it is the user's decision: point them to `docs/COMPATIBILITY.md` in the project, and run an upgrade only if they ask you to. If `node_modules` is missing, run step 3's install first and check again.
 3. **Workspace ignored by git.** Run `git check-ignore -q .site-audit`. If it isn't ignored (projects created before 1.4.1), tell the user to add `.site-audit/` to `.gitignore`; don't edit it yourself.
 
 ## 2. Agree on the pages
@@ -179,10 +176,3 @@ The user opens the full report from the dashboard's **Open report** button. Base
 4. Offer to fix specific findings, one at a time, now that the audit is done.
 
 If the dashboard was closed, run `pnpm exec sfnext audit serve` again: it opens the latest run, and its run picker switches to or deletes earlier ones. Stop the background server job when the user is done. Each `prepare` creates a new run, and `progress` and `finalize` always act on the latest one.
-
-## Related Skills
-
-- `storefront-next:sfnext-performance` - fix performance findings
-- `storefront-next:sfnext-seo` - fix SEO findings
-- `storefront-next:sfnext-security` - fix security findings
-- `storefront-next:sfnext-deployment` - the pre-launch checklist and upgrading the SDK
