@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.8.0
+
+### Minor Changes
+
+- [#824](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/824) [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304) - Added the `validate_xml_schema` tool so assistants can check import/export XML files or generated XML against the B2C Commerce schemas, with line-numbered errors. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - Error messages, `--json` error output, logs, and telemetry no longer include the access token when an API rejects it as invalid. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`69afa8d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69afa8d250ded87639f9ae1a9ce320eefa3d6045), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304)]:
+  - @salesforce/b2c-tooling-sdk@2.10.0
+  - @salesforce/b2c-agent-plugins@1.12.7
+
 ## 3.7.0
 
 ### Minor Changes

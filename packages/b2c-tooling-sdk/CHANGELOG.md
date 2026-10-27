@@ -1,5 +1,23 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.10.0
+
+### Minor Changes
+
+- [#820](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/820) [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd) - Plugins can now store sign-in sessions (access and refresh tokens from `b2c auth login`, `b2c auth client`, and browser sign-in) somewhere other than the default `auth-sessions.json` file, such as an OS keychain, with the new `b2c:auth-session-store` hook. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#824](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/824) [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304) - Added `b2c validate` to check import/export XML (catalogs, price books, inventory, site archives, and more) against the bundled B2C Commerce XSDs before importing. It picks each file's schema automatically, reports errors with line numbers, and needs no `xmllint` install. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#818](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/818) [`69afa8d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69afa8d250ded87639f9ae1a9ce320eefa3d6045) - `b2c cap validate` no longer rejects Commerce Apps whose site cartridges contain a `controllers/` directory. (Thanks [@jbisaSF](https://github.com/jbisaSF)!)
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - `b2c code download` no longer fails after about five minutes on large code versions; when the server takes longer to zip the code than the connection waits, the download waits for the zip to finish and then downloads it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - Error messages, `--json` error output, logs, and telemetry no longer include the access token when an API rejects it as invalid. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - `code deploy`, `download`, `watch`, and `list` now also find the active code version over WebDAV when your API client can't read code versions, instead of failing. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.9.0
 
 ### Minor Changes
