@@ -551,6 +551,7 @@ export {
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
   ocapiDeprecatedMessage,
+  redactAccessTokens,
 } from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

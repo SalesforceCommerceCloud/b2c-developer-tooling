@@ -26,15 +26,16 @@ links to the source documentation.
 
 No B2C Commerce credentials required.
 
-| Tool                 | Capability                                                                   |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `skills_read`        | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
-| `docs_search`        | Find platform references, guides, Salesforce Help, and tooling docs.         |
-| `docs_read`          | Read a documentation article.                                                |
-| `docs_list`          | Browse documentation categories and titles.                                  |
-| `docs_schema_search` | Find XML import/export schemas.                                              |
-| `docs_schema_read`   | Read an XML schema.                                                          |
-| `docs_schema_list`   | List available XML schemas.                                                  |
+| Tool                  | Capability                                                                   |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `skills_read`         | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
+| `docs_search`         | Find platform references, guides, Salesforce Help, and tooling docs.         |
+| `docs_read`           | Read a documentation article.                                                |
+| `docs_list`           | Browse documentation categories and titles.                                  |
+| `docs_schema_search`  | Find XML import/export schemas.                                              |
+| `docs_schema_read`    | Read an XML schema.                                                          |
+| `docs_schema_list`    | List available XML schemas.                                                  |
+| `validate_xml_schema` | Check import/export XML files against the schemas.                           |
 
 The included [skill collections](../guide/agent-skills) complement documentation
 with development patterns and operational workflows. No separate skills

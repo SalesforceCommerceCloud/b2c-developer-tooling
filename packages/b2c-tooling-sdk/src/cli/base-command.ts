@@ -47,6 +47,7 @@ import {flushAuthSessionStore, initializeFileAuthSessionStore, setAuthSessionBac
 import {initializeContentCache} from '../docs/content-cache.js';
 import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
+import {redactAccessTokens} from '../clients/error-utils.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
@@ -164,12 +165,16 @@ export function classifyError(err: unknown): ErrorCategory {
  */
 export function serializeErrorCause(cause: unknown): unknown {
   if (cause instanceof Error) {
-    return {name: cause.name, message: cause.message};
+    return {name: cause.name, message: redactAccessTokens(cause.message)};
   }
   if (cause !== null && typeof cause === 'object') {
-    return cause;
+    try {
+      return JSON.parse(redactAccessTokens(JSON.stringify(cause)));
+    } catch {
+      return redactAccessTokens(String(cause));
+    }
   }
-  return String(cause);
+  return redactAccessTokens(String(cause));
 }
 
 /**
@@ -858,6 +863,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // user who passed, e.g., `-p x -s y` learns that `-s`/`--storefront` are the
     // same flag as `-p`/`--project`.
     err.message = augmentDuplicateFlagError(err.message, {...this.ctor.baseFlags, ...this.ctor.flags});
+    // API faults can echo the request's access token; keep it out of output, logs, and telemetry.
+    err.message = redactAccessTokens(err.message);
+    if (err.stack) err.stack = redactAccessTokens(err.stack);
 
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
@@ -873,7 +881,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         duration,
         errorCategory,
         errorMessage: err.message,
-        ...(err.cause ? {errorCause: String(err.cause)} : {}),
+        ...(err.cause ? {errorCause: redactAccessTokens(String(err.cause))} : {}),
       });
       await this.telemetry.flush();
       await this.telemetry.stop();
@@ -881,7 +889,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {
-      this.logger.error({cause: err?.cause}, err.message);
+      const cause = err.cause instanceof Error ? err.cause : err.cause && serializeErrorCause(err.cause);
+      this.logger.error({cause}, err.message);
     }
 
     // JSON mode exits below without reaching finally()

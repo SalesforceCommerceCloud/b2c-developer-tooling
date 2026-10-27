@@ -175,12 +175,29 @@ export class OcapiDeprecatedError extends Error {
   }
 }
 
+/** JWT-shaped credentials, such as Account Manager and SLAS access tokens. */
+const JWT_PATTERN = /\beyJ[\w-]+\.[\w-]+\.[\w-]*/g;
+
+/** Credentials after a `Bearer` scheme, for tokens that are not JWTs. */
+const BEARER_PATTERN = /\b(Bearer\s+)[\w.~+/-]+=*/gi;
+
+/**
+ * Replaces access tokens in text with `REDACTED`. Some API faults echo the
+ * request's token (OCAPI: "The access token '...' is invalid"), so messages
+ * built from response bodies pass through this before they reach users,
+ * logs, or telemetry.
+ */
+export function redactAccessTokens(text: string): string {
+  return text.replace(JWT_PATTERN, 'REDACTED').replace(BEARER_PATTERN, '$1REDACTED');
+}
+
 /**
  * Extract a clean error message from an API error response.
  *
  * Handles multiple API error patterns and falls back to HTTP status.
  * This ensures that HTML response bodies (like error pages) are never
- * included in user-facing error messages.
+ * included in user-facing error messages. Access tokens echoed in the
+ * response are redacted.
  *
  * Supported error patterns:
  * - ODS/SLAS: `{ error: { message: '...' } }`
@@ -202,6 +219,10 @@ export class OcapiDeprecatedError extends Error {
  * ```
  */
 export function getApiErrorMessage(error: unknown, response: Response | {status: number; statusText: string}): string {
+  return redactAccessTokens(extractApiErrorMessage(error, response));
+}
+
+function extractApiErrorMessage(error: unknown, response: Response | {status: number; statusText: string}): string {
   if (error && typeof error === 'object') {
     const err = error as Record<string, unknown>;
 
