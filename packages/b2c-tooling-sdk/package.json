@@ -337,7 +337,7 @@
     "jszip": "3.10.1",
     "minimatch": "10.2.4",
     "minisearch": "7.2.0",
-    "node-forge": "1.4.0",
+    "node-forge": "1.4.1",
     "open": "catalog:",
     "openapi-fetch": "0.15.0",
     "pino": "10.1.0",
