@@ -14,7 +14,7 @@ description: >-
 The audit is a CLI workflow that you drive. `sfnext audit prepare` collects the evidence and decides every rule that a script can decide. You (and your subagents) evaluate the remaining rules and write one small JSON file per rule. `sfnext audit finalize` validates your files and compiles the report. A local dashboard shows progress the whole time and serves the final report.
 
 ```text
-check prerequisites → agree on pages → serve (background) → install + prepare (15–30 min)
+check prerequisites → find the pages → serve (background) → install + prepare (15–30 min)
   → evaluate AI rules in parallel batches → write summary.json → finalize → review with the user
 ```
 
@@ -40,21 +40,47 @@ A full audit of three pages takes about 30 minutes. Tell the user that before yo
    It prints the five audit commands (`prepare`, `serve`, `progress`, `finalize`, `catalog`). `audit` may be missing from the top-level `sfnext --help` list, so don't use that list as the test. If it prints `Command audit not found`, or `pnpm exec sfnext --version` reports an older version, stop and tell the user the audit needs `@salesforce/storefront-next-dev` 1.4.1 or later. Upgrading changes `package.json` and the lockfile and can bring other SDK changes, so it is the user's decision: point them to `docs/COMPATIBILITY.md` in the project, and run an upgrade only if they ask you to. If `node_modules` is missing, run step 3's install first and check again.
 3. **Workspace ignored by git.** Run `git check-ignore -q .site-audit`. If it isn't ignored (projects created before 1.4.1), tell the user to add `.site-audit/` to `.gitignore`; don't edit it yourself.
 
-## 2. Agree on the pages
+## 2. Find the pages
 
-The audit measures deployed pages, not a local dev server. Get from the user, or confirm with them:
+The audit measures three pages of the deployed storefront over HTTPS: the **home page (`home`)**, a **category listing page (`plp`)** and a **product page (`pdp`)**. It doesn't measure a local dev server. Users usually give only the storefront's address. Treat that address as the home page and find the other two pages yourself. If the user does give a page URL, use it. If the user has no deployed storefront yet, stop: the audit needs one.
 
-- one URL each for the **home page (`home`)**, a **category listing page (`plp`)** and a **product page (`pdp`)**, all on the deployed storefront over HTTPS. Don't guess URLs. If the user has no deployed storefront yet, stop: the audit needs one.
-
-Check each URL before you collect:
+Check every URL you'll use with:
 
 ```bash
 curl -sL -o /dev/null -w '%{http_code} %{url_effective}\n' <url>
 ```
 
-Expect `200` and a final URL on the same host. A redirect to a login, password or maintenance page also returns `200`, so look at the final URL. Ask the user again if a URL fails.
+Expect `200` and a final URL on the same host, and use that final URL in the audit: product links often redirect to their canonical address. A redirect to a login, password or maintenance page also returns `200`, so look at the final URL too.
 
-Then tell the user, in a few lines, what will happen: about 5 minutes of measurement per page; a build of the project (it runs the project's `build` script twice and rewrites the gitignored `build/` folder); and, on the first audit on this machine, a one-time download of about 180 MB for Playwright's Chromium.
+1. **Home.** Check the address the user gave.
+2. **PLP.** List the home page's links, most repeated first. The navigation's category links are usually among them:
+
+   ```bash
+   curl -sL <home url> | grep -oE '<a [^>]*href="[^"#?]*"' | grep -oE 'href="[^"]*"$' | sort | uniq -c | sort -rn | head -40
+   ```
+
+   Skip links to other hosts, files, account, cart, search and content pages. Then try likely category links one at a time. A Storefront Next category page embeds its product list as structured data. This prints the number of products in it, or nothing if the page has none:
+
+   ```bash
+   curl -sL <candidate url> | sed -n 's/.*<script id="category-schema"[^>]*>\([^<]*\)<\/script>.*/\1/p' | jq '.mainEntity.numberOfItems'
+   ```
+
+   Use the first candidate that lists several products.
+3. **PDP.** Take an in-stock product from that category's list:
+
+   ```bash
+   curl -sL <plp url> | sed -n 's/.*<script id="category-schema"[^>]*>\([^<]*\)<\/script>.*/\1/p' | jq -r '.mainEntity.itemListElement[].item | select((.offers.availability // "") | test("InStock")) | .url' | head -3
+   ```
+
+   Check it, then confirm it's a product page: `curl -sL <final url> | grep -c 'id="product-schema"'` prints `1` or more.
+
+If a page has no structured data (a customized storefront can remove it), use the links instead. With the default URL format, category paths contain `/c/` and product paths contain `/p/`. Open a candidate and judge from its content. If you still can't find a working page, ask the user for that one URL. Never make up URLs.
+
+Then tell the user, in a few lines:
+- the three URLs you'll audit (they can swap any of them);
+- about 5 minutes of measurement per page;
+- a build of the project (it runs the project's `build` script twice and rewrites the gitignored `build/` folder);
+- on the first audit on this machine, a one-time download of about 180 MB for Playwright's Chromium.
 
 Only these options change what is collected. Use them only when the user asks:
 
