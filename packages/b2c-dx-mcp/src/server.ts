@@ -26,6 +26,7 @@ import type {
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {redactAccessTokens} from '@salesforce/b2c-tooling-sdk/clients';
 import {BrowserLoginContinuations} from './utils/browser-login.js';
 import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 
@@ -211,8 +212,8 @@ export class B2CDxMcpServer extends McpServer {
             toolName: name,
             runTimeMs,
             isError: true,
-            errorMessage: error instanceof Error ? error.message : String(error),
-            ...(error instanceof Error && error.cause ? {errorCause: String(error.cause)} : {}),
+            errorMessage: redactAccessTokens(error instanceof Error ? error.message : String(error)),
+            ...(error instanceof Error && error.cause ? {errorCause: redactAccessTokens(String(error.cause))} : {}),
           })
           .catch((error_: unknown) => {
             getLogger().debug({err: error_, toolName: name}, '[mcp] telemetry sendEventAndFlush failed');

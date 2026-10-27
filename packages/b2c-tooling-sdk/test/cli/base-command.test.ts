@@ -659,6 +659,12 @@ describe('cli/base-command', () => {
         expect(serializeErrorCause(cause)).to.deep.equal({name: 'TypeError', message: 'boom'});
       });
 
+      it('redacts access tokens in API response bodies', () => {
+        const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.c2lnbmF0dXJl-_x';
+        const cause = {title: 'Invalid Access Token', detail: 'The access token is invalid.', accessToken: jwt};
+        expect(serializeErrorCause(cause)).to.deep.equal({...cause, accessToken: 'REDACTED'});
+      });
+
       it('stringifies primitive causes', () => {
         expect(serializeErrorCause('plain string')).to.equal('plain string');
         expect(serializeErrorCause(42)).to.equal('42');
