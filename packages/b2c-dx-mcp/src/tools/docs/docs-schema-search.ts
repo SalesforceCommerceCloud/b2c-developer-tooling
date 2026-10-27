@@ -30,7 +30,7 @@ export function createDocsSchemaSearchTool(loadServices: () => Promise<Services>
       openWorld: false,
       description:
         'Search bundled B2C Commerce (SFCC/Demandware) XSD schemas by ID. ' +
-        'Returns matching IDs and scores; use docs_schema_read for content.',
+        'Returns matching IDs and scores; use docs_schema_read for content, validate_xml_schema to check XML.',
       toolsets: [...TOOLSETS],
       inputSchema: {
         query: z.string().min(1).describe('Schema name or partial match (e.g., "catalog", "order").'),

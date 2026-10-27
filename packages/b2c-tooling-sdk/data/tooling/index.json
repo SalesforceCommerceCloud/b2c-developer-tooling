@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-26T13:21:04.646Z",
+  "generatedAt": "2026-10-27T19:37:08.308Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -98,7 +98,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/docs.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/docs.md",
-      "headings": "Authentication • b2c docs search • Usage • Arguments • Flags • Examples • Restricting available topics (`--topics`) • Workspace-Aware Search • Output • b2c docs read • Usage • Arguments • Flags • Examples • Output • b2c docs cache • Usage • Flags • Examples • Output • b2c docs schema • Usage • Arguments • Flags • Examples • Output • Validating XML with xmllint • b2c docs skill • Usage • Arguments • Flags • Examples • Output • b2c docs download • Usage • Arguments • Flags • Examples • Output",
+      "headings": "Authentication • b2c docs search • Usage • Arguments • Flags • Examples • Restricting available topics (`--topics`) • Workspace-Aware Search • Output • b2c docs read • Usage • Arguments • Flags • Examples • Output • b2c docs cache • Usage • Flags • Examples • Output • b2c docs schema • Usage • Arguments • Flags • Examples • Output • Validating XML • b2c docs skill • Usage • Arguments • Flags • Examples • Output • b2c docs download • Usage • Arguments • Flags • Examples • Output",
       "preview": "Search, read, and download B2C Commerce documentation including Script API reference, Developer Center guides, Salesforce Help, XSD schemas, and job steps."
     },
     {
@@ -253,6 +253,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md",
       "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
       "preview": "Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients."
+    },
+    {
+      "id": "cli-validate",
+      "title": "Validate Command",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/validate.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/validate.md",
+      "headings": "b2c validate • Usage • Arguments • Flags • Examples • Output • Notes",
+      "preview": "Validate B2C Commerce import/export XML files against the bundled XSD schemas, offline and without installing xmllint."
     },
     {
       "id": "cli-webdav",

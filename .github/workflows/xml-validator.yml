@@ -1,0 +1,49 @@
+name: XML Validator Build
+
+# The libxml2 WebAssembly validator is committed as a built artifact. This rebuilds it
+# from source in the pinned toolchain container and fails if the committed files differ.
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'packages/b2c-tooling-sdk/wasm/xml-validator/**'
+      - 'packages/b2c-tooling-sdk/data/xml-validator/**'
+      - '.github/workflows/xml-validator.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+    paths:
+      - 'packages/b2c-tooling-sdk/wasm/xml-validator/**'
+      - 'packages/b2c-tooling-sdk/data/xml-validator/**'
+      - '.github/workflows/xml-validator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Rebuild from source
+        run: packages/b2c-tooling-sdk/wasm/xml-validator/build.sh "$RUNNER_TEMP/xml-validator"
+
+      - name: Compare with committed artifacts
+        run: |
+          committed=packages/b2c-tooling-sdk/data/xml-validator
+          if ! diff -r "$committed" "$RUNNER_TEMP/xml-validator"; then
+            echo "::error::Committed XML validator artifacts do not match a rebuild from source. Run packages/b2c-tooling-sdk/wasm/xml-validator/build.sh and commit the result."
+            exit 1
+          fi
+          cat "$committed/SHA256SUMS"

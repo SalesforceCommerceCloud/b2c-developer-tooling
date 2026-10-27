@@ -70,6 +70,11 @@
       "types": "./dist/esm/docs/index.d.ts",
       "default": "./dist/esm/docs/index.js"
     },
+    "./xml-validation": {
+      "development": "./src/xml-validation/index.ts",
+      "types": "./dist/esm/xml-validation/index.d.ts",
+      "default": "./dist/esm/xml-validation/index.js"
+    },
     "./schemas": {
       "development": "./src/schemas/index.ts",
       "types": "./dist/esm/schemas/index.d.ts",
