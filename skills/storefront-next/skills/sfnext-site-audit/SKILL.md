@@ -3,7 +3,7 @@ name: sfnext-site-audit
 description: >-
   Run a pre-launch site audit of a Storefront Next storefront with `sfnext audit`: measure the deployed home,
   category (PLP) and product (PDP) pages with Playhouse (Lighthouse), break down the JavaScript bundle, check
-  about 40 performance, SEO, security and best-practice rules (scripts decide some, you evaluate the rest), and
+  performance, SEO, security and best-practice rules (scripts decide some, you evaluate the rest), and
   report launch readiness in a live local dashboard. Use when asked to "audit my storefront", "run a site audit",
   "pre-launch check", "go-live check", "launch readiness", or "is my storefront ready to launch". Needs
   `@salesforce/storefront-next-dev` 1.4.1 or later in the project. Do not use to fix one known issue (use
@@ -114,7 +114,7 @@ Read `<run>/prepared.json`:
 
 Then:
 
-1. Group `rules` into batches of at most 3 rules from the same category (typically 8–12 batches).
+1. Group `rules` into batches of at most 3 rules from the same category.
 2. Start one subagent per batch, in parallel (as many at once as your tool allows), with the prompt below. Subagents need a shell (`curl`, `jq`) and read access to the project. If you can't start subagents, work through the batches yourself, following the same guide.
 3. As each batch reports back, add a line to the dashboard's activity log so the user can see analysis moving:
 
