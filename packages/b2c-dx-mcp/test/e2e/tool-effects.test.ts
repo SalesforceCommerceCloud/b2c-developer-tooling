@@ -19,6 +19,7 @@ const groups = [
       'docs_schema_list',
       'docs_schema_search',
       'docs_schema_read',
+      'validate_xml_schema',
       'logs_watch_poll',
       'mrt_logs_watch_poll',
     ],

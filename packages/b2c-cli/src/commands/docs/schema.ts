@@ -40,7 +40,7 @@ export default class DocsSchema extends BaseCommand<typeof DocsSchema> {
     '<%= config.bin %> <%= command.id %> order',
     '<%= config.bin %> <%= command.id %> --list',
     '<%= config.bin %> <%= command.id %> catalog --json',
-    'xmllint --schema "$(<%= config.bin %> <%= command.id %> catalog --path)" file.xml --noout',
+    '<%= config.bin %> <%= command.id %> catalog --path',
   ];
 
   static flags = {

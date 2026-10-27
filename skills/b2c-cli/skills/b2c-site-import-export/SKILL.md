@@ -27,7 +27,8 @@ promotion discounts or targeting rules are configured.
 1. Resolve the target site/catalog and intended change. Include only relevant
    data in the archive; preserve unrelated settings and requested enabled state.
 2. Author XML in the platform archive layout. Check the relevant XSD with
-   `b2c docs schema <name>` (list names with `--list`), then validate locally.
+   `b2c docs schema <name>` (list names with `--list`), then validate the archive
+   with `b2c validate ./archive` (MCP: `validate_xml_schema`) and fix every error.
 3. Import the directory or zip. The command waits by default; `--show-log` shows
    job logs on failure. Check completion before retrying.
 4. Read back the affected fields. If the API omits them, export the matching data
