@@ -1073,8 +1073,10 @@ describe('cli/base-command', () => {
       await command.testCollectPluginAuthSessionStore();
 
       expect(getAuthSessionBackend()).to.equal(first);
-      expect(warn.calledWithMatch(/z-plugin also provides an auth session store; using the one from a-plugin/)).to.be
-        .true;
+      expect(warn.calledOnce).to.be.true;
+      expect(String(warn.firstCall.args[0])).to.match(
+        /z-plugin also provides an auth session store; using the one from a-plugin/,
+      );
     });
   });
 
