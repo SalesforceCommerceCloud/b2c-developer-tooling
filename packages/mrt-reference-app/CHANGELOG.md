@@ -1,5 +1,12 @@
 # @salesforce/mrt-reference-app
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`08c771f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/08c771f710e38ef8dcc57c945e233079a84a5d58)]:
+  - @salesforce/mrt-utilities@0.3.4
+
 ## 0.0.5
 
 ### Patch Changes

@@ -57,7 +57,7 @@
       "source": "./plugins/b2c-dx-mcp",
       "category": "productivity",
       "strict": false,
-      "version": "3.8.0"
+      "version": "3.8.1"
     },
     {
       "name": "storefront-next",
