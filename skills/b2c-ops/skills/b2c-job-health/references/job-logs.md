@@ -8,7 +8,9 @@ Use `webdav_list` on the parent directory for sizes when needed.
 Read a bounded byte range; reuse `nextOffset` to preserve UTF-8 boundaries.
 `size` is total bytes, not characters. Null continuation means end; a few pages
 do not establish whole-file or interval coverage. Files may grow/rotate between
-reads. Download to a new `outputPath` for local analysis of a large file.
+reads. Use `tail: true` for the end of the log, where a job's final status is
+written. Download with `webdav_get_to_file` to a new `outputPath` for local
+analysis of a large file.
 
 For recent parsed entries or ongoing watches, use `logs_get_recent` / `logs_watch`.
 These tools parse and filter; an empty result does not prove an empty raw log.

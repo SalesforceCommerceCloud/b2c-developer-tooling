@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {mkdirSync, mkdtempSync, rmSync, writeFileSync} from 'node:fs';
+import {mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {Services} from '../../../src/services.js';
@@ -87,6 +87,36 @@ describe('tools/docs/validate_xml_schema', () => {
       [join('site', 'other.xml'), 'skip'],
     ]);
     expect(result.unmatched).to.deep.equal(['missing.xml']);
+  });
+
+  it('keeps paths and globs within projectDirectory and accepts only bundled schemas', async () => {
+    /* eslint-disable no-await-in-loop -- Each rejected input is checked in turn. */
+    write('project/site/good.xml', inventory('true'));
+    write('outside.xml', inventory('maybe'));
+    write('outside.xsd', '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>');
+    write('project/site/local.xsd', '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>');
+    const projectDirectory = join(root, 'project');
+
+    for (const args of [
+      {paths: ['../outside.xml']},
+      {paths: [join(root, 'outside.xml')]},
+      {schema: '../outside.xsd', paths: ['site']},
+      {schema: 'site/local.xsd', paths: ['site']},
+    ]) {
+      const result = await tool.handler({...args, projectDirectory});
+      expect(result.isError, JSON.stringify(args)).to.equal(true);
+    }
+    /* eslint-enable no-await-in-loop */
+    // Brace expansion is not normalized lexically, so matches outside the project are dropped.
+    const braces = await tool.handler({paths: ['{..,site}/*.xml'], projectDirectory});
+    expect(json(braces)).to.include({valid: true, totalFiles: 1});
+
+    // Symlinks inside the project cannot reach files outside it.
+    symlinkSync(root, join(projectDirectory, 'linked'));
+    const linked = await tool.handler({paths: ['site', 'linked/outside.xml'], projectDirectory});
+    expect(json(linked)).to.include({valid: true, totalFiles: 1});
+    const linkedSchema = await tool.handler({paths: ['site'], schema: 'linked/outside.xsd', projectDirectory});
+    expect(linkedSchema.isError).to.equal(true);
   });
 
   it('applies an explicit schema and rejects ambiguous input', async () => {

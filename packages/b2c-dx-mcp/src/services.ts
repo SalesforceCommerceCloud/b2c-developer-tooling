@@ -52,6 +52,7 @@ import {configSourceHint} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
 import {openBrowserForTool} from './utils/browser-login.js';
+import {isPathWithin} from './utils/paths.js';
 import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
 import {
   createCustomApisClient,
@@ -552,8 +553,10 @@ export class Services {
   /**
    * Resolve a path relative to the project directory.
    * If path is not supplied, returns the project directory.
-   * If path is absolute, returns it as-is.
-   * If path is relative, resolves it relative to the project directory.
+   * Relative and absolute paths must resolve inside the project directory;
+   * `..` segments or absolute paths that escape it are rejected. This check is
+   * lexical; callers that read or create files should also confirm the real
+   * path (see `resolveLocalPath` in the WebDAV tools) so symlinks cannot escape.
    *
    * An optional explicit project-directory override (typically a per-call
    * `projectDirectory` tool argument) takes precedence over the configured
@@ -562,16 +565,18 @@ export class Services {
    * @param pathArg - Optional path to resolve
    * @param projectDirectoryOverride - Optional explicit project directory to resolve against
    * @returns Resolved absolute path
+   * @throws Error if the path resolves outside the project directory
    */
   public resolveWithProjectDirectory(pathArg?: string, projectDirectoryOverride?: string): string {
     const projectDir = this.resolveProjectDirectory(projectDirectoryOverride).path;
     if (!pathArg) {
       return projectDir;
     }
-    if (path.isAbsolute(pathArg)) {
-      return pathArg;
+    const resolved = path.resolve(projectDir, pathArg);
+    if (!isPathWithin(path.resolve(projectDir), resolved)) {
+      throw new Error(`Path must be within the project directory (${projectDir}): ${pathArg}`);
     }
-    return path.resolve(projectDir, pathArg);
+    return resolved;
   }
 
   /** Run a tool with its resolved safety policy, without changing other calls. */

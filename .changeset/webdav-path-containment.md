@@ -1,0 +1,5 @@
+---
+'@salesforce/b2c-dx-mcp': minor
+---
+
+Security fix ([GHSA-g52w-56c5-674f](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/security/advisories/GHSA-g52w-56c5-674f)): local paths given to MCP tools (`webdav_put` `sourcePath`, download destinations, `cartridgeDirectory`, and `validate_xml_schema` paths) must now stay inside the project directory, so a tool call can no longer read or write files elsewhere on the machine. `validate_xml_schema` now accepts only bundled schema IDs for `schema`, not local `.xsd` paths. For cartridges in a sibling checkout, set `projectDirectory` (or `--project-directory`) to the common parent. When `--project-directory` is set or the client shares workspace roots, a per-call `projectDirectory` outside them now asks the user for approval first. `webdav_get` is now read-only and gains `tail: true` for the end of a log; whole-file downloads move to the new `webdav_get_to_file` tool, so pass `outputPath` there instead. Thanks to [@ccsimplyspolit](https://github.com/ccsimplyspolit) for the report.

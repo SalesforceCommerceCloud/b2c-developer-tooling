@@ -4,17 +4,19 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import {z} from 'zod';
 import {
   collectXmlFiles,
+  getBundledXmlSchemas,
   validateXmlContent,
   validateXmlFiles,
   type XmlDiagnostic,
   type XmlValidationResult,
 } from '@salesforce/b2c-tooling-sdk/xml-validation';
 import {TOOLSETS} from '../../utils/constants.js';
-import type {McpTool} from '../../utils/index.js';
+import {isPathWithin, type McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 
@@ -103,9 +105,7 @@ export function createValidateXmlSchemaTool(loadServices: () => Promise<Services
           .string()
           .min(1)
           .optional()
-          .describe(
-            'Bundled schema ID (docs_schema_list) or .xsd path to use for every document instead of namespace detection.',
-          ),
+          .describe('Bundled schema ID (docs_schema_list) to use for every document instead of namespace detection.'),
         exclude: z.array(z.string().min(1)).max(50).optional().describe('Globs to skip when expanding paths.'),
       },
       async execute(args, context) {
@@ -113,6 +113,15 @@ export function createValidateXmlSchemaTool(loadServices: () => Promise<Services
           throw new Error('Supply exactly one of paths, content.');
         }
         const root = context.services.resolveProjectDirectory(args.projectDirectory).path;
+        // Only bundled schemas; never load a local .xsd.
+        if (args.schema && !getBundledXmlSchemas().some((s) => s.id === args.schema)) {
+          throw new Error(`Unknown schema "${args.schema}". Use a bundled schema ID from docs_schema_list.`);
+        }
+        // Local paths must stay within the project directory after following symlinks.
+        const realRoot = fs.realpathSync(root);
+        const isContained = (file: string) => isPathWithin(realRoot, fs.realpathSync(file));
+        for (const input of args.paths ?? [])
+          context.services.resolveWithProjectDirectory(input, args.projectDirectory);
         const options = {cwd: root, schema: args.schema};
 
         let results: XmlValidationResult[];
@@ -120,6 +129,8 @@ export function createValidateXmlSchemaTool(loadServices: () => Promise<Services
         let notValidated = 0;
         if (args.content === undefined) {
           const collected = await collectXmlFiles(args.paths!, {cwd: root, exclude: args.exclude});
+          // Glob braces or symlinks can still reach outside the project directory; drop those matches.
+          collected.files = collected.files.filter((file) => isContained(file));
           unmatched = collected.unmatched;
           if (collected.files.length === 0) throw new Error(`No XML files found for: ${args.paths!.join(', ')}`);
           notValidated = Math.max(0, collected.files.length - MAX_VALIDATED_FILES);

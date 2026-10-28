@@ -452,6 +452,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
             },
             telemetry: this.telemetry,
             cleanup: () => context.destroyAll(),
+            projectDirectory: this.flags['project-directory'],
             cacheHints: {
               'tools/list': {ttlMs: 300_000, cacheScope: 'private'},
               'resources/list': {ttlMs: 300_000, cacheScope: 'private'},
