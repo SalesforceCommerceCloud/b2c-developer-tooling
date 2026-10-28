@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Security-only: Renovate raises PRs only for dependencies with known vulnerabilities, using the lowest fixed version. Routine version bumps are intentionally disabled. Vulnerable transitive dependencies are fixed with capped overrides in pnpm-workspace.yaml (Renovate cannot remediate pnpm transitives).",
+  "description": "Security-only: Renovate raises PRs only for dependencies with known vulnerabilities, using the lowest fixed version. Routine version bumps are intentionally disabled. Security PRs wait for the fixed version to be 2 days old, matching pnpm's minimumReleaseAge. Vulnerable transitive dependencies are fixed with capped overrides in pnpm-workspace.yaml (Renovate cannot remediate pnpm transitives).",
   "extends": ["config:recommended", "security:only-security-updates", ":semanticCommits"],
   "labels": ["dependencies"],
   "rangeStrategy": "update-lockfile",
@@ -8,6 +8,7 @@
     "enabled": true,
     "labels": ["dependencies", "security"],
     "vulnerabilityFixStrategy": "lowest",
+    "minimumReleaseAge": "2 days",
     "prConcurrentLimit": 10
   },
   "osvVulnerabilityAlerts": true
