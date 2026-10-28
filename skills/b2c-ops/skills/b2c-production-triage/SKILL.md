@@ -52,8 +52,8 @@ Native assistants use the installed skill name; MCP can read these URIs or use
    to make managed MCP calls. Pass the same project/instance context to CLI fallbacks.
 2. Join signals using execution IDs, log timestamps, and affected record IDs.
    For exact job logs, pass the returned `logFilePath` to `webdav_get`; use byte
-   continuation or download locally. Recent-log tools remain preferred for
-   filtered samples/watches. A bounded result is not full-interval coverage.
+   continuation, `tail: true`, or download locally with `webdav_get_to_file`.
+   Recent-log tools remain preferred for filtered samples/watches. A bounded result is not full-interval coverage.
 3. Reuse code-mode snippet totals/window/`nextOffset`; do not return entire
    schemas or records. The failed-job snippet omits step details and healthy
    runs: use `builtin/job-execution-inspect` / `builtin/job-execution-review` selectively. Compare expected business data

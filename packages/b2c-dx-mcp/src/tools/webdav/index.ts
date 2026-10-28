@@ -8,13 +8,22 @@ import {writeFile} from 'node:fs/promises';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import {createToolAdapter, jsonResult, type ServicesLoader} from '../adapter.js';
-import {readFileResponse, readLocalFile, readTextRange, webdavPath} from './files.js';
+import {readFileResponse, readLocalFile, readTextRange, resolveLocalPath, webdavPath} from './files.js';
 
 const pathSchema = z
   .string()
   .min(1)
   .max(2048)
   .describe('WebDAV Sites-relative path, e.g. Logs/jobs/run.log or Impex/src/import.xml.');
+
+function responseMetadata(path: string, response: Response) {
+  return {
+    path: decodeURIComponent(path),
+    contentType: response.headers.get('content-type'),
+    etag: response.headers.get('etag'),
+    lastModified: response.headers.get('last-modified'),
+  };
+}
 
 export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
   return [
@@ -67,7 +76,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
         idempotent: true,
         openWorld: true,
         description:
-          'Read exact WebDAV text using HTTP byte ranges, or download a whole file to the MCP host (maximum 64 MiB).',
+          'Read exact WebDAV text into the conversation using HTTP byte ranges (maximum 8000 bytes per call). Use tail: true for the end of a log. To save a whole or binary file locally, use webdav_get_to_file.',
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -79,38 +88,68 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
             .default(0)
             .describe('Byte offset for text; continue with returned nextOffset.'),
           maxBytes: z.number().int().min(4).max(8000).default(4000),
-          outputPath: z
-            .string()
-            .min(1)
-            .optional()
-            .describe('Optional new file on the MCP host, relative to projectDirectory. Never overwrites.'),
+          tail: z
+            .boolean()
+            .default(false)
+            .describe('Read the last maxBytes of the file instead of from offset, e.g. recent log lines.'),
         },
-        async execute(
-          args: {path: string; offset: number; maxBytes: number; outputPath?: string; projectDirectory?: string},
-          context,
-        ) {
+        async execute(args: {path: string; offset: number; maxBytes: number; tail: boolean}, context) {
           const path = webdavPath(args.path);
-          if (args.outputPath && args.offset !== 0)
-            throw new Error('outputPath downloads the whole file; omit offset.');
+          if (args.tail && args.offset !== 0) throw new Error('tail reads the end of the file; omit offset.');
           const response = await context.b2cInstance!.webdav.request(path, {
             method: 'GET',
             redirect: 'error',
             signal: AbortSignal.timeout(30_000),
-            ...(args.outputPath ? {} : {headers: {Range: `bytes=${args.offset}-${args.offset + args.maxBytes - 1}`}}),
+            headers: {
+              // Byte ranges must refer to the stored bytes, not a compressed transfer.
+              'Accept-Encoding': 'identity',
+              Range: args.tail ? `bytes=-${args.maxBytes}` : `bytes=${args.offset}-${args.offset + args.maxBytes - 1}`,
+            },
           });
-          const metadata = {
-            path: decodeURIComponent(path),
-            contentType: response.headers.get('content-type'),
-            etag: response.headers.get('etag'),
-            lastModified: response.headers.get('last-modified'),
+          return {
+            ...responseMetadata(path, response),
+            ...(await readTextRange(response, args.tail ? undefined : args.offset, args.maxBytes)),
           };
-          if (args.outputPath) {
-            const data = await readFileResponse(response);
-            const outputPath = context.services.resolveWithProjectDirectory(args.outputPath, args.projectDirectory);
-            await writeFile(outputPath, data, {flag: 'wx', mode: 0o600});
-            return {...metadata, size: data.length, outputPath};
-          }
-          return {...metadata, ...(await readTextRange(response, args.offset, args.maxBytes))};
+        },
+        formatOutput: jsonResult,
+      },
+      loadServices,
+    ),
+    createToolAdapter(
+      {
+        name: 'webdav_get_to_file',
+        effect: 'write',
+        idempotent: false,
+        openWorld: true,
+        description:
+          'Download a whole WebDAV file, including binary archives, to a new file on the MCP host (maximum 64 MiB). Never overwrites.',
+        toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
+        requiresInstance: true,
+        inputSchema: {
+          path: pathSchema,
+          outputPath: z
+            .string()
+            .min(1)
+            .describe(
+              'New file on the MCP host, within projectDirectory (relative to it). The parent directory must exist.',
+            ),
+        },
+        async execute(args: {path: string; outputPath: string; projectDirectory?: string}, context) {
+          const path = webdavPath(args.path);
+          // Validate the destination before downloading anything.
+          const outputPath = await resolveLocalPath(context.services, args.outputPath, args.projectDirectory, {
+            create: true,
+          });
+          const response = await context.b2cInstance!.webdav.request(path, {
+            method: 'GET',
+            redirect: 'error',
+            signal: AbortSignal.timeout(30_000),
+          });
+          const data = await readFileResponse(response);
+          // Re-check after the download in case the parent directory changed meanwhile.
+          await resolveLocalPath(context.services, args.outputPath, args.projectDirectory, {create: true});
+          await writeFile(outputPath, data, {flag: 'wx', mode: 0o600});
+          return {...responseMetadata(path, response), size: data.length, outputPath};
         },
         formatOutput: jsonResult,
       },
@@ -137,7 +176,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
             .string()
             .min(1)
             .optional()
-            .describe('File on the MCP host, relative to projectDirectory. Maximum 64 MiB.'),
+            .describe('File on the MCP host, within projectDirectory (relative to it). Maximum 64 MiB.'),
           contentType: z.string().max(200).optional(),
           overwrite: z.boolean().default(false),
         },
@@ -159,9 +198,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
           }
           const data =
             args.content === undefined
-              ? await readLocalFile(
-                  context.services.resolveWithProjectDirectory(args.sourcePath!, args.projectDirectory),
-                )
+              ? await readLocalFile(await resolveLocalPath(context.services, args.sourcePath!, args.projectDirectory))
               : Buffer.from(args.content);
           const response = await context.b2cInstance!.webdav.request(path, {
             method: 'PUT',

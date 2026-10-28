@@ -58,6 +58,10 @@ const groups = [
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
   },
   {
+    names: ['webdav_get_to_file'],
+    annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true},
+  },
+  {
     names: ['webdav_put'],
     annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true},
   },

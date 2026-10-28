@@ -11,11 +11,11 @@ Use the `b2c` CLI plugin to perform WebDAV file operations on Salesforce B2C Com
 
 ## MCP equivalent
 
-Prefer `webdav_list`, `webdav_get`, and `webdav_put` when available for one-directory
-listings, exact text reads, and single-file transfers. `webdav_get` uses HTTP byte
-ranges (`offset`, `maxBytes`, returned `size`/`nextOffset`); `outputPath` downloads a
-whole file. `webdav_put` accepts `content` or `sourcePath`; parent must exist,
-replacement needs `overwrite: true`. Local paths are on the MCP host, relative to
+Prefer `webdav_list`, `webdav_get`, `webdav_get_to_file`, and `webdav_put` when available
+for one-directory listings, exact text reads, and single-file transfers. `webdav_get` uses
+HTTP byte ranges (`offset`, `maxBytes`, `tail`, returned `size`/`nextOffset`);
+`webdav_get_to_file` downloads a whole file to a new `outputPath`. `webdav_put` accepts `content` or `sourcePath`; parent must exist,
+replacement needs `overwrite: true`. Local paths are on the MCP host, within
 `projectDirectory`. Transfers cap at 64 MiB; no prerequisite skill read.
 Use `cartridge_deploy` for local cartridge selection/mapping. Keep the CLI for
 recursive transfers, mkdir, delete, ZIP/UNZIP, or extra flags not exposed by MCP.

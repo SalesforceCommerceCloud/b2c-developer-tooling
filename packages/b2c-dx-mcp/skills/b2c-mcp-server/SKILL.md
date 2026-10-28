@@ -71,7 +71,8 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   selected local files, `codeVersion` for an explicit target; omit `files` for
   whole cartridges. Reload may activate the target.
 - Instance files: `webdav_list` gives directory entries/sizes; `webdav_get` reads
-  exact text by HTTP byte range or downloads to `outputPath`; `webdav_put` uploads
+  exact text by HTTP byte range (`tail` for the end); `webdav_get_to_file` downloads
+  to a new local `outputPath`; `webdav_put` uploads
   `content` or `sourcePath`. Prefer these over a terminal for supported transfers.
   [File choices and limits](references/files.md).
 - Debug: [MCP debugger](skill://mcp/b2c-mcp-debugger/SKILL.md). CLI/IDE only when requested.

@@ -233,17 +233,19 @@ Browse instance directories, read exact job logs, and upload or download files
 without installing the CLI separately. Upload text directly or transfer files
 from the machine running the MCP server.
 
-| Tool          | Capability                                                               |
-| ------------- | ------------------------------------------------------------------------ |
-| `webdav_list` | List a directory with file sizes and modification dates.                 |
-| `webdav_get`  | Read part of a text file or download a whole file.                       |
-| `webdav_put`  | Upload text or a local file; replace existing files only when requested. |
+| Tool                 | Capability                                                               |
+| -------------------- | ------------------------------------------------------------------------ |
+| `webdav_list`        | List a directory with file sizes and modification dates.                 |
+| `webdav_get`         | Read part of a text file, or its end (`tail`), without writing locally.  |
+| `webdav_get_to_file` | Download a whole file, including binary archives, to a new local file.   |
+| `webdav_put`         | Upload text or a local file; replace existing files only when requested. |
 
 With only a hostname configured, the first call asks you to
 [sign in](../guide/authentication#webdav-access) with your Account Manager account,
 and your Business Manager roles decide what you can access. This also applies to logs
 and cartridge uploads. Run `b2c auth logout` to sign out. Whole-file transfers are limited
 to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+Local files must be inside the project directory.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).
 
