@@ -243,8 +243,9 @@ from the machine running the MCP server.
 With only a hostname configured, the first call asks you to
 [sign in](../guide/authentication#webdav-access) with your Account Manager account,
 and your Business Manager roles decide what you can access. This also applies to logs
-and cartridge uploads. Run `b2c auth logout` to sign out. Whole-file transfers are limited
-to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+and cartridge uploads. Run `b2c auth logout` to sign out. `webdav_get` returns up to 32,000
+bytes per call; whole-file downloads have no size limit, and uploads are limited to 64 MiB.
+Upload folders must already exist; local downloads require a new filename.
 Local files must be inside the project directory.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).

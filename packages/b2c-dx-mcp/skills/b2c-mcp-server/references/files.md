@@ -15,12 +15,12 @@ Paths are WebDAV Sites-relative: `Logs/jobs/run.log`, `Impex/src/data.zip`,
 `Cartridges/version/app/cartridge/scripts/file.js`. Returned `/Sites/LOGS/...`
 job paths are accepted. List one directory; listing does not recurse.
 
-Text reads fetch at most `maxBytes` (default 4000, maximum 8000). `size` is total
+Text reads fetch at most `maxBytes` (default 4000, maximum 32000). `size` is total
 file bytes; reuse `nextOffset` to preserve UTF-8 boundaries. Null means end.
 `tail: true` reads the last `maxBytes`, which suits recent lines of a large log.
 Files can grow/rotate; compare returned size/ETag/lastModified when consistency
 matters. For recent errors or continuous activity, prefer the log tools.
-Binary or whole-file reads use `webdav_get_to_file`; transfers are limited to 64 MiB.
+Binary or whole-file reads use `webdav_get_to_file` (any size); uploads are limited to 64 MiB.
 Local paths refer to the MCP host and must stay within `projectDirectory`.
 Downloads never replace existing local files. Upload parents must exist;
 replacement requires `overwrite: true` and user intent. No automatic deletion.

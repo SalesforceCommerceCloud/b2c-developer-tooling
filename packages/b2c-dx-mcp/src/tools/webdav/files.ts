@@ -6,13 +6,19 @@
 
 /* eslint-disable no-await-in-loop -- Streaming reads must advance sequentially. */
 
-import {open, realpath} from 'node:fs/promises';
+import {open, realpath, rm} from 'node:fs/promises';
 import path from 'node:path';
 import {WEBDAV_ROOTS} from '@salesforce/b2c-tooling-sdk/cli';
 import type {Services} from '../../services.js';
 import {isPathWithin} from '../../utils/paths.js';
 
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
+
+/**
+ * Largest webdav_get text range. Even dense text (~2 bytes per token after JSON escaping) stays well under
+ * Claude Code's default 25,000-token MCP tool output limit.
+ */
+export const MAX_TEXT_BYTES = 32_000;
 
 /** Accept server-returned job paths as well as paths relative to WebDAV Sites. */
 export function webdavPath(input: string): string {
@@ -30,16 +36,17 @@ export function webdavPath(input: string): string {
   return [root, ...parts.slice(1)].map((part) => encodeURIComponent(part)).join('/');
 }
 
-/** Bound downloads even when the response omits or misstates Content-Length. */
-export async function readFileResponse(response: Response, maxBytes = MAX_FILE_BYTES): Promise<Buffer> {
-  const limitMessage =
-    maxBytes === MAX_FILE_BYTES
-      ? 'File exceeds the 64 MiB transfer limit.'
-      : 'Server exceeded the requested byte range. Use webdav_get_to_file to download the file.';
+async function assertOk(response: Response): Promise<void> {
   if (!response.ok) {
     await response.body?.cancel();
     throw new Error(`WebDAV HTTP ${response.status} ${response.statusText}. Check the path and WebDAV permissions.`);
   }
+}
+
+/** Bound range reads even when the response omits or misstates Content-Length. */
+export async function readFileResponse(response: Response, maxBytes: number): Promise<Buffer> {
+  const limitMessage = 'Server exceeded the requested byte range. Use webdav_get_to_file to download the file.';
+  await assertOk(response);
   const declared = Number(response.headers.get('content-length'));
   if (declared > maxBytes) {
     await response.body?.cancel();
@@ -61,6 +68,38 @@ export async function readFileResponse(response: Response, maxBytes = MAX_FILE_B
     await reader.cancel();
   }
   return Buffer.concat(chunks, size);
+}
+
+/**
+ * Stream a download of any size to a new file (exclusive create, owner-only) and return its size.
+ * `onChunk` runs per received chunk, e.g. to refresh an idle timeout. A failed download removes the partial file.
+ */
+export async function writeResponseToFile(response: Response, outputPath: string, onChunk?: () => void) {
+  await assertOk(response);
+  const file = await open(outputPath, 'wx', 0o600);
+  let size = 0;
+  try {
+    const reader = response.body?.getReader();
+    if (reader) {
+      try {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          onChunk?.();
+          await file.writeFile(value);
+          size += value.byteLength;
+        }
+      } finally {
+        await reader.cancel();
+      }
+    }
+    await file.close();
+  } catch (error) {
+    await file.close().catch(() => {});
+    await rm(outputPath, {force: true});
+    throw error;
+  }
+  return size;
 }
 
 /**
