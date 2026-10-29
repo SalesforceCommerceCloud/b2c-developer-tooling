@@ -6,7 +6,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@salesforce/b2c-dx-mcp@3.9.0"
+        "@salesforce/b2c-dx-mcp@3.10.0"
       ],
       "env": {
         "npm_config_min_release_age": "0"

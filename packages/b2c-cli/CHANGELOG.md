@@ -1,5 +1,16 @@
 # @salesforce/b2c-cli
 
+## 2.10.2
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Fix Metrics API series tags: `apiFamily`, `controller`, `host`, `ocapiCategory` and `statusClass` no longer include the `<realm>_<environment>` prefix, and empty placeholder series no longer get bogus dimensions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06)]:
+  - @salesforce/b2c-tooling-sdk@2.10.2
+
 ## 2.10.1
 
 ### Patch Changes
