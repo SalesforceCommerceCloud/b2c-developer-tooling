@@ -297,6 +297,20 @@
           ],
           "description": "Alternate spelling of `cartridges`. Cartridge names for deploy/watch filtering and IDE discovery. Array, or a colon/comma-separated string. Env: `SFCC_CARTRIDGES`."
         },
+        "cartridge-ignore-dirs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Directory names skipped at any depth when archiving cartridges for deploy. Replaces the default list (`node_modules`, `.git`, `coverage`, `.cache`, `tmp`, `temp`); use `[]` to archive everything. Env: `SFCC_CARTRIDGE_IGNORE_DIRS`."
+        },
+        "cartridgeIgnoreDirs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Alternate spelling of `cartridge-ignore-dirs`. Directory names skipped at any depth when archiving cartridges for deploy. Replaces the default list (`node_modules`, `.git`, `coverage`, `.cache`, `tmp`, `temp`); use `[]` to archive everything. Env: `SFCC_CARTRIDGE_IGNORE_DIRS`."
+        },
         "auto-upload": {
           "type": "boolean",
           "description": "Automatically upload code changes from the VS Code extension."

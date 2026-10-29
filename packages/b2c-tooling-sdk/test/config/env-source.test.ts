@@ -294,6 +294,12 @@ describe('config/EnvSource', () => {
       expect(result?.config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
     });
 
+    it('parses cartridge ignore directories', () => {
+      const source = new EnvSource({SFCC_CARTRIDGE_IGNORE_DIRS: 'node_modules, build'});
+      const result = source.load({});
+      expect(result?.config.cartridgeIgnoreDirs).to.deep.equal(['node_modules', 'build']);
+    });
+
     it('parses SFCC_OAUTH_SCOPES as comma-separated array', () => {
       const source = new EnvSource({SFCC_OAUTH_SCOPES: 'mail,roles,openid'});
       const result = source.load({});

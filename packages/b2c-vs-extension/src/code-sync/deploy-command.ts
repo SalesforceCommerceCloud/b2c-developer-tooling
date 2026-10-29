@@ -89,7 +89,9 @@ export function createDeployCommand(
           // so we can only honor cancellation between top-level steps; an
           // in-flight upload will complete before we abort.
           progress.report({message: 'Uploading cartridges...'});
-          await uploadCartridges(instance, selectedCartridges);
+          await uploadCartridges(instance, selectedCartridges, {
+            ignoreDirs: configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+          });
 
           if (token.isCancellationRequested) {
             throw new vscode.CancellationError();
@@ -224,7 +226,9 @@ export function createDeployOneCommand(
       },
       async () => {
         try {
-          await uploadCartridges(instance, [toDeploy]);
+          await uploadCartridges(instance, [toDeploy], {
+            ignoreDirs: configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+          });
           outputChannel.appendLine(`Deployed "${toDeploy.name}" to "${codeVersion}"`);
           outputChannel.appendLine(`--- Deploy single complete ---`);
 

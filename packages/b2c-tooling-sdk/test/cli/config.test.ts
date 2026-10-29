@@ -470,6 +470,14 @@ describe('cli/config', () => {
       expect(result.password).to.equal('my-password');
     });
 
+    it('maps --cartridge-ignore-dirs, treating an empty value as an empty list', () => {
+      expect(
+        extractInstanceFlags({'cartridge-ignore-dirs': ['node_modules', 'build']}).cartridgeIgnoreDirs,
+      ).to.deep.equal(['node_modules', 'build']);
+      expect(extractInstanceFlags({'cartridge-ignore-dirs': ['']}).cartridgeIgnoreDirs).to.deep.equal([]);
+      expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.be.undefined;
+    });
+
     it('includes OAuth flags', () => {
       const flags: ParsedFlags = {
         server: 'my-sandbox.demandware.net',

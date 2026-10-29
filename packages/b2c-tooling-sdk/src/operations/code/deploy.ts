@@ -17,8 +17,19 @@ import {NetworkError, describeNetworkErrorKind} from '../../errors/network-error
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
-/** Directory names never archived into the cartridge deploy zip (mirrors the cartridge discovery ignore list). */
-const ARCHIVE_IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.cache', 'tmp', 'temp']);
+/**
+ * Directory names skipped at any depth when archiving cartridges for deploy, unless overridden
+ * with the `cartridgeIgnoreDirs` config value. Narrower than the cartridge discovery ignore
+ * list: names like `build` and `dist` are legitimate cartridge folders.
+ */
+export const DEFAULT_CARTRIDGE_IGNORE_DIRS: readonly string[] = [
+  'node_modules',
+  '.git',
+  'coverage',
+  '.cache',
+  'tmp',
+  'temp',
+];
 
 /**
  * Options for deploying cartridges.
@@ -37,6 +48,11 @@ export interface UploadProgressInfo {
 export interface UploadOptions {
   /** Callback for progress updates. Called when a phase starts (elapsedSeconds=0) and periodically thereafter. */
   onProgress?: (info: UploadProgressInfo) => void;
+  /**
+   * Directory names to skip at any depth inside each cartridge. Replaces
+   * {@link DEFAULT_CARTRIDGE_IGNORE_DIRS}; pass `[]` to archive everything.
+   */
+  ignoreDirs?: readonly string[];
 }
 
 export interface DeployOptions extends FindCartridgesOptions {
@@ -50,6 +66,8 @@ export interface DeployOptions extends FindCartridgesOptions {
   delete?: boolean;
   /** Callback for progress updates during long-running operations */
   onProgress?: UploadOptions['onProgress'];
+  /** Directory names to skip inside each cartridge (see {@link UploadOptions.ignoreDirs}) */
+  ignoreDirs?: UploadOptions['ignoreDirs'];
 }
 
 /**
@@ -69,7 +87,12 @@ export interface DeployResult {
 /**
  * Recursively adds a directory to a JSZip instance.
  */
-async function addDirectoryToZip(zip: JSZip, dirPath: string, zipPath: string): Promise<void> {
+async function addDirectoryToZip(
+  zip: JSZip,
+  dirPath: string,
+  zipPath: string,
+  ignoreDirs: ReadonlySet<string>,
+): Promise<void> {
   const entries = await fs.promises.readdir(dirPath, {withFileTypes: true});
 
   for (const entry of entries) {
@@ -77,8 +100,11 @@ async function addDirectoryToZip(zip: JSZip, dirPath: string, zipPath: string): 
     const entryZipPath = path.join(zipPath, entry.name);
 
     if (entry.isDirectory()) {
-      if (ARCHIVE_IGNORE_DIRS.has(entry.name)) continue;
-      await addDirectoryToZip(zip, fullPath, entryZipPath);
+      if (ignoreDirs.has(entry.name)) {
+        getLogger().debug({path: fullPath}, `Skipping ignored directory ${fullPath}`);
+        continue;
+      }
+      await addDirectoryToZip(zip, fullPath, entryZipPath, ignoreDirs);
     } else if (entry.isFile()) {
       const content = await fs.promises.readFile(fullPath);
       zip.file(entryZipPath, content);
@@ -190,9 +216,10 @@ export async function uploadCartridges(
   onProgress?.({phase: 'archiving', elapsedSeconds: 0});
   logger.debug('Creating cartridge archive...');
   const zip = new JSZip();
+  const ignoreDirs = new Set(options?.ignoreDirs ?? DEFAULT_CARTRIDGE_IGNORE_DIRS);
 
   for (const c of cartridges) {
-    await addDirectoryToZip(zip, c.src, path.join(codeVersion, c.dest));
+    await addDirectoryToZip(zip, c.src, path.join(codeVersion, c.dest), ignoreDirs);
   }
 
   const buffer = await zip.generateAsync({
@@ -350,7 +377,7 @@ export async function findAndDeployCartridges(
   }
 
   // Upload cartridges
-  await uploadCartridges(instance, cartridges, {onProgress: options.onProgress});
+  await uploadCartridges(instance, cartridges, {onProgress: options.onProgress, ignoreDirs: options.ignoreDirs});
 
   // Optionally activate or reload
   let activated = false;

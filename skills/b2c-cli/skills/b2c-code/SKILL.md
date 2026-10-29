@@ -54,6 +54,9 @@ b2c code deploy -c app_storefront_base -c plugin_applepay
 
 # exclude specific cartridges from deployment
 b2c code deploy -x test_cartridge
+
+# replace the directory names skipped inside cartridges (default: node_modules,.git,coverage,.cache,tmp,temp)
+b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
 ```
 
 ### Download Cartridges

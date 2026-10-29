@@ -375,6 +375,7 @@ Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [
 | `libraries`<br>`SFCC_LIBRARIES`                   | Library IDs. JSON accepts strings or `{ "id": "RefArch", "siteLibrary": true }` entries; see [content libraries](#content-libraries-example).                    |
 | `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
 | `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
+| `cartridge-ignore-dirs`<br>`SFCC_CARTRIDGE_IGNORE_DIRS`| Directory names skipped inside cartridges on deploy. Replaces the default list; see [ignored directories](/cli/code#ignored-directories).                        |
 | `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
 | `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders, or http(s) URLs, for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
 
@@ -450,6 +451,7 @@ Only these fields are read from `package.json` (camelCase and kebab-case are acc
 | --------------------- | --------------------------------------------------------------- |
 | API and site defaults | `shortCode`, `clientId`, `siteId`                               |
 | Content and imports   | `contentLibrary`, `libraries`, `assetQuery`, `importSetExclude` |
+| Code                  | `cartridgeIgnoreDirs` |
 | Managed Runtime       | `mrtProject`, `mrtOrigin`                                       |
 | Platform defaults     | `accountManagerHost`, `sandboxApiHost`, `realm`                 |
 

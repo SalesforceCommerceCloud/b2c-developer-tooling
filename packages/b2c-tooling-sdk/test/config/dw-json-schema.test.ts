@@ -43,6 +43,7 @@ const DW_JSON_CONFIG_KEYS = {
   autoUpload: true,
   cartridges: true,
   importSetExclude: true,
+  cartridgeIgnoreDirs: true,
   contentLibrary: true,
   catalogs: true,
   libraries: true,

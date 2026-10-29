@@ -95,6 +95,8 @@ export interface DwJsonConfig {
   cartridges?: string | string[];
   /** Directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /** Directory names skipped at any depth when archiving cartridges for deploy */
+  cartridgeIgnoreDirs?: string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */
