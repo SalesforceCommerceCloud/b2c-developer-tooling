@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.12.8
+
+### Patch Changes
+
+- [#828](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/828) [`bf85de1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf85de16efeb775250f0bb27ee137133c90a5698) - Job-health, production-triage, and WebDAV skills now point agents to `webdav_get` `tail: true` for the end of a log and `webdav_get_to_file` for local downloads. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.12.7
 
 ### Patch Changes
