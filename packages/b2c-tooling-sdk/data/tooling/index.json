@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-28T21:07:46.009Z",
+  "generatedAt": "2026-10-29T20:38:17.710Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -53,7 +53,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.md",
-      "headings": "API Backend • Authentication • WebDAV Operations (deploy, download, watch) • Code Version Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
+      "headings": "API Backend • Authentication • WebDAV Operations (deploy, download, watch) • Code Version Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • Ignored Directories • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
       "preview": "Commands for deploying, downloading, activating code versions, and watching for file changes on B2C Commerce instances."
     },
     {

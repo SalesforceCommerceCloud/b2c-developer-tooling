@@ -56,6 +56,13 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       description: 'Delete existing cartridges before upload',
       default: false,
     }),
+    'cartridge-ignore-dirs': Flags.string({
+      description:
+        'Directory names to skip inside cartridges, replacing the default list (node_modules,.git,coverage,.cache,tmp,temp); pass an empty value to skip nothing (env: SFCC_CARTRIDGE_IGNORE_DIRS)',
+      multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
+    }),
   };
 
   static hiddenAliases = ['code:deploy'];
@@ -187,6 +194,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         cleanup: t('commands.code.deploy.cleanup', 'Cleaning up'),
       };
       await this.operations.uploadCartridges(this.instance, cartridges, {
+        ignoreDirs: this.resolvedConfig.values.cartridgeIgnoreDirs,
         onProgress: (info) => {
           if (this.jsonEnabled()) return;
           const label = uploadPhaseLabels[info.phase];

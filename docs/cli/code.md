@@ -157,6 +157,7 @@ In addition to [global flags](./index#global-flags):
 | `--delete`                  | Delete existing cartridges before upload                             | `false` |
 | `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)          |         |
 | `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)          |         |
+| `--cartridge-ignore-dirs`   | Directory names to skip inside cartridges (see below)                |         |
 
 ### Examples
 
@@ -195,6 +196,20 @@ b2c code deploy
 ### Cartridge Discovery
 
 Cartridges are discovered by searching for `.project` files (Eclipse project markers commonly used in SFCC development). The directory containing the `.project` file is considered a cartridge.
+
+If a `.project` file sits in a directory that also contains other cartridges (for example, at a repository root), that directory is ignored and a "project root detected as a cartridge" warning is logged. It is used only when it is the only cartridge found.
+
+### Ignored Directories
+
+When archiving a cartridge, deploy skips directories named `node_modules`, `.git`, `coverage`, `.cache`, `tmp`, and `temp` at any depth. To change the list, pass `--cartridge-ignore-dirs` or set `cartridge-ignore-dirs` in `dw.json` (env: `SFCC_CARTRIDGE_IGNORE_DIRS`). The value replaces the default list.
+
+```bash
+# Also skip build output
+b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
+
+# Archive everything
+b2c code deploy --cartridge-ignore-dirs ''
+```
 
 ---
 

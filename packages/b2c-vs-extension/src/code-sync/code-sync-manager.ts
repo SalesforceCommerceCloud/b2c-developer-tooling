@@ -304,7 +304,9 @@ export class CodeSyncManager implements vscode.Disposable {
     await vscode.window.withProgress(
       {location: vscode.ProgressLocation.Notification, title: `Uploading ${cartridge.name}...`},
       async () => {
-        await uploadCartridges(instance, [cartridge]);
+        await uploadCartridges(instance, [cartridge], {
+          ignoreDirs: this.configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+        });
         this.log(`[Upload] Cartridge "${cartridge.name}" uploaded successfully`);
         vscode.window.showInformationMessage(`B2C DX: Cartridge "${cartridge.name}" uploaded.`);
       },
@@ -344,7 +346,9 @@ export class CodeSyncManager implements vscode.Disposable {
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `Uploading ${cartridge.name}...`},
         async () => {
-          await uploadCartridges(instance, [cartridge]);
+          await uploadCartridges(instance, [cartridge], {
+            ignoreDirs: this.configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+          });
           this.log(`[Upload] Cartridge "${cartridge.name}" uploaded successfully`);
           vscode.window.showInformationMessage(`B2C DX: Cartridge "${cartridge.name}" uploaded.`);
         },

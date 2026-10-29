@@ -4,7 +4,9 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {globSync, globIterateSync} from 'glob';
+import fs from 'node:fs';
 import path from 'node:path';
+import {getLogger} from '../../logging/logger.js';
 
 /**
  * Represents a discovered cartridge in the local filesystem.
@@ -51,6 +53,10 @@ export interface FindCartridgesOptions {
  *
  * Cartridges are identified by the presence of a `.project` file
  * (Eclipse project marker commonly used in SFCC development).
+ *
+ * A `.project` whose directory also contains other cartridges (typically a
+ * stray marker at a repository root) is not treated as a cartridge; a warning
+ * is logged instead. Such a directory is only used when it is the sole match.
  *
  * @param directory - Directory to search for cartridges (defaults to cwd)
  * @param options - Filter options for including/excluding cartridges
@@ -121,5 +127,35 @@ export function findCartridges(directory?: string, options: FindCartridgesOption
   }
 
   // Find all .project files (Eclipse project markers).
-  return globSync('**/.project', globOptions).map(toCartridge).filter(matches);
+  // Prune before filtering so include/exclude cannot resurrect a project root.
+  return pruneProjectRootCartridges(globSync('**/.project', globOptions).map(toCartridge)).filter(matches);
+}
+
+/**
+ * Drops cartridges whose directory contains other discovered cartridges. A
+ * `.project` at a repository root otherwise turns the whole project (including
+ * `node_modules` and `.git`) into a "cartridge".
+ */
+function pruneProjectRootCartridges(cartridges: CartridgeMapping[]): CartridgeMapping[] {
+  const logger = getLogger();
+  const kept = cartridges.filter((c) => {
+    const nested = cartridges.filter((other) => other !== c && other.src.startsWith(c.src + path.sep));
+    if (nested.length === 0) return true;
+    logger.warn(
+      {cartridgeName: c.name, path: c.src, nested: nested.map((n) => n.name)},
+      `Project root detected as a cartridge: ignoring "${c.name}" (${c.src}) because it contains nested cartridges (${nested.map((n) => n.name).join(', ')}). Remove its .project file if it is not a cartridge.`,
+    );
+    return false;
+  });
+
+  for (const c of kept) {
+    if (fs.existsSync(path.join(c.src, '.git')) || fs.existsSync(path.join(c.src, 'node_modules'))) {
+      logger.warn(
+        {cartridgeName: c.name, path: c.src},
+        `Project root detected as a cartridge: "${c.name}" (${c.src}) contains .git or node_modules. Remove its .project file if it is not a cartridge.`,
+      );
+    }
+  }
+
+  return kept;
 }
