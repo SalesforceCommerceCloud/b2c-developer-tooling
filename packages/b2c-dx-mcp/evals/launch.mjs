@@ -13,9 +13,17 @@
  *   directory (configuration discovery walks parent directories) and passed as `--project-directory`.
  *
  * Eval runs provide a temporary HOME, so no user configuration or credentials are visible.
+ *
+ * Live cases (the `live/` suite, `pnpm run mcp:eval:live`) instead set `EVAL_MCP_LIVE: "1"`. They
+ * use a real configuration supplied by the operator, never a committed one:
+ * - `EVAL_LIVE_CONFIG`: path to a dw.json-format file. It is copied into the temporary project
+ *   directory as `dw.json`, so the copy (with any secret) lives only in the run's temp directory.
+ * - `EVAL_LIVE_INSTANCE`: optional named instance in that file.
+ * The server is started with `SFCC_SAFETY_LEVEL=READ_ONLY`; safety levels merge to the strictest
+ * source, so the run cannot write even if the configuration allows it.
  */
 import {spawn} from 'node:child_process';
-import {cpSync, existsSync, mkdtempSync} from 'node:fs';
+import {copyFileSync, cpSync, existsSync, mkdtempSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -31,7 +39,24 @@ if (!existsSync(path.join(packageRoot, 'dist', 'commands', 'mcp.js'))) {
 
 const args = (process.env.EVAL_MCP_ARGS ?? '').split(/\s+/).filter(Boolean);
 const project = process.env.EVAL_MCP_PROJECT;
-if (project) {
+const live = process.env.EVAL_MCP_LIVE === '1';
+const serverEnv = {...process.env, SF_DISABLE_TELEMETRY: 'true', SFCC_DISABLE_TELEMETRY: 'true'};
+
+if (live) {
+  const liveConfig = process.env.EVAL_LIVE_CONFIG;
+  if (!liveConfig || !existsSync(liveConfig)) {
+    throw new Error('b2c-dx-mcp eval: live cases need EVAL_LIVE_CONFIG set to an existing dw.json-format file');
+  }
+
+  const projectDirectory = mkdtempSync(path.join(os.tmpdir(), 'b2c-eval-live-'));
+  copyFileSync(liveConfig, path.join(projectDirectory, 'dw.json'));
+  args.push('--project-directory', projectDirectory);
+  if (process.env.EVAL_LIVE_INSTANCE) args.push('--instance', process.env.EVAL_LIVE_INSTANCE);
+  serverEnv.SFCC_SAFETY_LEVEL = 'READ_ONLY';
+  process.stderr.write(
+    `b2c-dx-mcp eval: live configuration copied to ${projectDirectory} (contains credentials; delete kept temp directories)\n`,
+  );
+} else if (project) {
   const fixture = path.join(evalsRoot, 'fixtures', project);
   if (!existsSync(fixture)) {
     throw new Error(`b2c-dx-mcp eval: unknown fixture "${project}"`);
@@ -43,7 +68,7 @@ if (project) {
 }
 
 const child = spawn(process.execPath, [entry, ...args], {
-  env: {...process.env, SF_DISABLE_TELEMETRY: 'true', SFCC_DISABLE_TELEMETRY: 'true'},
+  env: serverEnv,
   stdio: 'inherit',
 });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));

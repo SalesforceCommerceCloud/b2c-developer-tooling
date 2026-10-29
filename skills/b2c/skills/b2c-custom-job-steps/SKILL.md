@@ -509,6 +509,7 @@ Rule of thumb: data already on (or generated on) the instance → in-flow standa
 ## Related Skills
 
 - `b2c-cli:b2c-job` - For **running** existing jobs and importing site archives via CLI
+- `b2c-cli:b2c-replication` - Ready-made job definitions for `ExecuteCodeReplication` / `ExecuteDataReplication` with JSON replication configuration
 - `b2c-cli:b2c-docs` - To look up standard job step type IDs and their parameters (`b2c docs read job-steps`, `b2c docs read <TypeID>`)
 - `b2c:b2c-webservices` - When job steps need to call external HTTP services or APIs, use the webservices skill for service configuration and HTTP client patterns
 

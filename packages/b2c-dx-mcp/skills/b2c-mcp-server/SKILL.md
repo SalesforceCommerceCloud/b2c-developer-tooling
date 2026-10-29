@@ -20,6 +20,8 @@ Read only the skill that matches the task; each links its own references.
 | Production incident or unknown operational signal | `skill://b2c-ops/b2c-production-triage/SKILL.md` |
 | Failed or late jobs | `skill://b2c-ops/b2c-job-health/SKILL.md` |
 | Checkout or order failures | `skill://b2c-ops/b2c-checkout-triage/SKILL.md`, `skill://b2c-ops/b2c-order-failure-triage/SKILL.md` |
+| External service (payment, tax, OMS, shipping, search) calls failing, slow or stopped | `skill://b2c-ops/b2c-integration-triage/SKILL.md` |
+| Slow or erroring storefront/API; latency, error-rate, cache or integration metrics | `skill://b2c-ops/b2c-performance-triage/SKILL.md` |
 | eCDN edge traffic: bots, scrapers, API/SLAS abuse, edge 403/429 spikes, WAF/firewall/rate-limit rules (storefront or SCAPI zone) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md` |
 | Anything else | `skill://index` |
 
