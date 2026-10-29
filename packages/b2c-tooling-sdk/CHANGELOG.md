@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.10.2
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge discovery now ignores a `.project` at a project root when real cartridges exist below it, and warns that a project root was detected as a cartridge. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Failed job commands now show the cause more often: they wait briefly for a log that isn't written yet, print `[DATAERROR]` lines from site import logs alongside the error, and when the log can't be downloaded, report why (for example a 401) with a `b2c webdav get --user-auth` command to read it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Fix Metrics API series tags: `apiFamily`, `controller`, `host`, `ocapiCategory` and `statusClass` no longer include the `<realm>_<environment>` prefix, and empty placeholder series no longer get bogus dimensions. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.10.1
 
 ### Patch Changes

@@ -1,5 +1,25 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.10.0
+
+### Minor Changes
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - `metrics_get` accepts `summarize: true` to return per-series statistics instead of every data point, so agents can scan whole categories without exceeding output limits. Output is now compact JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Fix Metrics API series tags: `apiFamily`, `controller`, `host`, `ocapiCategory` and `statusClass` no longer include the `<realm>_<environment>` prefix, and empty placeholder series no longer get bogus dimensions. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - New `b2c-performance-triage` and `b2c-integration-triage` runbooks and a metrics signals catalog map slow, erroring or silent storefront and external-service symptoms to Metrics API categories and dimensions; checkout and edge-traffic runbooks point to the relevant signals. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#830](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/830) [`e372c0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e372c0a589481acc9dc46e7d2d8564bcac951073) - `webdav_get_to_file` now streams downloads of any size instead of stopping at 64 MiB, and `webdav_get` reads up to 32,000 bytes per call (was 8,000). (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`e372c0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e372c0a589481acc9dc46e7d2d8564bcac951073)]:
+  - @salesforce/b2c-agent-plugins@1.13.0
+  - @salesforce/b2c-tooling-sdk@2.10.2
+
 ## 3.9.0
 
 ### Minor Changes

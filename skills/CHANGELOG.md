@@ -1,5 +1,21 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.13.0
+
+### Minor Changes
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Added the `b2c-replication` skill: automate code and data replication from staging with a custom job built on the `ExecuteCodeReplication` and `ExecuteDataReplication` steps, including task reference and first-replication ordering for new sites. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Added the `b2c-storefronts` skill for Storefront Next: when to create a storefront versus import one to keep an instance in the same Managed Runtime project, storefront export/import requirements, and where to get project configuration and credentials. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - New `b2c-performance-triage` and `b2c-integration-triage` runbooks and a metrics signals catalog map slow, erroring or silent storefront and external-service symptoms to Metrics API categories and dimensions; checkout and edge-traffic runbooks point to the relevant signals. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#830](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/830) [`e372c0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e372c0a589481acc9dc46e7d2d8564bcac951073) - `webdav_get_to_file` now streams downloads of any size instead of stopping at 64 MiB, and `webdav_get` reads up to 32,000 bytes per call (was 8,000). (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.12.8
 
 ### Patch Changes
