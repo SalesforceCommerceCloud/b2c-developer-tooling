@@ -75,7 +75,7 @@ The MRT project ID is the `mrt-site` value in the export, not the storefront nam
 
 ## Project Configuration and Credentials
 
-To develop locally or configure CI against a storefront, download its project configuration and credentials from the storefront's detail page in Business Manager. Use that file for the storefront project rather than copying values by hand. See [Storefront Next](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next) for how the CLI uses common Storefront Next project variables.
+To develop locally or configure CI against a storefront, download its project configuration and credentials from the storefront's detail page in Business Manager. Use that file for the storefront project rather than copying values by hand. See the [Storefront Next guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md) (`b2c docs read guide-storefront-next`) for how the CLI uses common Storefront Next project variables.
 
 ## Related Skills
 
