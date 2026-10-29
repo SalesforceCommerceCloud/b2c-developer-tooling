@@ -7,7 +7,13 @@ import {Command} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import {BackendDispatcher} from '../compat/dispatcher.js';
 import {createScapiJobsClient, type ScapiJobsClient} from '../clients/scapi-jobs.js';
-import {mapOcapiExecution, type JobExecution, type JobExecutionInfo} from '../operations/jobs/index.js';
+import {
+  getJobExecution as ocapiGetJobExecution,
+  mapOcapiExecution,
+  scapiGetJobExecution,
+  type JobExecution,
+  type JobExecutionInfo,
+} from '../operations/jobs/index.js';
 import {t} from '../i18n/index.js';
 
 /**
@@ -35,6 +41,9 @@ import {t} from '../i18n/index.js';
  * }
  * ```
  */
+const LOG_FILE_RETRY_ATTEMPTS = 2;
+const LOG_FILE_RETRY_DELAY_MS = 2000;
+
 export abstract class JobCommand<T extends typeof Command> extends InstanceCommand<T> {
   protected createJobsDispatcher(): BackendDispatcher<ScapiJobsClient> {
     return this.createDispatcher('jobs', () => this.buildScapiJobsClient());
@@ -64,8 +73,12 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
    * function works on a single shape.
    */
   protected async showJobLog(execution: JobExecutionInfo | JobExecution): Promise<void> {
-    const canonical = isCanonical(execution) ? execution : mapOcapiExecution(execution);
+    let canonical = isCanonical(execution) ? execution : mapOcapiExecution(execution);
     const errorMessage = getCanonicalJobErrorMessage(canonical);
+
+    if (!canonical.isLogFileExisting) {
+      canonical = await this.refreshForLogFile(canonical);
+    }
 
     if (!canonical.isLogFileExisting) {
       if (errorMessage) {
@@ -84,12 +97,66 @@ export abstract class JobCommand<T extends typeof Command> extends InstanceComma
       if (errorMessage) {
         this.logger.error(t('cli.job.errorMessage', 'Error: {{message}}', {message: errorMessage}));
       }
-    } catch {
-      this.warn(t('cli.job.logFetchFailed', 'Could not retrieve job log'));
+
+      const dataErrors = extractDataErrors(log);
+      if (dataErrors.length > 0) {
+        this.logger.error(
+          {dataErrors},
+          t('cli.job.dataErrors', 'Data errors:\n{{errors}}', {errors: dataErrors.join('\n')}),
+        );
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const webdavPath = canonical.logFilePath?.replace(/^\/Sites\/LOGS\//i, '');
+      this.warn(
+        webdavPath
+          ? t(
+              'cli.job.logFetchFailedWithHint',
+              'Could not retrieve job log: {{reason}}\nTry: b2c webdav get --root logs {{path}} --user-auth',
+              {reason, path: webdavPath},
+            )
+          : t('cli.job.logFetchFailedReason', 'Could not retrieve job log: {{reason}}', {reason}),
+      );
       if (errorMessage) {
         this.logger.error({errorMessage}, errorMessage);
       }
     }
+  }
+
+  /** Delay between log-file re-checks; overridable in tests. */
+  protected async sleepBeforeLogRetry(milliseconds: number): Promise<void> {
+    await new Promise((resolve) => {
+      setTimeout(resolve, milliseconds);
+    });
+  }
+
+  /**
+   * Re-reads the execution a few times when the log file is not flagged as
+   * written yet; jobs that fail within seconds often finish before the
+   * platform marks the log as existing. Best effort: any failure returns
+   * the execution unchanged.
+   */
+  private async refreshForLogFile(execution: JobExecutionInfo): Promise<JobExecutionInfo> {
+    if (!execution.jobId || !execution.id) return execution;
+
+    const tenantId = this.resolvedConfig.values.tenantId;
+    const getExecution = () =>
+      this.createJobsDispatcher().run<JobExecutionInfo>({
+        scapi: (client) => scapiGetJobExecution(client, execution.jobId, execution.id, tenantId!),
+        ocapi: async () => mapOcapiExecution(await ocapiGetJobExecution(this.instance, execution.jobId, execution.id)),
+      });
+
+    for (let attempt = 0; attempt < LOG_FILE_RETRY_ATTEMPTS; attempt++) {
+      try {
+        // Sequential by design: each re-check waits before the next request.
+        await this.sleepBeforeLogRetry(LOG_FILE_RETRY_DELAY_MS);
+        const refreshed = await getExecution();
+        if (refreshed.isLogFileExisting) return refreshed;
+      } catch {
+        return execution;
+      }
+    }
+    return execution;
   }
 
   private async fetchCanonicalLog(execution: JobExecutionInfo): Promise<string> {
@@ -120,4 +187,12 @@ function getCanonicalJobErrorMessage(execution: JobExecutionInfo): string | unde
     }
   }
   return undefined;
+}
+
+/** Returns `[DATAERROR]` lines from a job log, which carry the cause of site import failures. */
+function extractDataErrors(log: string): string[] {
+  return log.split(/\r?\n/).flatMap((line) => {
+    const index = line.indexOf('[DATAERROR]');
+    return index === -1 ? [] : [line.slice(index).trim()];
+  });
 }
