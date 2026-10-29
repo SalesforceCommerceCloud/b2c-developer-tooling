@@ -8,7 +8,7 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
+import {mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
@@ -185,24 +185,65 @@ describe('WebDAV file tools', () => {
     expect((await tools.webdav_put.handler({path: 'Impex/src/a', sourcePath: '.'})).isError).to.equal(true);
   });
 
-  it('bounds streams even without Content-Length', async () => {
+  it('bounds range reads even without Content-Length', async () => {
     const response = new Response(
       // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.16 release.
       new ReadableStream({
         start(controller) {
-          const chunk = new Uint8Array(1024 * 1024);
-          for (let i = 0; i <= MAX_FILE_BYTES / chunk.length; i++) controller.enqueue(chunk);
+          for (let i = 0; i < 3; i++) controller.enqueue(new Uint8Array(4));
           controller.close();
         },
       }),
     );
     let error;
     try {
-      await readFileResponse(response);
+      await readFileResponse(response, 8);
     } catch (error_) {
       error = error_;
     }
-    expect(String(error)).to.include('64 MiB');
+    expect(String(error)).to.include('byte range');
+  });
+
+  it('streams downloads larger than the upload limit to a local file', async () => {
+    const chunk = new Uint8Array(1024 * 1024);
+    const chunks = MAX_FILE_BYTES / chunk.length + 1;
+    request.resolves(
+      new Response(
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.16 release.
+        new ReadableStream({
+          start(controller) {
+            for (let i = 0; i < chunks; i++) controller.enqueue(chunk);
+            controller.close();
+          },
+        }),
+      ),
+    );
+    const result = json(await tools.webdav_get_to_file.handler({path: 'Impex/src/big.zip', outputPath: 'big.zip'}));
+    expect(result.size).to.equal(chunks * chunk.length);
+    expect((await stat(join(root, 'big.zip'))).size).to.equal(chunks * chunk.length);
+  });
+
+  it('removes the partial local file when a download fails mid-stream', async () => {
+    request.resolves(
+      new Response(
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.16 release.
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([1, 2, 3]));
+            controller.error(new Error('connection reset'));
+          },
+        }),
+      ),
+    );
+    const result = await tools.webdav_get_to_file.handler({path: 'Impex/src/a.zip', outputPath: 'a.zip'});
+    expect(json(result).error).to.include('connection reset');
+    let exists = true;
+    try {
+      await stat(join(root, 'a.zip'));
+    } catch {
+      exists = false;
+    }
+    expect(exists).to.equal(false);
   });
 
   it('continues at a complete UTF-8 boundary and handles end-of-file ranges', async () => {

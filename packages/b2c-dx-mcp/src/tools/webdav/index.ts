@@ -4,17 +4,25 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {writeFile} from 'node:fs/promises';
 import {z} from 'zod';
 import type {McpTool} from '../../utils/index.js';
 import {createToolAdapter, jsonResult, type ServicesLoader} from '../adapter.js';
-import {readFileResponse, readLocalFile, readTextRange, resolveLocalPath, webdavPath} from './files.js';
+import {
+  MAX_TEXT_BYTES,
+  readLocalFile,
+  readTextRange,
+  resolveLocalPath,
+  webdavPath,
+  writeResponseToFile,
+} from './files.js';
 
 const pathSchema = z
   .string()
   .min(1)
   .max(2048)
   .describe('WebDAV Sites-relative path, e.g. Logs/jobs/run.log or Impex/src/import.xml.');
+
+const DOWNLOAD_IDLE_TIMEOUT_MS = 30_000;
 
 function responseMetadata(path: string, response: Response) {
   return {
@@ -75,8 +83,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
         effect: 'read',
         idempotent: true,
         openWorld: true,
-        description:
-          'Read exact WebDAV text into the conversation using HTTP byte ranges (maximum 8000 bytes per call). Use tail: true for the end of a log. To save a whole or binary file locally, use webdav_get_to_file.',
+        description: `Read exact WebDAV text into the conversation using HTTP byte ranges (maximum ${MAX_TEXT_BYTES} bytes per call). Use tail: true for the end of a log. To save a whole or binary file locally, use webdav_get_to_file.`,
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -87,7 +94,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
             .min(0)
             .default(0)
             .describe('Byte offset for text; continue with returned nextOffset.'),
-          maxBytes: z.number().int().min(4).max(8000).default(4000),
+          maxBytes: z.number().int().min(4).max(MAX_TEXT_BYTES).default(4000),
           tail: z
             .boolean()
             .default(false)
@@ -122,7 +129,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
         idempotent: false,
         openWorld: true,
         description:
-          'Download a whole WebDAV file, including binary archives, to a new file on the MCP host (maximum 64 MiB). Never overwrites.',
+          'Download a whole WebDAV file, including binary archives, to a new file on the MCP host. Streams any size; never overwrites.',
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -140,16 +147,27 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
           const outputPath = await resolveLocalPath(context.services, args.outputPath, args.projectDirectory, {
             create: true,
           });
-          const response = await context.b2cInstance!.webdav.request(path, {
-            method: 'GET',
-            redirect: 'error',
-            signal: AbortSignal.timeout(30_000),
-          });
-          const data = await readFileResponse(response);
-          // Re-check after the download in case the parent directory changed meanwhile.
-          await resolveLocalPath(context.services, args.outputPath, args.projectDirectory, {create: true});
-          await writeFile(outputPath, data, {flag: 'wx', mode: 0o600});
-          return {...responseMetadata(path, response), size: data.length, outputPath};
+          // Abort only when the transfer stalls, so large files are not cut off by a total deadline.
+          const controller = new AbortController();
+          const idle = setTimeout(
+            () => controller.abort(new Error('WebDAV download stalled for 30 seconds.')),
+            DOWNLOAD_IDLE_TIMEOUT_MS,
+          );
+          try {
+            const response = await context.b2cInstance!.webdav.request(path, {
+              method: 'GET',
+              redirect: 'error',
+              signal: controller.signal,
+            });
+            // Re-check before creating the file in case the parent directory changed meanwhile.
+            await resolveLocalPath(context.services, args.outputPath, args.projectDirectory, {create: true});
+            const size = await writeResponseToFile(response, outputPath, () => idle.refresh());
+            return {...responseMetadata(path, response), size, outputPath};
+          } finally {
+            clearTimeout(idle);
+            // Release the response body if validation or the write stopped early.
+            controller.abort();
+          }
         },
         formatOutput: jsonResult,
       },

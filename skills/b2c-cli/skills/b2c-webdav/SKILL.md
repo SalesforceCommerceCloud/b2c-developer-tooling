@@ -16,7 +16,7 @@ for one-directory listings, exact text reads, and single-file transfers. `webdav
 HTTP byte ranges (`offset`, `maxBytes`, `tail`, returned `size`/`nextOffset`);
 `webdav_get_to_file` downloads a whole file to a new `outputPath`. `webdav_put` accepts `content` or `sourcePath`; parent must exist,
 replacement needs `overwrite: true`. Local paths are on the MCP host, within
-`projectDirectory`. Transfers cap at 64 MiB; no prerequisite skill read.
+`projectDirectory`. Uploads cap at 64 MiB; downloads have no cap; no prerequisite skill read.
 Use `cartridge_deploy` for local cartridge selection/mapping. Keep the CLI for
 recursive transfers, mkdir, delete, ZIP/UNZIP, or extra flags not exposed by MCP.
 
