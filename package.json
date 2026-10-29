@@ -22,6 +22,7 @@
     "skills:eval": "uv run skills/eval/run_eval.py --model us.anthropic.claude-sonnet-4-6 --verbose",
     "skills:eval:optimize": "uv run skills/eval/run_loop.py --model us.anthropic.claude-sonnet-4-6 --verbose",
     "mcp:eval": "claude plugin eval packages/b2c-dx-mcp/evals --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --ablation none",
+    "mcp:eval:live": "claude plugin eval packages/b2c-dx-mcp/evals --eval-dir live --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --ablation none",
     "mcp:eval:ablation": "claude plugin eval packages/b2c-dx-mcp/evals --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --tag ablation --ablation with-without",
     "changeset": "changeset",
     "version": "changeset version && node scripts/sync-plugin-versions.mjs && node scripts/sync-python-sdk-version.mjs && node scripts/sync-actions-version.mjs && date -u > .changeset/RELEASE",

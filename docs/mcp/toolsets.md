@@ -294,6 +294,8 @@ See [analytics access](./security#cip).
 
 `metrics_get` reads B2C Commerce metrics. Requires tenant access
 to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
+Pass `summarize: true` to get per-series statistics (point count, sum, min, max,
+average, peak time) instead of every data point, which keeps long windows readable.
 
 ## Configuration inspection
 

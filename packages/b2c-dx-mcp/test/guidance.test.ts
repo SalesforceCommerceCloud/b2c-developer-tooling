@@ -33,6 +33,8 @@ describe('guidance distribution and result contracts', () => {
       'b2c-checkout-triage',
       'b2c-order-failure-triage',
       'b2c-edge-traffic-triage',
+      'b2c-performance-triage',
+      'b2c-integration-triage',
     ];
     const tool = createGuidanceTool();
     expect(catalog.resources().some((resource) => resource.uri.startsWith('skill://b2c-ops/'))).to.equal(false);
