@@ -439,6 +439,15 @@ Common paths for CLI operations:
 
 An access key is used when configured, then an API client, then signing in with your account. To use the API client for WebDAV when an access key is also configured, pass `--auth-methods client-credentials` (or set `SFCC_AUTH_METHODS=client-credentials`).
 
+To sign in with your account even when an access key or API client is configured, for example when the configured client isn't set up for browser sign-in, pass `--default-client` (or set `SFCC_DEFAULT_CLIENT=true`). It uses the built-in client and keeps the rest of your configuration, such as the server:
+
+```bash
+b2c auth login --default-client
+b2c webdav ls --root temp --server my-sandbox.dx.commercecloud.salesforce.com --default-client
+```
+
+Commands that call OCAPI or SCAPI can't use `--default-client`, because the built-in client has no API access.
+
 ::: warning
 Avoid `--auth-methods basic` on commands that also call APIs, such as `code deploy --activate`: it disables the API client for those calls too.
 :::

@@ -140,6 +140,8 @@ b2c auth token --user-auth
 
 Coding agents can use `--user-auth` wherever a browser can be opened. Don't combine it with `--auth-methods`.
 
+To sign in with the CLI's built-in client even when a client or access key is configured (for example, the configured client doesn't allow browser sign-in), use `--default-client` or `SFCC_DEFAULT_CLIENT=true`. It works for `auth login`, WebDAV, code upload, logs, sandbox, and Account Manager commands; OCAPI and SCAPI commands reject it. Don't combine it with `--client-id`, `--client-secret`, or `--auth-methods`.
+
 **Running behind a proxy:** If `localhost:8080` isn't reachable by the browser (e.g., running in a container or behind a reverse proxy), set `SFCC_REDIRECT_URI` to the proxy URL. The local OAuth server still listens on the default port (or `SFCC_OAUTH_LOCAL_PORT`), but the redirect URI sent to Account Manager will use your proxy URL. Add the proxy URL to the API client's redirect URLs in Account Manager.
 
 ## Tenant ID and Organization ID
