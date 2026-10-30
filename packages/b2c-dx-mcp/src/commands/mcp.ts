@@ -464,6 +464,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
               'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
+              'New sandbox or realm setup (sample data, storefronts, replication): first read skill://b2c-cli/b2c-setup/SKILL.md. ' +
               'Production incidents (slow or failing storefront/APIs, external service failures, jobs, orders): first read skill://b2c-ops/b2c-production-triage/SKILL.md. ' +
               'Missing credentials in config do not mean unauthenticated: instance tools may sign in through Account Manager in the browser; resolution.auth and config_inspect show how. ' +
               'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; artifacts or dashboards skill://mcp/b2c-mcp-claude-artifacts/SKILL.md; ' +

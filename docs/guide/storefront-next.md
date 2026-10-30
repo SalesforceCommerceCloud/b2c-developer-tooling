@@ -18,6 +18,8 @@ Use **storefront setup in Business Manager** to create your storefront and its A
 - [Create Storefront Next with a GitHub repository](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm-github.html)
 - [Create Storefront Next with local code](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-bm.html)
 
+To load a sample site first, or to set up a new sandbox or realm end to end, see [Realm Setup](./realm-setup).
+
 Use the generated configuration for local development and the existing MRT resources for the operations below. For additional environments and production launch, follow [Launch Your Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html).
 
 ## Prerequisites

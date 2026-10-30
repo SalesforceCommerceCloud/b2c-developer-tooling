@@ -2,6 +2,7 @@
   "version": 1,
   "featuredResources": [
     "mcp/b2c-mcp-server",
+    "b2c-cli/b2c-setup",
     "mcp/b2c-mcp-debugger",
     "mcp/b2c-mcp-config",
     "mcp/b2c-mcp-scapi",

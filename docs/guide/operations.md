@@ -27,6 +27,8 @@ investigations also need the [B2C CLI](./installation), Business Manager access,
 or information from an integration provider. See [authentication](./authentication)
 and [Safety Mode](./safety) for access and operation controls.
 
+To set up a new sandbox or realm, see [Realm Setup](./realm-setup).
+
 ## Understand settings and procedures
 
 Use [documentation search](../mcp/#b2c-commerce-documentation) to understand

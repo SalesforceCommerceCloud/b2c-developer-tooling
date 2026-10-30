@@ -79,6 +79,7 @@ To develop locally or configure CI against a storefront, download its project co
 
 ## Related Skills
 
+- `b2c-cli:b2c-setup` — end-to-end sandbox and realm setup
 - `b2c-cli:b2c-mrt` — MRT projects, environments, bundles, and environment variables
 - `b2c-cli:b2c-site-import-export` — site archive layout and other export data units
 - `b2c-cli:b2c-job` — job execution, logs, and waiting

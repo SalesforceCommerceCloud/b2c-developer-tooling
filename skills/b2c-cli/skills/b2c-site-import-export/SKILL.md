@@ -54,6 +54,7 @@ review and trim before committing, preserving XSD-required fields.
 - Export flags, data units, and compact JSON results: the export reference in the `b2c-job` skill.
 - Ordered migrations, naming, history, and recovery: `b2c-cli:b2c-import-set-migrations`.
 - Service configuration XML: `b2c:b2c-webservices`.
+- Sample storefront datasets and new-instance setup: `b2c-cli:b2c-setup`.
 
 Jobs prefer SCAPI; `--api-backend auto` can fall back to OCAPI on supported
 rejections. Archive transfer uses WebDAV in either case. For job scopes, backend

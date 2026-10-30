@@ -1,0 +1,30 @@
+[
+  {
+    "query": "We just got a new realm provisioned. Walk me through getting staging and production set up with a working Storefront Next storefront.",
+    "should_trigger": true
+  },
+  {"query": "Get Market Street running on my new sandbox — data, search, and the storefront.", "should_trigger": true},
+  {
+    "query": "How do I load the sample storefront datasets onto my instance before I set up the storefront?",
+    "should_trigger": true
+  },
+  {
+    "query": "I want a demo sandbox with sample products and a Storefront Next storefront. What are the steps with the b2c CLI?",
+    "should_trigger": true
+  },
+  {
+    "query": "Staging is set up with our site and storefront. What's the order of steps to get production ready?",
+    "should_trigger": true
+  },
+  {
+    "query": "Which dataset release should I use for Storefront Next template 1.4 and how do I import it?",
+    "should_trigger": true
+  },
+  {"query": "Delete my sandbox abcd-003.", "should_trigger": false},
+  {
+    "query": "My storefront import on production failed with 'is not authorized to import storefront'. What do I fix?",
+    "should_trigger": false
+  },
+  {"query": "Add my client secret to dw.json for the staging instance.", "should_trigger": false},
+  {"query": "Checkout conversion dropped on production in the last hour. Help me investigate.", "should_trigger": false}
+]

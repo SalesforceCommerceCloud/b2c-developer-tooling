@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-29T20:38:17.710Z",
+  "generatedAt": "2026-10-29T22:13:29.774Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -442,6 +442,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/project-setup.md",
       "headings": "Give your assistant project context • Salesforce B2C Commerce • Add your team's conventions",
       "preview": "Optional project recommendations for working with the Agentic B2C Developer Toolkit and your AI assistant."
+    },
+    {
+      "id": "guide-realm-setup",
+      "title": "Realm Setup",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/realm-setup.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/realm-setup.md",
+      "headings": "Before You Start • Protect Shared Instances • Storefront Datasets • Set Up a Sandbox • Set Up a Realm • 1. Prepare Staging • 2. Replicate to Production • 3. Connect the Storefront • Troubleshooting • Related",
+      "preview": "Set up a new sandbox or realm with sample storefront data, search indexes, Storefront Next storefronts, and replication from staging to production."
     },
     {
       "id": "guide-safety",
