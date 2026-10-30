@@ -2,6 +2,8 @@
 
 Salesforce publishes sample data for the reference storefronts in [storefront-datasets](https://github.com/SalesforceCommerceCloud/storefront-datasets). Each dataset is a site archive with a site, catalogs, price books, inventory, content, promotions, and import jobs.
 
+The repository is private to Commerce Cloud customers and partners. Link your GitHub account through Account Manager first; without access, GitHub returns 404 for the repository and `git clone` fails. See [GitHub repositories and access](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-github-repo-access.md) (`b2c docs read b2c-github-repo-access`).
+
 | Dataset directory  | Site ID        | Contents                                             |
 | ------------------ | -------------- | ---------------------------------------------------- |
 | `foundations-data` | `Foundations`  | Small default dataset for the Foundations storefront |
