@@ -17,6 +17,7 @@ Classify every target before changing it. Staging, production, and development i
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | Sandbox                                    | Confirm creating (billable) or deleting a sandbox. Imports and storefront setup can proceed once the user asked.       |
 | Staging, production, development instances | State the instance hostname and the exact change, then wait for explicit approval. Ask again for each separate change. |
+| Account Manager (API clients, users, roles) | Show every detail (organization, roles, tenant filter, scopes) and wait for explicit approval. Ask again for each client. |
 
 - Never infer that a target is a sandbox from a configuration name; check the hostname (see [safety](references/SAFETY.md)).
 - Approval for one instance or step does not carry to the next.
@@ -36,7 +37,7 @@ Recommend Safety Mode for shared instances: [safety](references/SAFETY.md).
 
 Every path starts the same way:
 
-1. **Connect.** Configure the instance and API client, then check with `b2c setup inspect`. See `b2c-cli:b2c-config`; API clients and roles: `b2c-cli:b2c-am`. Creating a Storefront Next storefront from the CLI needs storefront scopes on the client: [Storefront Next setup](references/STOREFRONT-NEXT.md#1-api-client-for-the-cli).
+1. **Connect.** Configure the instance and API client, then check with `b2c setup inspect`. See `b2c-cli:b2c-config`. Jobs, sites, and storefront commands need an API client; if the user has none, create one with their sign-in (`b2c-cli:b2c-am`, Create Client), and only after they approve every detail of it. Creating a Storefront Next storefront from the CLI needs storefront scopes on the client: [Storefront Next setup](references/STOREFRONT-NEXT.md#1-api-client-for-the-cli).
 2. **Check what exists.** `b2c sites list` and `b2c code list` show existing sites and code versions. Do not overwrite existing sites or settings without approval.
 3. **Load data** (staging or sandbox only), then **rebuild search indexes**.
 4. **Deploy code** for the storefront type (cartridges, or a Storefront Next storefront).

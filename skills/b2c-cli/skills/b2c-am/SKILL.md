@@ -55,24 +55,49 @@ b2c am clients get <api-client-id> --expand organizations,roles
 
 ### Create Client
 
-Clients are created inactive by default. Requires user auth.
+Jobs, sites, Storefront Next storefronts, and other SCAPI and OCAPI commands need an Account Manager API client. If the user has none, or `b2c setup inspect` shows no `clientId`, you can create one with the user's own sign-in. Requires user auth (`--user-auth`) with the **API Administrator** or **Account Administrator** role.
 
-```bash
-b2c am clients create \
-  --name "My API Client" \
-  --orgs <org-id> \
-  --password "securePassword123"
+**Always confirm the client in detail with the user before creating it.** A new client is a credential for the organization, and it cannot be deleted until it has been disabled for 7 days. Before running `create`, show the user every value — name, organization, roles, role tenant filter (the tenant IDs it can reach), scopes and default scopes, redirect URLs, and whether it is active — and wait for explicit approval. Ask again for each client; do not reuse an approval. Let the user choose the password, or generate one and tell them where it is stored; never print it.
 
-# with roles, role tenant filter, and redirect URLs
-b2c am clients create \
-  --name "CI/CD Pipeline" \
-  --orgs <org-id> \
-  --password "securePassword123" \
-  --roles SALESFORCE_COMMERCE_API \
-  --role-tenant-filter "SALESFORCE_COMMERCE_API:zzxy_prd" \
-  --redirect-urls "https://example.com/callback" \
-  --active
-```
+1. **Find the organization:** `b2c am orgs list --user-auth` (or `b2c am orgs get <org-id>`).
+2. **Choose access** for what the user needs:
+
+   | Need                                   | Roles and tenant filter                                     | Scopes                                                                                   |
+   | -------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+   | Every client                           |                                                             | `mail,roles,tenantFilter,openid`                                                         |
+   | Jobs, sites, and other SCAPI commands  | `SALESFORCE_COMMERCE_API` with tenant IDs (`abcd_001`)      | Per command: `sfcc.jobs.rw`, `sfcc.sites`, ... (`b2c docs read guide-authentication`)    |
+   | Storefront Next storefronts (SCAPI)    | `SALESFORCE_COMMERCE_API` with tenant IDs                   | `sfcc.storefront.storefronts.rw`, `sfcc.storefront.environments.rw`, `sfcc.storefront.deployments.rw` |
+   | Sandboxes and SLAS clients             | `Sandbox API User` with realm or tenant IDs                 |                                                                                          |
+
+   Add the same scopes to `--scopes` and `--default-scopes`. Only grant the tenants and scopes the user asked for.
+
+3. **Create it** after the user approves. The command prints the details and asks for confirmation; when the agent cannot answer the prompt, pass `--force` only after the user approved those exact details.
+
+   ```bash
+   b2c am clients create --user-auth \
+     --name "CI/CD Pipeline" \
+     --orgs <org-id> \
+     --password "<client-secret>" \
+     --roles SALESFORCE_COMMERCE_API \
+     --role-tenant-filter "SALESFORCE_COMMERCE_API:abcd_001,abcd_002" \
+     --scopes "mail,roles,tenantFilter,openid,sfcc.jobs.rw,sfcc.sites" \
+     --default-scopes "mail,roles,tenantFilter,openid,sfcc.jobs.rw,sfcc.sites" \
+     --active
+   ```
+
+   The client authenticates with its secret (`client_secret_basic`) unless `--token-endpoint-auth-method` says otherwise; a client set to `private_key_jwt` rejects the secret with `invalid_client` ("Invalid authentication method"). Clients are created inactive unless `--active` is set; activate later with `b2c am clients update <api-client-id> --active`.
+
+4. **Save it** in the instance configuration with the client ID from the output (`b2c-cli:b2c-config`):
+
+   ```bash
+   b2c setup instance create staging --hostname staging.example.com \
+     --client-id <api-client-id> --client-secret "<client-secret>" \
+     --short-code kv7kzm78 --tenant-id abcd_001
+   ```
+
+5. **Verify:** `b2c setup inspect`, then a read such as `b2c sites list`.
+
+Commands that use OCAPI (for example, with `--api-backend ocapi`) also need the client ID in the instance's Open Commerce API Settings, and WebDAV with client credentials needs WebDAV Client Permissions; see the [Authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md).
 
 ### Update Client
 
@@ -91,7 +116,7 @@ b2c am clients password <api-client-id> --current "oldPass" --new "newSecurePass
 
 ### Delete Client
 
-Client must be disabled for 7+ days before deletion. Destructive operation (safe mode check).
+Client must be disabled for 7+ days before deletion. Destructive operation (safe mode check); confirm with the user first.
 
 ```bash
 b2c am clients delete <api-client-id>

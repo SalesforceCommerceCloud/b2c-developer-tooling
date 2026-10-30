@@ -13,10 +13,10 @@ b2c setup inspect
 b2c mrt project list --mrt-backend scapi
 ```
 
-If the client is missing or the call returns 401/403, create or update one. Creating a client requires browser sign-in with the Account Manager **API Administrator** or **Account Administrator** role, and changes the organization; confirm with the user first.
+If the client is missing or the call returns 401/403, create or update one. Creating a client requires browser sign-in with the Account Manager **API Administrator** or **Account Administrator** role and adds a credential to the organization. **Before creating it, show the user every value (organization, roles, tenant filter, scopes, active) and wait for explicit approval.** The full procedure is in `b2c-cli:b2c-am` (Create Client).
 
 ```bash
-b2c am clients create \
+b2c am clients create --user-auth \
   --name "Storefront automation" \
   --orgs <org-id> \
   --password "<12+ character secret>" \

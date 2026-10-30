@@ -51,7 +51,7 @@ Setup creates the storefront's API and SLAS clients, eCDN configuration, MRT pro
 Creating a storefront from the CLI uses the SCAPI Storefronts API, which needs an Account Manager API client with the `Salesforce Commerce API` role and the storefront scopes. The API client that storefront setup creates doesn't have these scopes. If your configured client lacks them, create one (requires the API Administrator or Account Administrator role in Account Manager):
 
 ```bash
-b2c am clients create \
+b2c am clients create --user-auth \
   --name "Storefront automation" \
   --orgs <org-id> \
   --password "<client-secret>" \

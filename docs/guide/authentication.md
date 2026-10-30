@@ -54,6 +54,8 @@ Account Manager commands that manage organizations and API clients need roles on
 
 ### Creating an API Client
 
+To create the client from the CLI with your own sign-in, use [`b2c am clients create`](/cli/account-manager#b2c-am-clients-create). This requires the API Administrator or Account Administrator role; see [API Client Provisioning](./account-manager#api-client-provisioning). To create one in Account Manager:
+
 1. Log in to [Account Manager](https://account.demandware.com).
 2. Navigate to **API Client** in the left menu.
 3. Click **Add API Client**.
