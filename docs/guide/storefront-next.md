@@ -68,19 +68,17 @@ The user who sets up the storefront also needs the Managed Runtime User or Manag
 
 ### Generate the Project Code
 
-Generate the storefront code with the Storefront Next CLI, outside an existing project:
+Generate the storefront code with the `sfnext` CLI's `create-storefront` command. Because it runs before a project exists, run it with `pnpm dlx` outside any project; other `sfnext` commands run from the project's own dependency:
 
 ```bash
 pnpm dlx @salesforce/storefront-next-dev create-storefront -n my-storefront -V fashion --defaults
-# or, with the B2C CLI
-b2c sfnext create-storefront -n my-storefront -V fashion --defaults
 
 cd my-storefront
 pnpm install
 pnpm run dev
 ```
 
-Choose the `--vertical` (`-V`) that matches your site's data, such as `fashion` for the Market Street dataset or `cosmetic` for Beauty Next. Pin a template release with `--template-branch` to match your [dataset version](./realm-setup#storefront-datasets). Without `--defaults`, the command asks for extensions and configuration values. The default values point to a public demo instance, so replace the project's `.env` before you connect it to your own instance.
+Choose the `--vertical` (`-V`) that matches your site's data, such as `fashion` for the Market Street dataset or `cosmetic` for Beauty Next. Pin a template release with `--template-branch` to match your [dataset version](./realm-setup#storefront-datasets). Without `--defaults`, the command asks for extensions and configuration values. See the [`sfnext` CLI reference](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-cli.html) for all options. The default values point to a public demo instance, so replace the project's `.env` before you connect it to your own instance.
 
 ### Get the Environment File
 

@@ -41,7 +41,7 @@ b2c mrt project create "Market Street" --site MarketStreet --mrt-backend scapi
 
 This needs an API client with the storefront scopes. Setup provisions the MRT project and environment, API and SLAS clients, and eCDN. It runs asynchronously; check progress with `b2c mrt project get -p <project-id> --mrt-backend scapi`.
 
-Then generate the project code with `create-storefront` and fill in its `.env` from the storefront's **Download .env** in Business Manager. API client, scaffolding, and `.env`: [Storefront Next setup](STOREFRONT-NEXT.md).
+Then generate the project code with the `sfnext` CLI (`pnpm dlx @salesforce/storefront-next-dev create-storefront`) and fill in its `.env` from the storefront's **Download .env** in Business Manager. API client, scaffolding, and `.env`: [Storefront Next setup](STOREFRONT-NEXT.md).
 
 For a cartridge storefront, deploy the cartridges and set the site's cartridge path instead (`b2c-cli:b2c-code`, `b2c-cli:b2c-sites`).
 

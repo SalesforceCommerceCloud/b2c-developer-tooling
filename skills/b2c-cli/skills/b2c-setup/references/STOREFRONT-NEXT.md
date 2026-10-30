@@ -49,12 +49,10 @@ Setup takes up to 30 minutes and creates the MRT project and environment, the st
 
 ## 3. Generate the Project Code
 
-Run the scaffolding CLI outside an existing project. Both forms run the same `create-storefront` command:
+Use the `sfnext` CLI from `@salesforce/storefront-next-dev`. Other `sfnext` commands run from the project's own dependency (`pnpm sfnext ...`); `create-storefront` runs before a project exists, so run it with `pnpm dlx` outside any project:
 
 ```bash
 pnpm dlx @salesforce/storefront-next-dev create-storefront -n market-street -V fashion --defaults
-# or
-b2c sfnext create-storefront -n market-street -V fashion --defaults
 ```
 
 | Flag                    | Use                                                                                                                                              |
@@ -73,7 +71,7 @@ pnpm install
 pnpm run dev
 ```
 
-Template features: [Storefront Next Template Features](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-template-compare.md) (`b2c docs read sfnext/sfnext-template-compare`). Command reference: [Storefront Next CLI](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-cli.md) (`b2c docs read sfnext/sfnext-cli`). For project-level setup and configuration, use the `storefront-next:sfnext-project-setup` skill if it is installed.
+Template features: [Storefront Next Template Features](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-template-compare.md) (`b2c docs read sfnext/sfnext-template-compare`). `sfnext` command reference: [Command-Line Interface (CLI) Reference](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-cli.md) (`b2c docs read sfnext/sfnext-cli`). For project-level setup and configuration, use the `storefront-next:sfnext-project-setup` skill if it is installed.
 
 ## 4. Get the `.env` File
 
