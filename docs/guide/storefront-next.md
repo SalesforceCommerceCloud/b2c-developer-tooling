@@ -1,5 +1,5 @@
 ---
-description: Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts, add instances to an MRT project, manage environment variables, tail logs, and work with deployments.
+description: Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts and their API client, generate project code, get the environment file, add instances to an MRT project, manage environment variables, tail logs, and work with deployments.
 ---
 
 # Storefront Next
@@ -44,7 +44,64 @@ b2c mrt project create "My Storefront" --site MySite --mrt-backend scapi
 b2c mrt project get -p <project-id> --mrt-backend scapi
 ```
 
-Setup creates the storefront's API and SLAS clients, eCDN configuration, MRT project, and default environment. When it completes, download the project configuration and credentials from the storefront's detail page in Business Manager. See [project create](/cli/mrt#b2c-mrt-project-create) for the required scope.
+Setup creates the storefront's API and SLAS clients, eCDN configuration, MRT project, and default environment. It can take up to 30 minutes. The returned `storefrontId` is the MRT project ID.
+
+#### API Client
+
+Creating a storefront from the CLI uses the SCAPI Storefronts API, which needs an Account Manager API client with the `Salesforce Commerce API` role and the storefront scopes. The API client that storefront setup creates doesn't have these scopes. If your configured client lacks them, create one (requires the API Administrator or Account Administrator role in Account Manager):
+
+```bash
+b2c am clients create \
+  --name "Storefront automation" \
+  --orgs <org-id> \
+  --password "<client-secret>" \
+  --roles SALESFORCE_COMMERCE_API \
+  --role-tenant-filter "SALESFORCE_COMMERCE_API:abcd_001" \
+  --scopes "mail,roles,tenantFilter,openid,sfcc.storefront.storefronts.rw,sfcc.storefront.environments.rw,sfcc.storefront.deployments.rw" \
+  --default-scopes "mail,roles,tenantFilter,openid,sfcc.storefront.storefronts.rw,sfcc.storefront.environments.rw,sfcc.storefront.deployments.rw" \
+  --active
+```
+
+Add `sfcc.jobs.rw` and `sfcc.sites` to import data and rebuild search indexes with the same client. Then add the client ID, secret, short code, and tenant ID to your [configuration](./configuration). See [Scopes by Command](./authentication#scopes-by-command) and [Account Manager](./account-manager).
+
+The user who sets up the storefront also needs the Managed Runtime User or Managed Runtime Admin role in Account Manager and Business Manager access to storefronts.
+
+### Generate the Project Code
+
+Generate the storefront code with the Storefront Next CLI, outside an existing project:
+
+```bash
+pnpm dlx @salesforce/storefront-next-dev create-storefront -n my-storefront -V fashion --defaults
+# or, with the B2C CLI
+b2c sfnext create-storefront -n my-storefront -V fashion --defaults
+
+cd my-storefront
+pnpm install
+pnpm run dev
+```
+
+Choose the `--vertical` (`-V`) that matches your site's data, such as `fashion` for the Market Street dataset or `cosmetic` for Beauty Next. Pin a template release with `--template-branch` to match your [dataset version](./realm-setup#storefront-datasets). Without `--defaults`, the command asks for extensions and configuration values. The default values point to a public demo instance, so replace the project's `.env` before you connect it to your own instance.
+
+### Get the Environment File
+
+On the storefront's detail page in Business Manager (**Administration > Storefronts**), click **Download .env**. The file contains your instance settings, MRT project and environment IDs, and the storefront's Account Manager and SLAS client credentials. Replace the project's `.env` with its contents and keep it out of source control.
+
+::: warning
+The client secrets are available for download only once. No CLI command or API returns the file or its secrets: storefront and MRT environment variable values and SLAS client secrets are masked.
+:::
+
+Without the download, rebuild the non-secret values from your instance:
+
+| Variable                                                     | Where to find it                                                                               |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `MRT_PROJECT`                                                | `storefrontId` from `b2c mrt project list --mrt-backend scapi`                                 |
+| `MRT_TARGET`                                                 | The environment ID from `b2c mrt env list -p <project-id> --mrt-backend scapi`                 |
+| `PUBLIC__app__commerce__api__clientId`                       | The SLAS client named `Automated Storefront Step: <storefront name>` in `b2c slas client list` |
+| `PUBLIC__app__commerce__api__organizationId`                 | `f_ecom_` followed by your tenant ID, such as `f_ecom_abcd_001`                                |
+| `PUBLIC__app__commerce__api__shortCode`                      | Your instance's SCAPI short code                                                               |
+| `PUBLIC__app__defaultSiteId`, `PUBLIC__app__commerce__sites` | Your storefront's sites                                                                        |
+
+To replace a lost SLAS client secret, rotate it with `b2c slas client update <client-id> --secret <new-secret>`, then update it everywhere the storefront uses it, including the MRT environment. See [SLAS commands](/cli/slas). For the full SCAPI walkthrough, see [Create Storefront Next with SCAPI](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-scapi-create-storefront.html).
 
 ### Add Another Instance
 

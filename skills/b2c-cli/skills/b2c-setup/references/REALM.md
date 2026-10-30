@@ -23,7 +23,7 @@ b2c setup inspect -i staging
    ```
 
 2. **Code.** For cartridge storefronts, deploy and activate a code version (`b2c-cli:b2c-code`). Staging code uploads may need a certificate: see the [Hyperforce guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.md) (`b2c docs read guide-hyperforce`).
-3. **Storefront.** For Storefront Next, create the storefront on staging (Business Manager storefront setup, or `b2c mrt project create "My Storefront" --site MySite -i staging --mrt-backend scapi`). See `b2c-cli:b2c-storefronts`.
+3. **Storefront.** For Storefront Next, create the storefront on staging (Business Manager storefront setup, or `b2c mrt project create "My Storefront" --site MySite -i staging --mrt-backend scapi`). Scopes, project code, and `.env`: [Storefront Next setup](STOREFRONT-NEXT.md).
 4. **Verify** the site on staging before replicating.
 
 ## 3. Replicate to Production or Development

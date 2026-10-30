@@ -18,7 +18,7 @@ To explore the template locally, use `npx` from outside an existing project:
 npx @salesforce/b2c-cli sfnext create-storefront
 ```
 
-This creates local project files; it does not provision the storefront's B2C Commerce and MRT resources. See [Explore Storefront Next Code Locally](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-sf.html) for the local workflow.
+This creates local project files; it does not provision the storefront's B2C Commerce and MRT resources. To connect a generated project to a storefront on your instance, see [Generate the Project Code](/guide/storefront-next#generate-the-project-code). See [Explore Storefront Next Code Locally](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-quick-start-create-sf.html) for the local workflow.
 
 ## In-Project Commands
 

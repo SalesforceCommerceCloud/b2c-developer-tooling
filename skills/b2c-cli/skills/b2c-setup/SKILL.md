@@ -26,16 +26,17 @@ Recommend Safety Mode for shared instances: [safety](references/SAFETY.md).
 
 ## Choose a Path
 
-| Goal                                                      | Path                                          |
-| --------------------------------------------------------- | --------------------------------------------- |
-| A development sandbox with sample data and a storefront   | [Sandbox setup](references/SANDBOX.md)        |
-| A new realm: staging first, then production / development | [Realm setup](references/REALM.md)            |
-| Sample sites, catalogs, and content for any instance      | [Storefront datasets](references/DATASETS.md) |
-| Add an instance to an existing Storefront Next project    | `b2c-cli:b2c-storefronts`                     |
+| Goal                                                      | Path                                                   |
+| --------------------------------------------------------- | ------------------------------------------------------ |
+| A development sandbox with sample data and a storefront   | [Sandbox setup](references/SANDBOX.md)                 |
+| A new realm: staging first, then production / development | [Realm setup](references/REALM.md)                     |
+| Sample sites, catalogs, and content for any instance      | [Storefront datasets](references/DATASETS.md)          |
+| A Storefront Next storefront, project code, and `.env`    | [Storefront Next setup](references/STOREFRONT-NEXT.md) |
+| Add an instance to an existing Storefront Next project    | `b2c-cli:b2c-storefronts`                              |
 
 Every path starts the same way:
 
-1. **Connect.** Configure the instance and API client, then check with `b2c setup inspect`. See `b2c-cli:b2c-config`; API clients and roles: `b2c-cli:b2c-am`.
+1. **Connect.** Configure the instance and API client, then check with `b2c setup inspect`. See `b2c-cli:b2c-config`; API clients and roles: `b2c-cli:b2c-am`. Creating a Storefront Next storefront from the CLI needs storefront scopes on the client: [Storefront Next setup](references/STOREFRONT-NEXT.md#1-api-client-for-the-cli).
 2. **Check what exists.** `b2c sites list` and `b2c code list` show existing sites and code versions. Do not overwrite existing sites or settings without approval.
 3. **Load data** (staging or sandbox only), then **rebuild search indexes**.
 4. **Deploy code** for the storefront type (cartridges, or a Storefront Next storefront).
@@ -45,17 +46,17 @@ Every path starts the same way:
 
 Steps that depend on the product line, license, or feature. Use only the rows that apply to the user's realm.
 
-| Workflow                                   | Applies to                                 | Guidance                                                             |
-| ------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------- |
-| Instance connection, API clients, roles    | All                                        | `b2c-cli:b2c-config`, `b2c-cli:b2c-am`, `b2c-cli:b2c-bm-users-roles` |
-| Sample data and search indexes             | All                                        | [Storefront datasets](references/DATASETS.md), `b2c-cli:b2c-job`     |
-| Site archives and custom data              | All                                        | `b2c-cli:b2c-site-import-export`                                     |
-| Code and data replication                  | Realms (staging to production/development) | `b2c-cli:b2c-replication`                                            |
-| Storefront Next storefront and MRT project | Storefront Next                            | `b2c-cli:b2c-storefronts`, `b2c-cli:b2c-mrt`                         |
-| Cartridge storefronts (SFRA)               | Cartridge-based storefronts                | `b2c-cli:b2c-code`, `b2c-cli:b2c-sites`                              |
-| Shopper authentication (SLAS)              | Headless and composable storefronts        | `b2c-cli:b2c-slas`                                                   |
-| Commerce apps                              | Commerce apps                              | `b2c-cli:b2c-cap`                                                    |
-| eCDN zones and certificates                | Storefronts on eCDN                        | `b2c-cli:b2c-ecdn`                                                   |
+| Workflow                                   | Applies to                                 | Guidance                                                                                             |
+| ------------------------------------------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Instance connection, API clients, roles    | All                                        | `b2c-cli:b2c-config`, `b2c-cli:b2c-am`, `b2c-cli:b2c-bm-users-roles`                                 |
+| Sample data and search indexes             | All                                        | [Storefront datasets](references/DATASETS.md), `b2c-cli:b2c-job`                                     |
+| Site archives and custom data              | All                                        | `b2c-cli:b2c-site-import-export`                                                                     |
+| Code and data replication                  | Realms (staging to production/development) | `b2c-cli:b2c-replication`                                                                            |
+| Storefront Next storefront and MRT project | Storefront Next                            | [Storefront Next setup](references/STOREFRONT-NEXT.md), `b2c-cli:b2c-storefronts`, `b2c-cli:b2c-mrt` |
+| Cartridge storefronts (SFRA)               | Cartridge-based storefronts                | `b2c-cli:b2c-code`, `b2c-cli:b2c-sites`                                                              |
+| Shopper authentication (SLAS)              | Headless and composable storefronts        | `b2c-cli:b2c-slas`                                                                                   |
+| Commerce apps                              | Commerce apps                              | `b2c-cli:b2c-cap`                                                                                    |
+| eCDN zones and certificates                | Storefronts on eCDN                        | `b2c-cli:b2c-ecdn`                                                                                   |
 
 ## Related Skills
 

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-30T16:05:59.651Z",
+  "generatedAt": "2026-10-30T16:42:08.019Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -512,8 +512,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md",
-      "headings": "Start with Storefront Setup • Set Up Storefronts from the CLI • Create a Storefront • Add Another Instance • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
-      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts, add instances to an MRT project, manage environment variables, tail logs, and work with deployments."
+      "headings": "Start with Storefront Setup • Set Up Storefronts from the CLI • Create a Storefront • API Client • Generate the Project Code • Get the Environment File • Add Another Instance • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
+      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts and their API client, generate project code, get the environment file, add instances to an MRT project, manage environment variables, tail logs, and work with deployments."
     },
     {
       "id": "guide-third-party-plugins",

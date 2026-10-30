@@ -30,7 +30,7 @@ Business Manager storefront setup is the primary path; it also scaffolds the pro
 b2c mrt project create "My Storefront" --site MySite --mrt-backend scapi
 ```
 
-Creation runs asynchronously. See the `b2c-cli:b2c-mrt` skill for SCAPI backend setup and scopes (`sfcc.storefront.storefronts.rw`).
+Creation runs asynchronously. It needs an Account Manager API client with `sfcc.storefront.storefronts.rw`; the client that storefront setup creates does not have it. See the `b2c-cli:b2c-mrt` skill for SCAPI backend setup.
 
 ## Move a Storefront to Another Instance
 
@@ -75,7 +75,7 @@ The MRT project ID is the `mrt-site` value in the export, not the storefront nam
 
 ## Project Configuration and Credentials
 
-To develop locally or configure CI against a storefront, download its project configuration and credentials from the storefront's detail page in Business Manager. Use that file for the storefront project rather than copying values by hand. See the [Storefront Next guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md) (`b2c docs read guide-storefront-next`) for how the CLI uses common Storefront Next project variables.
+To develop locally or configure CI against a storefront, use **Download .env** on the storefront's detail page in Business Manager. Use that file for the storefront project rather than copying values by hand. Its client secrets download only once, and no CLI command or API returns them; to rebuild the other values or rotate a lost SLAS secret, see the Storefront Next setup reference in `b2c-cli:b2c-setup` or [Get the Environment File](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md#get-the-environment-file). See the [Storefront Next guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md) (`b2c docs read guide-storefront-next`) for how the CLI uses common Storefront Next project variables.
 
 ## Related Skills
 
