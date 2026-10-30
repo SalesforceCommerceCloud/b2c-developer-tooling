@@ -6,6 +6,8 @@ Using Claude Desktop? See [Claude Desktop (Cowork) setup](/guide/desktop-assista
 
 Start a new Claude Code session. To install for the current project only, run it from your project directory with `--scope project`.
 
+<!--@include: ./claude-plugin-auto-update.md-->
+
 <details class="details custom-block" data-setup-anchor="claude-manual">
 <summary>Manual MCP setup</summary>
 

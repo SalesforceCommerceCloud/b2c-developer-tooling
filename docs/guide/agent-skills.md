@@ -93,6 +93,8 @@ claude plugin install b2c-cli@b2c-developer-tooling
 
 Start a new session after installation. To install for the current project only, run it from your project directory with `--scope project`.
 
+<!--@include: ../_partials/claude-plugin-auto-update.md-->
+
 ::: details Update or remove
 
 ```bash
