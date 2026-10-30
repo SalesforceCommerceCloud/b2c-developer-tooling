@@ -16,6 +16,10 @@ const bundleType = process.env.MRT_BUNDLE_TYPE;
 const MRT_STREAMING_BUNDLES = ['stream', 'streaming', 'streamingHandler'];
 const isStreaming = MRT_STREAMING_BUNDLES.includes(bundleType ?? '');
 const ssrEntry = isStreaming ? 'streamingHandler' : 'ssr';
+// Streaming adapter selector, baked in at build time (there is no way to set
+// Lambda env vars on MRT at runtime). Defaults to the V1 adapter; set
+// MRT_ADAPTER_VERSION=v2 to ship a bundle that uses the V2 adapter.
+const adapterVersion = process.env.MRT_ADAPTER_VERSION;
 const enableSourceMaps = !process.env.DISABLE_SOURCE_MAPS;
 const format = process.env.MRT_EXPORT_TYPE === 'esm' ? 'esm' : 'cjs';
 
@@ -119,6 +123,7 @@ async function build() {
     define: {
       'process.env.NODE_ENV': '"production"',
       ...(bundleType ? {'process.env.MRT_BUNDLE_TYPE': `"${bundleType}"`} : {}),
+      ...(adapterVersion ? {'process.env.MRT_ADAPTER_VERSION': `"${adapterVersion}"`} : {}),
     },
     plugins: [bundlePlugin],
     // Inline dynamic imports to avoid chunk resolution issues in Lambda
