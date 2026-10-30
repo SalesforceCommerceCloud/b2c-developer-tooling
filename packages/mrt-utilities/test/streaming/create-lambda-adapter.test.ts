@@ -10,6 +10,7 @@ import {EventEmitter} from 'events';
 import type {Express} from 'express';
 import {expect} from 'chai';
 import sinon from 'sinon';
+import zlib from 'node:zlib';
 import {expressVersions} from '../helpers/express-versions.js';
 import {
   createStreamingLambdaAdapter,
@@ -840,6 +841,99 @@ describe('create-lambda-adapter', () => {
 
             expect(mockResponseStream.end.called).to.be.true;
             expect(res.finished).to.be.true;
+          });
+
+          // MRT requires at least one body write before the stream ends; otherwise the
+          // response stream terminates abnormally and MRT returns a 502.
+          it('should write empty buffer before ending for 200 with no body chunk', () => {
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(mockResponseStream, event, context);
+            res.status(200).end();
+
+            expect(mockResponseStream.write.calledWith(Buffer.alloc(0))).to.be.true;
+            expect(mockResponseStream.write.calledBefore(mockResponseStream.end)).to.be.true;
+          });
+
+          it('should write empty buffer before ending for 204 No Content', () => {
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(mockResponseStream, event, context);
+            res.status(204).end();
+
+            expect(mockResponseStream.write.calledWith(Buffer.alloc(0))).to.be.true;
+            expect(mockResponseStream.write.calledBefore(mockResponseStream.end)).to.be.true;
+          });
+
+          it('should write empty buffer before ending for 302 redirect with no body chunk', () => {
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(mockResponseStream, event, context);
+            res.status(302).end();
+
+            expect(mockResponseStream.write.calledWith(Buffer.alloc(0))).to.be.true;
+            expect(mockResponseStream.write.calledBefore(mockResponseStream.end)).to.be.true;
+          });
+
+          it('should write empty buffer before ending for 4xx with no body chunk', () => {
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(mockResponseStream, event, context);
+            res.status(400).end();
+
+            expect(mockResponseStream.write.calledWith(Buffer.alloc(0))).to.be.true;
+            expect(mockResponseStream.write.calledBefore(mockResponseStream.end)).to.be.true;
+          });
+
+          it('should write empty buffer before ending for 5xx with no body chunk', () => {
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(mockResponseStream, event, context);
+            res.status(502).end();
+
+            expect(mockResponseStream.write.calledWith(Buffer.alloc(0))).to.be.true;
+            expect(mockResponseStream.write.calledBefore(mockResponseStream.end)).to.be.true;
+          });
+
+          // endStream()'s own flush() also writes a zero-length buffer into zlib, so the
+          // discriminator is an empty write that lands BEFORE the first flush().
+          it('should write a zero-length chunk into the compression stream before flushing a body-less 200', async () => {
+            const stream = createCollectingStream();
+            const request = createRequestWithEncoding('gzip');
+            const event = createMockEvent({httpMethod: 'GET', headers: {'Accept-Encoding': 'gzip'}});
+            const context = createMockContext();
+
+            const realCreateGzip = zlib.createGzip;
+            let gzipWriteSpy: sinon.SinonSpy | undefined;
+            let gzipFlushSpy: sinon.SinonSpy | undefined;
+            const createGzipStub = sinon.stub(zlib, 'createGzip').callsFake((options) => {
+              const gzip = realCreateGzip(options);
+              gzipWriteSpy = sinon.spy(gzip, 'write');
+              gzipFlushSpy = sinon.spy(gzip, 'flush');
+              return gzip;
+            });
+
+            try {
+              const res = createExpressResponse(stream, event, context, request);
+              res.setHeader('Content-Type', 'application/json');
+              res.status(200).end();
+
+              await stream.waitForEnd();
+
+              expect(createGzipStub.calledOnce).to.be.true;
+              const primedBeforeFlush = gzipWriteSpy!
+                .getCalls()
+                .some(
+                  (call) =>
+                    Buffer.isBuffer(call.args[0]) &&
+                    call.args[0].length === 0 &&
+                    (!gzipFlushSpy!.called || call.calledBefore(gzipFlushSpy!.firstCall)),
+                );
+              expect(primedBeforeFlush).to.be.true;
+              expect(res.finished).to.be.true;
+            } finally {
+              createGzipStub.restore();
+            }
           });
 
           it('should write final chunk before ending', () => {
@@ -2580,6 +2674,89 @@ describe('create-lambda-adapter', () => {
             res.end('test');
 
             expect(mockResponseStream.write.called).to.be.true;
+          });
+        });
+
+        describe('backpressure handling', () => {
+          // A response stream whose first write() returns false and emits 'drain' on the
+          // next tick, on the stream itself. This mirrors the MRT response stream, which
+          // does not surface its drain on res — the condition that stalled React Router 7.16+.
+          function createBackpressuringStream(): MockWritable {
+            const stream = createMockWritable();
+            let saturated = false;
+            stream.write = sinon.stub().callsFake((chunk: any) => {
+              stream.chunks.push(Buffer.from(chunk));
+              if (!saturated) {
+                saturated = true;
+                setImmediate(() => {
+                  saturated = false;
+                  stream.emit('drain');
+                });
+                return false;
+              }
+              return true;
+            });
+            return stream;
+          }
+
+          it('reports a backpressured write as accepted so writers awaiting drain on res do not stall', async () => {
+            const destination = createBackpressuringStream();
+            const event = createMockEvent({httpMethod: 'GET'});
+            const context = createMockContext();
+            const res = createExpressResponse(destination, event, context);
+            res.setHeader('Content-Type', 'text/html');
+
+            // Same contract as @react-router/node's writeReadableStreamToWritable: when
+            // write() returns false, wait for 'drain' on res before the next chunk.
+            const parts = ['<!doctype html>', '<body>', 'streamed content', '</body>'];
+            const writeAll = async () => {
+              for (const part of parts) {
+                if (!res.write(part)) {
+                  await new Promise((resolve) => res.once('drain', resolve));
+                }
+              }
+              res.end();
+            };
+            const deadline = new Promise((_, reject) => setTimeout(() => reject(new Error('writer stalled')), 1000));
+            await Promise.race([writeAll(), deadline]);
+
+            expect(destination.end.called).to.be.true;
+            expect(res.finished).to.be.true;
+            expect(destination.getWrittenData('utf-8')).to.contain('streamed content');
+          });
+
+          it('reports accepted writes as writable on the compressed path', async () => {
+            const realCreateGzip = zlib.createGzip;
+            let gzip: ReturnType<typeof zlib.createGzip> | undefined;
+            const createGzipStub = sinon.stub(zlib, 'createGzip').callsFake((options) => {
+              gzip = realCreateGzip(options);
+              return gzip;
+            });
+
+            try {
+              const stream = createCollectingStream();
+              const request = createRequestWithEncoding('gzip');
+              const event = createMockEvent({httpMethod: 'GET', headers: {'Accept-Encoding': 'gzip'}});
+              const context = createMockContext();
+              const res = createExpressResponse(stream, event, context, request);
+              res.setHeader('Content-Type', 'text/html');
+
+              expect(res.write('<!doctype html>')).to.be.true;
+              expect(createGzipStub.calledOnce).to.be.true;
+
+              const realGzipWrite = gzip!.write.bind(gzip!);
+              const gzipWriteStub = sinon.stub(gzip!, 'write').callsFake((...args: any[]) => {
+                (realGzipWrite as any)(...args);
+                return false;
+              });
+              expect(res.write('<body>more content</body>')).to.be.true;
+              expect(gzipWriteStub.called).to.be.true;
+
+              res.end();
+              await stream.waitForEnd();
+            } finally {
+              createGzipStub.restore();
+            }
           });
         });
 
