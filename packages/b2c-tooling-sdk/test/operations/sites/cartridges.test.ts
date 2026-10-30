@@ -24,6 +24,10 @@ const TEST_HOST = 'test.demandware.net';
 const FAST_POLL = {waitOptions: {pollIntervalSeconds: 0}};
 const BASE_URL = `https://${TEST_HOST}/s/-/dw/data/v25_6`;
 const WEBDAV_BASE = `https://${TEST_HOST}/on/demandware.servlet/webdav/Sites`;
+const SCAPI_BM_CARTRIDGES =
+  'https://abcd1234.api.commercecloud.salesforce.com/site/sites/v1/organizations/f_ecom_zzxy_dev/sites/Sites-Site/custom-cartridges';
+const SCAPI_JOB_EXECUTIONS =
+  'https://abcd1234.api.commercecloud.salesforce.com/operation/jobs/v1/organizations/f_ecom_zzxy_dev/jobs/sfcc-site-archive-import/executions';
 
 /**
  * Creates MSW handlers for site archive import (upload zip + execute job + poll + cleanup).
@@ -364,6 +368,77 @@ describe('operations/sites/cartridges', () => {
       } catch (error: any) {
         expect(error.message).to.include('already exists');
       }
+    });
+  });
+
+  describe('Business Manager via SCAPI', () => {
+    let scapiInstance: any;
+
+    beforeEach(() => {
+      scapiInstance = {
+        ...mockInstance,
+        apiBackend: 'auto',
+        scapiClientConfig: {shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth: new MockAuthStrategy()},
+      };
+    });
+
+    it('sets the BM cartridge path with SCAPI custom-cartridges', async () => {
+      let putBody: any;
+      server.use(
+        http.put(SCAPI_BM_CARTRIDGES, async ({request}) => {
+          putBody = await request.json();
+          return HttpResponse.json({customCartridges: 'bm_a:bm_b'});
+        }),
+      );
+
+      const result = await setCartridgePath(scapiInstance, 'Sites-Site', 'bm_a:bm_b');
+
+      expect(putBody).to.deep.equal({customCartridges: 'bm_a:bm_b'});
+      expect(result.cartridgeList).to.deep.equal(['bm_a', 'bm_b']);
+    });
+
+    it('adds a BM cartridge by reading and writing SCAPI custom-cartridges', async () => {
+      server.use(
+        http.get(SCAPI_BM_CARTRIDGES, () => HttpResponse.json({customCartridges: 'bm_a'})),
+        http.put(SCAPI_BM_CARTRIDGES, async ({request}) => HttpResponse.json(await request.json())),
+      );
+
+      const result = await addCartridge(scapiInstance, 'Sites-Site', {name: 'bm_new', position: 'first'});
+
+      expect(result.cartridges).to.equal('bm_new:bm_a');
+    });
+
+    it('falls back to import without trying OCAPI when SCAPI is rejected', async () => {
+      let importedBuffer: Buffer | undefined;
+      server.use(
+        http.put(SCAPI_BM_CARTRIDGES, () => HttpResponse.json({title: 'Forbidden'}, {status: 403})),
+        // With SCAPI configured, the import job itself runs over SCAPI Jobs.
+        http.post(`${SCAPI_JOB_EXECUTIONS}`, () => HttpResponse.json({id: 'exec-1', executionStatus: 'pending'})),
+        http.get(`${SCAPI_JOB_EXECUTIONS}/exec-1`, () =>
+          HttpResponse.json({id: 'exec-1', executionStatus: 'finished', exitStatus: {code: 'OK', status: 'ok'}}),
+        ),
+        ...createImportHandlers((buf) => {
+          importedBuffer = buf;
+        }),
+      );
+
+      const result = await setCartridgePath(scapiInstance, 'Sites-Site', 'bm_a', FAST_POLL);
+
+      expect(result.cartridges).to.equal('bm_a');
+      expect(importedBuffer).to.exist;
+    });
+
+    it('uses import when the instance prefers OCAPI', async () => {
+      let importedBuffer: Buffer | undefined;
+      server.use(
+        ...createImportHandlers((buf) => {
+          importedBuffer = buf;
+        }),
+      );
+
+      await setCartridgePath({...scapiInstance, apiBackend: 'ocapi'}, 'Sites-Site', 'bm_a', FAST_POLL);
+
+      expect(importedBuffer).to.exist;
     });
   });
 });

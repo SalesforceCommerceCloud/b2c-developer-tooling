@@ -85,7 +85,7 @@ Found 2 site(s):
 Manage the cartridge path for a site — the ordered list of cartridges that are active on a storefront. Use `sites cartridges` or the singular alias `sites cartridge`.
 
 ::: tip Business Manager
-Use the `--bm` flag as a shorthand for `--site-id Sites-Site` to manage the Business Manager cartridge path. BM updates always use site archive import since OCAPI direct updates are not supported for the BM site.
+Use the `--bm` flag as a shorthand for `--site-id Sites-Site` to manage the Business Manager cartridge path. BM reads and updates use the SCAPI Sites API (`sfcc.sites.rw`) and fall back to site archive import when SCAPI isn't available. OCAPI can't update the BM site.
 :::
 
 ::: tip Automatic Fallback

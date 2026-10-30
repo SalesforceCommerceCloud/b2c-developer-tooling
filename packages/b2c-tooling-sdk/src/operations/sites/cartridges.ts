@@ -16,7 +16,7 @@ import {getLogger} from '../../logging/logger.js';
 import {siteArchiveImport, siteArchiveExportToBuffer} from '../jobs/site-archive.js';
 import type {WaitForJobOptions} from '../jobs/run.js';
 import {createSitesBackend} from './sites-backend.js';
-import type {CartridgePosition} from './sites-types.js';
+import type {CartridgePosition, SitesBackend} from './sites-types.js';
 
 /** The special site ID for Business Manager. */
 export const BM_SITE_ID = 'Sites-Site';
@@ -97,9 +97,9 @@ export async function getCartridgePath(instance: B2CInstance, siteId: string): P
 /**
  * Adds a cartridge to a site's cartridge path.
  *
- * For regular sites, uses the SCAPI-first Sites backend and falls back to site
- * archive import if neither direct backend is available.
- * For Business Manager (Sites-Site), always uses site archive import.
+ * Uses the SCAPI-first Sites backend and falls back to site archive import if
+ * no direct backend is available. Business Manager (Sites-Site) uses SCAPI only
+ * (OCAPI cannot update it), then site archive import.
  *
  * @param instance - B2C instance
  * @param siteId - Site ID
@@ -128,13 +128,12 @@ export async function addCartridge(
 ): Promise<CartridgePathResult> {
   const logger = getLogger();
 
-  // BM always uses import/export
-  if (siteId === BM_SITE_ID) {
-    logger.debug({siteId}, 'Business Manager site — using site archive import for cartridge add');
+  const backend = cartridgeWriteBackend(instance, siteId);
+  if (!backend) {
+    logger.debug({siteId}, 'Business Manager site without SCAPI — using site archive import for cartridge add');
     return addCartridgeViaImport(instance, siteId, options, updateOptions);
   }
 
-  const backend = createSitesBackend({instance});
   try {
     return toResult(siteId, await backend.addCartridge(siteId, options.name, options.position, options.target));
   } catch (backendError) {
@@ -147,9 +146,9 @@ export async function addCartridge(
 /**
  * Removes a cartridge from a site's cartridge path.
  *
- * For regular sites, uses the SCAPI-first Sites backend and falls back to site
- * archive import if neither direct backend is available.
- * For Business Manager (Sites-Site), always uses site archive import.
+ * Uses the SCAPI-first Sites backend and falls back to site archive import if
+ * no direct backend is available. Business Manager (Sites-Site) uses SCAPI only
+ * (OCAPI cannot update it), then site archive import.
  *
  * @param instance - B2C instance
  * @param siteId - Site ID
@@ -169,12 +168,12 @@ export async function removeCartridge(
 ): Promise<CartridgePathResult> {
   const logger = getLogger();
 
-  if (siteId === BM_SITE_ID) {
-    logger.debug({siteId}, 'Business Manager site — using site archive import for cartridge remove');
+  const backend = cartridgeWriteBackend(instance, siteId);
+  if (!backend) {
+    logger.debug({siteId}, 'Business Manager site without SCAPI — using site archive import for cartridge remove');
     return removeCartridgeViaImport(instance, siteId, cartridgeName, updateOptions);
   }
 
-  const backend = createSitesBackend({instance});
   try {
     return toResult(siteId, await backend.removeCartridge(siteId, cartridgeName));
   } catch (backendError) {
@@ -187,9 +186,9 @@ export async function removeCartridge(
 /**
  * Replaces the entire cartridge path for a site.
  *
- * For regular sites, uses the SCAPI-first Sites backend and falls back to site
- * archive import if neither direct backend is available.
- * For Business Manager (Sites-Site), always uses site archive import.
+ * Uses the SCAPI-first Sites backend and falls back to site archive import if
+ * no direct backend is available. Business Manager (Sites-Site) uses SCAPI only
+ * (OCAPI cannot update it), then site archive import.
  *
  * @param instance - B2C instance
  * @param siteId - Site ID
@@ -209,12 +208,12 @@ export async function setCartridgePath(
 ): Promise<CartridgePathResult> {
   const logger = getLogger();
 
-  if (siteId === BM_SITE_ID) {
-    logger.debug({siteId}, 'Business Manager site — using site archive import for cartridge set');
+  const backend = cartridgeWriteBackend(instance, siteId);
+  if (!backend) {
+    logger.debug({siteId}, 'Business Manager site without SCAPI — using site archive import for cartridge set');
     return setCartridgePathViaImport(instance, siteId, cartridges, updateOptions);
   }
 
-  const backend = createSitesBackend({instance});
   try {
     return toResult(siteId, await backend.setCartridgePath(siteId, cartridges));
   } catch (backendError) {
@@ -227,6 +226,18 @@ export async function setCartridgePath(
 // ---------------------------------------------------------------------------
 // Internal: Fallback handler
 // ---------------------------------------------------------------------------
+
+/**
+ * Picks the direct backend for a cartridge path update. Business Manager is
+ * SCAPI-only (OCAPI's site cartridges resource does not cover Sites-Site), so it
+ * returns undefined when SCAPI is unavailable or OCAPI is explicitly preferred,
+ * meaning the caller should go straight to site archive import.
+ */
+function cartridgeWriteBackend(instance: B2CInstance, siteId: string): SitesBackend | undefined {
+  if (siteId !== BM_SITE_ID) return createSitesBackend({instance});
+  if (!instance.scapiClientConfig || instance.apiBackend === 'ocapi') return undefined;
+  return createSitesBackend({instance, preference: 'scapi'});
+}
 
 async function handleFallback(
   instance: B2CInstance,
@@ -251,12 +262,12 @@ async function handleFallback(
       [
         `Failed to ${operation} cartridge path for site "${siteId}".`,
         '',
-        `SCAPI/OCAPI direct update failed: ${backendMessage}`,
+        `${siteId === BM_SITE_ID ? 'SCAPI' : 'SCAPI/OCAPI'} direct update failed: ${backendMessage}`,
         `Site archive import fallback also failed: ${importMessage}`,
         '',
         'To fix, configure one of:',
         '  • SCAPI Sites API: Grant sfcc.sites.rw',
-        '  • OCAPI Data API: Grant POST/PUT/DELETE on /sites/*/cartridges',
+        ...(siteId === BM_SITE_ID ? [] : ['  • OCAPI Data API: Grant POST/PUT/DELETE on /sites/*/cartridges']),
         '  • Site import: Grant job execution permissions for sfcc-site-archive-import and WebDAV write access to Impex/',
         '',
         'See: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html',
@@ -272,7 +283,7 @@ async function handleFallback(
 
 /**
  * Reads the current cartridge path via site archive export.
- * Used as a fallback when OCAPI GET also fails.
+ * Used as a fallback when the direct read also fails.
  */
 async function getCartridgePathViaExport(
   instance: B2CInstance,

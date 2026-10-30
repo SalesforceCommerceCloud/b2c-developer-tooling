@@ -6,6 +6,8 @@
 
 import {ux} from '@oclif/core';
 import {expect} from 'chai';
+import {http, HttpResponse} from 'msw';
+import {setupServer} from 'msw/node';
 import sinon from 'sinon';
 import SitesCartridgesList from '../../../../src/commands/sites/cartridges/list.js';
 import {createIsolatedConfigHooks, createTestCommand} from '../../../helpers/test-setup.js';
@@ -80,6 +82,34 @@ describe('sites cartridges list', () => {
     expect(result.siteId).to.equal('Sites-Site');
     expect(ocapiGet.firstCall.args[0]).to.equal('/sites/{site_id}');
     expect(ocapiGet.firstCall.args[1].params.path.site_id).to.equal('Sites-Site');
+  });
+
+  it('reads --bm from SCAPI custom-cartridges (no site resource for Sites-Site)', async () => {
+    const server = setupServer(
+      http.get(
+        'https://abcd1234.api.commercecloud.salesforce.com/site/sites/v1/organizations/f_ecom_zzxy_dev/sites/Sites-Site/custom-cartridges',
+        () => HttpResponse.json({customCartridges: 'bm_a:bm_b'}),
+      ),
+    );
+    server.listen({onUnhandledRequest: 'error'});
+    try {
+      const command: any = await createCommand({bm: true});
+      stubCommon(command, {jsonEnabled: true});
+      sinon.stub(command, 'flags').get(() => ({'site-id': undefined, bm: true}));
+      const auth = {
+        fetch: (url: string, init?: Parameters<typeof fetch>[1]) => fetch(url, init),
+        getAuthorizationHeader: async () => 'Bearer test',
+      };
+      sinon.stub(command, 'instance').get(() => ({
+        apiBackend: 'scapi',
+        scapiClientConfig: {shortCode: 'abcd1234', tenantId: 'zzxy_dev', auth},
+      }));
+
+      const result = await command.run();
+      expect(result.cartridgeList).to.deep.equal(['bm_a', 'bm_b']);
+    } finally {
+      server.close();
+    }
   });
 
   it('errors when neither --site-id nor --bm provided', async () => {
