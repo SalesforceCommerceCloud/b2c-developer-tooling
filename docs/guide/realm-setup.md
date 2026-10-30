@@ -132,7 +132,7 @@ b2c job export --storefront market-street -i staging --output ./storefront-expor
 b2c job import ./storefront-export/<archive-name> -i production --wait-for-storefront --show-log
 ```
 
-The storefront import requires the `user-id` in the export to be an Account Manager user who is authorized for the target. An export made with client credentials records the API client's service user; edit `user-id` before importing. Verify with `b2c mrt env list -p <project-id> -i production --mrt-backend scapi`.
+The storefront import requires the `user-id` in the export to be an Account Manager user who is authorized for the target. An export made with client credentials records the API client's service user; edit `user-id` before importing. Verify with `b2c mrt env list -p <project-id> -i production --mrt-backend scapi`. For all import requirements, see [Add Another Instance](./storefront-next#add-another-instance).
 
 <ExamplePrompt>
 

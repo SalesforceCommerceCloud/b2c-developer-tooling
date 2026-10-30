@@ -1,5 +1,5 @@
 ---
-description: Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Manage environment variables, tail logs, and work with deployments.
+description: Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts, add instances to an MRT project, manage environment variables, tail logs, and work with deployments.
 ---
 
 # Storefront Next
@@ -21,6 +21,68 @@ Use **storefront setup in Business Manager** to create your storefront and its A
 To load a sample site first, or to set up a new sandbox or realm end to end, see [Realm Setup](./realm-setup).
 
 Use the generated configuration for local development and the existing MRT resources for the operations below. For additional environments and production launch, follow [Launch Your Storefront Next](https://developer.salesforce.com/docs/commerce/sfnext/guide/sfnext-mrt-launch-storefront.html).
+
+## Set Up Storefronts from the CLI
+
+Choose between creating and importing by whether the Managed Runtime (MRT) project should already exist:
+
+| Goal                                                                 | Use                                                                        |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| A new storefront with a new MRT project                              | Storefront setup in Business Manager, or `b2c mrt project create`          |
+| Add another instance, such as production, to an existing MRT project | Export the storefront from the source instance and import it on the target |
+
+Creating a storefront always provisions a new MRT project, even when one with the same name and sites exists. Storefronts are not included in code and data replication. To keep staging and production in one project, create the storefront once, then export and import it on each other instance.
+
+### Create a Storefront
+
+Create a storefront for one or more existing sites with the SCAPI Storefronts API:
+
+```bash
+b2c mrt project create "My Storefront" --site MySite --mrt-backend scapi
+
+# Creation runs asynchronously; check setupStatus.
+b2c mrt project get -p <project-id> --mrt-backend scapi
+```
+
+Setup creates the storefront's API and SLAS clients, eCDN configuration, MRT project, and default environment. When it completes, download the project configuration and credentials from the storefront's detail page in Business Manager. See [project create](/cli/mrt#b2c-mrt-project-create) for the required scope.
+
+### Add Another Instance
+
+Exporting and importing storefronts requires B2C Commerce 26.10 or later on both instances.
+
+```bash
+# Export the storefront record from staging, by storefront name.
+b2c job export --storefront my-storefront -i staging --output ./storefront-export
+
+# Import it on production and wait for storefront setup.
+b2c job import ./storefront-export/<archive-name> -i production --wait-for-storefront --show-log
+```
+
+The export contains only the storefront record: its name, type, sites, MRT project (`mrt-site`), MRT organization (`org-slug`), and the acting `user-id`. The import creates the storefront and runs the `sfcc-post-import-setup-storefront` job. That job provisions the instance's API and SLAS clients, eCDN, and a new MRT environment in the existing project. Setup can take 20 minutes or more.
+
+The import fails unless all of these are true on the target:
+
+- **The sites exist** and do not belong to another storefront. Replicate or import them first.
+- **The storefront name is free.** Do not delete a storefront to retry an import. Deleting it removes its MRT project for every instance.
+- **The MRT organization matches** the target instance's organization.
+- **The user is authorized.** An import with client credentials uses the archive's `user-id`, which must be an Account Manager user with a Managed Runtime role in the organization. An export made with client credentials records the API client's service user instead; change `user-id` in `storefronts/<storefront-name>.xml` before you import.
+
+When an import fails, the summary error is generic. Check the `[DATAERROR]` lines in the job log, which `--show-log` prints.
+
+Source repository links are not imported; connect the new environment to source control separately. Verify that both instances show the same project, each with its own environment:
+
+```bash
+b2c mrt env list -p <project-id> -i staging --mrt-backend scapi
+b2c mrt env list -p <project-id> -i production --mrt-backend scapi
+```
+
+The project ID is the `mrt-site` value in the export, not the storefront name.
+
+<ExamplePrompt>
+
+> Our Storefront Next storefront runs on staging. Connect production to the same Managed Runtime project: check the import requirements, export the storefront from staging, and import it on production. Ask me before changing production.
+
+</ExamplePrompt>
 
 ## Prerequisites
 
