@@ -22,7 +22,9 @@ b2c setup inspect -i staging
    b2c job run Reindex -i staging --wait
    ```
 
-2. **Code.** For cartridge storefronts, deploy and activate a code version (`b2c-cli:b2c-code`). Staging code uploads may need a certificate: see the [Hyperforce guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.md) (`b2c docs read guide-hyperforce`).
+2. **Code.** For cartridge storefronts, deploy and activate a code version (`b2c-cli:b2c-code`).
+   - **Staging requires two-factor code upload.** Staging instances normally reject cartridge uploads without a client certificate (mTLS). The symptom is usually `403 Forbidden` on writes under `Cartridges` while reads and `Impex` writes succeed. Ask the user which setup their realm uses. On legacy realms, Salesforce Support provides a CA bundle and code goes to the `cert.staging.*` hostname. On Hyperforce realms, the user registers their own CA through eCDN (`b2c ecdn mtls create`, Hyperforce only). See [Two-Factor Authentication](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md#two-factor-authentication-mtls) and [Set Up Two-Factor Code Upload](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/hyperforce.md#set-up-two-factor-code-upload) (`b2c docs read guide-hyperforce`).
+   - **Hooks need a feature switch.** If the code registers order or basket hooks, Commerce API hook execution must be on (**Administration > Global Preferences > Feature Switches**). Without it, hooks are skipped and the warn log shows `SCAPI hook invoked but feature is disabled`.
 3. **Storefront.** For Storefront Next, create the storefront on staging (Business Manager storefront setup, or `b2c mrt project create "My Storefront" --site MySite -i staging --mrt-backend scapi`). Scopes, project code, and `.env`: [Storefront Next setup](STOREFRONT-NEXT.md).
 4. **Verify** the site on staging before replicating.
 

@@ -111,6 +111,10 @@ b2c mrt project create "Market Street" --site MarketStreet -i staging --mrt-back
 
 For cartridge storefronts, deploy and activate a code version; see [code commands](/cli/code).
 
+Staging instances normally require two-factor (mTLS) code upload, so cartridge uploads without a client certificate fail, usually with `403 Forbidden`. On legacy realms, the client certificate is signed by a CA bundle from Salesforce Support and uploads go to the `cert.staging` hostname. On Hyperforce realms, you register your own CA through eCDN; see [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload). To configure the certificate, see [Two-Factor Authentication](/guide/configuration#two-factor-authentication-mtls).
+
+If your cartridges register hooks for the Commerce API, also turn on hook execution in **Administration > Global Preferences > Feature Switches**. Otherwise the hooks don't run.
+
 ### 2. Replicate to Production
 
 Replicate from staging with replication jobs in three steps: code, global data, then site data. Global data creates the site on the target, so on the first replication, run it before site data. The `b2c-replication` skill has the job definitions.
