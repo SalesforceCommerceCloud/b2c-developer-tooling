@@ -2804,7 +2804,7 @@
             "oneOf": [
               {
                 "type": "string",
-                "example": "sk_live_a1b2c3d4e5f6",
+                "example": "sk_live_EXAMPLE",
                 "maxLength": 32768
               },
               {
@@ -2829,7 +2829,7 @@
             "value": 50
           },
           "PAYMENT_GATEWAY_API_KEY": {
-            "value": "sk_live_a1b2c3d4e5f6"
+            "value": "sk_live_EXAMPLE"
           },
           "LEGACY_CHECKOUT_URL": {}
         }
@@ -3912,7 +3912,7 @@
             "value": 50
           },
           "PAYMENT_GATEWAY_API_KEY": {
-            "value": "sk_live_a1b2c3d4e5f6"
+            "value": "sk_live_EXAMPLE"
           },
           "LEGACY_CHECKOUT_URL": {}
         }

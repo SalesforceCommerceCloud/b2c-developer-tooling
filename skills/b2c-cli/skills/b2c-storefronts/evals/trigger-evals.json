@@ -1,0 +1,11 @@
+[
+  {"query": "We have our Storefront Next storefront running against staging and now need it on production too. If I run storefront setup on production it makes a second Managed Runtime project — how do I hook production up to the project we already have?", "should_trigger": true},
+  {"query": "My storefront import on production failed with 'is not authorized to import storefront' and something about no user found in Account Manager. The export came from a CI job. What do I need to fix?", "should_trigger": true},
+  {"query": "We replicated code and data from staging to production but the composable storefront didn't come over. Is there a way to copy just the storefront record to the other instance?", "should_trigger": true},
+  {"query": "Should I create a new storefront or import one when I'm adding a development instance to our existing Storefront Next project?", "should_trigger": true},
+  {"query": "Where do I get the project configuration and credentials for my Storefront Next app so I can run it locally?", "should_trigger": true},
+  {"query": "I need to set PUBLIC__app__i18n__fallbackLng on my MRT staging environment. What's the command?", "should_trigger": false},
+  {"query": "How do I export the catalog and price books from my sandbox so I can diff them against production?", "should_trigger": false},
+  {"query": "List the sites on my sandbox and show which are online.", "should_trigger": false},
+  {"query": "Deploy my local PWA Kit build to the production MRT environment with a release message.", "should_trigger": false}
+]

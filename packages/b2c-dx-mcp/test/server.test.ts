@@ -7,6 +7,7 @@
 import {expect} from 'chai';
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
+import type {ToolContext} from '../src/utils/index.js';
 import type {Transport, JSONRPCMessage} from '@modelcontextprotocol/server';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 
@@ -14,6 +15,7 @@ import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
  * Mock telemetry for testing.
  */
 class MockTelemetry {
+  public agent?: string;
   public attributes: Record<string, unknown> = {};
   public events: Array<{name: string; attributes: Record<string, unknown>}> = [];
   public started = false;
@@ -34,6 +36,10 @@ class MockTelemetry {
   async sendEventAndFlush(name: string, attributes: Record<string, unknown> = {}): Promise<void> {
     this.sendEvent(name, attributes);
     await this.flush();
+  }
+
+  setAgentFallback(agent: string): void {
+    this.agent ??= agent;
   }
 
   async start(): Promise<void> {
@@ -375,6 +381,27 @@ describe('B2CDxMcpServer', () => {
       expect(mockTelemetry.events[0].attributes.errorCause).to.include('Error: Inner error');
     });
 
+    it('should send recorded CONTENT_READ events before TOOL_CALLED on success only', async () => {
+      const server = createServerWithHandlerCapture();
+      const read = {contentType: 'doc', contentId: 'dw.catalog.ProductMgr', offset: 0} as const;
+      const readHandler = (isError: boolean) => async (_args: unknown, context?: ToolContext) => {
+        context?.recordContentRead?.(read);
+        return {content: [{type: 'text' as const, text: 'ok'}], isError};
+      };
+
+      server.addTool('failed_read', 'Failed read', {}, readHandler(true));
+      await capturedHandler!({}, {});
+      server.addTool('docs_read', 'Read', {}, readHandler(false));
+      await capturedHandler!({}, {});
+
+      expect(mockTelemetry.events.map((event) => event.name)).to.deep.equal([
+        'TOOL_CALLED',
+        'CONTENT_READ',
+        'TOOL_CALLED',
+      ]);
+      expect(mockTelemetry.events[1].attributes).to.deep.equal({...read, via: 'docs_read'});
+    });
+
     it('should measure runTimeMs accurately', async () => {
       const server = createServerWithHandlerCapture();
 
@@ -442,6 +469,36 @@ describe('B2CDxMcpServer', () => {
       // Verify telemetry attributes were added
       expect(mockTelemetry.attributes.clientName).to.equal('test-client');
       expect(mockTelemetry.attributes.clientVersion).to.equal('2.0.0');
+    });
+
+    it('reports the client once and maps known clients to an agent', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+      server.server.getClientVersion = () => ({name: 'codex-mcp-client', version: '0.50.0'});
+
+      server.server.oninitialized?.();
+      server.server.oninitialized?.();
+
+      expect(mockTelemetry.agent).to.equal('codex');
+      expect(mockTelemetry.events.map((e) => e.name)).to.deep.equal(['CLIENT_CONNECTED']);
+      expect(mockTelemetry.events[0].attributes.protocolEra).to.equal('legacy');
+    });
+
+    it('does not set an agent for unknown clients', () => {
+      const mockTelemetry = new MockTelemetry();
+      const server = new B2CDxMcpServer(
+        {name: 'test-server', version: '1.0.0'},
+        {telemetry: mockTelemetry as unknown as Telemetry},
+      );
+      server.server.getClientVersion = () => ({name: 'my-custom-client', version: '1.0.0'});
+
+      server.server.oninitialized?.();
+
+      expect(mockTelemetry.agent).to.be.undefined;
+      expect(mockTelemetry.events.map((e) => e.name)).to.deep.equal(['CLIENT_CONNECTED']);
     });
 
     it('should handle missing client info gracefully', () => {

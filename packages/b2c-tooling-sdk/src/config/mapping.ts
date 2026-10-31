@@ -11,7 +11,9 @@
  *
  * @module config/mapping
  */
-import type {AuthConfig, AuthMethod} from '../auth/types.js';
+import type {AuthConfig, AuthMethod, AuthStrategy} from '../auth/types.js';
+import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
+import {getDefaultPublicClientId} from '../defaults.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
 import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
@@ -80,6 +82,7 @@ export const CONFIG_KEY_ALIASES: Record<string, string> = {
   cartridgesPath: 'cartridges',
   cloudOrigin: 'mrtOrigin',
   selfsigned: 'selfSigned',
+  'selfsigned-api': 'selfSignedApi',
   'oauth-scopes': 'oauthScopes',
   'auth-methods': 'authMethods',
   'client-auth-method': 'clientAuthMethod',
@@ -180,11 +183,13 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     siteId: json.siteId,
     shortCode: json.shortCode,
     tenantId: json.tenantId,
+    scapiBaseUrl: json.scapiBaseUrl,
     sandboxApiHost: json.sandboxApiHost,
     realm: json.realm,
     autoUpload: json.autoUpload,
     cartridges: parseCartridges(json.cartridges),
     importSetExclude: json.importSetExclude,
+    cartridgeIgnoreDirs: json.cartridgeIgnoreDirs,
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
@@ -204,6 +209,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     certificate: json.certificate,
     certificatePassphrase: json.certificatePassphrase,
     selfSigned: json.selfSigned,
+    selfSignedApi: json.selfSignedApi,
     // API backend
     apiBackend: json.apiBackend,
     // MRT backend
@@ -308,6 +314,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   if (config.tenantId !== undefined) {
     result.tenantId = config.tenantId;
   }
+  if (config.scapiBaseUrl !== undefined) {
+    result.scapiBaseUrl = config.scapiBaseUrl;
+  }
   if (config.authMethods !== undefined) {
     result.authMethods = config.authMethods;
   }
@@ -325,6 +334,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.importSetExclude !== undefined) {
     result.importSetExclude = config.importSetExclude;
+  }
+  if (config.cartridgeIgnoreDirs !== undefined) {
+    result.cartridgeIgnoreDirs = config.cartridgeIgnoreDirs;
   }
   if (config.catalogs !== undefined) {
     result.catalogs = config.catalogs;
@@ -361,6 +373,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.selfSigned !== undefined) {
     result.selfSigned = config.selfSigned;
+  }
+  if (config.selfSignedApi !== undefined) {
+    result.selfSignedApi = config.selfSignedApi;
   }
   if (config.apiBackend !== undefined) {
     result.apiBackend = config.apiBackend;
@@ -414,6 +429,16 @@ export interface MergeConfigOptions {
    * @default true
    */
   clientIdProtection?: boolean;
+  /**
+   * Which source supplied each base field (e.g. `password-store (pass:b2c-cli/_default)`).
+   * Used only in warning messages; defaults to "config file".
+   */
+  baseOrigins?: Partial<Record<keyof NormalizedConfig, string>>;
+  /**
+   * Where each override field came from (e.g. `.env (SFCC_OAUTH_CLIENT_ID)`, `--client-id`).
+   * Used only in warning messages; defaults to "override".
+   */
+  overrideOrigins?: Partial<Record<keyof NormalizedConfig, string>>;
 }
 
 /**
@@ -481,6 +506,8 @@ export function mergeConfigsWithProtection(
   const warnings: ConfigWarning[] = [];
   const hostnameProtection = options.hostnameProtection !== false;
   const clientIdProtection = options.clientIdProtection !== false;
+  const describeOverride = (field: keyof NormalizedConfig) => options.overrideOrigins?.[field] ?? 'override';
+  const describeBase = (field: keyof NormalizedConfig) => options.baseOrigins?.[field] ?? 'config file';
 
   // Check for hostname mismatch
   const hostnameExplicitlyProvided = Boolean(overrides.hostname);
@@ -490,10 +517,14 @@ export function mergeConfigsWithProtection(
   if (hostnameMismatch && hostnameProtection) {
     warnings.push({
       code: 'HOSTNAME_MISMATCH',
-      message: `Server override "${overrides.hostname}" differs from config file "${base.hostname}". Config file values ignored.`,
+      message:
+        `Server "${overrides.hostname}" from ${describeOverride('hostname')} differs from ` +
+        `"${base.hostname}" in ${describeBase('hostname')}. Ignoring values from ${describeBase('hostname')}.`,
       details: {
         providedHostname: overrides.hostname,
+        providedFrom: describeOverride('hostname'),
         configHostname: base.hostname,
+        configFrom: describeBase('hostname'),
       },
     });
 
@@ -524,11 +555,14 @@ export function mergeConfigsWithProtection(
       warnings.push({
         code: 'CLIENT_ID_MISMATCH',
         message:
-          `Client ID override "${overrides.clientId}" differs from config file "${base.clientId}". ` +
-          `Ignoring stored clientSecret for the configured client.`,
+          `Client ID "${overrides.clientId}" from ${describeOverride('clientId')} differs from ` +
+          `"${base.clientId}" in ${describeBase('clientId')}. ` +
+          `Ignoring the clientSecret from ${describeBase('clientSecret')}.`,
         details: {
           providedClientId: overrides.clientId,
+          providedFrom: describeOverride('clientId'),
           configClientId: base.clientId,
+          configFrom: describeBase('clientId'),
         },
       });
     }
@@ -549,11 +583,14 @@ export function mergeConfigsWithProtection(
       warnings.push({
         code: 'SLAS_CLIENT_ID_MISMATCH',
         message:
-          `SLAS client ID override "${overrides.slasClientId}" differs from config file "${base.slasClientId}". ` +
-          `Ignoring stored slasClientSecret for the configured client.`,
+          `SLAS client ID "${overrides.slasClientId}" from ${describeOverride('slasClientId')} differs from ` +
+          `"${base.slasClientId}" in ${describeBase('slasClientId')}. ` +
+          `Ignoring the slasClientSecret from ${describeBase('slasClientSecret')}.`,
         details: {
           providedSlasClientId: overrides.slasClientId,
+          providedFrom: describeOverride('slasClientId'),
           configSlasClientId: base.slasClientId,
+          configFrom: describeBase('slasClientId'),
         },
       });
     }
@@ -579,9 +616,11 @@ export function mergeConfigsWithProtection(
       clientAuthMethod: overrides.clientAuthMethod ?? base.clientAuthMethod,
       shortCode: overrides.shortCode ?? base.shortCode,
       tenantId: overrides.tenantId ?? base.tenantId,
+      scapiBaseUrl: overrides.scapiBaseUrl ?? base.scapiBaseUrl,
       autoUpload: overrides.autoUpload ?? base.autoUpload,
       cartridges: overrides.cartridges ?? base.cartridges,
       importSetExclude: overrides.importSetExclude ?? base.importSetExclude,
+      cartridgeIgnoreDirs: overrides.cartridgeIgnoreDirs ?? base.cartridgeIgnoreDirs,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
@@ -602,6 +641,7 @@ export function mergeConfigsWithProtection(
       certificate: overrides.certificate ?? base.certificate,
       certificatePassphrase: overrides.certificatePassphrase ?? base.certificatePassphrase,
       selfSigned: overrides.selfSigned ?? base.selfSigned,
+      selfSignedApi: overrides.selfSignedApi ?? base.selfSignedApi,
       // API backend
       apiBackend: overrides.apiBackend ?? base.apiBackend,
       // MRT backend
@@ -689,6 +729,7 @@ export function buildAuthConfigFromNormalized(config: NormalizedConfig): AuthCon
       jwtCertPath: config.jwtCertPath,
       jwtKeyPath: config.jwtKeyPath,
       jwtPassphrase: config.jwtPassphrase,
+      selfSignedApi: config.selfSignedApi,
     };
   }
 
@@ -751,5 +792,17 @@ export function createInstanceFromConfig(config: NormalizedConfig, options?: Cre
     };
   }
 
-  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy});
+  let webdavFallbackStrategy: AuthStrategy | (() => AuthStrategy) | undefined = options?.webdavFallbackStrategy;
+  if (!webdavFallbackStrategy && options?.defaultWebDavClient) {
+    webdavFallbackStrategy = () =>
+      createUserAuthStrategy({
+        clientId: getDefaultPublicClientId(config.accountManagerHost),
+        accountManagerHost: config.accountManagerHost,
+        redirectUri: options.redirectUri,
+        openBrowser: options.openBrowser,
+        selfSignedApi: config.selfSignedApi,
+      });
+  }
+
+  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy, webdavFallbackStrategy});
 }

@@ -1,5 +1,91 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.13.0
+
+### Minor Changes
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Added the `b2c-replication` skill: automate code and data replication from staging with a custom job built on the `ExecuteCodeReplication` and `ExecuteDataReplication` steps, including task reference and first-replication ordering for new sites. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Added the `b2c-storefronts` skill for Storefront Next: when to create a storefront versus import one to keep an instance in the same Managed Runtime project, storefront export/import requirements, and where to get project configuration and credentials. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - New `b2c-performance-triage` and `b2c-integration-triage` runbooks and a metrics signals catalog map slow, erroring or silent storefront and external-service symptoms to Metrics API categories and dimensions; checkout and edge-traffic runbooks point to the relevant signals. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#830](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/830) [`e372c0a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e372c0a589481acc9dc46e7d2d8564bcac951073) - `webdav_get_to_file` now streams downloads of any size instead of stopping at 64 MiB, and `webdav_get` reads up to 32,000 bytes per call (was 8,000). (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.8
+
+### Patch Changes
+
+- [#828](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/828) [`bf85de1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf85de16efeb775250f0bb27ee137133c90a5698) - Job-health, production-triage, and WebDAV skills now point agents to `webdav_get` `tail: true` for the end of a log and `webdav_get_to_file` for local downloads. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.7
+
+### Patch Changes
+
+- [#824](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/824) [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304) - Skills now check XML with `b2c validate`, replacing `xmllint` in the site archive and docs skills and validating `bm_extensions.xml` in the Business Manager extensions skill. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.6
+
+### Patch Changes
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - New `b2c auth status` command lists stored Account Manager sessions and how the configured instance authenticates, and `b2c setup inspect` now shows whether WebDAV, OCAPI, and SCAPI use Basic auth, an API client, or a browser login, and whether you're signed in. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#811](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/811) [`d52f6e2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d52f6e220733dac2992ce5a2db460817e4a0339a) - Updated the b2c-config skill's OpenShell guidance on what a re-run applies and when to recreate a sandbox. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - `code deploy`, `download`, `watch`, and `list`, the MCP `cartridge_deploy` tool, and VS Code code sync now find the instance's active code version without an API client, so you can upload with just your server and no `--code-version`. Activating a code version still needs an API client. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - WebDAV commands (`webdav`, `logs`, and `code deploy`/`download`/`watch`), the MCP WebDAV, logs, and cartridge tools, and VS Code code sync now work with only a server configured: you sign in to Account Manager in a browser and your Business Manager role authorizes access. MCP clients that support URL elicitation show the sign-in link instead of the server opening a browser. A refused request names the user and the functional permission they need. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.5
+
+### Patch Changes
+
+- [#807](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/807) [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d) - `b2c cap validate` now requires `app-configuration/translations/` when a CAP includes `tasksList.json`. Add the required Business Manager locales, and make sure `en-US.json` covers every config task key. Install runs this check unless you pass `--skip-validate`. (Thanks [@shauryemahajanSF](https://github.com/shauryemahajanSF)!)
+
+## 1.12.4
+
+### Patch Changes
+
+- [#806](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/806) [`cca5471`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cca5471c868b61cb2016ed12e6f4f39896b84a15) - eCDN guidance now covers the SCAPI (API) zone: which rules it supports and how to scope rules per instance. The edge traffic runbook now covers API/SLAS abuse and edge error spikes as well as bots. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - The logs guide and the `b2c-logs` skill explain how to read custom logger files (`custom-*.log`) and how `--filter` matches them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#804](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/804) [`48bc461`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/48bc461686ae1c8113c0a1fdfd8ded21d3e0032c) - Documented where `setup instance create` stores an instance, how to use it from other directories, and how to change an existing instance. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#803](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/803) [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e) - Corrected the WebDAV access key setup steps (user menu > Manage Access Keys, or `b2c bm access-key create`), clarified that the Account Manager password is not accepted for WebDAV or the script debugger, and added troubleshooting for 401 responses on WebDAV. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.3
+
+### Patch Changes
+
+- [#786](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/786) [`b098aec`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b098aec9f6613115f788423d25abe22ccf021c56) - Plugins now include an icon for Claude plugin listings. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#783](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/783) [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18) - Custom API skill now covers remote-include request context: no path parameters inside include targets, SCAPI locale format, and how include errors affect the parent (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Plugins now show readable names, such as "B2C DX MCP" and "B2C Operations", in Claude plugin browsers, and the B2C DX MCP plugin has an icon in Codex. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#775](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/775) [`6c6e1b2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c6e1b27aefafccfeb5e73de7a1314df0a30cfe0) - Storefront Next skills no longer mention the removed `mrt_bundle_push` MCP tool. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Fixed Claude marketplace sync warnings for the Storefront Next extensions and Page Designer skills; skill bundling now rejects angle brackets in skill descriptions. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.12.2
+
+### Patch Changes
+
+- [#774](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/774) [`13038ab`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/13038abf6363fb0ffbff5943b406c35ab9c50ee8) - Fix `b2c ecdn zones list` and `--zone <name>` lookup only seeing the first 25 zones; zones are now paged in full. The SDK adds a `listAllZones` helper. (Thanks [@jlbruno](https://github.com/jlbruno)!)
+
+- [#762](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/762) [`20784c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/20784c93ae31eb2f81d000b7755bd9f245c4ac29) - Document the new static IP flags and output fields in the `b2c-mrt` skill's project and environment command references. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+## 1.12.1
+
+### Patch Changes
+
+- [#759](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/759) [`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96) - Document `b2c job export --all` and the `all` ID for `--site`, `--catalog`, `--library`, `--inventory-list`, and `--price-book`, so agents choose these flags over hand-written data-units JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.12.0
 
 ### Minor Changes

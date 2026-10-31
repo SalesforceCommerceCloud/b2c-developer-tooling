@@ -29,19 +29,24 @@ every available signal.
   section `setup-and-access`; native `b2c-config`/`b2c-auth`, or the
   [authentication guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.md) (`b2c docs read guide-authentication`).
 
-Prefer dedicated MCP tools; discover available names once. Read
+Metrics are a closed beta; when unavailable (not enrolled, 403/404) record an access gap and continue. Prefer dedicated MCP tools; discover available names once. Read
 `skill://mcp/b2c-mcp-scapi/SKILL.md` before using `scapi_search`/`scapi_execute`, as those
 tools require. Read only the matching runbook/reference, not every linked skill.
+For any `metrics_get` question, read the matching runbook below before the first
+call: the series have traps (sparse latency, placeholders, missing dimensions)
+that the runbooks and signals catalog explain.
 Native assistants use the installed skill name; MCP can read these URIs or use
 `skills_read` with `collection: "b2c-ops"` and a task query.
 
 | Symptom                                                   | Toolkit path                                                                                                                                | Decision / detail                                                                                                                                                            |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Error spike or integration errors                         | `logs_list_files` -> returned `prefix` -> `logs_get_recent` with `count: 20`, `since`, and a relevant `search`                              | Defaults cover error/customerror, not every `custom-*` integration log. CLI: `b2c logs list` / `b2c logs get`.                                                               |
+| Error spike in application logs                           | `logs_list_files` -> returned `prefix` -> `logs_get_recent` with `count: 20`, `since`, and a relevant `search`                              | Defaults cover error/customerror, not every `custom-*` integration log. External service failures: use integration triage below. CLI: `b2c logs list` / `b2c logs get`. |
 | Failed job or stale data                                  | Code mode `codemode.describe("builtin/failed-job-triage")`, then run with fixed `from`/`to` -> execution IDs and `logFilePath` -> log tools | [Job health](skill://b2c-ops/b2c-job-health/SKILL.md) covers continuation, step details, exact WebDAV logs, and green-but-incomplete runs.                                        |
 | Checkout failures or orders down                          | Custom logs -> determine whether failures produce order records -> relevant data/traffic evidence                                           | [Checkout triage](skill://b2c-ops/b2c-checkout-triage/SKILL.md) distinguishes checkout symptoms from failed-order records.                                                   |
 | Find/count FAILED orders or investigate affected products | Verify Admin filter support; otherwise external OCAPI Shop order search -> safe IDs -> logs and selected Admin product reads                | [Failed-order triage](skill://b2c-ops/b2c-order-failure-triage/SKILL.md) owns enumeration, count/sample limits, and the workaround. No OCAPI helper exists inside code mode. |
 | Bot, scraper or abusive traffic; edge 403/429 spikes | Zone protections and available edge traffic evidence via code mode `cdn/zones/v1` | [Edge traffic triage](skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md) classifies sources, checks owners, and finds protection gaps before any rule change. |
+| Calls to external services failing, slow or stopped | Read [integration triage](skill://b2c-ops/b2c-integration-triage/SKILL.md) before any call; it drives `metrics_get` `third-party` by host, then service logs | Separates provider slowness, stopped calls and non-transport failures, and lists what metrics cannot show. |
+| Slow pages/APIs, rising 4xx/5xx, cache, hook or integration latency | Read [performance triage](skill://b2c-ops/b2c-performance-triage/SKILL.md) before any call; it drives `metrics_get` (closed beta) by category with short windows, then logs | Localizes the layer (stack, family, controller, hook, cache, host) and points to the metrics signals catalog. |
 | Suspected code change                                     | Code mode `builtin/code-version-inspect`: active/rollback versions and activation/modification timestamps                                                                             | Current metadata is not a complete activation history. Corroborate with release records.                                                             |
 | Runtime-only defect                                       | [MCP debugger](skill://mcp/b2c-mcp-debugger/SKILL.md) on an authorized reproduction target                                                          | Operator handoff is valid without source access. Do not halt production requests for routine triage.                                                                         |
 
@@ -52,8 +57,8 @@ Native assistants use the installed skill name; MCP can read these URIs or use
    to make managed MCP calls. Pass the same project/instance context to CLI fallbacks.
 2. Join signals using execution IDs, log timestamps, and affected record IDs.
    For exact job logs, pass the returned `logFilePath` to `webdav_get`; use byte
-   continuation or download locally. Recent-log tools remain preferred for
-   filtered samples/watches. A bounded result is not full-interval coverage.
+   continuation, `tail: true`, or download locally with `webdav_get_to_file`.
+   Recent-log tools remain preferred for filtered samples/watches. A bounded result is not full-interval coverage.
 3. Reuse code-mode snippet totals/window/`nextOffset`; do not return entire
    schemas or records. The failed-job snippet omits step details and healthy
    runs: use `builtin/job-execution-inspect` / `builtin/job-execution-review` selectively. Compare expected business data

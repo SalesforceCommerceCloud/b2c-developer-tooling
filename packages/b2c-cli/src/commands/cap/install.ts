@@ -47,8 +47,7 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
     ...JobCommand.baseFlags,
     'site-id': Flags.string({
       char: 's',
-      description: 'Site ID to install the Commerce App on',
-      required: true,
+      description: 'Site ID to install the Commerce App on (defaults to siteId from configuration)',
       aliases: ['site'],
     }),
     'clean-archive': Flags.boolean({
@@ -88,13 +87,18 @@ export default class CapInstall extends JobCommand<typeof CapInstall> {
 
     const {path} = this.args;
     const {
-      'site-id': site,
       'clean-archive': cleanArchive,
       timeout,
       'skip-validate': skipValidate,
       'create-pr': createPr,
       force,
     } = this.flags;
+    const site = this.flagOrConfig(this.flags['site-id'], 'siteId');
+    if (!site) {
+      this.error(
+        t('error.siteIdRequired', 'Site ID is required. Provide --site-id or set siteId in your configuration.'),
+      );
+    }
     const hostname = this.resolvedConfig.values.hostname!;
 
     // Validate first unless skipped

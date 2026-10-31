@@ -16,7 +16,6 @@ import type {ServicesLoader} from './tools/adapter.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
 import {createDiagnosticsTools} from './tools/diagnostics/index.js';
 import {createDocsTools} from './tools/docs/index.js';
-import {createMrtTools} from './tools/mrt/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
 import {createWebDavTools} from './tools/webdav/index.js';
 import {createCipTools} from './tools/cip/index.js';
@@ -60,7 +59,6 @@ export function createToolRegistry(
     ...createCipTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
     ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
-    ...createMrtTools(loadServices),
     ...createScapiTools(loadServices, serverContext?.scapiExecutions, scapiSchemas),
     createGuidanceTool(),
   ];

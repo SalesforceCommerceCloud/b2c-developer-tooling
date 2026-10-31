@@ -194,22 +194,24 @@ describe('code deploy', () => {
     expect(errorMessage).to.include('Cartridges were deployed');
   });
 
-  it('errors when no code version and no OAuth credentials', async () => {
+  it('finds the active version over WebDAV without OAuth credentials', async () => {
     const command: any = await createCommand({}, {cartridgePath: '.'});
-
-    sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
-    sinon.stub(command, 'hasOAuthCredentials').returns(false);
-    sinon.stub(command, 'log').returns(void 0);
-    sinon.stub(command, 'warn').returns(void 0);
+    const {instance, scriptsBackend} = stubCommon(command);
+    (command.hasOAuthCredentials as sinon.SinonStub).returns(false);
+    instance.config.codeVersion = undefined as unknown as string;
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
+    scriptsBackend.getActiveCodeVersion.resolves({id: 'active_v', active: true});
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    sinon.stub(command, 'findCartridgesWithProviders').resolves([{name: 'c1', src: '/tmp/c1', dest: 'c1'}]);
+    const uploadStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
 
-    await expectError(() => command.run());
+    const result = await command.run();
 
-    expect(errorStub.calledOnce).to.be.true;
-    const errorMessage = errorStub.firstCall.args[0];
-    expect(errorMessage).to.include('auto-discover');
+    expect(instance.config.codeVersion).to.equal('active_v');
+    expect(result).to.deep.include({codeVersion: 'active_v', activated: false});
   });
 
   it('errors when --reload flag set but no OAuth credentials', async () => {

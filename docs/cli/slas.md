@@ -16,9 +16,9 @@ These flags are available on all SLAS commands:
 
 ## Authentication
 
-SLAS commands work out of the box using the CLI's built-in public client, which authenticates via browser login (Authorization Code + PKCE flow). No API client configuration is required for interactive use.
+SLAS commands work without any API client configuration: you sign in with your Account Manager account in the browser.
 
-For automation or CI/CD, you can provide your own API client credentials.
+For automation or CI/CD, provide your own API client credentials.
 
 ### Required Roles
 

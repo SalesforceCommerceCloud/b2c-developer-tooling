@@ -11,6 +11,7 @@
  *
  * @module operations/mrt/tail-logs
  */
+import {createApiWebSocket, getApiDispatcher} from '../../clients/http-transport.js';
 import type {AuthStrategy} from '../../auth/types.js';
 import {DEFAULT_MRT_ORIGIN} from '../../clients/mrt.js';
 import {normalizeOriginUrl} from '../../config/mapping.js';
@@ -105,6 +106,7 @@ export async function createLoggingToken(options: CreateLoggingTokenOptions, aut
 
   const response = await auth.fetch(url, {
     method: 'POST',
+    dispatcher: getApiDispatcher(auth),
   });
 
   if (!response.ok) {
@@ -242,7 +244,7 @@ export async function tailMrtLogs(options: TailMrtLogsOptions, auth: AuthStrateg
   logger.debug({wsUrl: wsUrl.toString()}, '[MRT] Opening log stream WebSocket');
 
   // Step 3: Open WebSocket
-  const ws = new WebSocket(wsUrl.toString());
+  const ws = createApiWebSocket(wsUrl.toString(), auth);
   logger.trace({readyState: ws.readyState}, '[MRT] WebSocket instance created');
 
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;

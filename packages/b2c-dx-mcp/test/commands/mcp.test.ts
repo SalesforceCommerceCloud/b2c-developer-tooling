@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {createSandbox, type SinonStub, type SinonSandbox} from 'sinon';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
+import {getScapiOrigin, setScapiBaseUrl} from '@salesforce/b2c-tooling-sdk/clients';
 import {
   globalConfigSourceRegistry,
   type ConfigSource,
@@ -97,8 +98,8 @@ describe('McpServerCommand', () => {
     it('should lowercase tools input', async () => {
       const parse = McpServerCommand.flags.tools.parse;
       if (parse) {
-        const result = await parse('CARTRIDGE_DEPLOY,MRT_BUNDLE_PUSH', {} as never, {} as never);
-        expect(result).to.equal('cartridge_deploy,mrt_bundle_push');
+        const result = await parse('CARTRIDGE_DEPLOY,MRT_LOGS_WATCH', {} as never, {} as never);
+        expect(result).to.equal('cartridge_deploy,mrt_logs_watch');
       }
     });
   });
@@ -562,6 +563,37 @@ describe('McpServerCommand', () => {
           .true;
       } finally {
         fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('should apply the per-call project scapi-base-url to SCAPI clients', async () => {
+      const withOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-scapi-base-url-'));
+      const withoutOverride = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-scapi-base-url-'));
+      fs.writeFileSync(
+        path.join(withOverride, 'dw.json'),
+        JSON.stringify({hostname: 'local.invalid', 'scapi-base-url': 'https://localhost:25010'}),
+      );
+      fs.writeFileSync(path.join(withoutOverride, 'dw.json'), JSON.stringify({hostname: 'remote.invalid'}));
+
+      try {
+        (command as unknown as {flags: Record<string, unknown>}).flags = {};
+        sandbox.stub(command as unknown as Record<string, unknown>, 'getBaseConfigOptions').returns({});
+        const load = (
+          command as unknown as {
+            loadConfiguration(projectContext?: {projectDirectory?: string}): Promise<{values: Record<string, unknown>}>;
+          }
+        ).loadConfiguration.bind(command);
+
+        const local = await load({projectDirectory: withOverride});
+        expect(local.values.scapiBaseUrl).to.equal('https://localhost:25010');
+        expect(getScapiOrigin('kv7kzm78')).to.equal('https://localhost:25010');
+
+        await load({projectDirectory: withoutOverride});
+        expect(getScapiOrigin('kv7kzm78')).to.equal('https://kv7kzm78.api.commercecloud.salesforce.com');
+      } finally {
+        setScapiBaseUrl(undefined);
+        fs.rmSync(withOverride, {recursive: true, force: true});
+        fs.rmSync(withoutOverride, {recursive: true, force: true});
       }
     });
 

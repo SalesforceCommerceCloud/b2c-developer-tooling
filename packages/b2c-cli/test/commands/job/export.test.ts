@@ -122,6 +122,54 @@ describe('job export', () => {
     expect(exportStub.getCall(0).args[1]).to.deep.equal({storefronts: {'my-storefront': true}});
   });
 
+  async function runAndCaptureDataUnits(flags: Record<string, unknown>) {
+    const command: any = await createCommand({'no-download': true, json: true, ...flags});
+    stubCommon(command);
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+
+    const exportStub = sinon.stub().resolves({
+      execution: {execution_status: 'finished', exit_status: {code: 'OK'}} as any,
+      archiveFilename: 'all.zip',
+    });
+    command.operations = {...command.operations, siteArchiveExport: exportStub};
+
+    await command.run();
+    return exportStub.getCall(0).args[1];
+  }
+
+  it('exports every data unit with --all', async () => {
+    expect(await runAndCaptureDataUnits({all: true})).to.deep.equal({
+      global_data: {all: true},
+      sites: {all: {all: true}},
+      catalogs: {all: true},
+      catalog_static_resources: {all: true},
+      libraries: {all: true},
+      library_static_resources: {all: true},
+      inventory_lists: {all: true},
+      price_books: {all: true},
+      customer_lists: {all: true},
+    });
+  });
+
+  it('adds a composable storefront to --all', async () => {
+    const dataUnits = await runAndCaptureDataUnits({all: true, storefront: 'my-storefront'});
+    expect(dataUnits.storefronts).to.deep.equal({'my-storefront': true});
+    expect(dataUnits.customer_lists).to.deep.equal({all: true});
+  });
+
+  it('passes "all" through as an ID for ID-keyed flags', async () => {
+    expect(
+      await runAndCaptureDataUnits({site: ['all'], catalog: ['all'], 'price-book': ['all'], 'global-data': 'all'}),
+    ).to.deep.equal({
+      sites: {all: {all: true}},
+      catalogs: {all: true},
+      price_books: {all: true},
+      global_data: {all: true},
+    });
+  });
+
   for (const scenario of ['storefront flag', 'storefront JSON', 'other data', 'job failure']) {
     it(`preserves export errors and scopes the version note for ${scenario}`, async () => {
       const flags =

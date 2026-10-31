@@ -19,6 +19,9 @@ export default class SetupInstanceIndex extends BaseCommand<typeof SetupInstance
     '<%= config.bin %> setup instance create',
     '<%= config.bin %> setup instance list',
     '<%= config.bin %> setup instance set-active',
+    '<%= config.bin %> setup set password <access-key> --instance staging',
+    '<%= config.bin %> setup get --instance staging',
+    '<%= config.bin %> setup instance remove staging',
   ];
 
   async run(): Promise<void> {

@@ -167,6 +167,11 @@ describe('operations/code/deploy', () => {
       fs.writeFileSync(path.join(cartridgeDir, 'cartridge', 'scripts', 'a.js'), 'console.log("a");');
       fs.mkdirSync(path.join(cartridgeDir, 'node_modules', 'x'), {recursive: true});
       fs.writeFileSync(path.join(cartridgeDir, 'node_modules', 'x', 'index.js'), 'module.exports = {};');
+      const templatesDir = path.join(cartridgeDir, 'cartridge', 'templates', 'default');
+      fs.mkdirSync(path.join(templatesDir, 'build'), {recursive: true});
+      fs.writeFileSync(path.join(templatesDir, 'build', 'b.isml'), '<div></div>');
+      fs.mkdirSync(path.join(templatesDir, 'dist'), {recursive: true});
+      fs.writeFileSync(path.join(templatesDir, 'dist', 'd.isml'), '<div></div>');
 
       const cartridges: CartridgeMapping[] = [{name: 'app_test', src: cartridgeDir, dest: 'app_test'}];
 
@@ -193,6 +198,49 @@ describe('operations/code/deploy', () => {
       const entryPaths = Object.keys(zip.files).map((p) => p.replaceAll('\\', '/'));
       expect(entryPaths.some((p) => p.endsWith('cartridge/scripts/a.js'))).to.be.true;
       expect(entryPaths.some((p) => p.includes('node_modules/'))).to.be.false;
+      expect(entryPaths.some((p) => p.endsWith('templates/default/build/b.isml'))).to.be.true;
+      expect(entryPaths.some((p) => p.endsWith('templates/default/dist/d.isml'))).to.be.true;
+    });
+
+    it('should replace the default ignore list with ignoreDirs', async () => {
+      const cartridgeDir = path.join(tempDir, 'app_test');
+      fs.mkdirSync(path.join(cartridgeDir, 'cartridge', 'scripts'), {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, 'cartridge', 'scripts', 'a.js'), 'console.log("a");');
+      fs.mkdirSync(path.join(cartridgeDir, 'node_modules', 'x'), {recursive: true});
+      fs.writeFileSync(path.join(cartridgeDir, 'node_modules', 'x', 'index.js'), 'module.exports = {};');
+      const templatesDir = path.join(cartridgeDir, 'cartridge', 'templates', 'default');
+      fs.mkdirSync(path.join(templatesDir, 'build'), {recursive: true});
+      fs.writeFileSync(path.join(templatesDir, 'build', 'b.isml'), '<div></div>');
+      fs.mkdirSync(path.join(templatesDir, 'dist'), {recursive: true});
+      fs.writeFileSync(path.join(templatesDir, 'dist', 'd.isml'), '<div></div>');
+
+      const cartridges: CartridgeMapping[] = [{name: 'app_test', src: cartridgeDir, dest: 'app_test'}];
+
+      let uploadedZip: Buffer | null = null;
+
+      server.use(
+        http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+          const url = new URL(request.url);
+          if (request.method === 'PUT' && url.pathname.includes('_sync-') && url.pathname.endsWith('.zip')) {
+            uploadedZip = Buffer.from(await request.arrayBuffer());
+            return new HttpResponse(null, {status: 201});
+          }
+          if (request.method === 'POST' || request.method === 'DELETE') {
+            return new HttpResponse(null, {status: 204});
+          }
+          return new HttpResponse(null, {status: 404});
+        }),
+      );
+
+      await uploadCartridges(mockInstance, cartridges, {ignoreDirs: ['build']});
+
+      expect(uploadedZip).to.not.be.null;
+      const zip = await JSZip.loadAsync(uploadedZip!);
+      const entryPaths = Object.keys(zip.files).map((p) => p.replaceAll('\\', '/'));
+      expect(entryPaths.some((p) => p.endsWith('cartridge/scripts/a.js'))).to.be.true;
+      expect(entryPaths.some((p) => p.includes('node_modules/x/index.js'))).to.be.true;
+      expect(entryPaths.some((p) => p.endsWith('templates/default/build/b.isml'))).to.be.false;
+      expect(entryPaths.some((p) => p.endsWith('templates/default/dist/d.isml'))).to.be.true;
     });
 
     it('should throw error when cartridges array is empty', async () => {

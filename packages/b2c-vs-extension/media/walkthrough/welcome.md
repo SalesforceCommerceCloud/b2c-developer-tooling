@@ -5,7 +5,7 @@ Five focused steps and you're deployed.
 ## What you'll set up
 
 1. **Install the B2C CLI** *(optional — skip if you'll only use the views)*
-2. **Configure your instance** — drop a `dw.json` at your workspace root
+2. **Configure your instance** — drop a `dw.json` at your workspace root (just the hostname is enough to deploy)
 3. **Connect & authenticate** — verify the extension can talk to your sandbox
 4. **Deploy your first cartridge** — push code to your active code version
 5. **Generate from a scaffold** — boilerplate for new cartridges, controllers, pages

@@ -84,7 +84,11 @@ for (const mode of ['legacy', '2026-07-28'] as const) {
           arguments: {skillRead: true, code: 'async () => 42'},
         });
         expect(result.isError).not.to.equal(true);
-        expect(result.content).to.deep.equal([{type: 'text', text: '{"result":42}'}]);
+        const content = result.content as Array<{text: string; type: string}>;
+        expect(content).to.have.lengthOf(1);
+        expect(content[0].type).to.equal('text');
+        // Responses also carry environment-dependent `resolution` metadata; only the program result is asserted.
+        expect(JSON.parse(content[0].text)).to.have.property('result', 42);
       } finally {
         controller.abort();
         if (pid) {

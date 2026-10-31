@@ -15,7 +15,8 @@
  *
  * @module clients/scapi-client-factory
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import {
   createAuthMiddleware,
@@ -27,6 +28,7 @@ import {
 import {globalMiddlewareRegistry, type HttpClientType, type MiddlewareRegistry} from './middleware-registry.js';
 import {buildTenantScope} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 export interface BuildScapiClientOptions {
   /**
@@ -112,9 +114,13 @@ export function buildScapiClient<P extends Record<string, any>>(
     throw new Error(`[buildScapiClient] ${options.domainKey}: must provide either scopeCascade or defaultScopes.`);
   }
 
-  const client = createClient<P>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/${options.pathSegment}`,
-  });
+  const client = createHttpClient<P>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/${options.pathSegment}`,
+    },
+    auth,
+    {operation: 'SCAPI request'},
+  );
 
   if (options.scopeCascade) {
     // Cascade-aware path: bake the tenant scope into the auth strategy as a

@@ -78,6 +78,8 @@ b2c cap validate ./avalara-tax-v0.2.5.zip
 b2c cap validate ./commerce-avalara-tax-app-v0.2.5 --json
 ```
 
+A CAP that includes `app-configuration/tasksList.json` must also include `app-configuration/translations/`. That directory needs every required default Business Manager locale, `en-US.json` must list every `taskKey`, and the other locale files must use the same task keys. When `adminComponents.json` is shipped, `en-US.json` must also cover each component attribute. Write the real translation in each locale file.
+
 ### Package a CAP
 
 ```bash

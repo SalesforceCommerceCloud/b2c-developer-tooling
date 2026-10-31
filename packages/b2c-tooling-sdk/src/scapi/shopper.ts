@@ -5,11 +5,12 @@
  */
 
 import {toOrganizationId} from '../clients/custom-apis.js';
+import type {HttpTransportOptions} from '../clients/http-transport.js';
 import type {MiddlewareRegistry} from '../clients/middleware-registry.js';
 import {getGuestToken, refreshShopperToken} from '../slas/token.js';
 import type {SlasTokenConfig, SlasTokenResponse} from '../slas/types.js';
 
-export interface ScapiShopperConfig {
+export interface ScapiShopperConfig extends HttpTransportOptions {
   shortCode: string;
   tenantId: string;
   slasClientId?: string;
@@ -20,11 +21,14 @@ export interface ScapiShopperConfig {
 }
 
 /** Host-held shopper access; the token never reaches executed code. */
-export interface ScapiShopperAuth {
+export interface ScapiShopperAuth extends HttpTransportOptions {
   /** Bearer token for a guest shopper on the site. */
   getAccessToken(siteId: string, signal: AbortSignal): Promise<string>;
-  /** Drop a rejected token so the next request starts a new session. */
-  invalidate(siteId: string): void;
+  /**
+   * Drop a rejected token so the next request starts a new session. With `accessToken`, only a session
+   * still holding that token is dropped, so a late rejection cannot discard a newer session.
+   */
+  invalidate(siteId: string, accessToken?: string): void;
 }
 
 interface Session {
@@ -47,9 +51,13 @@ export class ScapiShopperSessions {
   /** Shopper auth bound to one configuration. */
   for(config: ScapiShopperConfig): ScapiShopperAuth {
     return {
+      selfSignedApi: config.selfSignedApi,
       getAccessToken: async (siteId, signal) => (await this.session(config, siteId, signal)).token.access_token,
-      invalidate: (siteId) => {
-        if (config.slasClientId) this.sessions.delete(sessionKey(config, siteId));
+      invalidate: (siteId, accessToken) => {
+        if (!config.slasClientId) return;
+        const key = sessionKey(config, siteId);
+        if (accessToken === undefined || this.sessions.get(key)?.token.access_token === accessToken)
+          this.sessions.delete(key);
       },
     };
   }
@@ -78,6 +86,7 @@ export class ScapiShopperSessions {
         siteId,
         redirectUri: config.redirectUri ?? 'http://localhost:3000/callback',
         middlewareRegistry: config.middlewareRegistry,
+        selfSignedApi: config.selfSignedApi,
       };
       pending = (async () => {
         let token: SlasTokenResponse | undefined;

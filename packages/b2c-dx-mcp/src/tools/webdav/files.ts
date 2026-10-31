@@ -6,10 +6,19 @@
 
 /* eslint-disable no-await-in-loop -- Streaming reads must advance sequentially. */
 
-import {open} from 'node:fs/promises';
+import {open, realpath, rm} from 'node:fs/promises';
+import path from 'node:path';
 import {WEBDAV_ROOTS} from '@salesforce/b2c-tooling-sdk/cli';
+import type {Services} from '../../services.js';
+import {isPathWithin} from '../../utils/paths.js';
 
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
+
+/**
+ * Largest webdav_get text range. Even dense text (~2 bytes per token after JSON escaping) stays well under
+ * Claude Code's default 25,000-token MCP tool output limit.
+ */
+export const MAX_TEXT_BYTES = 32_000;
 
 /** Accept server-returned job paths as well as paths relative to WebDAV Sites. */
 export function webdavPath(input: string): string {
@@ -27,16 +36,17 @@ export function webdavPath(input: string): string {
   return [root, ...parts.slice(1)].map((part) => encodeURIComponent(part)).join('/');
 }
 
-/** Bound downloads even when the response omits or misstates Content-Length. */
-export async function readFileResponse(response: Response, maxBytes = MAX_FILE_BYTES): Promise<Buffer> {
-  const limitMessage =
-    maxBytes === MAX_FILE_BYTES
-      ? 'File exceeds the 64 MiB transfer limit.'
-      : 'Server exceeded the requested byte range. Use outputPath to download the file.';
+async function assertOk(response: Response): Promise<void> {
   if (!response.ok) {
     await response.body?.cancel();
     throw new Error(`WebDAV HTTP ${response.status} ${response.statusText}. Check the path and WebDAV permissions.`);
   }
+}
+
+/** Bound range reads even when the response omits or misstates Content-Length. */
+export async function readFileResponse(response: Response, maxBytes: number): Promise<Buffer> {
+  const limitMessage = 'Server exceeded the requested byte range. Use webdav_get_to_file to download the file.';
+  await assertOk(response);
   const declared = Number(response.headers.get('content-length'));
   if (declared > maxBytes) {
     await response.body?.cancel();
@@ -60,37 +70,110 @@ export async function readFileResponse(response: Response, maxBytes = MAX_FILE_B
   return Buffer.concat(chunks, size);
 }
 
-/** Decode complete UTF-8 characters and leave any split trailing character for the next range. */
-export async function readTextRange(response: Response, offset: number, maxBytes: number) {
+/**
+ * Stream a download of any size to a new file (exclusive create, owner-only) and return its size.
+ * `onChunk` runs per received chunk, e.g. to refresh an idle timeout. A failed download removes the partial file.
+ */
+export async function writeResponseToFile(response: Response, outputPath: string, onChunk?: () => void) {
+  await assertOk(response);
+  const file = await open(outputPath, 'wx', 0o600);
+  let size = 0;
+  try {
+    const reader = response.body?.getReader();
+    if (reader) {
+      try {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          onChunk?.();
+          await file.writeFile(value);
+          size += value.byteLength;
+        }
+      } finally {
+        await reader.cancel();
+      }
+    }
+    await file.close();
+  } catch (error) {
+    await file.close().catch(() => {});
+    await rm(outputPath, {force: true});
+    throw error;
+  }
+  return size;
+}
+
+/**
+ * Decode complete UTF-8 characters and leave any split trailing character for the next range.
+ * With `offset` undefined, the response is a suffix (tail) range and the start comes from Content-Range.
+ */
+export async function readTextRange(response: Response, offset: number | undefined, maxBytes: number) {
+  const tail = offset === undefined;
   const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') ?? '');
   const beyondEnd = /^bytes \*\/(\d+)$/.exec(response.headers.get('content-range') ?? '');
-  if (response.status === 416 && beyondEnd && offset >= Number(beyondEnd[1])) {
+  if (response.status === 416 && beyondEnd && (tail || offset >= Number(beyondEnd[1]))) {
     await response.body?.cancel();
-    return {content: '', size: Number(beyondEnd[1]), offset, bytesRead: 0, nextOffset: null};
+    const size = Number(beyondEnd[1]);
+    return {content: '', size, offset: offset ?? size, bytesRead: 0, nextOffset: null};
   }
+  const start = range ? Number(range[1]) : 0;
   if (
-    (response.status === 206 && (!range || Number(range[1]) !== offset)) ||
-    (response.status === 200 && offset !== 0)
+    (response.status === 206 && (!range || (!tail && start !== offset))) ||
+    (response.status === 200 && !tail && offset !== 0)
   ) {
     await response.body?.cancel();
-    throw new Error('Server did not honor the requested byte range. Use outputPath to download the file.');
+    throw new Error('Server did not honor the requested byte range. Use webdav_get_to_file to download the file.');
   }
   const data = await readFileResponse(response, maxBytes);
   const size = range ? Number(range[3]) : data.length;
-  if (range && (Number(range[2]) + 1 !== offset + data.length || Number(range[2]) >= size)) {
+  const end = start + data.length;
+  if (range && (Number(range[2]) + 1 !== end || Number(range[2]) >= size || (tail && end !== size))) {
     throw new Error('Incomplete or invalid WebDAV byte range. Inspect the file size before retrying.');
   }
+  // A tail range can begin inside a multi-byte character; skip its continuation bytes (0x80-0xBF).
+  let skipped = 0;
+  if (tail && start > 0) {
+    while (skipped < Math.min(3, data.length) && data[skipped] >= 0x80 && data[skipped] <= 0xbf) skipped++;
+  }
+  const begin = start + skipped;
   let content: string;
   try {
-    content = new TextDecoder('utf8', {fatal: true, ignoreBOM: true}).decode(data, {
-      stream: offset + data.length < size,
-    });
+    // Always stream: a trailing partial character (next range, or a log mid-append) is left for nextOffset.
+    content = new TextDecoder('utf8', {fatal: true, ignoreBOM: true}).decode(data.subarray(skipped), {stream: true});
   } catch {
-    throw new Error('Range is not valid UTF-8 text. Use a returned nextOffset, or outputPath for a binary download.');
+    throw new Error(
+      'Range is not valid UTF-8 text. Use a returned nextOffset, or webdav_get_to_file for a binary download.',
+    );
   }
-  if (content.includes('\0')) throw new Error('File appears binary. Use outputPath to download it.');
-  const end = offset + Buffer.byteLength(content);
-  return {content, size, offset, bytesRead: data.length, nextOffset: end < size ? end : null};
+  if (content.includes('\0')) throw new Error('File appears binary. Use webdav_get_to_file to download it.');
+  const next = begin + Buffer.byteLength(content);
+  if (next === begin && data.length > skipped) {
+    throw new Error(
+      'Range contains no complete UTF-8 character. Retry later, or use webdav_get_to_file for a binary download.',
+    );
+  }
+  return {content, size, offset: begin, bytesRead: data.length, nextOffset: next < size ? next : null};
+}
+
+/**
+ * Resolve a local MCP-host path inside the project directory, following symlinks.
+ * For `create`, the parent directory must exist inside the project; the file itself must not exist
+ * (callers open it with the exclusive `wx` flag, which also refuses a symlink at that name).
+ */
+export async function resolveLocalPath(
+  services: Services,
+  pathArg: string,
+  projectDirectory: string | undefined,
+  {create = false}: {create?: boolean} = {},
+): Promise<string> {
+  const resolved = services.resolveWithProjectDirectory(pathArg, projectDirectory);
+  const root = await realpath(services.resolveProjectDirectory(projectDirectory).path);
+  const actual = create
+    ? path.join(await realpath(path.dirname(resolved)), path.basename(resolved))
+    : await realpath(resolved);
+  if (!isPathWithin(root, actual)) {
+    throw new Error(`Path must be within the project directory (${root}): ${pathArg}`);
+  }
+  return actual;
 }
 
 export async function readLocalFile(path: string): Promise<Buffer> {

@@ -1,5 +1,117 @@
 # Change Log
 
+## 1.7.2
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06)]:
+  - @salesforce/b2c-tooling-sdk@2.10.2
+
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [[`08c771f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/08c771f710e38ef8dcc57c945e233079a84a5d58)]:
+  - @salesforce/b2c-tooling-sdk@2.10.1
+
+## 1.7.0
+
+### Minor Changes
+
+- [#820](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/820) [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd) - New `b2c-dx.auth.usePluginSessionStore` setting keeps sign-in sessions in an installed B2C CLI plugin's auth session store instead of VS Code secret storage, so the extension and the CLI share sessions. Off by default. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`69afa8d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69afa8d250ded87639f9ae1a9ce320eefa3d6045), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304)]:
+  - @salesforce/b2c-tooling-sdk@2.10.0
+
+## 1.6.0
+
+### Minor Changes
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - Set up code sync with just your server: when nothing is configured, paste a hostname or Business Manager URL to create a `dw.json`. Uploads go to the active code version; the new **Select Code Version for Uploads** command picks a different one. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - `code deploy`, `download`, `watch`, and `list`, the MCP `cartridge_deploy` tool, and VS Code code sync now find the instance's active code version without an API client, so you can upload with just your server and no `--code-version`. Activating a code version still needs an API client. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#816](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/816) [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505) - WebDAV commands (`webdav`, `logs`, and `code deploy`/`download`/`watch`), the MCP WebDAV, logs, and cartridge tools, and VS Code code sync now work with only a server configured: you sign in to Account Manager in a browser and your Business Manager role authorizes access. MCP clients that support URL elicitation show the sign-in link instead of the server opening a browser. A refused request names the user and the functional permission they need. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505), [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505), [`d52f6e2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d52f6e220733dac2992ce5a2db460817e4a0339a), [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505), [`470a884`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/470a88465b1a88ab7fc86474c721bc7167018505)]:
+  - @salesforce/b2c-tooling-sdk@2.9.0
+
+## 1.5.9
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - The API Browser now only proxies requests to Commerce Cloud API hosts over HTTPS. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d), [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d), [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d)]:
+  - @salesforce/b2c-tooling-sdk@2.8.3
+
+## 1.5.8
+
+### Patch Changes
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - **Start Tailing Logs** now offers the instance's custom logger files (`custom-*.log`), plus `custom-` to tail all of them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48), [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102), [`3ec643a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3ec643a588f85fb5c6e50601d2c006b052260099), [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48), [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e)]:
+  - @salesforce/b2c-tooling-sdk@2.8.2
+
+## 1.5.7
+
+### Patch Changes
+
+- [#776](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/776) [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa) - Activation telemetry now includes coarse workspace context (whether an instance is configured, remote vs. local, first activation) to help prioritize improvements. No paths or configuration values are sent. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa), [`e615d07`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e615d07304a57464ab71148e6609c497e94b13fa), [`295d546`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/295d5468cda616844d9215430a71cc2f8a867a18), [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51), [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d), [`4f848fc`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4f848fcb58a26a20fa88cc340a48bf9e3d276a51)]:
+  - @salesforce/b2c-tooling-sdk@2.8.1
+
+## 1.5.6
+
+### Patch Changes
+
+- Updated dependencies [[`2d86737`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2d86737d68228c642d85cb4522ecca96b2cd40e8), [`13038ab`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/13038abf6363fb0ffbff5943b406c35ab9c50ee8), [`20784c9`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/20784c93ae31eb2f81d000b7755bd9f245c4ac29)]:
+  - @salesforce/b2c-tooling-sdk@2.8.0
+
+## 1.5.5
+
+### Patch Changes
+
+- [#768](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/768) [`6e76a4a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6e76a4a197e02e5c08b81421bd696e6ccb5f22f9) - Fix API Browser "Execute" doing nothing for some operations (e.g. Shopper Products getProduct). "Try it out" fields no longer prefill with sample values; only organizationId and siteId are filled from your config. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#766](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/766) [`e33f89e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e33f89eb684bb9a895eb0c01734a53dcac35a313) - Replace a Stripe-style placeholder key in the bundled Storefront Environments API examples so the VS Code extension passes Open VSX secret scanning (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies []:
+  - @salesforce/b2c-tooling-sdk@2.7.1
+
+## 1.5.4
+
+### Patch Changes
+
+- [#765](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/765) [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2) - Internal: added a development-only TLS option for local servers; no user-facing change. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#764](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/764) [`5779a35`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5779a35b1d552eaac5ce261aa91883b74324d606) - (internal) Add a SCAPI base URL override for local SCAPI development (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2), [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2), [`347389f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/347389f1a5254780b4e60980cdb0242be5e4a2f2), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`d6e0208`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d6e0208bc5d8c3b0c3c2f536ef9630ce26529028), [`5779a35`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/5779a35b1d552eaac5ce261aa91883b74324d606)]:
+  - @salesforce/b2c-tooling-sdk@2.7.0
+
+## 1.5.3
+
+### Patch Changes
+
+- Updated dependencies [[`0497681`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04976817b080f6a7afe809ccd7177bcdb36e6340)]:
+  - @salesforce/b2c-tooling-sdk@2.6.2
+
+## 1.5.2
+
+### Patch Changes
+
+- Updated dependencies [[`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8), [`18d4599`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/18d4599f21dd8110c3362c8f6451437e8a04b2f8)]:
+  - @salesforce/b2c-tooling-sdk@2.6.1
+
 ## 1.5.1
 
 ### Patch Changes

@@ -26,15 +26,16 @@ links to the source documentation.
 
 No B2C Commerce credentials required.
 
-| Tool                 | Capability                                                                   |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `skills_read`        | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
-| `docs_search`        | Find platform references, guides, Salesforce Help, and tooling docs.         |
-| `docs_read`          | Read a documentation article.                                                |
-| `docs_list`          | Browse documentation categories and titles.                                  |
-| `docs_schema_search` | Find XML import/export schemas.                                              |
-| `docs_schema_read`   | Read an XML schema.                                                          |
-| `docs_schema_list`   | List available XML schemas.                                                  |
+| Tool                  | Capability                                                                   |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `skills_read`         | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
+| `docs_search`         | Find platform references, guides, Salesforce Help, and tooling docs.         |
+| `docs_read`           | Read a documentation article.                                                |
+| `docs_list`           | Browse documentation categories and titles.                                  |
+| `docs_schema_search`  | Find XML import/export schemas.                                              |
+| `docs_schema_read`    | Read an XML schema.                                                          |
+| `docs_schema_list`    | List available XML schemas.                                                  |
+| `validate_xml_schema` | Check import/export XML files against the schemas.                           |
 
 The included [skill collections](../guide/agent-skills) complement documentation
 with development patterns and operational workflows. No separate skills
@@ -155,7 +156,7 @@ Logs may contain sensitive data; see [data handling](./security#protect-credenti
 | `logs_watch`      | Start, list, or stop instance log watches.   |
 | `logs_watch_poll` | Retrieve entries from an instance log watch. |
 
-Instance logs require WebDAV log-read access.
+Instance logs need only your instance hostname; you'll be asked to sign in the first time.
 
 <ExamplePrompt>
 
@@ -163,9 +164,9 @@ Instance logs require WebDAV log-read access.
 
 </ExamplePrompt>
 
-### Managed Runtime logs
+### Managed Runtime logs {#mrt}
 
-**Toolsets:** `DIAGNOSTICS`, `PWAV3`, `STOREFRONTNEXT`
+**Toolsets:** `DIAGNOSTICS`, `MRT`, `PWAV3`, `STOREFRONTNEXT`
 
 | Tool                  | Capability                                 |
 | --------------------- | ------------------------------------------ |
@@ -219,20 +220,10 @@ sandbox and end sessions when finished. See [debugger access](./security#debugge
 | ------------------ | ------------------------------------------------------------------------------------- |
 | `cartridge_deploy` | Upload cartridges or selected files to a code version; optionally activate/reload it. |
 
-Cartridges require WebDAV write access. Code-version discovery and reload use
-SCAPI (`sfcc.scripts` / `sfcc.scripts.rw`) with OCAPI compatibility where available.
+Uploading cartridges needs only your instance hostname; code goes to the active
+code version. Activating or reloading a code version needs an API client with the
+`sfcc.scripts.rw` scope, plus `short-code` and `tenant-id`.
 Check [deployment permissions](./security#deployments) before connecting.
-
-### Managed Runtime {#mrt}
-
-**Toolsets:** `MRT`, `PWAV3`, `STOREFRONTNEXT`
-
-| Tool              | Capability                                                   |
-| ----------------- | ------------------------------------------------------------ |
-| `mrt_bundle_push` | Publish a pre-built storefront bundle; optionally deploy it. |
-
-Bundle publishing requires an [MRT API key and project](../guide/authentication#managed-runtime-api-key),
-plus an environment when deploying.
 
 ## Instance files {#webdav}
 
@@ -242,14 +233,20 @@ Browse instance directories, read exact job logs, and upload or download files
 without installing the CLI separately. Upload text directly or transfer files
 from the machine running the MCP server.
 
-| Tool          | Capability                                                               |
-| ------------- | ------------------------------------------------------------------------ |
-| `webdav_list` | List a directory with file sizes and modification dates.                 |
-| `webdav_get`  | Read part of a text file or download a whole file.                       |
-| `webdav_put`  | Upload text or a local file; replace existing files only when requested. |
+| Tool                 | Capability                                                               |
+| -------------------- | ------------------------------------------------------------------------ |
+| `webdav_list`        | List a directory with file sizes and modification dates.                 |
+| `webdav_get`         | Read part of a text file, or its end (`tail`), without writing locally.  |
+| `webdav_get_to_file` | Download a whole file, including binary archives, to a new local file.   |
+| `webdav_put`         | Upload text or a local file; replace existing files only when requested. |
 
-Requires WebDAV access to the selected directory. Whole-file transfers are limited
-to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+With only a hostname configured, the first call asks you to
+[sign in](../guide/authentication#webdav-access) with your Account Manager account,
+and your Business Manager roles decide what you can access. This also applies to logs
+and cartridge uploads. Run `b2c auth logout` to sign out. `webdav_get` returns up to 32,000
+bytes per call; whole-file downloads have no size limit, and uploads are limited to 64 MiB.
+Upload folders must already exist; local downloads require a new filename.
+Local files must be inside the project directory.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).
 
@@ -298,14 +295,16 @@ See [analytics access](./security#cip).
 
 `metrics_get` reads B2C Commerce metrics. Requires tenant access
 to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
+Pass `summarize: true` to get per-series statistics (point count, sum, min, max,
+average, peak time) instead of every data point, which keeps long windows readable.
 
 ## Configuration inspection
 
 **Toolsets:** `DIAGNOSTICS`, `CIP`
 
-| Tool             | Capability                                                               |
-| ---------------- | ------------------------------------------------------------------------ |
-| `config_inspect` | Check resolved configuration and targets; secrets are masked by default. |
+| Tool             | Capability                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| `config_inspect` | Check resolved configuration, targets, and authentication; secrets are masked by default. |
 
 ## Toolsets for customization
 
@@ -313,10 +312,10 @@ to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
 | ---------------- | ---------------------------------------------------------------- |
 | `CARTRIDGES`     | Cartridge deployment and instance diagnostics.                   |
 | `DIAGNOSTICS`    | Debugging, instance/MRT logs, and configuration inspection.      |
-| `MRT`            | Managed Runtime bundle publishing and deployment.                |
-| `PWAV3`          | Shared MRT and SCAPI tools for PWA Kit projects.                 |
+| `MRT`            | Managed Runtime log streaming.                                   |
+| `PWAV3`          | Shared MRT log and SCAPI tools for PWA Kit projects.             |
 | `SCAPI`          | API development, instance diagnostics, and optional metrics.     |
-| `STOREFRONTNEXT` | Shared MRT and SCAPI tools for Storefront Next projects.         |
+| `STOREFRONTNEXT` | Shared MRT log and SCAPI tools for Storefront Next projects.     |
 | `CIP`            | Analytics report discovery, warehouse metadata, and SQL queries. |
 
 Skills and documentation are included in every toolset. Shared tools appear once.

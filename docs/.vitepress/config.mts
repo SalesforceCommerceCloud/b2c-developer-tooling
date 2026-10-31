@@ -124,6 +124,7 @@ const toolkitSidebar = [
         ],
       },
       {text: 'Agent Skills', link: '/guide/agent-skills'},
+      {text: 'Desktop Assistants', link: '/guide/desktop-assistants'},
     ],
   },
   {
@@ -216,6 +217,7 @@ const referenceSidebar = [
       {text: 'Sites', link: '/cli/sites'},
       {text: 'SLAS', link: '/cli/slas'},
       {text: 'Storefront Next', link: '/cli/sfnext'},
+      {text: 'Validate', link: '/cli/validate'},
       {text: 'WebDAV', link: '/cli/webdav'},
       {text: 'Logging', link: '/cli/logging'},
     ],

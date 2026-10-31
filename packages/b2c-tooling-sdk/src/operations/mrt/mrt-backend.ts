@@ -37,6 +37,24 @@ export type MrtBackendPreference = 'auto' | 'legacy' | 'scapi';
 export type MrtBackend = 'legacy' | 'scapi';
 
 /**
+ * Thrown by a SCAPI MRT backend branch when the caller's inputs cannot satisfy
+ * a SCAPI request before it is attempted — e.g. `clone` without a display name,
+ * or `project create` with no sites. It is a *pre-execution* failure (nothing
+ * reached the platform), so {@link runMrtWithFallback} treats it like the safe
+ * {@link isFallbackTrigger} statuses: under `auto` with a legacy target it falls
+ * back to legacy (which validates — and often honors — the same inputs its own
+ * way); under explicit `--mrt-backend scapi` it surfaces so the user sees the
+ * missing SCAPI requirement. Keep these throws distinct from a plain `Error`,
+ * which never triggers fallback.
+ */
+export class MrtScapiPreconditionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MrtScapiPreconditionError';
+  }
+}
+
+/**
  * SCAPI MRT connection bundle: everything a SCAPI MRT operation needs to build a
  * client. The presence of one signals SCAPI eligibility to
  * {@link resolveMrtBackend} / {@link runMrtWithFallback}.
@@ -57,15 +75,13 @@ export interface ScapiMrtConnection {
  * Error message for when explicit `--mrt-backend scapi` is requested but the
  * SCAPI MRT prerequisites are missing. Names both reasons the connection can
  * be unavailable — missing coordinates OR an auth flow SCAPI Admin does not
- * accept. Unlike the OCAPI {@link scapiUnavailableMessage}, MRT resolves auth
- * through the shared `getOAuthStrategy()` path, so a stored `b2c auth client`
- * session counts as a supported flow here.
+ * accept.
  */
 export function mrtScapiUnavailableMessage(): string {
   return (
     `The SCAPI MRT backend requires shortCode, tenantId, and an OAuth flow SCAPI Admin accepts ` +
-    `that can request the sfcc.storefront.* scopes — client-credentials or JWT Bearer, configured ` +
-    `directly (--client-id/--client-secret or JWT) or as a stored \`b2c auth client\` session. ` +
+    `that can request the sfcc.storefront.* scopes — client-credentials (--client-id/--client-secret) ` +
+    `or JWT Bearer. ` +
     `Browser user auth (Authorization Code + PKCE or the deprecated implicit flow) is not supported ` +
     `for SCAPI Admin as of B2C Commerce release ${SCAPI_CAPABILITY_BASELINE_RELEASE}. ` +
     `Provide --short-code and --tenant-id with a supported flow, or use --mrt-backend legacy ` +
@@ -172,10 +188,13 @@ export async function runMrtWithFallback<T>(
   try {
     return {backend: 'scapi', value: await branches.scapi()};
   } catch (error) {
-    // Rethrow the real SCAPI error on ambiguous/non-safe failures, or when
-    // there is no legacy target to fall back to (falling back would only
-    // surface a misleading "provide an API key" error).
-    if (!isFallbackTrigger(error) || !canFallbackToLegacy) {
+    // Fall back on a safe SCAPI rejection or a pre-execution precondition the
+    // SCAPI branch could not satisfy (e.g. a legacy-style invocation with no
+    // SCAPI display name). Rethrow the real SCAPI error on ambiguous/non-safe
+    // failures, or when there is no legacy target to fall back to (falling back
+    // would only surface a misleading "provide an API key" error).
+    const canFallback = isFallbackTrigger(error) || error instanceof MrtScapiPreconditionError;
+    if (!canFallback || !canFallbackToLegacy) {
       throw error;
     }
     const reason = error instanceof Error ? error.message : String(error);

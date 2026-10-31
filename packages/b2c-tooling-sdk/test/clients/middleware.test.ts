@@ -372,7 +372,7 @@ describe('clients/middleware', () => {
     it('preserves redirect, credentials, abort signal, and body through request modifications', async () => {
       const controller = new AbortController();
       const middleware = createExtraParamsMiddleware({
-        headers: {'x-mobify': 'true'},
+        headers: {'x-test-header': 'true'},
         query: {diagnostic: 'true'},
         body: {extra: 'value'},
       });
@@ -389,7 +389,7 @@ describe('clients/middleware', () => {
       if (!(result instanceof Request)) throw new Error('Expected a Request');
       expect(result.redirect).to.equal('manual');
       expect(result.credentials).to.equal('include');
-      expect(result.headers.get('x-mobify')).to.equal('true');
+      expect(result.headers.get('x-test-header')).to.equal('true');
       expect(new URL(result.url).searchParams.get('diagnostic')).to.equal('true');
       expect(await result.json()).to.deep.equal({original: 'value', extra: 'value'});
       controller.abort();
@@ -967,6 +967,25 @@ describe('clients/middleware', () => {
       // ctx.fetch is only used for the retry; the initial 429 response already occurred.
       expect(callCount).to.equal(1);
       expect(finalResponse.status).to.equal(200);
+    });
+
+    it('retries with the client fetch from openapi-fetch options', async () => {
+      const middleware = createRateLimitMiddleware({maxRetries: 1, baseDelayMs: 0, maxDelayMs: 0});
+      type OnResponseParams = Parameters<NonNullable<typeof middleware.onResponse>>[0];
+      const requests: string[] = [];
+      const clientFetch = async (req: Request) => {
+        requests.push(req.url);
+        return new Response('ok', {status: 200});
+      };
+
+      const finalResponse = (await middleware.onResponse!({
+        request: new Request('https://example.com/rate', {method: 'GET'}),
+        response: new Response('rate-limited', {status: 429}),
+        options: {fetch: clientFetch},
+      } as unknown as OnResponseParams)) as Response;
+
+      expect(finalResponse.status).to.equal(200);
+      expect(requests).to.deep.equal(['https://example.com/rate']);
     });
 
     it('does not retry when openapi-fetch does not provide a fetch helper', async () => {

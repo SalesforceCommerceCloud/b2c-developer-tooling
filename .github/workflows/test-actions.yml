@@ -23,6 +23,9 @@ env:
   SFCC_DISABLE_TELEMETRY: true
   SFCC_LOG_LEVEL: trace
 
+permissions:
+  contents: read
+
 jobs:
   action-metadata:
     name: 'Action release metadata'

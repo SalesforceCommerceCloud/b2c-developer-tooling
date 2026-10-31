@@ -28,6 +28,8 @@ export default class JobExport extends JobCommand<typeof JobExport> {
     '<%= config.bin %> <%= command.id %> --site RefArch --site-data content,site_preferences',
     '<%= config.bin %> <%= command.id %> --storefront my-storefront',
     '<%= config.bin %> <%= command.id %> --catalog storefront-catalog',
+    '<%= config.bin %> <%= command.id %> --site all --catalog all',
+    '<%= config.bin %> <%= command.id %> --all --output ./full-export',
     '<%= config.bin %> <%= command.id %> --data-units \'{"global_data":{"meta_data":true}}\'',
     '<%= config.bin %> <%= command.id %> --output ./exports --no-download',
   ];
@@ -40,7 +42,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       default: './export',
     }),
     site: Flags.string({
-      description: 'Site IDs to export (comma-separated)',
+      description: 'Site IDs to export (comma-separated, or "all")',
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
@@ -52,31 +54,46 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       description: 'Site data units to export (comma-separated: content,site_preferences,etc.)',
     }),
     catalog: Flags.string({
-      description: 'Catalog IDs to export (comma-separated)',
+      description: 'Catalog IDs to export (comma-separated, or "all")',
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
     }),
     library: Flags.string({
-      description: 'Library IDs to export (comma-separated)',
+      description: 'Library IDs to export (comma-separated, or "all")',
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
     }),
     'inventory-list': Flags.string({
-      description: 'Inventory list IDs to export (comma-separated)',
+      description: 'Inventory list IDs to export (comma-separated, or "all")',
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
     }),
     'price-book': Flags.string({
-      description: 'Price book IDs to export (comma-separated)',
+      description: 'Price book IDs to export (comma-separated, or "all")',
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
     }),
     'global-data': Flags.string({
-      description: 'Global data units to export (comma-separated: meta_data,custom_types,etc.)',
+      description: 'Global data units to export (comma-separated: meta_data,custom_types,etc., or "all")',
+    }),
+    all: Flags.boolean({
+      description:
+        'Export all data units: global data, sites, catalogs, libraries, static resources, inventory lists, price books, and customer lists',
+      default: false,
+      exclusive: [
+        'data-units',
+        'site',
+        'site-data',
+        'catalog',
+        'library',
+        'inventory-list',
+        'price-book',
+        'global-data',
+      ],
     }),
     'data-units': Flags.string({
       char: 'd',
@@ -116,6 +133,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     const {
       output,
+      all,
       site,
       storefront,
       'site-data': siteData,
@@ -146,6 +164,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
 
     // Build data units configuration
     const dataUnits = this.buildDataUnits({
+      all,
       dataUnitsJson,
       site,
       storefront,
@@ -161,7 +180,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       this.error(
         t(
           'commands.job.export.noDataUnits',
-          'No data units specified. Use --global-data, --site, --storefront, --catalog, etc. or --data-units',
+          'No data units specified. Use --all, --global-data, --site, --storefront, --catalog, etc. or --data-units',
         ),
       );
     }
@@ -301,6 +320,7 @@ export default class JobExport extends JobCommand<typeof JobExport> {
   }
 
   private buildDataUnits(params: {
+    all?: boolean;
     dataUnitsJson?: string;
     site?: string[];
     storefront?: string;
@@ -324,7 +344,20 @@ export default class JobExport extends JobCommand<typeof JobExport> {
       }
     }
 
-    const dataUnits: Partial<ExportDataUnitsConfiguration> = {};
+    // The platform treats "all" as a wildcard key in every ID-keyed data unit map.
+    const dataUnits: Partial<ExportDataUnitsConfiguration> = params.all
+      ? {
+          global_data: {all: true},
+          sites: {all: {all: true}},
+          catalogs: {all: true},
+          catalog_static_resources: {all: true},
+          libraries: {all: true},
+          library_static_resources: {all: true},
+          inventory_lists: {all: true},
+          price_books: {all: true},
+          customer_lists: {all: true},
+        }
+      : {};
 
     // Sites
     if (params.site && params.site.length > 0) {

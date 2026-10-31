@@ -117,26 +117,30 @@ For the full field reference, see the [Configuration guide](https://salesforceco
 Most commands that interact with a B2C Commerce instance require authentication. The CLI supports several methods:
 
 - **Client credentials (API client):** Configure `clientId` and `clientSecret` in dw.json or environment variables. This is the default for automated/CI use.
-- **Browser-based (implicit OAuth):** Use `--user-auth` on any OAuth-enabled command to authenticate interactively via the browser. This opens Account Manager in your default browser for login.
+- **Sign in with your account:** Use `--user-auth` on any OAuth-enabled command to sign in with your Account Manager account in the browser.
 - **Basic auth:** Configure `username` and `password` for WebDAV operations.
-- **Stateful sessions:** Use `b2c auth login` for persistent browser-based login sessions or `b2c auth client` for persistent client authentication. Later commands reuse the valid saved session when no other client is configured.
+- **Stateful sessions:** Use `b2c auth login` to stay signed in; later commands reuse the saved session when no other client is configured. Client credentials need no session (each command gets a token); `b2c auth client` exists for `sfcc-ci client:auth` compatibility.
+- **Just a server:** code upload, logs, and `webdav` commands need only the hostname; the user signs in with their Account Manager account in the browser when asked.
+- **Check what's in use:** `b2c setup inspect` shows how the instance authenticates; `b2c auth status` shows who is signed in.
 
 ### `--user-auth` Flag
 
-Many commands support `--user-auth` to use browser-based OAuth instead of client credentials. As of B2C Commerce release 26.8, SCAPI Admin APIs do not support this flow; migrated commands use OCAPI in `auto` mode, while explicit SCAPI reports an actionable authentication error before making an API request. User auth remains useful when:
+Many commands support `--user-auth` to sign in with your account instead of using client credentials. SCAPI Admin APIs don't support it yet (release 26.8): with `--user-auth`, commands that also support OCAPI use it, and `--api-backend scapi` fails with an error. It's useful when:
 
 - You don't have a `clientSecret` configured
 - You need user-level permissions (e.g., Account Manager admin roles)
 - You're working interactively
 
 ```bash
-# Interactive browser-based auth for any OAuth command
+# Sign in with your account
 b2c sandbox list --user-auth
-b2c scapi schemas list --user-auth
+b2c am users list --user-auth
 b2c auth token --user-auth
 ```
 
-Coding agents can also use `--user-auth` — the browser flow works in any environment where a browser can be opened. The flag is exclusive with `--auth-methods`.
+Coding agents can use `--user-auth` wherever a browser can be opened. Don't combine it with `--auth-methods`.
+
+To sign in with the CLI's built-in client even when a client or access key is configured (for example, the configured client doesn't allow browser sign-in), use `--default-client` or `SFCC_DEFAULT_CLIENT=true`. It works for `auth login`, WebDAV, code upload, logs, sandbox, and Account Manager commands; OCAPI and SCAPI commands reject it. Don't combine it with `--client-id`, `--client-secret`, or `--auth-methods`.
 
 **Running behind a proxy:** If `localhost:8080` isn't reachable by the browser (e.g., running in a container or behind a reverse proxy), set `SFCC_REDIRECT_URI` to the proxy URL. The local OAuth server still listens on the default port (or `SFCC_OAUTH_LOCAL_PORT`), but the redirect URI sent to Account Manager will use your proxy URL. Add the proxy URL to the API client's redirect URLs in Account Manager.
 
@@ -255,7 +259,7 @@ b2c setup openshell --dry-run
 openshell sandbox exec -n b2c-<instance> -- b2c code list
 ```
 
-Edit `.openshell/<sandbox>/policy.yaml` and re-run to apply it; use `--recreate` after changing secrets or configuration. Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [Agent Sandboxing guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing.md#openshell) (`b2c docs read guide-agent-sandboxing`).
+Re-run to apply a changed safety level, Safety Mode rules, or an edited `.openshell/<sandbox>/policy.yaml` (an edited policy is kept; `--force` regenerates it); use `--recreate` after changing secrets or configuration, or when the command warns that sandbox settings changed (recreating removes uploaded files and attached agent providers). Add hosts with `--allow-host`. Only client credentials work in the sandbox (no browser login). See the [Agent Sandboxing guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-sandboxing.md#openshell) (`b2c docs read guide-agent-sandboxing`).
 
 ## Managing Instances
 
@@ -289,9 +293,11 @@ b2c setup instance create staging --hostname staging.example.com \
 b2c setup instance create staging \
   --hostname staging.example.com \
   --username admin \
-  --password secret \
+  --password <access-key> \
   --force
 ```
+
+`create` writes `dw.json` in the current directory (or the `--config` / `--project-directory` target, or the global default when no local `dw.json` exists) and prints the path. Commands run from another directory won't see it unless they pass `--config` or `--project-directory`, or the file is registered with `b2c setup default-config set <path>`. `create` fails for an existing name; change an existing instance with `b2c setup set <key> <value> --instance <name>`.
 
 `shortCode` and `tenantId` are optional. When present with stateless OAuth, setup tries SCAPI first to detect the active code version; otherwise `auto` uses OCAPI. If detection fails, interactive setup reports the reason and allows manual code-version entry.
 
@@ -462,7 +468,7 @@ curl -H "Authorization: Bearer $(b2c auth token)" \
   "https://your-instance.dx.commercecloud.salesforce.com/s/-/dw/data/v24_1/sites"
 ```
 
-The token is obtained using the `clientId` and `clientSecret` from your configuration (dw.json or environment variables). If only `clientId` is configured, or `--user-auth` is used, an implicit OAuth flow is used (browser-based).
+The token is obtained using the `clientId` and `clientSecret` from your configuration (dw.json or environment variables). If no secret is configured, or `--user-auth` is used, you sign in with your account in the browser.
 
 **Note:** This command returns **admin** tokens for OCAPI/Admin APIs. For **shopper** tokens (SLAS), see the `b2c-slas` skill.
 

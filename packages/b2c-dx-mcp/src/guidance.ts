@@ -9,7 +9,7 @@ import {GuidanceCatalog, GuidanceError, GUIDANCE_INDEX_URI} from '@salesforce/b2
 import {z} from 'zod';
 import type {B2CDxMcpServer} from './server.js';
 import {TOOLSETS} from './utils/constants.js';
-import type {McpTool, ToolResult} from './utils/types.js';
+import type {ContentRead, McpTool, ToolResult} from './utils/types.js';
 
 const inputSchema = {
   workspace: z
@@ -118,7 +118,7 @@ export function createGuidanceTool(): McpTool {
     inputSchema,
     outputSchema,
     toolsets: [...TOOLSETS],
-    async handler(args) {
+    async handler(args, context) {
       const parsed = z.object(inputSchema).strict().safeParse(args);
       if (!parsed.success)
         return errorResult(
@@ -128,13 +128,27 @@ export function createGuidanceTool(): McpTool {
           ),
         );
       try {
-        const structuredContent = {result: getCatalog().read(parsed.data)};
+        const result = getCatalog().read(parsed.data);
+        if (result.kind === 'read') {
+          context?.recordContentRead?.({
+            ...skillRead(result.uri),
+            ...(parsed.data.section && {section: parsed.data.section}),
+            offset: result.offset,
+          });
+        }
+        const structuredContent = {result};
         return {structuredContent, content: [{type: 'text', text: JSON.stringify(structuredContent)}]};
       } catch (error) {
         return errorResult(error);
       }
     },
   };
+}
+
+/** `skill://<collection>/<entry>/<path>` identifies entry `<collection>/<entry>`; `skill://index` is `index`. */
+function skillRead(uri: string): ContentRead {
+  const [collection, entry] = uri.slice('skill://'.length).split('/');
+  return {contentType: 'skill', contentId: entry ? `${collection}/${entry}` : collection, contentUri: uri};
 }
 
 function protocolError(error: unknown): ProtocolError {
@@ -153,7 +167,9 @@ export function registerGuidanceResources(server: B2CDxMcpServer, includeSharedS
   const catalog = catalogLoader(includeSharedSkills ? undefined : ['mcp'])();
   const read = async (uri: string): Promise<{contents: {uri: string; mimeType: string; text: string}[]}> => {
     try {
-      return {contents: [{uri, mimeType: 'text/markdown', text: catalog.readResource(uri)}]};
+      const text = catalog.readResource(uri);
+      server.recordContentRead('resources/read', skillRead(uri));
+      return {contents: [{uri, mimeType: 'text/markdown', text}]};
     } catch (error) {
       throw protocolError(error);
     }
@@ -194,7 +210,9 @@ export function registerGuidanceResources(server: B2CDxMcpServer, includeSharedS
     list: () => catalog.skills(),
     get(uri) {
       try {
-        return catalog.skill(uri);
+        const skill = catalog.skill(uri);
+        server.recordContentRead('skills/get', skillRead(skill.uri));
+        return skill;
       } catch (error) {
         throw protocolError(error);
       }

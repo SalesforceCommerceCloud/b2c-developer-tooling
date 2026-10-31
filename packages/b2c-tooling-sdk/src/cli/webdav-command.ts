@@ -69,6 +69,10 @@ export abstract class WebDavCommand<T extends typeof Command> extends InstanceCo
     }),
   };
 
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
+
   /**
    * Builds a full WebDAV path from the root and a relative path.
    *

@@ -14,6 +14,7 @@ export default defineConfig([
     version: 'stable',
     workspaceFolder: 'src/test/fixtures/empty-workspace',
     launchArgs: ['--user-data-dir', shortUserDataDir('jobs-menu-and-step-types')],
+    env: {SFCC_DISABLE_TELEMETRY: 'true'},
     mocha: {
       ui: 'tdd',
       timeout: 20000,

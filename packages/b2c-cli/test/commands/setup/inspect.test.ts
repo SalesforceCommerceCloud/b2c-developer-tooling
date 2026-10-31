@@ -15,6 +15,8 @@ import SetupInspect from '../../../src/commands/setup/inspect.js';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {runSilent} from '../../helpers/test-setup.js';
 import type {ConfigSourceInfo, NormalizedConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {saveAuthSession} from '@salesforce/b2c-tooling-sdk/auth';
+import {DEFAULT_PUBLIC_CLIENT_ID} from '@salesforce/b2c-tooling-sdk';
 
 function stubCommandConfigAndLogger(command: any): void {
   Object.defineProperty(command, 'config', {
@@ -470,6 +472,66 @@ describe('setup inspect', () => {
       await runSilent(() => command.run());
 
       expect(warnings).to.include('Sensitive values are displayed unmasked.');
+    });
+  });
+
+  describe('effective authentication', () => {
+    function inspect(values: Partial<NormalizedConfig>, json: boolean, verbose = false) {
+      const command = new SetupInspect([], {} as any);
+      (command as any).flags = {unmask: false, verbose};
+      stubJsonEnabled(command, json);
+      stubCommandConfigAndLogger(command);
+      stubResolvedConfig(command, values);
+      return command;
+    }
+
+    it('reports the browser login for WebDAV with only a server', async () => {
+      saveAuthSession({
+        clientId: DEFAULT_PUBLIC_CLIENT_ID,
+        flow: 'pkce',
+        accessToken: 'opaque',
+        refreshToken: 'refresh',
+        sub: 'dev@example.com',
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      });
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      const result = await inspect({hostname: 'my-sandbox.example.com'}, false).run();
+
+      expect(result.auth?.webdav).to.deep.equal({
+        method: 'user',
+        clientId: DEFAULT_PUBLIC_CLIENT_ID,
+        builtInClient: true,
+      });
+      expect(result.auth?.ocapi.method).to.equal('none');
+      const output = (stdoutStub.firstCall.args[0] as string).replaceAll(/\s+/g, ' ');
+      expect(output).to.include('auth WebDAV: signed in as dev@example.com');
+      expect(output).not.to.include('Effective Authentication');
+    });
+
+    it('summarizes unconfigured sign-in and API clients on one line', async () => {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      await inspect({hostname: 'my-sandbox.example.com'}, false).run();
+      await inspect(
+        {hostname: 'my-sandbox.example.com', username: 'u', password: 'p', clientId: 'c', clientSecret: 's'},
+        false,
+      ).run();
+      const [signIn, configured] = stdoutStub.args.map((args) => String(args[0]).replaceAll(/\s+/g, ' '));
+      expect(signIn).to.include('auth WebDAV: browser sign-in (not signed in)');
+      expect(configured).to.include('auth WebDAV: access key · OCAPI: API client');
+    });
+
+    it('shows authentication details with --verbose', async () => {
+      const stdoutStub = sinon.stub(ux, 'stdout');
+      await inspect({hostname: 'my-sandbox.example.com'}, false, true).run();
+      const output = (stdoutStub.firstCall.args[0] as string).replaceAll(/\s+/g, ' ');
+      expect(output).to.include('Effective Authentication');
+      expect(output).to.include('browser login (built-in client) — not signed in');
+      expect(output).to.include('b2c auth status');
+    });
+
+    it('omits authentication without a server', async () => {
+      const result = await inspect({clientId: 'my-client'}, true).run();
+      expect(result.auth).to.equal(undefined);
     });
   });
 

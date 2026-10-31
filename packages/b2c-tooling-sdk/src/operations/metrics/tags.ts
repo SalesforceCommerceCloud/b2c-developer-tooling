@@ -9,9 +9,9 @@
  *
  * The Metrics API returns each series as `{id, name, data}`, where `id`/`name`
  * pack every identifying dimension into a single display string using
- * inconsistent delimiters — e.g. `bdpx.product` (realm `.` apiFamily),
- * `bdpx.product HIT` (realm `.` family ` ` cacheStatus), `2xx bdpx.host` (status
- * class *before* the realm), or `bdpx.host.socketReadTimeout` (realm `.` host —
+ * inconsistent delimiters — e.g. `bdpx_prd.product` (tenant `.` apiFamily),
+ * `bdpx_prd.product MISS` (tenant `.` family ` ` cacheStatus), `2xx bdpx.host` (eCDN:
+ * status class *before* the bare realm), or `bdpx_prd.host.socketReadTimeout` (tenant `.` host —
  * whose own dots are ambiguous — `.` exceptionType). This makes the strings
  * effectively unparseable in general and awkward to chart, group, or merge
  * across realms.
@@ -64,7 +64,7 @@ export type MetricSeriesTags = Record<string, string>;
  * dimension is *known from the request* and is stamped onto every series as an
  * authoritative tag — rather than being (mis)parsed from a drilled-down series
  * id. For example, requesting `apiFamily=shopper` makes the server return
- * finer-grained ids like `bdpx.shopper.auth.v1`; folding the filter in yields the
+ * finer-grained ids like `bdpx_prd.shopper.auth.v1`; folding the filter in yields the
  * correct `apiFamily: "shopper"` instead of the string-parser's wrong
  * `apiFamily: "shopper.auth.v1"`.
  */
@@ -113,14 +113,20 @@ function splitRealmEnvironment(tenantId: string): {realm: string; environment?: 
 }
 
 /**
- * Strips a leading `realm.` or `realm ` prefix from a packed series id, if
- * present. The Metrics API prefixes most ids with the realm using either a `.`
- * or a space; this removes whichever is found so the category rule sees only the
- * dimension remainder. Returns the input unchanged when no realm prefix matches.
+ * Strips a leading tenant prefix from a packed series id, if present. Most
+ * categories prefix ids with `<realm>_<environment>` (`bdpx_prd.Home-Show`,
+ * `bdpx_prd 2xx`); eCDN prefixes with the bare realm (`bdpx.host`). Either is
+ * followed by a `.` or a space. The longer `realm_environment` form is tried
+ * first so it is not mistaken for a realm-only prefix. Returns the input
+ * unchanged when no prefix matches.
  */
-function stripRealmPrefix(seriesId: string, realm: string): string {
-  if (seriesId.startsWith(`${realm}.`)) return seriesId.slice(realm.length + 1);
-  if (seriesId.startsWith(`${realm} `)) return seriesId.slice(realm.length + 1);
+function stripRealmPrefix(seriesId: string, realm: string, environment?: string): string {
+  const prefixes = environment ? [`${realm}_${environment}`, realm] : [realm];
+  for (const prefix of prefixes) {
+    if (seriesId.startsWith(`${prefix}.`) || seriesId.startsWith(`${prefix} `)) {
+      return seriesId.slice(prefix.length + 1);
+    }
+  }
   return seriesId;
 }
 
@@ -155,7 +161,7 @@ const scapiFamilyOrStatus: SeriesTagExtractor = (remainder): MetricSeriesTags =>
  */
 const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtractor>>> = {
   scapi: {
-    // `bdpx.product` → apiFamily=product; `bdpx 2xx`/`bdpx 3xx` → statusClass
+    // `bdpx_prd.product` → apiFamily=product; `bdpx_prd 2xx` → statusClass
     totalCalls: scapiFamilyOrStatus,
     requestLatency: (remainder): MetricSeriesTags => {
       // `Average overall latency` is a rollup, not a per-family series.
@@ -164,7 +170,8 @@ const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtract
     },
     responseCount: scapiFamilyOrStatus,
     errors4xx: (remainder): MetricSeriesTags => ({apiFamily: remainder}),
-    // `bdpx.product HIT` / `bdpx.custom MISS` → apiFamily + cacheStatus
+    errors5xx: (remainder): MetricSeriesTags => ({apiFamily: remainder}),
+    // `bdpx_prd.product HIT` / `bdpx_prd.custom MISS` → apiFamily + cacheStatus
     cacheHitRate: (remainder): MetricSeriesTags => {
       const spaceIdx = remainder.lastIndexOf(' ');
       if (spaceIdx > 0) {
@@ -174,20 +181,19 @@ const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtract
     },
   },
   ocapi: {
-    // `bdpx.shop` → ocapiCategory=shop
-    totalCalls: (remainder): MetricSeriesTags => ({ocapiCategory: remainder}),
-    callsMean: (remainder): MetricSeriesTags => ({ocapiCategory: remainder}),
+    // `bdpx_prd.shop` → ocapiCategory=shop
+    '*': (remainder): MetricSeriesTags => ({ocapiCategory: remainder}),
   },
   controller: {
-    // `bdpx.Home-Show` → controller=Home-Show (applies to every controller metric)
+    // `bdpx_prd.Home-Show` → controller=Home-Show (applies to every controller metric)
     '*': (remainder): MetricSeriesTags => ({controller: remainder}),
   },
   'third-party': {
-    // `bdpx.login.salesforce.com` → host; the host itself contains dots, so we
+    // `bdpx_prd.login.salesforce.com` → host; the host itself contains dots, so we
     // treat the whole remainder as the host for call/latency metrics.
     callsCount: (remainder): MetricSeriesTags => ({host: remainder}),
     callsP95: (remainder): MetricSeriesTags => ({host: remainder}),
-    // `bdpx.host.socketReadTimeout` → host + exceptionType. The exception type is
+    // `bdpx_prd.host.socketReadTimeout` → host + exceptionType. The exception type is
     // the final dot-segment; everything before it is the (dotted) host. This is
     // only unambiguous because we key on the remoteExceptions metric.
     remoteExceptions: (remainder): MetricSeriesTags => {
@@ -227,7 +233,7 @@ const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtract
  * 3. **Applied filters** — any filter that was sent with the request
  *    ({@link MetricsTagContext}) is stamped last, overriding a heuristic guess.
  *    This corrects drill-down ids: with `apiFamily=shopper` the server returns
- *    `bdpx.shopper.auth.v1`, which heuristics would mis-tag as
+ *    `bdpx_prd.shopper.auth.v1`, which heuristics would mis-tag as
  *    `apiFamily: "shopper.auth.v1"`; the filter restores `apiFamily: "shopper"`.
  *
  * The result is always a superset of the request context and never throws.
@@ -239,7 +245,7 @@ const EXTRACTORS: Partial<Record<MetricCategory, Record<string, SeriesTagExtract
  * ```typescript
  * parseSeriesTags({
  *   category: 'scapi', metricId: 'cacheHitRate',
- *   seriesId: 'bdpx.product HIT', context: {tenantId: 'f_ecom_bdpx_prd'},
+ *   seriesId: 'bdpx_prd.product HIT', context: {tenantId: 'f_ecom_bdpx_prd'},
  * });
  * // → { realm: 'bdpx', environment: 'prd', apiFamily: 'product', cacheStatus: 'HIT' }
  * ```
@@ -258,14 +264,16 @@ export function parseSeriesTags(params: {
 
   const categoryRules = EXTRACTORS[category];
   const extractor = categoryRules?.[metricId] ?? categoryRules?.['*'];
-  const remainder = stripRealmPrefix(seriesId, realm);
+  const remainder = stripRealmPrefix(seriesId, realm, environment);
 
-  if (extractor) {
+  if (remainder === metricId) {
+    // A value-less fallback series: the API echoes the metric id when there is
+    // no data to label. There is no dimension to extract.
+  } else if (extractor) {
     Object.assign(tags, extractor(remainder, seriesId, realm));
-  } else if (remainder && remainder !== metricId) {
+  } else if (remainder) {
     // No rule for this category/metric. Preserve the (realm-stripped) remainder
-    // so nothing is lost, unless it is just the metric id echoed back (a
-    // value-less fallback series).
+    // so nothing is lost.
     tags.series = remainder;
   }
 

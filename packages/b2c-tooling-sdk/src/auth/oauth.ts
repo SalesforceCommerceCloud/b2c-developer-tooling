@@ -5,6 +5,7 @@
  */
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import {getApiFetch, type HttpTransportOptions} from '../clients/http-transport.js';
 import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
@@ -18,7 +19,7 @@ const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
 // onto a single token-endpoint round trip instead of stampeding the server.
 const PENDING_TOKEN_REQUESTS: Map<string, Promise<AccessTokenResponse>> = new Map();
 
-export interface OAuthConfig {
+export interface OAuthConfig extends HttpTransportOptions {
   clientId: string;
   clientSecret: string;
   scopes?: string[];
@@ -188,6 +189,11 @@ export class OAuthStrategy implements AuthStrategy {
       this.config.scopes,
     );
     this.identityPrefix = `${this.accountManagerHost}:${this.config.clientId}:client-credentials:`;
+  }
+
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
   }
 
   /**
@@ -457,7 +463,7 @@ export class OAuthStrategy implements AuthStrategy {
     const startTime = Date.now();
     let response: Response;
     try {
-      response = await fetch(request, {signal, redirect: 'error'});
+      response = await getApiFetch(this.config)(request, {signal, redirect: 'error'});
     } catch (err) {
       const host = new URL(url).host;
       throw wrapNetworkError(err, {operation: 'OAuth token request', host});

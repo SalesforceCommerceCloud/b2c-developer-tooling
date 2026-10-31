@@ -13,13 +13,15 @@
  *
  * @module clients/cdn-zones
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './cdn-zones.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {toOrganizationId, normalizeTenantId, buildTenantScope} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 /**
  * Re-export generated types for external use.
@@ -38,7 +40,7 @@ export {toOrganizationId, normalizeTenantId, buildTenantScope};
  *
  * | Method | Path | Description |
  * |--------|------|-------------|
- * | GET | `/organizations/{organizationId}/zones/info` | List all zones |
+ * | GET | `/organizations/{organizationId}/zones/info` | List zones (paged, max 50; use `listAllZones` for all) |
  * | GET | `/organizations/{organizationId}/zones/{zoneId}/certificates` | Get zone certificates |
  * | POST | `/organizations/{organizationId}/zones/{zoneId}/cachepurge` | Purge cache |
  * | GET | `/organizations/{organizationId}/zones/{zoneId}/firewall/waf` | Get WAF settings |
@@ -153,6 +155,62 @@ export interface CdnZonesClientOptions {
   readWrite?: boolean;
 }
 
+/** Maximum page size accepted by the `zones/info` endpoint. */
+const ZONES_PAGE_SIZE = 50;
+
+/** Safety cap on the number of pages fetched by {@link listAllZones}. */
+const ZONES_MAX_PAGES = 1000;
+
+/**
+ * Result of {@link listAllZones}.
+ */
+export interface ListAllZonesResult {
+  /** Zones retrieved (partial if an error occurred on a later page). */
+  zones: Zone[];
+  /** Error body from the API, if a page request failed. */
+  error?: unknown;
+}
+
+/**
+ * Lists every zone in the organization by paging through `zones/info`.
+ *
+ * The endpoint returns at most 50 zones per request (25 by default) and does not
+ * report a total, so paging continues until a page returns fewer than 50 zones.
+ *
+ * @param client - CDN Zones client
+ * @param organizationId - Organization ID (see {@link toOrganizationId})
+ * @returns All zones, plus the API error if any page request failed
+ *
+ * @example
+ * const client = createCdnZonesClient({shortCode, tenantId}, auth);
+ * const {zones, error} = await listAllZones(client, toOrganizationId(tenantId));
+ */
+export async function listAllZones(client: CdnZonesClient, organizationId: string): Promise<ListAllZonesResult> {
+  const zones: Zone[] = [];
+  let offset = 0;
+
+  for (let page = 0; page < ZONES_MAX_PAGES; page++) {
+    // eslint-disable-next-line no-await-in-loop
+    const {data, error} = await client.GET('/organizations/{organizationId}/zones/info', {
+      params: {path: {organizationId}, query: {limit: ZONES_PAGE_SIZE, offset}},
+    });
+
+    if (error) {
+      return {zones, error};
+    }
+
+    const items = data?.data ?? [];
+    zones.push(...items);
+
+    if (items.length < ZONES_PAGE_SIZE) {
+      break;
+    }
+    offset += items.length;
+  }
+
+  return {zones};
+}
+
 /**
  * Creates a typed CDN Zones API client.
  *
@@ -211,9 +269,12 @@ export function createCdnZonesClient(
 ): CdnZonesClient {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/cdn/zones/v1`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/cdn/zones/v1`,
+    },
+    auth,
+  );
 
   // Build required scopes: domain scope + tenant-specific scope
   const domainScopes = options?.readWrite ? CDN_ZONES_RW_SCOPES : CDN_ZONES_READ_SCOPES;

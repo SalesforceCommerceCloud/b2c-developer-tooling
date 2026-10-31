@@ -50,7 +50,7 @@ pnpm push -- -m "Release 42" -e staging --wait       # deploy to an env and wait
 
 Put `MRT_PROJECT` and `MRT_TARGET` in `.env` for local pushes. Store `MRT_API_KEY` in your shell or CI secret store, not in committed files. Flags and other commands: `storefront-next:sfnext-project-setup` `references/SFNEXT-CLI.md`. Inspect without deploying: `pnpm sfnext create-bundle -d . -o .bundle`.
 
-Bundle history, rolling back to an earlier bundle, and environment management are generic MRT tasks: `b2c mrt bundle history|list|deploy`, see `b2c-cli:b2c-mrt`. Live logs: MCP `mrt_logs_watch` / `mrt_logs_watch_poll`, or `b2c mrt tail-logs`. MCP `mrt_bundle_push` can also push a bundle.
+Bundle history, rolling back to an earlier bundle, and environment management are generic MRT tasks: `b2c mrt bundle history|list|deploy`, see `b2c-cli:b2c-mrt`. Live logs: MCP `mrt_logs_watch` / `mrt_logs_watch_poll`, or `b2c mrt tail-logs`.
 
 ## Environment variables on MRT
 

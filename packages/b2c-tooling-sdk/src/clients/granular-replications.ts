@@ -12,13 +12,15 @@
  *
  * @module clients/granular-replications
  */
-import createClient, {type Client} from 'openapi-fetch';
+import type {Client} from 'openapi-fetch';
+import {createHttpClient} from './http-transport.js';
 import type {AuthStrategy} from '../auth/types.js';
 import type {paths, components} from './granular-replications.generated.js';
 import {createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware} from './middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from './middleware-registry.js';
 import {buildTenantScope, toOrganizationId, normalizeTenantId} from './custom-apis.js';
 import {withScopes} from './scapi-backend-utils.js';
+import {getScapiOrigin} from './scapi-origin.js';
 
 export {toOrganizationId, normalizeTenantId, buildTenantScope};
 
@@ -99,9 +101,12 @@ export function createGranularReplicationsClient(
 ): GranularReplicationsClient {
   const registry = config.middlewareRegistry ?? globalMiddlewareRegistry;
 
-  const client = createClient<paths>({
-    baseUrl: `https://${config.shortCode}.api.commercecloud.salesforce.com/operation/replications/v1`,
-  });
+  const client = createHttpClient<paths>(
+    {
+      baseUrl: `${getScapiOrigin(config.shortCode)}/operation/replications/v1`,
+    },
+    auth,
+  );
 
   // Build required scopes: domain scope + tenant-specific scope
   const requiredScopes = config.scopes ?? ['sfcc.granular-replications.rw', buildTenantScope(config.tenantId)];

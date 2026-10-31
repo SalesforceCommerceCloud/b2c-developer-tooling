@@ -7,6 +7,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
+import type {WebDavClient} from '../../clients/webdav.js';
+import {NetworkError} from '../../errors/network-error.js';
 import {getLogger} from '../../logging/logger.js';
 import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 import type {ScriptsBackend} from './scripts-types.js';
@@ -63,6 +65,118 @@ function startProgress(
     onProgress({phase, elapsedSeconds: Math.round((Date.now() - start) / 1000)});
   }, PROGRESS_INTERVAL_MS);
   return () => clearInterval(interval);
+}
+
+/**
+ * How long to keep checking for a server-side zip after the connection that
+ * requested it drops. The server keeps zipping after the client goes away.
+ * Exported for tests.
+ */
+export const ZIP_WAIT = {intervalMs: 10_000, timeoutMs: 30 * 60_000};
+
+/** End of central directory signature ("PK\x05\x06"); a zip ends with this record once it's fully written. */
+const EOCD_SIGNATURE = [0x50, 0x4b, 0x05, 0x06];
+/** The record is 22 bytes plus a comment of up to 64 KiB. */
+const EOCD_MAX_BYTES = 22 + 0xff_ff;
+
+function hasEndOfCentralDirectory(tail: Uint8Array): boolean {
+  for (let i = tail.length - 22; i >= 0; i--) {
+    if (EOCD_SIGNATURE.every((byte, j) => tail[i + j] === byte)) return true;
+  }
+  return false;
+}
+
+/**
+ * Whether the zip at `zipPath` is complete, read from its last bytes with a
+ * Range request. Throws if the server deleted it, which it does when zipping
+ * fails or there is nothing to zip.
+ */
+async function isServerZipComplete(webdav: WebDavClient, zipPath: string): Promise<boolean> {
+  let size: number | undefined;
+  try {
+    [{contentLength: size}] = await webdav.propfind(zipPath, '0');
+  } catch (error) {
+    throw new Error(
+      `Failed to create server-side zip: ${zipPath} is gone, so the server failed to build it or there was nothing to zip`,
+      {cause: error},
+    );
+  }
+  if (!size) return false;
+
+  const start = Math.max(0, size - EOCD_MAX_BYTES);
+  const response = await webdav.request(zipPath, {method: 'GET', headers: {Range: `bytes=${start}-`}});
+  if (!response.ok) return false;
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  // A server that ignores Range sends the whole file.
+  return hasEndOfCentralDirectory(response.status === 206 ? bytes : bytes.subarray(-EOCD_MAX_BYTES));
+}
+
+async function waitForServerZip(webdav: WebDavClient, zipPath: string): Promise<void> {
+  const deadline = Date.now() + ZIP_WAIT.timeoutMs;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, ZIP_WAIT.intervalMs));
+    if (await isServerZipComplete(webdav, zipPath)) return;
+  }
+  throw new Error(
+    `Failed to create server-side zip: ${zipPath} was not finished after ${Math.round(ZIP_WAIT.timeoutMs / 60_000)} minutes`,
+  );
+}
+
+/**
+ * Zips `sourcePath` on the server and downloads the result from
+ * `${sourcePath}.zip`. Large code versions can take longer to zip than the
+ * client waits for a response; when the request times out or the connection
+ * drops, waits for the zip to finish on the server instead of failing.
+ */
+async function zipAndDownload(
+  webdav: WebDavClient,
+  sourcePath: string,
+  onProgress?: (info: DownloadProgressInfo) => void,
+): Promise<ArrayBuffer> {
+  const logger = getLogger();
+  const zipPath = `${sourcePath}.zip`;
+
+  let stopProgress = startProgress('zipping', onProgress);
+  logger.debug({sourcePath}, 'Requesting server-side zip...');
+  try {
+    const zipResponse = await webdav.request(sourcePath, {
+      method: 'POST',
+      body: ZIP_BODY,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
+    });
+    if (!zipResponse.ok) {
+      const text = await zipResponse.text();
+      throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
+    }
+  } catch (error) {
+    if (!(error instanceof NetworkError && (error.kind === 'timeout' || error.kind === 'connection-reset'))) {
+      throw error;
+    }
+    logger.debug({zipPath, kind: error.kind}, 'Zip request dropped; waiting for the server to finish the zip');
+    await waitForServerZip(webdav, zipPath);
+  } finally {
+    stopProgress();
+  }
+  logger.debug('Server-side zip created');
+
+  stopProgress = startProgress('downloading', onProgress);
+  logger.debug({zipPath}, 'Downloading zip archive...');
+  let buffer: ArrayBuffer;
+  try {
+    const response = await webdav.request(zipPath, {
+      method: 'GET',
+      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to download zip: ${response.status} ${response.statusText}`);
+    }
+    buffer = await response.arrayBuffer();
+  } finally {
+    stopProgress();
+  }
+  logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
+  return buffer;
 }
 
 /**
@@ -132,7 +246,7 @@ async function extractZip(
 
     // Determine cartridge name: either from the next segment or from the option
     const cartridgeName = options.cartridgeName ?? parts.shift()!;
-    const relativePath = options.cartridgeName ? parts.join('/') : parts.join('/');
+    const relativePath = parts.join('/');
 
     // Apply filters
     if (options.include?.length && !options.include.includes(cartridgeName)) {
@@ -197,40 +311,7 @@ export async function downloadSingleCartridge(
   const cartridgePath = `Cartridges/${codeVersion}/${cartridgeName}`;
   const zipPath = `${cartridgePath}.zip`;
 
-  let stopProgress = startProgress('zipping', onProgress);
-  logger.debug({cartridgeName, codeVersion}, 'Requesting server-side zip for single cartridge...');
-  let zipResponse: Response;
-  try {
-    zipResponse = await webdav.request(cartridgePath, {
-      method: 'POST',
-      body: ZIP_BODY,
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-    });
-  } finally {
-    stopProgress();
-  }
-
-  if (!zipResponse.ok) {
-    const text = await zipResponse.text();
-    throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
-  }
-
-  stopProgress = startProgress('downloading', onProgress);
-  let buffer: ArrayBuffer;
-  try {
-    const dlResponse = await webdav.request(zipPath, {
-      method: 'GET',
-      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-    });
-    if (!dlResponse.ok) {
-      throw new Error(`Failed to download zip: ${dlResponse.status} ${dlResponse.statusText}`);
-    }
-    buffer = await dlResponse.arrayBuffer();
-  } finally {
-    stopProgress();
-  }
-  logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
+  const buffer = await zipAndDownload(webdav, cartridgePath, onProgress);
 
   // Cleanup server-side zip (best effort)
   onProgress?.({phase: 'cleanup', elapsedSeconds: 0});
@@ -315,46 +396,10 @@ export async function downloadCartridges(
 
   // Full code version download
   const webdav = instance.webdav;
-  const zipPath = `Cartridges/${codeVersion}.zip`;
+  const sourcePath = `Cartridges/${codeVersion}`;
+  const zipPath = `${sourcePath}.zip`;
 
-  let stopProgress = startProgress('zipping', onProgress);
-  logger.debug({codeVersion}, 'Requesting server-side zip...');
-  let zipResponse: Response;
-  try {
-    zipResponse = await webdav.request(`Cartridges/${codeVersion}`, {
-      method: 'POST',
-      body: ZIP_BODY,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-    });
-  } finally {
-    stopProgress();
-  }
-
-  if (!zipResponse.ok) {
-    const text = await zipResponse.text();
-    throw new Error(`Failed to create server-side zip: ${zipResponse.status} ${zipResponse.statusText} - ${text}`);
-  }
-  logger.debug('Server-side zip created');
-
-  stopProgress = startProgress('downloading', onProgress);
-  logger.debug({zipPath}, 'Downloading zip archive...');
-  let buffer: ArrayBuffer;
-  try {
-    const downloadResponse = await webdav.request(zipPath, {
-      method: 'GET',
-      signal: AbortSignal.timeout(LONG_OPERATION_TIMEOUT_MS),
-    });
-    if (!downloadResponse.ok) {
-      throw new Error(`Failed to download zip: ${downloadResponse.status} ${downloadResponse.statusText}`);
-    }
-    buffer = await downloadResponse.arrayBuffer();
-  } finally {
-    stopProgress();
-  }
-  logger.debug({size: buffer.byteLength}, `Archive downloaded: ${buffer.byteLength} bytes`);
+  const buffer = await zipAndDownload(webdav, sourcePath, onProgress);
 
   // Cleanup server-side zip (best-effort)
   onProgress?.({phase: 'cleanup', elapsedSeconds: 0});

@@ -2,7 +2,7 @@
   "name": "b2c-vs-extension",
   "displayName": "Salesforce B2C Commerce",
   "description": "Tools for developing on Salesforce B2C Commerce, including cartridge deployment, script debugging and IntelliSense, and sandbox management.",
-  "version": "1.5.1",
+  "version": "1.7.2",
   "publisher": "Salesforce",
   "icon": "media/icon.png",
   "license": "Apache-2.0",
@@ -286,6 +286,11 @@
           "type": "boolean",
           "default": false,
           "description": "(Preview) Infer a better type for hover/completion when TypeScript has widened something to `any` (typically an undocumented helper function). Heuristic and may be wrong. In development — off by default."
+        },
+        "b2c-dx.auth.usePluginSessionStore": {
+          "type": "boolean",
+          "default": false,
+          "description": "Store sign-in sessions in the auth session store provided by an installed b2c-cli plugin (for example, an OS keychain plugin) instead of VS Code secret storage. Sessions are then shared with the b2c CLI. Takes effect after reloading the window."
         },
         "b2c-dx.telemetry.enabled": {
           "type": "boolean",
@@ -1209,6 +1214,12 @@
         "category": "B2C DX - Code Sync"
       },
       {
+        "command": "b2c-dx.codeSync.selectCodeVersion",
+        "title": "Select Code Version for Uploads",
+        "icon": "$(versions)",
+        "category": "B2C DX - Code Sync"
+      },
+      {
         "command": "b2c-dx.scriptTypes.refresh",
         "title": "Refresh Script API IntelliSense",
         "icon": "$(refresh)",
@@ -1587,6 +1598,11 @@
         },
         {
           "command": "b2c-dx.codeSync.activateCodeVersion",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "1_versions"
+        },
+        {
+          "command": "b2c-dx.codeSync.selectCodeVersion",
           "when": "view == b2cCartridgeExplorer",
           "group": "1_versions"
         }

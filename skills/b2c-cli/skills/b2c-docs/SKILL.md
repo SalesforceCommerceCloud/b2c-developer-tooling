@@ -11,7 +11,7 @@ Use the `b2c` CLI to search and read B2C Commerce documentation spanning multipl
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli docs search ProductMgr`).
 
-> **MCP parity:** If the `b2c-dx-mcp` server is connected, its docs tools — `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, and `docs_schema_list` — cover the same corpus with the same search, workspace-awareness, and topic-scoping behavior described here.
+> **MCP parity:** If the `b2c-dx-mcp` server is connected, its docs tools — `docs_search`, `docs_read`, `docs_list`, `docs_schema_search`, `docs_schema_read`, and `docs_schema_list` — cover the same corpus with the same search, workspace-awareness, and topic-scoping behavior described here; `validate_xml_schema` matches `b2c validate`.
 
 ## Key Features
 
@@ -224,9 +224,23 @@ b2c docs schema --list
 
 # Print the filesystem path to the schema file
 b2c docs schema catalog --path
+```
 
-# Validate an XML file against a schema using xmllint
-xmllint --schema "$(b2c docs schema catalog --path)" my-catalog.xml --noout
+### Validate XML Against Schemas
+
+`b2c validate` checks import/export XML against these schemas offline, choosing each file's schema from its root element namespace. Unrecognized files found in a directory are skipped; malformed or invalid files fail with line numbers and exit status 1.
+
+```bash
+# Validate a site archive directory or specific files
+b2c validate ./site_template
+b2c validate my-catalog.xml
+
+# Force a schema, or use your own XSD
+b2c validate export.xml --schema catalog
+b2c validate data.xml --schema ./custom.xsd
+
+# JSON results (per-file status, schema, and errors with line numbers)
+b2c validate ./site_template --json
 ```
 
 ## Documentation Categories

@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {Services} from '../src/services.js';
+import {openBrowserForTool} from '../src/utils/browser-login.js';
 import {createMockResolvedConfig} from './test-helpers.js';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -76,6 +77,17 @@ describe('services', () => {
       const services = Services.fromResolvedConfig(config);
 
       expect(services.b2cInstance).to.equal(mockB2CInstance);
+    });
+
+    it('should let WebDAV tools fall back to the built-in client', () => {
+      const config = createMockResolvedConfig();
+      stub(config, 'hasB2CInstanceConfig').returns(true);
+      const create = stub(config, 'createB2CInstance').returns(mockB2CInstance);
+      stub(config, 'hasMrtConfig').returns(false);
+
+      Services.fromResolvedConfig(config);
+
+      expect(create.firstCall.args[0]).to.deep.equal({defaultWebDavClient: true, openBrowser: openBrowserForTool});
     });
 
     it('should create Services without B2C instance when config lacks instance', () => {
@@ -228,11 +240,27 @@ describe('services', () => {
       expect(services.resolveWithProjectDirectory()).to.equal(process.cwd());
     });
 
-    it('should return absolute path as-is', () => {
+    it('should accept an absolute path inside the project directory', () => {
+      const projectDir = path.resolve('/path/to/project');
+      const config = createMockResolvedConfig({projectDirectory: projectDir});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveWithProjectDirectory(path.join(projectDir, 'a', 'b.txt'))).to.equal(
+        path.join(projectDir, 'a', 'b.txt'),
+      );
+      expect(services.resolveWithProjectDirectory('..dotted/name')).to.equal(path.resolve(projectDir, '..dotted/name'));
+    });
+
+    it('should reject paths that escape the project directory', () => {
       const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
       const services = new Services({resolvedConfig: config});
 
-      expect(services.resolveWithProjectDirectory('/absolute/path')).to.equal('/absolute/path');
+      for (const pathArg of ['/absolute/path', '../sibling/file.txt', 'a/../../b', '/path/to/project-other/x']) {
+        expect(() => services.resolveWithProjectDirectory(pathArg), pathArg).to.throw(/within the project directory/);
+      }
+      expect(() => services.resolveWithProjectDirectory('../x', '/other/root')).to.throw(
+        /within the project directory/,
+      );
     });
 
     it('should resolve relative path relative to project directory', () => {
@@ -386,6 +414,26 @@ describe('services', () => {
       const services = new Services({resolvedConfig: config});
 
       expect(() => services.getOrganizationId()).to.throw('Tenant ID required');
+    });
+
+    it('points at the configuration guide and config_inspect when no configuration loaded', () => {
+      const services = new Services({resolvedConfig: createMockResolvedConfig()});
+
+      expect(() => services.getOrganizationId())
+        .to.throw('No configuration was found')
+        .with.property('message')
+        .that.includes('Run "config_inspect"');
+    });
+
+    it('names the loaded source kinds when configuration lacks the value', () => {
+      const config = createMockResolvedConfig();
+      config.sources.push({name: 'DwJsonSource', location: '/secret/path/dw.json', fields: ['hostname']} as never);
+      const services = new Services({resolvedConfig: config});
+
+      expect(() => services.getOrganizationId())
+        .to.throw('Configuration was loaded from dw.json, but it does not set this value')
+        .with.property('message')
+        .that.not.includes('/secret/path');
     });
   });
 

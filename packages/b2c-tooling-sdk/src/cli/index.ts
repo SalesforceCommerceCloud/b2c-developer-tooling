@@ -97,7 +97,14 @@ export {BackendDispatcher} from '../compat/dispatcher.js';
 export type {ApiBackendPreference, ResolvedBackend, DispatchBranches} from '../compat/dispatcher.js';
 
 // Base command classes
-export {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from './base-command.js';
+export {
+  BaseCommand,
+  ERROR_CODE,
+  augmentDuplicateFlagError,
+  classifyError,
+  configSourceHint,
+  serializeErrorCause,
+} from './base-command.js';
 export type {Flags, Args, ErrorCategory} from './base-command.js';
 export {OAuthCommand} from './oauth-command.js';
 export {InstanceCommand} from './instance-command.js';
@@ -119,6 +126,7 @@ export {
   extractOAuthFlags,
   extractInstanceFlags,
   extractMrtFlags,
+  listFromEnv,
 } from './config.js';
 export type {LoadConfigOptions, PluginSources, ParsedFlags, ExtractedMrtFlags} from './config.js';
 
@@ -130,6 +138,12 @@ export type {
   HttpMiddlewareHookOptions,
   HttpMiddlewareHookResult,
   HttpMiddlewareHook,
+  AuthMiddlewareHookOptions,
+  AuthMiddlewareHookResult,
+  AuthMiddlewareHook,
+  AuthSessionStoreHookOptions,
+  AuthSessionStoreHookResult,
+  AuthSessionStoreHook,
   // B2C lifecycle hook types
   B2COperationType,
   B2COperationContext,

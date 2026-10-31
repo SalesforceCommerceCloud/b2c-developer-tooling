@@ -99,7 +99,14 @@ export function createDebugStartSessionTool(
         };
 
         const manager = new DebugSessionManager(
-          {hostname, username, password, clientId, cartridgeRoots: cartridges},
+          {
+            hostname,
+            username,
+            password,
+            clientId,
+            cartridgeRoots: cartridges,
+            selfSignedApi: context.services.getResolvedConfig().values.selfSignedApi,
+          },
           callbacks,
         );
 

@@ -16,6 +16,24 @@ import {loadSkillCatalog, skillArgument, skillForCommand} from './lib/skills.js'
  *
  * Registered via `oclif.helpClass` in package.json.
  */
+/**
+ * WebDAV folder each WebDAV-backed command needs an API client permission for,
+ * keyed by command id or topic prefix.
+ */
+const WEBDAV_COMMAND_FOLDERS: Record<string, string> = {
+  'code:deploy': '/cartridges',
+  'code:download': '/cartridges',
+  'code:watch': '/cartridges',
+  logs: '/logs',
+  webdav: 'the root being accessed',
+};
+
+function webdavFolderFor(id: string): string | undefined {
+  // Help may receive ids with either the ':' or the ' ' topic separator.
+  const normalized = id.replaceAll(' ', ':');
+  return WEBDAV_COMMAND_FOLDERS[normalized] ?? WEBDAV_COMMAND_FOLDERS[normalized.split(':')[0]];
+}
+
 export default class B2CHelp extends Help {
   /** Overridable for tests. */
   protected agentContext: AgentContext = getAgentContext();
@@ -70,8 +88,29 @@ export default class B2CHelp extends Help {
     return this.section('SKILL', `${this.config.bin} docs skill ${skillArgument(skill)}`) + '\n';
   }
 
+  /** `WEBDAV AUTHENTICATION` section explaining which credentials apply and which one wins. */
+  protected formatWebDavAuth(id: string): string | undefined {
+    const folder = webdavFolderFor(id);
+    if (!folder) return undefined;
+    const bin = this.config.bin;
+    const lines = [
+      "- Basic auth: --username is a Business Manager user and --password is that user's",
+      '  WebDAV access key (scope "WebDAV File Access and UX Studio"), not the Account Manager',
+      `  password. Create one with: ${bin} bm access-key create`,
+      '- OAuth: --client-id and --client-secret of an API client granted access to',
+      `  ${folder} in Business Manager > Administration > Organization > WebDAV Client Permissions.`,
+      '- Browser login: with neither configured, you sign in to Account Manager in a browser',
+      "  and your Business Manager role's WebDAV permissions on the instance authorize access.",
+      'Basic auth is used when both Basic auth and an API client are configured. To use the',
+      'API client instead, pass --auth-methods client-credentials.',
+    ];
+    return this.section('WEBDAV AUTHENTICATION', lines.join('\n')) + '\n';
+  }
+
   async showCommandHelp(command: Command.Loadable): Promise<void> {
     await super.showCommandHelp(command);
+    const webdavAuth = this.formatWebDavAuth(command.id);
+    if (webdavAuth) this.log(webdavAuth);
     const skill = this.formatSkill(command.id);
     if (skill) this.log(skill);
     if (this.agentContext.isAgentic) {

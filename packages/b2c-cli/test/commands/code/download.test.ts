@@ -111,7 +111,7 @@ describe('code download', () => {
     expect(options.mirror.get('app_storefront')).to.equal('/project/app_storefront');
   });
 
-  it('errors when no code version and no OAuth credentials', async () => {
+  it('discovers the active version without OAuth credentials', async () => {
     const command: any = await createCommand({}, {cartridgePath: '.'});
 
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
@@ -119,19 +119,20 @@ describe('code download', () => {
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: undefined}}));
+    const instanceConfig: any = {hostname: 'example.com', codeVersion: undefined};
+    sinon.stub(command, 'instance').get(() => ({config: instanceConfig}));
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    const backend = {name: 'webdav', getActiveCodeVersion: sinon.stub().resolves({id: 'active_v', active: true})};
+    sinon.stub(command, 'createScriptsBackend').returns(backend);
+    const downloadStub = sinon.stub().resolves({cartridges: ['c1'], codeVersion: 'active_v', outputDirectory: 'x'});
+    command.operations = {...command.operations, downloadCartridges: downloadStub};
 
-    const errorStub = sinon.stub(command, 'error').throws(new Error('OAuth required'));
+    const result = await command.run();
 
-    try {
-      await command.run();
-      expect.fail('Should have thrown');
-    } catch {
-      // expected
-    }
-
-    expect(errorStub.calledOnce).to.equal(true);
-    const errorMessage = errorStub.firstCall.args[0];
-    expect(errorMessage).to.include('auto-discover');
+    expect(backend.getActiveCodeVersion.calledOnce).to.equal(true);
+    expect(instanceConfig.codeVersion).to.equal('active_v');
+    expect(result.codeVersion).to.equal('active_v');
   });
 
   it('uses active code version when codeVersion is not set', async () => {

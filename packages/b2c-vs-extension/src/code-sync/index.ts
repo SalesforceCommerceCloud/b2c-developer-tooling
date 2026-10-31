@@ -16,6 +16,7 @@ import {
 } from './cartridge-tree-provider.js';
 import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
+import {pickCodeVersion, saveCodeVersion, showNoInstanceError} from './code-sync-setup.js';
 
 export function registerCodeSync(
   context: vscode.ExtensionContext,
@@ -30,9 +31,9 @@ export function registerCodeSync(
   // --- Core sync commands ---
 
   const toggleCmd = registerSafeCommand('b2c-dx.codeSync.toggle', async () => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
     const hostname = configProvider.getConfig()?.values.hostname ?? '';
@@ -41,9 +42,9 @@ export function registerCodeSync(
   });
 
   const startCmd = registerSafeCommand('b2c-dx.codeSync.start', async () => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
     const hostname = configProvider.getConfig()?.values.hostname ?? '';
@@ -81,9 +82,9 @@ export function registerCodeSync(
   });
 
   const uploadCartridgeCmd = registerSafeCommand('b2c-dx.codeSync.uploadCartridge', async (item: CartridgeItem) => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
     await manager.uploadSingleCartridge(instance, item.cartridge);
@@ -121,9 +122,9 @@ export function registerCodeSync(
 
   const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
     if (!uri) return;
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
     await manager.uploadFileOrFolder(instance, uri, configProvider.getWorkingDirectory());
@@ -132,6 +133,32 @@ export function registerCodeSync(
     } catch {
       // best-effort
     }
+  });
+
+  // Lists code versions over WebDAV so this also works with only a browser login.
+  const selectCodeVersionCmd = registerSafeCommand('b2c-dx.codeSync.selectCodeVersion', async () => {
+    const instance = configProvider.getCodeSyncInstance();
+    const config = configProvider.getConfig();
+    if (!instance || !config) {
+      await showNoInstanceError();
+      return;
+    }
+    const codeVersion = await pickCodeVersion(instance);
+    if (!codeVersion) return;
+    instance.config.codeVersion = codeVersion;
+    const saved = await saveCodeVersion(config, codeVersion);
+    if (saved) {
+      // Saving dw.json reloads the configuration, which restarts code sync if it was on.
+      vscode.window.showInformationMessage(`B2C DX: Code sync uploads to "${codeVersion}" (saved to dw.json).`);
+    } else {
+      vscode.window.showInformationMessage(
+        `B2C DX: Code sync uploads to "${codeVersion}" for this session. Set code-version in your configuration to keep it.`,
+      );
+      if (manager.getPersistedState(config.values.hostname ?? '') && !manager.isWatching) {
+        await manager.startWatch(instance, configProvider.getWorkingDirectory());
+      }
+    }
+    treeView.description = `v: ${codeVersion}`;
   });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
@@ -151,7 +178,7 @@ export function registerCodeSync(
 
   // --- Auto-start logic ---
   async function evaluateAutoStart(): Promise<void> {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
       manager.hideStatusBar();
       return;
@@ -219,6 +246,7 @@ export function registerCodeSync(
     uploadCartridgeCmd,
     openStepTypeDefinitionCmd,
     uploadToInstanceCmd,
+    selectCodeVersionCmd,
     cartridgesSub,
     ...cartridgeCmdDisposables,
   );

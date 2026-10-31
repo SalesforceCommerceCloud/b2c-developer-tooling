@@ -17,7 +17,7 @@ import {createDocsSchemaSearchTool} from '../../../src/tools/docs/docs-schema-se
 import {createDocsSchemaReadTool} from '../../../src/tools/docs/docs-schema-read.js';
 import {createDocsSchemaListTool} from '../../../src/tools/docs/docs-schema-list.js';
 import {createDocsTools} from '../../../src/tools/docs/index.js';
-import type {ToolResult} from '../../../src/utils/index.js';
+import type {ContentRead, ToolResult} from '../../../src/utils/index.js';
 
 function getResultJson<T>(result: ToolResult): T {
   const text = result.content[0];
@@ -123,7 +123,7 @@ describe('tools/docs', () => {
   });
 
   describe('createDocsTools', () => {
-    it('creates all six tools', () => {
+    it('creates all seven tools', () => {
       const tools = createDocsTools(loadServices);
       expect(tools.map((t) => t.name)).to.deep.equal([
         'docs_search',
@@ -132,6 +132,7 @@ describe('tools/docs', () => {
         'docs_schema_search',
         'docs_schema_read',
         'docs_schema_list',
+        'validate_xml_schema',
       ]);
     });
 
@@ -356,6 +357,19 @@ describe('tools/docs', () => {
       }
     });
 
+    it('records the doc read, not the query, for telemetry', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const reads: ContentRead[] = [];
+      const recordContentRead = (read: ContentRead) => reads.push(read);
+      const json = getResultJson<{entry: {id: string; category: string}}>(
+        await tool.handler({query: 'productmgr', maxLength: 200, offset: 200}, {recordContentRead}),
+      );
+      await tool.handler({query: 'zzzzzqqqqxxxxnomatch'}, {recordContentRead});
+      expect(reads).to.deep.equal([
+        {contentType: 'doc', contentId: json.entry.id, category: json.entry.category, offset: 200},
+      ]);
+    });
+
     it('returns errorResult when nothing matches', async () => {
       const tool = createDocsReadTool(loadServices);
       const result = await tool.handler({query: 'zzzzzqqqqxxxxnomatch'});
@@ -440,6 +454,15 @@ describe('tools/docs', () => {
       const json = getResultJson<{entry: {id: string}; content: string; path: string}>(result);
       expect(json.content).to.match(/<\?xml|<xsd:schema|<xs:schema/);
       expect(json.path).to.be.a('string');
+    });
+
+    it('records the schema read for telemetry', async () => {
+      const tool = createDocsSchemaReadTool(loadServices);
+      const reads: ContentRead[] = [];
+      const recordContentRead = (read: ContentRead) => reads.push(read);
+      const json = getResultJson<{entry: {id: string}}>(await tool.handler({query: 'catalog'}, {recordContentRead}));
+      await tool.handler({query: 'zzzzz_no_schema_zzzzz'}, {recordContentRead});
+      expect(reads).to.deep.equal([{contentType: 'schema', contentId: json.entry.id}]);
     });
 
     it('returns error for unknown schema', async () => {

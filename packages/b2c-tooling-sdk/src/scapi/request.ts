@@ -4,11 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import createClient, {createQuerySerializer} from 'openapi-fetch';
+import {createQuerySerializer} from 'openapi-fetch';
 import type {HttpMethod} from 'openapi-typescript-helpers';
 import type {AuthStrategy} from '../auth/types.js';
 import {buildTenantScope, toOrganizationId} from '../clients/custom-apis.js';
 import {withScopes} from '../clients/scapi-backend-utils.js';
+import {createHttpClient, getApiFetch} from '../clients/http-transport.js';
 import {createAuthMiddleware, createSafetyMiddleware} from '../clients/middleware.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry} from '../clients/middleware-registry.js';
 import {SafetyGuard, extractJobIdFromPath, type SafetyConfig} from '../safety/index.js';
@@ -20,6 +21,7 @@ import type {ScapiShopperAuth} from './shopper.js';
 import {
   scapiAuthError,
   scapiAuthResponse,
+  shopperTokenLacksScopes,
   scapiShopperAuthError,
   selectScapiAuth,
   shopperTokenScopes,
@@ -27,6 +29,7 @@ import {
   unsupportedScapiTransfer,
   isScapiTextMediaType,
 } from './authentication.js';
+import {getScapiOrigin} from '../clients/scapi-origin.js';
 
 /** Exact, resolved request awaiting approval. Credentials are never included. */
 export interface ScapiConfirmation {
@@ -62,7 +65,7 @@ export function createScapiRequest(
   options: ScapiRequestOptions,
 ): (input: unknown, signal: AbortSignal) => Promise<unknown> {
   if (!/^[a-z0-9-]+$/i.test(options.shortCode)) throw new Error('Invalid SCAPI shortCode.');
-  const origin = `https://${options.shortCode}.api.commercecloud.salesforce.com`;
+  const origin = getScapiOrigin(options.shortCode);
   const organizationId = toOrganizationId(options.tenantId);
   const documents = [...options.documents];
   let totalBytes = 0;
@@ -220,6 +223,7 @@ export function createScapiRequest(
       }
       return {
         fetch: baseAuth.fetch.bind(baseAuth),
+        selfSignedApi: baseAuth.selfSignedApi,
         getAuthorizationHeader: async () => {
           try {
             if (baseAuth.getAccessTokenForCascade)
@@ -236,12 +240,15 @@ export function createScapiRequest(
         },
       };
     };
+    let shopperToken: string | undefined;
     const auth: AuthStrategy = shopper
       ? {
-          fetch,
+          fetch: (url, init) => getApiFetch(options.shopperAuth)(url, init as RequestInit),
+          selfSignedApi: options.shopperAuth!.selfSignedApi,
           getAuthorizationHeader: async () => {
             try {
               const token = await options.shopperAuth!.getAccessToken(shopperSiteId!, signal);
+              shopperToken = token;
               authContext.shopper!.tokenScopes = shopperTokenScopes(token);
               return `Bearer ${token}`;
             } catch (error) {
@@ -251,47 +258,52 @@ export function createScapiRequest(
           },
         }
       : adminAuth();
-    const client = createClient<ApiDocument>({
-      baseUrl: origin,
-      headers: {Accept: 'application/json, text/*'},
-      fetch: async (request: Request) => {
-        signal.throwIfAborted();
-        await checkApprovedRequest(request);
-        signal.throwIfAborted();
-        options.onDispatch?.();
-        const response = await fetch(request, {signal, redirect: 'error'});
-        const mediaType = response.headers.get('content-type');
-        if (response.ok && mediaType && !isScapiTextMediaType(mediaType)) {
-          void response.body?.cancel().catch(() => {});
-          throw new Error(
-            'SCAPI_TRANSFER_UNSUPPORTED: API returned a non-text response. Use a file-capable HTTP client; check any write before retrying.',
-          );
-        }
-        const chunks: Uint8Array[] = [];
-        let bytes = 0;
-        const reader = response.body?.getReader();
-        try {
-          while (reader) {
-            const chunk = await reader.read();
-            if (chunk.done) break;
-            bytes += chunk.value.length;
-            totalBytes += chunk.value.length;
-            if (bytes > 1_048_576 || totalBytes > 5_242_880)
-              throw new Error('SCAPI_RESPONSE_TOO_LARGE: request a smaller page.');
-            chunks.push(chunk.value);
+    const apiFetch = getApiFetch(auth);
+    const client = createHttpClient<ApiDocument>(
+      {
+        baseUrl: origin,
+        headers: {Accept: 'application/json, text/*'},
+        fetch: async (request: Request) => {
+          signal.throwIfAborted();
+          await checkApprovedRequest(request);
+          signal.throwIfAborted();
+          options.onDispatch?.();
+          const response = await apiFetch(request, {signal, redirect: 'error'});
+          const mediaType = response.headers.get('content-type');
+          if (response.ok && mediaType && !isScapiTextMediaType(mediaType)) {
+            void response.body?.cancel().catch(() => {});
+            throw new Error(
+              'SCAPI_TRANSFER_UNSUPPORTED: API returned a non-text response. Use a file-capable HTTP client; check any write before retrying.',
+            );
           }
-        } finally {
-          // A tee'd response can wait for another consumer; cleanup must not delay a limit error.
-          void reader?.cancel().catch(() => {});
-        }
-        getLogger().debug({method, path: matched.template, status: response.status, bytes}, 'SCAPI code request');
-        return new Response(chunks.length ? Buffer.concat(chunks) : null, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
+          const chunks: Uint8Array[] = [];
+          let bytes = 0;
+          const reader = response.body?.getReader();
+          try {
+            while (reader) {
+              const chunk = await reader.read();
+              if (chunk.done) break;
+              bytes += chunk.value.length;
+              totalBytes += chunk.value.length;
+              if (bytes > 1_048_576 || totalBytes > 5_242_880)
+                throw new Error('SCAPI_RESPONSE_TOO_LARGE: request a smaller page.');
+              chunks.push(chunk.value);
+            }
+          } finally {
+            // A tee'd response can wait for another consumer; cleanup must not delay a limit error.
+            void reader?.cancel().catch(() => {});
+          }
+          getLogger().debug({method, path: matched.template, status: response.status, bytes}, 'SCAPI code request');
+          return new Response(chunks.length ? Buffer.concat(chunks) : null, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        },
       },
-    });
+      auth,
+      {operation: 'SCAPI request'},
+    );
     for (const middleware of (options.middlewareRegistry ?? globalMiddlewareRegistry).getMiddleware('scapi', {
       exclude: ['cli-safety-guard'],
     }))
@@ -323,7 +335,12 @@ export function createScapiRequest(
       }
     }
     const diagnostic = scapiAuthResponse(result.response.status, authContext);
-    if (shopper && result.response.status === 401) options.shopperAuth?.invalidate(shopperSiteId!);
+    // A token missing the operation's scopes keeps failing; a new one reflects scopes granted since.
+    if (
+      shopper &&
+      (result.response.status === 401 || (result.response.status === 403 && shopperTokenLacksScopes(authContext)))
+    )
+      options.shopperAuth?.invalidate(shopperSiteId!, shopperToken);
     // Authenticated live schema responses extend this execution's catalog, replacing bundled contracts.
     if (
       result.response.ok &&

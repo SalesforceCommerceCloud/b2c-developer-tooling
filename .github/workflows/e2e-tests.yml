@@ -34,6 +34,9 @@ on:
 env:
   SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
     # E2E tests run only on the current LTS Node version for stability and speed.
@@ -135,35 +138,6 @@ jobs:
           name: e2e-test-results-node-${{ matrix.node-version }}-${{ github.run_number }}
           path: packages/b2c-cli/test-results.json
           retention-days: 30
-
-      - name: Notify on Failure
-        if: failure() && github.event_name == 'schedule' && steps.check-secrets.outputs.has-secrets == 'true'
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const issue = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `CLI E2E Tests Failed - ${new Date().toISOString().split('T')[0]}`,
-              body: `## CLI E2E Test Failure
-              
-              The CLI E2E tests have failed. Please investigate.
-              
-              **Workflow:** ${context.workflow}
-              **Run:** ${context.runNumber}
-              **Commit:** ${context.sha}
-              **Event:** ${context.eventName}
-              **Node Version:** ${{ matrix.node-version }}
-              
-              [View workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
-              `,
-              labels: ['bug', 'e2e-failure', 'cli', 'needs-investigation']
-            };
-            
-            // Only create issue for scheduled runs to avoid spam
-            if (context.eventName === 'schedule') {
-              github.rest.issues.create(issue);
-            }
 
   e2e-tests-windows:
     name: e2e-tests (windows)
@@ -270,8 +244,17 @@ jobs:
       - name: Build packages
         run: pnpm -r run build
       - name: Run MCP E2E tests
+        id: e2e-test
         working-directory: packages/b2c-dx-mcp
         env:
           SFCC_DISABLE_TELEMETRY: 'true'
           NODE_ENV: test
         run: pnpm run test:e2e:ci
+      # The CI reporter writes JSON only, so failures are invisible in the step log without this.
+      - name: MCP E2E Test Report
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2  # v3.0.0
+        if: always() && steps.e2e-test.conclusion != 'cancelled' && steps.e2e-test.conclusion != 'skipped'
+        with:
+          name: MCP E2E Test Results
+          path: 'packages/b2c-dx-mcp/test-results-e2e.json'
+          reporter: mocha-json

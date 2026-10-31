@@ -103,11 +103,12 @@ The `development` condition:
 
 ## Client Factory Pattern
 
-HTTP clients follow a consistent factory function pattern:
+HTTP clients follow a consistent factory function pattern. Always build them with `createHttpClient(options, auth)` from `src/clients/http-transport.ts` (and use `getApiFetch(auth)` instead of the global `fetch` for direct API requests) so the auth strategy's transport options apply — see [API Client Development](../api-client-development/SKILL.md#shared-http-transport-required).
 
 ```typescript
 // src/clients/newapi.ts
-import createClient, { type Client } from 'openapi-fetch';
+import type { Client } from 'openapi-fetch';
+import { createHttpClient } from './http-transport.js';
 import type { AuthStrategy } from '../auth/types.js';
 import type { paths, components } from './newapi.generated.js';
 import { createAuthMiddleware, createLoggingMiddleware } from './middleware.js';
@@ -126,9 +127,9 @@ export function createNewApiClient(
 ): NewApiClient {
   const { apiVersion = 'v1' } = options ?? {};
 
-  const client = createClient<paths>({
+  const client = createHttpClient<paths>({
     baseUrl: `https://${hostname}/api/newapi/${apiVersion}`,
-  });
+  }, auth);
 
   // Middleware order: auth first (runs last), logging last (sees complete request)
   client.use(createAuthMiddleware(auth));
@@ -443,6 +444,9 @@ datasets and search indexes (`build:job-steps-dataset`, `generate:job-steps-docs
   `content-schemas/*.json` rule), update the affected tests to match the new platform rule.
 - Run `pnpm --filter @salesforce/b2c-tooling-sdk run test:agent` and add a changeset when
   the refresh changes user-facing behavior (bump the platform version, note the change).
+  List `@salesforce/b2c-cli`, `@salesforce/b2c-dx-mcp`, and `@salesforce/b2c-tooling-sdk`
+  explicitly instead of relying on the automatic dependency bump, so the refresh appears in
+  the CLI and MCP changelogs and the unified release notes (see "Changesets" in `AGENTS.md`).
 
 The individual generation scripts can still be run standalone (see each script's header
 comment), but `refresh:docs-data` is the one-step path that keeps every corpus in sync

@@ -24,7 +24,8 @@ The B2C tooling reads config from layered sources. **Different fields belong in 
 Different jobs need different fields. The wizard lets you enable any combination:
 
 - **OAuth** — `client-id` + `client-secret`. Required for Sandbox Explorer, OCAPI / SCAPI, and CI jobs.
-- **Basic** — `username` + `password`. Required for WebDAV and cartridge deploys.
+- **Just `hostname`** — enough to deploy cartridges and run Code Sync. You sign in with your Account Manager account when asked.
+- **Basic** — `username` + `password`. Used by the WebDAV browser, and for deploys without signing in.
 - **SCAPI extras** — `short-code` + `tenant-id` + optional `oauth-scopes`. Required by the API Browser.
 - **MRT (Managed Runtime)** — `mrtProject` + `mrtEnvironment` (in `dw.json`) + `MRT_API_KEY` (in `~/.mobify` or env var).
 

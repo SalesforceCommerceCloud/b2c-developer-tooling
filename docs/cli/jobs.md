@@ -600,6 +600,7 @@ In addition to [global flags](./index#global-flags):
 | Flag                   | Description                                        | Default    |
 | ---------------------- | -------------------------------------------------- | ---------- |
 | `--output`, `-o`       | Output path for the export                         | `./export` |
+| `--all`                | Export all data units (see below)                  | `false`    |
 | `--data-units`         | Data units JSON configuration                      |            |
 | `--site`               | Site ID(s) to export (comma-separated, repeatable) |            |
 | `--storefront`         | Composable storefront name to export               |            |
@@ -630,6 +631,12 @@ b2c job export --storefront my-storefront
 # Export catalogs
 b2c job export --catalog storefront-catalog
 
+# Export every site and catalog
+b2c job export --site all --catalog all
+
+# Export everything
+b2c job export --all --output ./full-export
+
 # Export with custom data units JSON
 b2c job export --data-units '{"global_data":{"meta_data":true}}'
 
@@ -646,6 +653,10 @@ b2c job export --global-data meta_data --json
 ### Data Units
 
 The export is configured using "data units" which specify what data to export. You can use convenience flags (`--site`, `--global-data`, etc.) or provide a full JSON configuration with `--data-units`.
+
+`--site`, `--catalog`, `--library`, `--inventory-list`, and `--price-book` accept the special ID `all` to export every object of that type, and `--global-data all` exports all global data. For example, `--site all` exports all data for every site.
+
+`--all` exports everything: all global data, sites, catalogs, libraries, catalog and library static resources, inventory lists, price books, and customer lists. It can be combined with `--storefront` but not with other data unit flags or `--data-units`.
 
 A composable storefront is selected by its storefront name and is serialized as `{"storefronts":{"my-storefront":true}}`. B2C Commerce supports one storefront per export operation.
 

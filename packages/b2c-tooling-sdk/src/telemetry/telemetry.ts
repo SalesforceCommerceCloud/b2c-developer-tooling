@@ -227,6 +227,19 @@ export class Telemetry {
   }
 
   /**
+   * Attribute all future events to an AI agent identified by the host
+   * application, such as an MCP server recognizing its client by name. Only
+   * applies when environment detection found no agent; detection always wins.
+   *
+   * @param agent - Agent id, using the same ids as environment detection (e.g. `codex`)
+   */
+  setAgentFallback(agent: string): void {
+    if (this.agentAttributes.isAgent || !agent) return;
+    this.traceLog?.debug({agent}, 'telemetry setAgentFallback');
+    this.agentAttributes = {isAgent: true, agent};
+  }
+
+  /**
    * Send a telemetry event. Events are buffered until you call {@link flush} or
    * {@link stop}. Use this for batching; use {@link sendEventAndFlush} when you
    * need one event sent before continuing.

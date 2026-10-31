@@ -43,16 +43,17 @@ function getResultJson<T>(result: ToolResult): T {
 /**
  * Create a mock B2CInstance for testing.
  */
-function createMockB2CInstance(options?: {codeVersion?: string}): B2CInstance {
+function createMockB2CInstance(options?: {codeVersion?: string; hasOAuthCredentials?: boolean}): B2CInstance {
   // If codeVersion is explicitly provided (including undefined), use it; otherwise default to 'v1'
   const codeVersion = options && 'codeVersion' in options ? options.codeVersion : 'v1';
   return {
     config: {
       codeVersion,
     },
+    hasOAuthCredentials: options?.hasOAuthCredentials ?? true,
     webdav: {} as unknown as WebDavClient,
     ocapi: {} as unknown as OcapiClient,
-  } as B2CInstance;
+  } as unknown as B2CInstance;
 }
 
 /**
@@ -291,6 +292,23 @@ describe('tools/cartridges', () => {
       expect(options.reload).to.be.true;
     });
 
+    it('refuses to reload without an API client before uploading anything', async () => {
+      const mockInstance = createMockB2CInstance({hasOAuthCredentials: false});
+      const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance});
+      const tool = createCartridgesTools(loadServices, {
+        findAndDeployCartridges: findAndDeployCartridgesStub,
+        getActiveCodeVersion: getActiveCodeVersionStub,
+      })[0];
+
+      const result = await tool.handler({reload: true});
+
+      expect(result.isError).to.be.true;
+      expect(getResultText(result)).to.include('Nothing was uploaded');
+      expect(getResultText(result)).to.include('sfcc.scripts.rw');
+      expect(getResultText(result)).not.to.include('OCAPI');
+      expect(findAndDeployCartridgesStub.called).to.be.false;
+    });
+
     it('should pass all options together', async () => {
       const projectDir = '/path/to/project';
       const directory = './cartridges';
@@ -366,7 +384,7 @@ describe('tools/cartridges', () => {
 
     it('should resolve relative directory paths relative to project directory', async () => {
       const projectDir = '/path/to/project';
-      const relativePaths = ['./cartridges', 'cartridges', '../cartridges', './src/cartridges'];
+      const relativePaths = ['./cartridges', 'cartridges', 'src/../cartridges', './src/cartridges'];
 
       for (const relativePath of relativePaths) {
         findAndDeployCartridgesStub.resetHistory();
@@ -396,12 +414,9 @@ describe('tools/cartridges', () => {
       }
     });
 
-    it('should use absolute directory paths as-is', async () => {
-      const projectDir = '/path/to/project';
-      const absolutePaths =
-        process.platform === 'win32'
-          ? [String.raw`C:\cartridges`, String.raw`D:\projects\cartridges`]
-          : ['/absolute/cartridges', '/usr/local/cartridges'];
+    it('should accept absolute directory paths inside the project directory', async () => {
+      const projectDir = path.resolve('/path/to/project');
+      const absolutePaths = [projectDir, path.join(projectDir, 'cartridges')];
 
       for (const absolutePath of absolutePaths) {
         findAndDeployCartridgesStub.resetHistory();
@@ -427,6 +442,24 @@ describe('tools/cartridges', () => {
         expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
         const [, dir] = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
         expect(dir).to.equal(absolutePath);
+      }
+    });
+
+    it('should reject directory paths outside the project directory without deploying', async () => {
+      const projectDir = path.resolve('/path/to/project');
+      for (const directory of ['../cartridges', path.resolve('/usr/local/cartridges')]) {
+        const mockInstance = createMockB2CInstance();
+        const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
+        const tool = createCartridgesTools(loadServices, {
+          findAndDeployCartridges: findAndDeployCartridgesStub,
+          getActiveCodeVersion: getActiveCodeVersionStub,
+        })[0];
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await tool.handler({directory});
+
+        expect(result.isError, directory).to.be.true;
+        expect(findAndDeployCartridgesStub.called).to.be.false;
       }
     });
 
@@ -557,10 +590,9 @@ describe('tools/cartridges', () => {
       expect(getActiveCodeVersionStub.calledOnce).to.be.true;
       expect(findAndDeployCartridgesStub.called).to.be.false;
       const text = getResultText(result);
-      expect(text).to.include('No code version specified and no active code version found');
-      expect(text).to.include('--code-version flag');
-      expect(text).to.include('SFCC_CODE_VERSION environment variable');
-      expect(text).to.include('dw.json configuration file');
+      expect(text).to.include('No code version specified and the instance has no active code version');
+      expect(text).to.include('Pass codeVersion');
+      expect(text).to.include('SFCC_CODE_VERSION');
     });
 
     it('should throw error when no codeVersion and active version has no id', async () => {
@@ -580,10 +612,9 @@ describe('tools/cartridges', () => {
       expect(getActiveCodeVersionStub.calledOnce).to.be.true;
       expect(findAndDeployCartridgesStub.called).to.be.false;
       const text = getResultText(result);
-      expect(text).to.include('No code version specified and no active code version found');
-      expect(text).to.include('--code-version flag');
-      expect(text).to.include('SFCC_CODE_VERSION environment variable');
-      expect(text).to.include('dw.json configuration file');
+      expect(text).to.include('No code version specified and the instance has no active code version');
+      expect(text).to.include('Pass codeVersion');
+      expect(text).to.include('SFCC_CODE_VERSION');
     });
   });
 

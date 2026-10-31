@@ -23,6 +23,8 @@ Install B2C Commerce agent skills and plugins in your AI-powered editor. Three p
     /plugin install b2c-dx-mcp@b2c-developer-tooling
     ```
 
+    Claude Code does not auto-update third-party marketplaces by default. To get new releases automatically, run `/plugin` again, open **Marketplaces**, select `b2c-developer-tooling`, and choose **Enable auto-update**.
+
 - **VS Code (GitHub Copilot)**: Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling`.
 
 - **GitHub Copilot CLI**:
@@ -212,7 +214,8 @@ The SDK ships several corpora derived from the B2C Commerce platform under `pack
 |-----------|----------|-------------|
 | `script-api/` | Script API reference markdown + search index | `b2c docs search` / `docs read`, MCP `docs_*` |
 | `content-schemas/` | Page Designer / content metadefinition JSON schemas | `b2c content validate` |
-| `xsd/` | Import/export XSD schemas + search index | `b2c docs schema *`, XML validation |
+| `xsd/` | Import/export XSD schemas + search index | `b2c docs schema *`, `b2c validate`, MCP `validate_xml_schema` |
+| `xml-validator/` | libxml2 compiled to WebAssembly; built by `wasm/xml-validator/build.sh` and verified in CI | `b2c validate`, MCP `validate_xml_schema` |
 | `job-steps/` | Standard job-step markdown + dataset + search index | `b2c docs search` / `docs read` |
 
 All of these originate from the same documentation archive that `b2c docs download` fetches from an instance (the inner `DWAPP-<version>-API-doc.zip`). To refresh **all** of them to a new platform release at once, run the maintainer script against a current instance (it uses your default instance/auth via the CLI):

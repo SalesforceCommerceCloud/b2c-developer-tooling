@@ -198,6 +198,7 @@ describe('guidance over real stdio', function () {
     };
     expect(listed.resources.map((resource) => resource.name).sort()).to.deep.equal([
       'b2c-mcp-cip',
+      'b2c-mcp-claude-artifacts',
       'b2c-mcp-config',
       'b2c-mcp-debugger',
       'b2c-mcp-scapi',
@@ -237,6 +238,7 @@ describe('guidance over real stdio', function () {
     };
     expect(skills.map((skill) => skill.frontmatter.name).sort()).to.deep.equal([
       'b2c-mcp-cip',
+      'b2c-mcp-claude-artifacts',
       'b2c-mcp-config',
       'b2c-mcp-debugger',
       'b2c-mcp-scapi',

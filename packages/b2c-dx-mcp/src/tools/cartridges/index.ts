@@ -19,6 +19,7 @@ import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {ProjectContextInput, ProjectDirectoryInfo} from '../project-context.js';
 import {
+  ACTIVATION_NEEDS_API_CLIENT,
   createScriptsBackend,
   findAndDeployCartridges,
   getActiveCodeVersion,
@@ -152,6 +153,13 @@ function createCartridgeDeployTool(
 
         try {
           const scriptsBackend = createScriptsBackend({instance});
+          // Fail before uploading: reloading switches the active version, which needs an API client.
+          if (args.reload && scriptsBackend.name === 'webdav') {
+            throw new Error(
+              `Nothing was uploaded. Reloading the code version ${ACTIVATION_NEEDS_API_CLIENT} ` +
+                'Deploy without reload to upload with your sign-in.',
+            );
+          }
           // If no code version specified, get the active one
           let codeVersion = args.codeVersion ?? instance.config.codeVersion;
           if (!codeVersion) {
@@ -161,10 +169,8 @@ function createCartridgeDeployTool(
               : await scriptsBackend.getActiveCodeVersion();
             if (!active?.id) {
               throw new Error(
-                'No code version specified and no active code version found. ' +
-                  'Specify a code version using one of: ' +
-                  '--code-version flag, SFCC_CODE_VERSION environment variable, ' +
-                  'or code-version field in dw.json configuration file.',
+                'No code version specified and the instance has no active code version. ' +
+                  'Pass codeVersion, or set code-version in dw.json or SFCC_CODE_VERSION.',
               );
             }
             codeVersion = active.id;
@@ -189,6 +195,7 @@ function createCartridgeDeployTool(
             include: args.cartridges,
             exclude: args.exclude,
             reload: args.reload,
+            ignoreDirs: context.services.getResolvedConfig().values.cartridgeIgnoreDirs,
           };
 
           // Log all computed variables before deploying

@@ -57,6 +57,8 @@ export interface DwJsonConfig {
   siteId?: string;
   /** SCAPI short code */
   shortCode?: string;
+  /** @internal SCAPI origin override for local SCAPI development */
+  scapiBaseUrl?: string;
   /** Alternate hostname for WebDAV (if different from main hostname) */
   webdavHostname?: string;
   /** Allowed authentication methods in priority order */
@@ -93,6 +95,8 @@ export interface DwJsonConfig {
   cartridges?: string | string[];
   /** Directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /** Directory names skipped at any depth when archiving cartridges for deploy */
+  cartridgeIgnoreDirs?: string[];
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */
@@ -119,6 +123,12 @@ export interface DwJsonConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /**
+   * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and MRT requests.
+   * Internal development aid; dw.json key `selfsigned-api`.
+   * @internal
+   */
+  selfSignedApi?: boolean;
   /** API backend preference for operations that support both OCAPI and SCAPI */
   apiBackend?: 'ocapi' | 'scapi' | 'auto';
   /** MRT backend preference: legacy MRT Cloud API vs SCAPI MRT deployments API */

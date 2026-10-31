@@ -6,8 +6,8 @@
 
 import * as assert from 'assert';
 import type {SchemaEntry} from '../api-browser/api-browser-tree-provider.js';
-import {prefillParameters} from '../api-browser/prefill.js';
-import {detectApiType, injectCustomApiOrgPathPrefix} from '../api-browser/swagger-webview.js';
+import {prefillParameters, stripParameterExamples} from '../api-browser/prefill.js';
+import {detectApiType, injectCustomApiOrgPathPrefix, isCommerceCloudUrl} from '../api-browser/swagger-webview.js';
 import {
   API_BROWSER_EXPAND,
   OFFLINE_TOKEN_STATUS,
@@ -173,6 +173,66 @@ suite('prefillParameters', () => {
   });
 });
 
+suite('stripParameterExamples', () => {
+  test('removes parameter examples so Swagger UI leaves optional fields empty', () => {
+    const inventoryIds: Record<string, unknown> = {
+      name: 'inventoryIds',
+      in: 'query',
+      schema: {type: 'array', items: {type: 'string'}, maxItems: 5, example: ['Site1InventoryList']},
+      example: 'Site1InventoryList,Site2InventoryList',
+    };
+    const usid: Record<string, unknown> = {
+      name: 'sfdc_usid',
+      in: 'header',
+      examples: {Usid: {value: '550e8400-e29b-41d4-a716-446655440000'}},
+    };
+    const shared: Record<string, unknown> = {name: 'locale', in: 'query', example: 'en-US'};
+    const requestBody = {content: {'application/json': {example: {quantity: 1}}}};
+    const spec = {
+      components: {parameters: {locale: shared}},
+      paths: {'/products': {parameters: [usid], get: {parameters: [inventoryIds]}, post: {requestBody}}},
+    };
+    stripParameterExamples(spec);
+    assert.ok(!('example' in inventoryIds));
+    assert.deepStrictEqual(inventoryIds.schema, {type: 'array', items: {type: 'string'}, maxItems: 5});
+    assert.ok(!('examples' in usid));
+    assert.ok(!('example' in shared));
+    assert.deepStrictEqual(requestBody.content['application/json'].example, {quantity: 1});
+  });
+
+  test('drops examples inherited from referenced component schemas without changing them', () => {
+    const selectSchema = {type: 'string', example: '(name,id)'};
+    const select: Record<string, unknown> = {
+      name: 'select',
+      in: 'query',
+      schema: {$ref: '#/components/schemas/Select'},
+    };
+    const ids: Record<string, unknown> = {
+      name: 'ids',
+      in: 'query',
+      schema: {type: 'array', items: {allOf: [{$ref: '#/components/schemas/ProductId'}]}},
+    };
+    const spec = {
+      components: {
+        schemas: {Select: selectSchema, ProductId: {type: 'string', maxLength: 100, example: 'apple-ipod'}},
+      },
+      paths: {'/products': {get: {parameters: [select, ids]}}},
+    };
+    stripParameterExamples(spec);
+    assert.deepStrictEqual(select.schema, {type: 'string'});
+    assert.deepStrictEqual(ids.schema, {type: 'array', items: {allOf: [{type: 'string', maxLength: 100}]}});
+    assert.strictEqual(selectSchema.example, '(name,id)');
+  });
+
+  test('keeps configured prefill values when applied before prefillParameters', () => {
+    const siteId: Record<string, unknown> = {name: 'siteId', in: 'query', example: 'RefArch'};
+    const spec = {paths: {'/products': {get: {parameters: [siteId]}}}};
+    stripParameterExamples(spec);
+    prefillParameters(spec, {siteId: 'MarketStreet'});
+    assert.strictEqual(siteId.example, 'MarketStreet');
+  });
+});
+
 suite('resolveApiBrowserTenantId', () => {
   test('prefers and normalizes the configured tenant ID', () => {
     assert.strictEqual(
@@ -263,5 +323,22 @@ suite('API Browser offline fallback', () => {
   test('offline token status says Try it out is disabled', () => {
     assert.match(OFFLINE_TOKEN_STATUS, /Offline/);
     assert.match(OFFLINE_TOKEN_STATUS, /Try it out disabled/);
+  });
+});
+
+suite('isCommerceCloudUrl', () => {
+  test('allows HTTPS Commerce Cloud API hosts', () => {
+    assert.strictEqual(isCommerceCloudUrl('https://kv7kzm78.api.commercecloud.salesforce.com/product/v1/x'), true);
+  });
+
+  test('rejects other hosts that mention the Commerce Cloud domain', () => {
+    assert.strictEqual(isCommerceCloudUrl('https://example.com/?commercecloud.salesforce.com'), false);
+    assert.strictEqual(isCommerceCloudUrl('https://commercecloud.salesforce.com.example.com/'), false);
+    assert.strictEqual(isCommerceCloudUrl('https://example.com#.commercecloud.salesforce.com'), false);
+  });
+
+  test('rejects non-HTTPS and unparseable URLs', () => {
+    assert.strictEqual(isCommerceCloudUrl('http://kv7kzm78.api.commercecloud.salesforce.com/'), false);
+    assert.strictEqual(isCommerceCloudUrl('not a url'), false);
   });
 });

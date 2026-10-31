@@ -12,7 +12,7 @@
  * @module config/types
  */
 import type {ClientAuthMethod} from '../auth/client-credentials.js';
-import type {AuthMethod, AuthStrategy} from '../auth/types.js';
+import type {AuthMethod, AuthStrategy, BrowserLogin} from '../auth/types.js';
 import type {B2CInstance} from '../instance/index.js';
 import type {SafetyLevel} from '../safety/safety-middleware.js';
 import type {SafetyRule} from '../safety/types.js';
@@ -96,6 +96,11 @@ export interface NormalizedConfig {
   shortCode?: string;
   /** Tenant/Organization ID for SCAPI */
   tenantId?: string;
+  /**
+   * SCAPI origin override (replaces `https://{shortCode}.api.commercecloud.salesforce.com`).
+   * @internal For local SCAPI development; dw.json key `scapi-base-url`.
+   */
+  scapiBaseUrl?: string;
 
   // ODS (On-Demand Sandbox)
   /** ODS API hostname */
@@ -122,6 +127,8 @@ export interface NormalizedConfig {
   cartridges?: string[];
   /** Project-relative directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /** Directory names skipped at any depth when archiving cartridges for deploy (replaces the default list) */
+  cartridgeIgnoreDirs?: string[];
 
   // Content
   /** Default content library ID for content export/list commands */
@@ -195,6 +202,12 @@ export interface NormalizedConfig {
   certificatePassphrase?: string;
   /** Whether to skip SSL/TLS certificate verification (self-signed certs) */
   selfSigned?: boolean;
+  /**
+   * Skip TLS certificate verification for OCAPI, SCAPI, Account Manager and MRT requests.
+   * Internal development aid; dw.json key `selfsigned-api`.
+   * @internal
+   */
+  selfSignedApi?: boolean;
 
   // API backend
   /** API backend preference for operations that support both OCAPI and SCAPI */
@@ -320,6 +333,11 @@ export interface ResolveConfigOptions {
    * never validate. Same protection applies to slasClientId / slasClientSecret.
    */
   clientIdProtection?: boolean;
+  /**
+   * Human-readable origin of each override field (e.g. `.env (SFCC_OAUTH_CLIENT_ID)`, `--client-id`).
+   * Used only in mismatch warning messages.
+   */
+  overrideOrigins?: Partial<Record<keyof NormalizedConfig, string>>;
   /** Cloud origin for ~/.mobify lookup (MRT) */
   cloudOrigin?: string;
   /** Path to custom MRT credentials file (overrides default ~/.mobify) */
@@ -510,8 +528,8 @@ export interface CreateOAuthOptions {
   scopes?: string[];
   /** Override redirect URI for browser OAuth flows (e.g., for port forwarding in remote environments) */
   redirectUri?: string;
-  /** Custom browser opener for browser OAuth flows. Receives the authorization URL. */
-  openBrowser?: (url: string) => Promise<void>;
+  /** Custom browser opener for browser OAuth flows. Receives the authorization URL and, for PKCE logins, a handle to the pending login. */
+  openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
 }
 
 /** Options for constructing a B2C instance from resolved configuration. */
@@ -522,6 +540,21 @@ export interface CreateB2CInstanceOptions extends Pick<CreateOAuthOptions, 'redi
    * unless an OAuth-backed client is actually used.
    */
   oauthStrategy?: AuthStrategy | (() => AuthStrategy);
+  /**
+   * Let WebDAV fall back to a browser login with the built-in public client
+   * when neither Basic auth nor an API client is configured. The resulting user
+   * token is authorized by the user's Business Manager permissions, so no
+   * access key or WebDAV Client Permissions entry is needed. OCAPI and SCAPI
+   * are unaffected. Enable it only for WebDAV-only operations (file transfer,
+   * logs, code upload), since the login starts on the first WebDAV request.
+   */
+  defaultWebDavClient?: boolean;
+  /**
+   * WebDAV-only fallback strategy (or lazy factory). Takes precedence over
+   * {@link defaultWebDavClient}; used by callers that build their own browser
+   * login strategy.
+   */
+  webdavFallbackStrategy?: AuthStrategy | (() => AuthStrategy);
 }
 
 /**

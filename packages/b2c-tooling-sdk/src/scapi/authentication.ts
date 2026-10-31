@@ -145,6 +145,13 @@ export function scapiShopperAuthError(error: unknown, context: AuthContext): Err
   );
 }
 
+/** True when a guest token holds none of the operation's accepted scopes; only a new token can pick up client changes. */
+export function shopperTokenLacksScopes(context: AuthContext): boolean {
+  const granted = context.shopper?.tokenScopes;
+  const accepted = context.candidates[0] ?? [];
+  return Boolean(granted && accepted.length > 0 && !granted.some((scope) => accepted.includes(scope)));
+}
+
 function scopeAdvice(context: AuthContext): string {
   if (context.shopper) {
     const accepted = context.candidates[0] ?? [];
@@ -159,7 +166,9 @@ function scopeAdvice(context: AuthContext): string {
     const standard = granted.includes(SHOPPER_STANDARD_SCOPE)
       ? `${SHOPPER_STANDARD_SCOPE} does not cover this operation; add one of the accepted scopes to the client alongside it.`
       : `The shopper token grants: ${granted.join(' ')}; add one of the accepted scopes to the client.`;
-    return `${advice} ${standard} ${channel}`;
+    const renewal =
+      'This guest session is discarded, so the next request uses a new token (and a new basket) with the client scopes then in effect.';
+    return `${advice} ${standard} ${channel} ${renewal}`;
   }
   const choices = context.candidates.map((candidate) => candidate.join(' + ')).join(' OR ');
   return (

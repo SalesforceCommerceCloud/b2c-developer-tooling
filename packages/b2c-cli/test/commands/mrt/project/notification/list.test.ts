@@ -89,4 +89,24 @@ describe('mrt project notification list', () => {
     expect(result.notifications).to.have.lengthOf(2);
     expect(result.count).to.equal(2);
   });
+
+  it('does not support the SCAPI MRT backend', () => {
+    const command = createCommand();
+    expect(command.supportsScapiMrt()).to.equal(false);
+  });
+
+  it('rejects an explicit --mrt-backend scapi at init with an actionable error', async () => {
+    const command = createCommand();
+
+    stubParse(command, {'mrt-backend': 'scapi'}, {});
+    const errorStub = stubErrorToThrow(command);
+
+    try {
+      await command.init();
+      expect.fail('Expected error');
+    } catch {
+      expect(errorStub.calledOnce).to.equal(true);
+      expect(errorStub.firstCall.args[0]).to.include('--mrt-backend scapi is not supported');
+    }
+  });
 });

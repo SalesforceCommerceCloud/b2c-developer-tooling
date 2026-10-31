@@ -8,7 +8,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {Config} from '@oclif/core';
+import {Config, Parser} from '@oclif/core';
 import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ImplicitOAuthStrategy,
@@ -134,6 +134,26 @@ describe('cli/oauth-command', () => {
     clearAllAuthSessions();
   });
 
+  describe('comma-separated list env vars', () => {
+    it('parses SFCC_OAUTH_SCOPES and SFCC_AUTH_METHODS into arrays', async () => {
+      process.env.SFCC_OAUTH_SCOPES = 'sfcc.storefront.deployments.rw,sfcc.storefront.environments.rw';
+      process.env.SFCC_AUTH_METHODS = 'client-credentials,implicit';
+
+      const {flags} = await Parser.parse([], {flags: OAuthCommand.baseFlags});
+
+      expect(flags['auth-scope']).to.deep.equal(['sfcc.storefront.deployments.rw', 'sfcc.storefront.environments.rw']);
+      expect(flags['auth-methods']).to.deep.equal(['client-credentials', 'implicit']);
+    });
+
+    it('prefers explicit flags over the env vars', async () => {
+      process.env.SFCC_OAUTH_SCOPES = 'from-env';
+
+      const {flags} = await Parser.parse(['--auth-scope', 'a,b'], {flags: OAuthCommand.baseFlags});
+
+      expect(flags['auth-scope']).to.deep.equal(['a', 'b']);
+    });
+  });
+
   describe('requireOAuthCredentials', () => {
     it('throws error when no credentials', async () => {
       stubParse(command);
@@ -193,6 +213,43 @@ describe('cli/oauth-command', () => {
       const strategy = command.testGetOAuthStrategy();
       expect(strategy).to.not.be.instanceOf(PkceOAuthStrategy);
       expect(strategy).to.not.be.instanceOf(ImplicitOAuthStrategy);
+    });
+  });
+
+  describe('--default-client', () => {
+    it('ignores a client ID and secret from env or config and uses browser sign-in', async () => {
+      const commandWithDefault = new TestOAuthCommandWithDefault([], config);
+      // Parsed flag values stand in for env-sourced values: they are not on the command line.
+      stubParse(commandWithDefault, {'client-id': 'env-client', 'client-secret': 'env-secret', 'default-client': true});
+      await commandWithDefault.init();
+
+      const strategy = commandWithDefault.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
+      const pkceConfig = (strategy as unknown as {config: {clientId: string}}).config;
+      expect(pkceConfig.clientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('rejects a client ID given on the command line', async () => {
+      const commandWithDefault = new TestOAuthCommandWithDefault(
+        ['--default-client', '--client-id', 'cli-client'],
+        config,
+      );
+      stubParse(commandWithDefault, {'client-id': 'cli-client', 'default-client': true});
+
+      try {
+        await commandWithDefault.init();
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('--client-id cannot also be provided when using --default-client');
+      }
+    });
+
+    it('fails clearly for commands that need an API client', async () => {
+      stubParse(command, {'client-id': 'env-client', 'default-client': true});
+      await command.init();
+
+      expect(command.testHasOAuthCredentials()).to.be.true;
+      expect(() => command.testGetOAuthStrategy()).to.throw(/no OCAPI or SCAPI access/);
     });
   });
 

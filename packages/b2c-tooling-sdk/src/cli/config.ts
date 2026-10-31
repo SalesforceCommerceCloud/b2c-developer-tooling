@@ -11,6 +11,7 @@
  *
  * @module cli/config
  */
+import path from 'node:path';
 import type {AuthMethod} from '../auth/types.js';
 import type {ClientAuthMethod} from '../auth/client-credentials.js';
 import {ALL_AUTH_METHODS} from '../auth/types.js';
@@ -31,6 +32,40 @@ export {findDwJson};
  */
 export type ParsedFlags = Record<string, unknown>;
 
+/** Splits comma-separated list values, dropping blanks; `undefined` when nothing remains. */
+function toList(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  const items = (Array.isArray(value) ? value : [value])
+    .flatMap((item) => String(item).split(','))
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
+/**
+ * Flag `default` that reads a comma-separated list from an environment variable.
+ *
+ * Use this instead of `env:` on `multiple: true` flags. oclif does not split
+ * env values for multiple flags — `SFCC_OAUTH_SCOPES="a,b"` arrives as the
+ * single string `"a,b"`, and with `options` the whole string fails validation.
+ * Defaults also skip `options` validation, so pass `allowed` to keep it.
+ *
+ * @example
+ * ```typescript
+ * 'auth-scope': Flags.string({multiple: true, delimiter: ',', default: listFromEnv('SFCC_OAUTH_SCOPES')}),
+ * ```
+ */
+export function listFromEnv(envVar: string, allowed?: readonly string[]): () => Promise<string[] | undefined> {
+  return async () => {
+    const values = toList(process.env[envVar]);
+    const invalid = allowed ? values?.filter((value) => !allowed.includes(value)) : undefined;
+    if (invalid?.length) {
+      throw new Error(`Expected ${envVar} values to be one of: ${allowed!.join(', ')}. Got: ${invalid.join(', ')}`);
+    }
+    return values;
+  };
+}
+
 /**
  * Extracts OAuth-related configuration from oclif flags.
  *
@@ -47,10 +82,10 @@ export type ParsedFlags = Record<string, unknown>;
  * ```
  */
 export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig> {
-  const scopes = flags['auth-scope'] as string[] | undefined;
+  const scopes = toList(flags['auth-scope']);
 
   // Parse auth methods from --auth-methods or --user-auth flag
-  const authMethodValues = flags['auth-methods'] as string[] | undefined;
+  const authMethodValues = toList(flags['auth-methods']);
   let authMethods: AuthMethod[] | undefined;
   if (flags['user-auth']) {
     authMethods = ['user'];
@@ -66,14 +101,17 @@ export function extractOAuthFlags(flags: ParsedFlags): Partial<NormalizedConfig>
     clientSecret: flags['client-secret'] as string | undefined,
     shortCode: flags['short-code'] as string | undefined,
     tenantId: flags['tenant-id'] as string | undefined,
+    scapiBaseUrl: flags['scapi-base-url'] as string | undefined,
     authMethods,
     accountManagerHost: flags['account-manager-host'] as string | undefined,
     clientAuthMethod: flags['client-auth-method'] as ClientAuthMethod | undefined,
-    scopes: scopes && scopes.length > 0 ? scopes : undefined,
+    scopes,
     // JWT Bearer auth flags
     jwtCertPath: flags['jwt-cert'] as string | undefined,
     jwtKeyPath: flags['jwt-key'] as string | undefined,
     jwtPassphrase: flags['jwt-passphrase'] as string | undefined,
+    // Internal self-signed API TLS mode; undefined unless set so dw.json can apply
+    selfSignedApi: flags['selfsigned-api'] === true ? true : undefined,
   };
 }
 
@@ -116,11 +154,16 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     cipHost: flags['cip-host'] as string | undefined,
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
-    importSetExclude: flags['import-set-exclude'] as string[] | undefined,
+    importSetExclude: toList(flags['import-set-exclude']),
+    // An explicitly empty --cartridge-ignore-dirs means "ignore nothing".
+    cartridgeIgnoreDirs:
+      flags['cartridge-ignore-dirs'] === undefined ? undefined : (toList(flags['cartridge-ignore-dirs']) ?? []),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
-    selfSigned: (flags.selfsigned as boolean) || !(flags.verify as boolean),
+    // Only override when a flag opts out of verification; otherwise leave
+    // undefined so dw.json/env `selfSigned` can apply.
+    selfSigned: flags.selfsigned === true || flags.verify === false ? true : undefined,
     // API backend
     apiBackend: flags['api-backend'] as NormalizedConfig['apiBackend'],
     // Include OAuth flags (instance operations often need OAuth too)
@@ -282,6 +325,7 @@ export async function loadConfig(
     cloudOrigin: options.cloudOrigin,
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,
+    overrideOrigins: describeOverrideOrigins(flags, options.envFile),
     sourcesBefore: pluginSources.before,
     sourcesAfter: [...(pluginSources.after ?? []), createStorefrontNextSource(options.envFile)],
   });
@@ -292,6 +336,43 @@ export async function loadConfig(
   }
 
   return resolved;
+}
+
+/** Flag and env vars (highest precedence first) behind each mismatch-protected override field. */
+const OVERRIDE_INPUTS: Partial<Record<keyof NormalizedConfig, {env: string[]; flag: string}>> = {
+  hostname: {flag: '--server', env: ['SFCC_SERVER']},
+  clientId: {flag: '--client-id', env: ['SFCC_CLIENT_ID', 'SFCC_OAUTH_CLIENT_ID']},
+  clientSecret: {flag: '--client-secret', env: ['SFCC_CLIENT_SECRET', 'SFCC_OAUTH_CLIENT_SECRET']},
+};
+
+/**
+ * Describes where each mismatch-protected override came from — an env file
+ * variable, a shell environment variable, or a flag — for warning messages.
+ * A flag whose value matches an env var is reported as the env var; the value
+ * is the same either way.
+ */
+function describeOverrideOrigins(
+  flags: Partial<NormalizedConfig>,
+  envFile?: string,
+): Partial<Record<keyof NormalizedConfig, string>> {
+  const fileValues = envFile ? readEnvFile(envFile) : {};
+  const origins: Partial<Record<keyof NormalizedConfig, string>> = {};
+  for (const [field, input] of Object.entries(OVERRIDE_INPUTS) as [
+    keyof NormalizedConfig,
+    {env: string[]; flag: string},
+  ][]) {
+    const value = flags[field];
+    if (value === undefined) continue;
+    const name = input.env.find((envName) => process.env[envName] === value);
+    if (!name) {
+      origins[field] = input.flag;
+    } else if (envFile && fileValues[name] === value) {
+      origins[field] = `${path.basename(envFile)} (${name})`;
+    } else {
+      origins[field] = `environment variable ${name}`;
+    }
+  }
+  return origins;
 }
 
 /**

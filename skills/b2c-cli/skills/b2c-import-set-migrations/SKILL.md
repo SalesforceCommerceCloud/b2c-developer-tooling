@@ -231,7 +231,7 @@ b2c content export <CONTENT_ID> \
   -i <SOURCE_INSTANCE>
 ```
 
-Add `--site-library` for a site-private library. After any export, inspect every file and remove unrelated data, generated `version.txt`, environment-specific values, and secrets—including encrypted or hashed password values. Preserve the standard archive-relative layout and keep schema-required companion fields; validate trimmed XML against the matching B2C XSD rather than assuming a partial document is valid.
+Add `--site-library` for a site-private library. After any export, inspect every file and remove unrelated data, generated `version.txt`, environment-specific values, and secrets—including encrypted or hashed password values. Preserve the standard archive-relative layout and keep schema-required companion fields; validate trimmed XML with `b2c validate` rather than assuming a partial document is valid.
 
 Never export over an existing or applied archive. Use a temporary directory only intentionally, such as when comparing multiple exploratory exports or when a tool cannot isolate a new archive safely under the import-set directory.
 

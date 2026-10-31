@@ -76,6 +76,8 @@ Commerce platform contract.
 
 Edit cartridges locally and have changes show up on your sandbox automatically. Deploy on demand, diff against the active code version, and manage code versions without leaving the editor.
 
+Code sync needs only your instance hostname: start it, paste the hostname when asked, and sign in with your Account Manager account. See [Code sync with only a server](./configuration#code-sync-with-only-a-server).
+
 ### SCAPI API Explorer
 
 Explore every SCAPI API your instance exposes and try requests against them in a built-in Swagger UI. Authentication is handled for you using the same credentials your CLI already has.
@@ -92,7 +94,7 @@ Browse your sandbox's catalogs, libraries, and IMPEX folders right inside your e
 
 ### Log Tailing
 
-Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbox into your editor's output panel. Use **Start Tailing Logs** to begin and **Stop Tailing Logs** to end.
+Stream live `error-*.log`, `warn-*.log`, and `info-*.log` files from your sandbox into your editor's output panel. Use **Start Tailing Logs** to begin and **Stop Tailing Logs** to end. The prefix picker also lists the custom logger files (`custom-*.log`) found on the instance, plus `custom-` to tail all of them.
 
 ### Active Instance Status Bar
 

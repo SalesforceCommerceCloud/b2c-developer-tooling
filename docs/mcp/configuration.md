@@ -31,7 +31,9 @@ Restart the MCP connection after changing startup settings.
 Your assistant can select a project or named instance for each task. To fix a
 startup default, use the shared `--project-directory`, `--config`, or `--instance`
 options. See [Configuration](../guide/configuration) for their values and file formats.
-These defaults do not restrict which projects the assistant can access.
+When `--project-directory` is set, or your client shares its workspace folders
+(MCP roots), the assistant can select a project outside them only after you
+approve it. See [Project folders](./security#project-folders).
 
 ## Tools and toolsets {#toolset-selection}
 

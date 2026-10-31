@@ -30,6 +30,10 @@ The session file is `auth-sessions.json` inside that directory. The directory is
 created `0o700` and the file `0o600`, since it holds refresh tokens. Writes are
 atomic (temp file + rename).
 
+If a CLI plugin provides an [auth session store](/guide/extending#auth-session-store)
+(for example, an OS keychain plugin), the CLI keeps sessions there instead of in
+this file. The Python SDK doesn't see those sessions.
+
 ## On-disk session format
 
 The file is a JSON document — `{ "version": 1, "sessions": [ ... ] }` — with each

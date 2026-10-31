@@ -48,6 +48,7 @@ b2c job import ./archive --show-log
 b2c job import ./storefront-export.zip --wait-for-storefront
 b2c job export --site MySite --site-data campaigns_and_promotions --output ./export
 b2c job export --storefront my-storefront --output ./export
+b2c job export --all --output ./full-export
 ```
 
 Import/export wait by default and transfer files over WebDAV. Jobs prefer SCAPI
@@ -61,6 +62,8 @@ Read only the relevant reference:
 - Choose export data units or output paths: [export](references/EXPORT.md).
 - Author/validate XML and verify imported settings: `b2c-cli:b2c-site-import-export`.
 - Apply ordered, tracked migrations: `b2c-cli:b2c-import-set-migrations`.
+- Automate code or data replication from staging with a custom job: `b2c-cli:b2c-replication`.
+- Move a Storefront Next storefront to another instance: `b2c-cli:b2c-storefronts`.
 
 ## Output
 

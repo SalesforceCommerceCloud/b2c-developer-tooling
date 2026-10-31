@@ -9,7 +9,11 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import {B2CPluginManager} from '@salesforce/b2c-tooling-sdk/plugins';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
-import {globalAuthMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/auth';
+import {
+  getAuthSessionBackend,
+  globalAuthMiddlewareRegistry,
+  resetAuthSessionStoreForTesting,
+} from '@salesforce/b2c-tooling-sdk/auth';
 import {globalConfigSourceRegistry} from '@salesforce/b2c-tooling-sdk/config';
 
 describe('plugins/manager', () => {
@@ -248,6 +252,31 @@ describe('plugins/manager', () => {
     manager.applyMiddleware();
 
     expect(globalAuthMiddlewareRegistry.getProviderNames()).to.include('test-auth-middleware');
+  });
+
+  it('collects an auth session store without installing it', async () => {
+    resetAuthSessionStoreForTesting();
+    for (const name of ['b-store', 'a-store']) {
+      setupPlugin(tempDir, name, {'b2c:auth-session-store': './hooks/store.mjs'});
+      const hooksDir = path.join(tempDir, 'node_modules', name, 'hooks');
+      fs.mkdirSync(hooksDir, {recursive: true});
+      fs.writeFileSync(
+        path.join(hooksDir, 'store.mjs'),
+        `export default async function() {
+          return { backend: { id: '${name}', find() { return null; }, save() {}, delete() {}, list() { return []; }, clearAll() {} } };
+        }`,
+      );
+    }
+
+    const manager = new B2CPluginManager({discoveryOptions: {dataDir: tempDir}});
+    await manager.initialize();
+    manager.applyMiddleware();
+
+    // First plugin by name wins
+    expect((manager.getAuthSessionBackend() as unknown as {id: string}).id).to.equal('a-store');
+    // The host decides whether to install it
+    expect(getAuthSessionBackend()).to.not.equal(manager.getAuthSessionBackend());
+    resetAuthSessionStoreForTesting();
   });
 
   it('handles hook invocation errors gracefully', async () => {

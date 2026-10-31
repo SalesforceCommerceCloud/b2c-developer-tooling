@@ -40,7 +40,7 @@
  * | `--server` | `SFCC_SERVER` | B2C instance hostname |
  * | `--code-version` | `SFCC_CODE_VERSION` | Code version for deployments |
  * | `--username` | `SFCC_USERNAME` | Username for Basic auth (WebDAV) |
- * | `--password` | `SFCC_PASSWORD` | Password/access key for Basic auth |
+ * | `--password` | `SFCC_PASSWORD` | WebDAV access key for Basic auth |
  * | `--client-id` | `SFCC_CLIENT_ID` | OAuth client ID |
  * | `--client-secret` | `SFCC_CLIENT_SECRET` | OAuth client secret |
  *
@@ -65,7 +65,7 @@
  * ## Configuration
  *
  * Different tools require different configuration:
- * - **MRT tools** (e.g., `mrt_bundle_push`) → MRT flags (--project, --api-key)
+ * - **MRT tools** (e.g., `mrt_logs_watch`) → MRT flags (--project, --api-key)
  * - **B2C instance tools** (e.g., `cartridge_deploy`, SCAPI) → Instance flags or dw.json
  * - **Local tools** (e.g., scaffolding) → None
  *
@@ -146,6 +146,7 @@ import type {LoadConfigOptions} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {serveStdio} from '@modelcontextprotocol/server/stdio';
 import {EnvSource, readProjectEnvironment} from '@salesforce/b2c-tooling-sdk/config';
+import {setScapiBaseUrl} from '@salesforce/b2c-tooling-sdk/clients';
 import {
   isRemoteScapiSchema,
   loadScapiSchemaOverrides,
@@ -324,9 +325,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
       ...mrt.config,
     };
 
-    return loadConfig(flagConfig, options, {
+    const config = await loadConfig(flagConfig, options, {
       before: projectEnvironment ? [new EnvSource(projectEnvironment)] : undefined,
     });
+    // Internal SCAPI origin override follows the project resolved for this call.
+    setScapiBaseUrl(config.values.scapiBaseUrl);
+    return config;
   }
 
   /**
@@ -448,6 +452,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
             },
             telemetry: this.telemetry,
             cleanup: () => context.destroyAll(),
+            projectDirectory: this.flags['project-directory'],
             cacheHints: {
               'tools/list': {ttlMs: 300_000, cacheScope: 'private'},
               'resources/list': {ttlMs: 300_000, cacheScope: 'private'},
@@ -459,7 +464,9 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
               'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
-              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; ' +
+              'Production incidents (slow or failing storefront/APIs, external service failures, jobs, orders): first read skill://b2c-ops/b2c-production-triage/SKILL.md. ' +
+              'Missing credentials in config do not mean unauthenticated: instance tools may sign in through Account Manager in the browser; resolution.auth and config_inspect show how. ' +
+              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; artifacts or dashboards skill://mcp/b2c-mcp-claude-artifacts/SKILL.md; ' +
               'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).',
           },
         );

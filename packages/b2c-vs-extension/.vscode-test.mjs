@@ -32,6 +32,8 @@ const isolatedEnvironment = (label, extra = {}) => {
     ...Object.fromEntries(configVariables.map((key) => [key, undefined])),
     B2C_CONFIG_DIR: paths.b2cConfig,
     MRT_CREDENTIALS_FILE: path.join(paths.b2cConfig, 'missing.mobify'),
+    // Clearing SFCC_* above also drops CI's opt-out; test runs must never report telemetry.
+    SFCC_DISABLE_TELEMETRY: 'true',
     ...extra,
   };
 };

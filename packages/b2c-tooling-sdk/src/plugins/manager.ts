@@ -10,10 +10,12 @@ import type {HttpMiddlewareProvider} from '../clients/middleware-registry.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import type {AuthMiddlewareProvider} from '../auth/middleware.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
+import type {AuthSessionBackend} from '../auth/session-store.js';
 import type {Logger} from '../logging/types.js';
 import type {ConfigSourcesHookResult} from '../cli/hooks.js';
 import type {HttpMiddlewareHookResult} from '../cli/hooks.js';
 import type {AuthMiddlewareHookResult} from '../cli/hooks.js';
+import type {AuthSessionStoreHookResult} from '../cli/hooks.js';
 import {discoverPlugins, type PluginDiscoveryOptions} from './discovery.js';
 import {createHookContext, invokeHook} from './loader.js';
 
@@ -47,6 +49,8 @@ export class B2CPluginManager {
   private _sourcesAfter: ConfigSource[] = [];
   private _httpMiddleware: HttpMiddlewareProvider[] = [];
   private _authMiddleware: AuthMiddlewareProvider[] = [];
+  private _authSessionBackend?: AuthSessionBackend;
+  private _authSessionBackendPlugin?: string;
   private readonly logger?: Logger;
   private readonly discoveryOptions?: PluginDiscoveryOptions;
 
@@ -58,7 +62,8 @@ export class B2CPluginManager {
   /**
    * Discovers installed plugins and invokes their hooks.
    *
-   * Collects config sources, HTTP middleware, and auth middleware providers.
+   * Collects config sources, HTTP middleware, auth middleware providers, and
+   * the auth session store.
    */
   async initialize(hookOptions?: PluginHookOptions): Promise<void> {
     if (this._initialized) return;
@@ -127,6 +132,25 @@ export class B2CPluginManager {
           }
         }
       }
+
+      // Auth session store hook (first plugin by name wins, same as the CLI)
+      if (plugin.hooks['b2c:auth-session-store']) {
+        for (const hookPath of plugin.hooks['b2c:auth-session-store']) {
+          const absPath = path.resolve(plugin.packageDir, hookPath);
+          const options = {flags: hookOptions?.flags ?? {}};
+          const result = await invokeHook<AuthSessionStoreHookResult>(absPath, context, options, this.logger);
+          if (!result?.backend) continue;
+          if (this._authSessionBackend) {
+            this.logger?.warn(
+              `Plugin ${plugin.name} also provides an auth session store; using the one from ${this._authSessionBackendPlugin}`,
+            );
+            continue;
+          }
+          this._authSessionBackend = result.backend;
+          this._authSessionBackendPlugin = plugin.name;
+          this.logger?.debug(`Collected auth session store (from ${plugin.name})`);
+        }
+      }
     }
   }
 
@@ -172,6 +196,17 @@ export class B2CPluginManager {
       sourcesBefore: this._sourcesBefore,
       sourcesAfter: this._sourcesAfter,
     };
+  }
+
+  /**
+   * Returns the auth session store provided by a plugin, if any.
+   *
+   * Not installed by {@link applyMiddleware}: hosts with their own secret storage
+   * (such as the VS Code extension) decide whether to use it. To use it, pass it
+   * to `setAuthSessionBackend()` from `@salesforce/b2c-tooling-sdk/auth`.
+   */
+  getAuthSessionBackend(): AuthSessionBackend | undefined {
+    return this._authSessionBackend;
   }
 
   /**

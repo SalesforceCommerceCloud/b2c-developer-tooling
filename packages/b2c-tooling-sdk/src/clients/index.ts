@@ -84,7 +84,8 @@
  *
  * ```typescript
  * // src/clients/my-api.ts
- * import createClient, { type Client } from 'openapi-fetch';
+ * import type { Client } from 'openapi-fetch';
+ * import { createHttpClient } from './http-transport.js';
  * import type { AuthStrategy } from '../auth/types.js';
  * import type { paths, components } from './my-api.generated.js';
  * import { createAuthMiddleware, createLoggingMiddleware } from './middleware.js';
@@ -93,9 +94,9 @@
  * export type MyApiClient = Client<paths>;
  *
  * export function createMyApiClient(config: MyApiConfig, auth: AuthStrategy): MyApiClient {
- *   const client = createClient<paths>({
+ *   const client = createHttpClient<paths>({
  *     baseUrl: `https://${config.host}/api/v1`,
- *   });
+ *   }, auth);
  *
  *   // Add middleware - auth first, logging last (so logging sees complete request)
  *   client.use(createAuthMiddleware(auth));
@@ -118,6 +119,7 @@
  */
 export {WebDavClient} from './webdav.js';
 export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
+export {describeWebDavUserAccessFailure, getWebDavRootPermission} from './webdav-access-hint.js';
 
 export {
   createAuthMiddleware,
@@ -136,6 +138,15 @@ export type {
 
 // User-Agent provider (auto-registers on import)
 export {setUserAgent, getUserAgent, resetUserAgent, userAgentProvider} from './user-agent.js';
+
+export {
+  createApiWebSocket,
+  createHttpClient,
+  createWebDavDispatcher,
+  getApiDispatcher,
+  getApiFetch,
+} from './http-transport.js';
+export type {ApiFetch, HttpClientOptions, HttpTransportOptions} from './http-transport.js';
 
 export {MiddlewareRegistry, globalMiddlewareRegistry} from './middleware-registry.js';
 export type {HttpClientType, HttpMiddlewareProvider, UnifiedMiddleware} from './middleware-registry.js';
@@ -281,8 +292,9 @@ export type {
   ListOrgsOptions,
 } from './am-api.js';
 
-export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
+export {createCdnZonesClient, listAllZones, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {
+  ListAllZonesResult,
   CdnZonesClient,
   CdnZonesClientConfig,
   CdnZonesClientOptions,
@@ -481,6 +493,24 @@ export type {
   components as StorefrontEnvironmentsComponents,
 } from './storefront-environments.js';
 
+export {createStorefrontStorefrontsClient, STOREFRONT_STOREFRONTS_CASCADE} from './storefront-storefronts.js';
+export type {
+  StorefrontStorefrontsClient,
+  StorefrontStorefrontsClientConfig,
+  StorefrontStorefrontsError,
+  StorefrontStorefrontsResponse,
+  Storefront,
+  StorefrontResult,
+  StorefrontCreateRequest,
+  StorefrontUpdateRequest,
+  StorefrontType,
+  StorefrontCreateType,
+  StorefrontSetupStatus,
+  SsrRegion as StorefrontSsrRegion,
+  paths as StorefrontStorefrontsPaths,
+  components as StorefrontStorefrontsComponents,
+} from './storefront-storefronts.js';
+
 // SCAPI dual-backend utilities (shared across SCAPI/OCAPI domains)
 export {
   createScapiRequestError,
@@ -509,6 +539,7 @@ export {createFallbackBackend} from './scapi-fallback-backend.js';
 export {createDualBackend} from './dual-backend-factory.js';
 export type {DualBackendConfig, DualBackendCtors, ScapiBackendCtorConfig} from './dual-backend-factory.js';
 export {buildScapiClient} from './scapi-client-factory.js';
+export {getScapiOrigin, getScapiBaseUrl, setScapiBaseUrl, SCAPI_BASE_URL_ENV_VAR} from './scapi-origin.js';
 export type {BuildScapiClientOptions, ScapiClientConfig} from './scapi-client-factory.js';
 export {ScopeTierManager} from './scapi-scope-tier.js';
 export type {ScopeTier, ScopeTierManagerOptions} from './scapi-scope-tier.js';
@@ -520,6 +551,7 @@ export {
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
   ocapiDeprecatedMessage,
+  redactAccessTokens,
 } from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

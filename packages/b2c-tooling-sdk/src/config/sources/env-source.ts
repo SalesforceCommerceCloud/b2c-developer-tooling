@@ -55,17 +55,20 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_CERTIFICATE: 'certificate',
   SFCC_CERTIFICATE_PASSPHRASE: 'certificatePassphrase',
   SFCC_SELFSIGNED: 'selfSigned',
+  SFCC_SELFSIGNED_API: 'selfSignedApi',
   SFCC_CLIENT_ID: 'clientId',
   SFCC_CLIENT_SECRET: 'clientSecret',
   SFCC_OAUTH_SCOPES: 'scopes',
   SFCC_SHORT_CODE: 'shortCode',
   SFCC_SHORTCODE: 'shortCode',
   SFCC_TENANT_ID: 'tenantId',
+  SFCC_SCAPI_BASE_URL: 'scapiBaseUrl',
   SFCC_SLAS_CLIENT_ID: 'slasClientId',
   SFCC_SLAS_CLIENT_SECRET: 'slasClientSecret',
   SFCC_SITE_ID: 'siteId',
   SFCC_CARTRIDGES: 'cartridges',
   SFCC_IMPORT_SET_EXCLUDE: 'importSetExclude',
+  SFCC_CARTRIDGE_IGNORE_DIRS: 'cartridgeIgnoreDirs',
   SFCC_CATALOGS: 'catalogs',
   SFCC_LIBRARIES: 'libraries',
   SFCC_ASSET_QUERY: 'assetQuery',
@@ -101,6 +104,7 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
   'authMethods',
   'cartridges',
   'importSetExclude',
+  'cartridgeIgnoreDirs',
   'catalogs',
   'docsCategories',
   'scapiSchemas',
@@ -109,7 +113,7 @@ const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
 ]);
 
 /** Fields that should be parsed as booleans. */
-const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned']);
+const BOOLEAN_FIELDS = new Set<keyof NormalizedConfig>(['selfSigned', 'selfSignedApi']);
 
 /**
  * Enum-valued fields and their allowed values. Values outside the set are

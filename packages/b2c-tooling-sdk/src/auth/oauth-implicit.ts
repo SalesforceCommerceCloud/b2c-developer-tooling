@@ -8,10 +8,12 @@ import type {Socket} from 'node:net';
 import {URL} from 'node:url';
 import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import type {HttpTransportOptions} from '../clients/http-transport.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {findAuthSession, saveAuthSession, type AuthSession} from './session-store.js';
+import {describeSignIn} from './instance-auth.js';
 
 const DEFAULT_LOCAL_PORT = 8080;
 
@@ -24,7 +26,7 @@ const PENDING_AUTH: Map<string, Promise<AccessTokenResponse>> = new Map();
 /**
  * Configuration for the implicit OAuth flow.
  */
-export interface ImplicitOAuthConfig {
+export interface ImplicitOAuthConfig extends HttpTransportOptions {
   /** OAuth client ID registered with Account Manager */
   clientId: string;
   /** OAuth scopes to request (e.g., 'sfcc.products', 'sfcc.orders') */
@@ -160,6 +162,11 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     logger.trace({scopes: this.config.scopes}, '[Auth] Configured scopes');
   }
 
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
+  }
+
   /**
    * Load any persisted implicit session for this clientId. Idempotent.
    * Skips PKCE-flow records (different shape, different flow tag).
@@ -186,6 +193,24 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     } catch (error) {
       getLogger().debug({err: error}, '[Auth] Implicit store hydration failed');
     }
+  }
+
+  private logSignIn(tokenResponse: AccessTokenResponse): void {
+    let user = this._sub;
+    try {
+      const {sub} = decodeJWT(tokenResponse.accessToken).payload;
+      if (typeof sub === 'string' && sub.length > 0) user = sub;
+    } catch {
+      // not a JWT
+    }
+    getLogger().info(
+      describeSignIn({
+        clientId: this.config.clientId,
+        accountManagerHost: this.accountManagerHost,
+        user,
+        expiresAt: tokenResponse.expires,
+      }),
+    );
   }
 
   /**
@@ -300,6 +325,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     const tokenResponse = await this.implicitFlowLogin();
     ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
     this.persistTokens(tokenResponse);
+    this.logSignIn(tokenResponse);
     return tokenResponse;
   }
 
@@ -374,6 +400,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       const tokenResponse = await authPromise;
       ACCESS_TOKEN_CACHE.set(clientId, tokenResponse);
       this.persistTokens(tokenResponse);
+      this.logSignIn(tokenResponse);
       logger.debug(
         {expiresAt: tokenResponse.expires.toISOString(), scopes: tokenResponse.scopes},
         '[Auth] New token cached',

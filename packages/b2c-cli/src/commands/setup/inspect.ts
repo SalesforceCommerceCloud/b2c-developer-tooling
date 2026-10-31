@@ -11,6 +11,7 @@ import type {NormalizedConfig, ConfigSourceInfo, ResolvedB2CConfig} from '@sales
 import {isSensitiveConfigField, maskConfigValue, redactConfigValues} from '@salesforce/b2c-tooling-sdk/config';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '@salesforce/b2c-tooling-sdk';
 import {DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
+import {describeInstanceAuth, type InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import {
   loadGlobalSafetyConfig,
   parseSafetyLevelString,
@@ -18,11 +19,14 @@ import {
 } from '@salesforce/b2c-tooling-sdk/safety';
 import {t, withDocs} from '../../i18n/index.js';
 import {createEnvironmentSources} from '../../utils/setup/config-field-command.js';
+import {describeAuthPath, describeSessionState, summarizeInstanceAuth} from '../../utils/auth/describe.js';
 
 /**
  * JSON output structure for the inspect command.
  */
 interface SetupInspectResponse {
+  /** How this instance authenticates and the stored sessions it can use; see `b2c auth status`. */
+  auth?: InstanceAuthSummary;
   config: Record<string, unknown>;
   sources: ConfigSourceInfo[];
   warnings?: string[];
@@ -109,7 +113,10 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
   static flags = {
     ...BaseCommand.baseFlags,
     verbose: Flags.boolean({
-      description: t('commands.setup.inspect.verbose', 'Show the full ordered safety ruleset'),
+      description: t(
+        'commands.setup.inspect.verbose',
+        'Show the full ordered safety ruleset and authentication details',
+      ),
       default: false,
     }),
     unmask: Flags.boolean({
@@ -165,7 +172,12 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
 
     // Build output config with masking applied
     const outputConfig = redactConfigValues(values, {unmask});
+    // WebDAV and code commands can fall back to a browser login with the built-in client.
+    const auth = values.hostname
+      ? describeInstanceAuth(values, {defaultWebDavClient: true, reuseUnconfiguredSession: true})
+      : undefined;
     const result: SetupInspectResponse = {
+      auth,
       config: outputConfig,
       sources,
       warnings: warnings.length > 0 ? warnings.map((w) => w.message) : undefined,
@@ -181,7 +193,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       this.warn('Sensitive values are displayed unmasked.');
     }
 
-    this.printConfig(values, sources, unmask, safety);
+    this.printConfig(values, sources, unmask, safety, auth);
 
     // Show warnings
     for (const warning of warnings) {
@@ -270,6 +282,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     sources: ConfigSourceInfo[],
     unmask: boolean,
     safety: SafetyInspection,
+    auth?: InstanceAuthSummary,
   ): void {
     const ui = cliui({width: process.stdout.columns || 80});
     const fieldSources = this.buildFieldSourceMap(sources);
@@ -290,6 +303,9 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       fieldSources,
       unmask,
     );
+    if (auth && !this.flags.verbose) {
+      ui.div({text: '  auth', width: 22}, {text: summarizeInstanceAuth(auth)});
+    }
 
     // Auth (Basic) section
     this.renderSection(
@@ -364,6 +380,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
       [
         ['shortCode', config.shortCode],
         ['tenantId', config.tenantId],
+        ...(config.scapiBaseUrl ? [['scapiBaseUrl', config.scapiBaseUrl] as [string, unknown]] : []),
       ],
       fieldSources,
       unmask,
@@ -403,6 +420,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['autoUpload', config.autoUpload],
         ['cartridges', config.cartridges],
         ['importSetExclude', config.importSetExclude],
+        ['cartridgeIgnoreDirs', config.cartridgeIgnoreDirs],
         ['contentLibrary', config.contentLibrary],
         ['catalogs', config.catalogs],
         ['libraries', config.libraries],
@@ -427,6 +445,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     );
 
     this.renderSafety(ui, safety);
+    if (auth && this.flags.verbose) this.renderAuth(ui, auth);
 
     // Sources section
     if (sources.length > 0) {
@@ -452,6 +471,34 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
     }
 
     ux.stdout(ui.toString());
+  }
+
+  /**
+   * One line per request type. Sessions belong to Account Manager clients,
+   * not instances, so their details live in `b2c auth status`.
+   */
+  private renderAuth(ui: ReturnType<typeof cliui>, auth: InstanceAuthSummary): void {
+    ui.div({text: '', padding: [0, 0, 0, 0]});
+    ui.div({text: t('commands.setup.inspect.auth', 'Effective Authentication'), padding: [1, 0, 0, 0]});
+    ui.div({text: '─'.repeat(60), padding: [0, 0, 0, 0]});
+    for (const [label, path] of [
+      ['WebDAV', auth.webdav],
+      ['OCAPI', auth.ocapi],
+      ['SCAPI', auth.scapi],
+    ] as const) {
+      const session = path.clientId ? auth.sessions.find((s) => s.clientId === path.clientId) : undefined;
+      const state = describeSessionState(path, session);
+      ui.div({text: label, width: 22}, {text: describeAuthPath(path) + (state ? ` — ${state}` : '')});
+    }
+    if (auth.sessions.length > 0 || [auth.webdav, auth.ocapi].some((p) => p.method === 'user')) {
+      ui.div({
+        text: t(
+          'commands.setup.inspect.authStatusHint',
+          'Sign-ins are stored per Account Manager client and shared across instances. Run "b2c auth status" for details.',
+        ),
+        padding: [1, 0, 0, 0],
+      });
+    }
   }
 
   /**

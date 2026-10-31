@@ -5,7 +5,12 @@
  */
 import {expect} from 'chai';
 import {ScapiRequestError} from '../../../src/clients/scapi-backend-utils.js';
-import {resolveMrtBackend, runMrtWithFallback, type MrtBackend} from '../../../src/operations/mrt/mrt-backend.js';
+import {
+  MrtScapiPreconditionError,
+  resolveMrtBackend,
+  runMrtWithFallback,
+  type MrtBackend,
+} from '../../../src/operations/mrt/mrt-backend.js';
 
 describe('operations/mrt/mrt-backend', () => {
   describe('resolveMrtBackend', () => {
@@ -192,6 +197,61 @@ describe('operations/mrt/mrt-backend', () => {
         threw = error;
       }
       expect(threw).to.be.instanceOf(ScapiRequestError);
+      expect(calls).to.deep.equal(['scapi']);
+    });
+
+    it('auto falls back to legacy on a MrtScapiPreconditionError', async () => {
+      // A SCAPI-branch precondition failure (e.g. a required field the SCAPI API
+      // needs but legacy does not) must let `auto` try legacy, where the input
+      // may be valid.
+      const {calls, branches} = makeBranches({
+        scapi: async () => {
+          calls.push('scapi');
+          throw new MrtScapiPreconditionError('The SCAPI MRT backend requires a display name (--name).');
+        },
+      });
+      const fallbackReasons: string[] = [];
+      const run = await runMrtWithFallback(
+        {preference: 'auto', hasScapiConfig: true, onFallback: (reason) => fallbackReasons.push(reason)},
+        branches,
+      );
+      expect(run.backend).to.equal('legacy');
+      expect(run.value).to.equal('legacy-result');
+      expect(calls).to.deep.equal(['scapi', 'legacy']);
+      expect(fallbackReasons[0]).to.include('display name');
+    });
+
+    it('explicit scapi surfaces a MrtScapiPreconditionError without falling back', async () => {
+      const {calls, branches} = makeBranches({
+        scapi: async () => {
+          calls.push('scapi');
+          throw new MrtScapiPreconditionError('The SCAPI MRT backend requires a display name (--name).');
+        },
+      });
+      let threw: unknown;
+      try {
+        await runMrtWithFallback({preference: 'scapi', hasScapiConfig: true}, branches);
+      } catch (error) {
+        threw = error;
+      }
+      expect(threw).to.be.instanceOf(MrtScapiPreconditionError);
+      expect(calls).to.deep.equal(['scapi']);
+    });
+
+    it('does NOT fall back on a MrtScapiPreconditionError when there is no legacy fallback target', async () => {
+      const {calls, branches} = makeBranches({
+        scapi: async () => {
+          calls.push('scapi');
+          throw new MrtScapiPreconditionError('The SCAPI MRT backend requires a display name (--name).');
+        },
+      });
+      let threw: unknown;
+      try {
+        await runMrtWithFallback({preference: 'auto', hasScapiConfig: true, canFallbackToLegacy: false}, branches);
+      } catch (error) {
+        threw = error;
+      }
+      expect(threw).to.be.instanceOf(MrtScapiPreconditionError);
       expect(calls).to.deep.equal(['scapi']);
     });
 

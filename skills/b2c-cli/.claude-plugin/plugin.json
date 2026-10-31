@@ -1,0 +1,20 @@
+{
+  "name": "b2c-cli",
+  "version": "1.13.0",
+  "description": "B2C CLI Skills for Salesforce Commerce Cloud development.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "sfra",
+    "scapi",
+    "ocapi"
+  ],
+  "icon": "./assets/logo.png"
+}

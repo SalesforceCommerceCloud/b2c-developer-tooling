@@ -10,6 +10,9 @@ import {ERROR_CODE} from './base-command.js';
 import {loadConfig, extractInstanceFlags} from './config.js';
 import type {ResolvedB2CConfig} from '../config/index.js';
 import type {B2CInstance} from '../instance/index.js';
+import {listAuthSessions} from '../auth/session-store.js';
+import {getDefaultPublicClientId} from '../defaults.js';
+import {createScriptsBackend, WebDavScriptsBackend, type ScriptsBackend} from '../operations/code/index.js';
 import {t} from '../i18n/index.js';
 import {
   B2CLifecycleRunner,
@@ -32,8 +35,8 @@ import {BackendDispatcher, type ApiBackendPreference} from '../compat/dispatcher
  * - SFCC_SERVER: B2C instance hostname
  * - SFCC_WEBDAV_SERVER: Separate WebDAV hostname (optional)
  * - SFCC_CODE_VERSION: Code version
- * - SFCC_USERNAME: Username for Basic Auth
- * - SFCC_PASSWORD: Password/access key for Basic Auth
+ * - SFCC_USERNAME: Business Manager username for WebDAV Basic auth
+ * - SFCC_PASSWORD: WebDAV access key of that Business Manager user
  * - Plus all from OAuthCommand (SFCC_CLIENT_ID, SFCC_CLIENT_SECRET)
  *
  * Provides:
@@ -72,13 +75,13 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
     }),
     username: Flags.string({
       char: 'u',
-      description: 'Username for Basic Auth (WebDAV)',
+      description: 'Business Manager username for WebDAV Basic auth',
       env: 'SFCC_USERNAME',
       helpGroup: 'AUTH',
     }),
     password: Flags.string({
       char: 'p',
-      description: 'Password/access key for Basic Auth (WebDAV)',
+      description: 'WebDAV access key of the Business Manager user (not the Account Manager password)',
       env: 'SFCC_PASSWORD',
       helpGroup: 'AUTH',
     }),
@@ -273,17 +276,67 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       // B2CInstance. This preserves stored PKCE sessions, refresh tokens,
       // default public clients, and the transitional PKCE→implicit fallback.
       // Keep it lazy so Basic-only WebDAV commands never resolve OAuth.
-      this._instance = this.resolvedConfig.createB2CInstance({oauthStrategy: () => this.getOAuthStrategy()});
+      this._instance = this.resolvedConfig.createB2CInstance({
+        oauthStrategy: () => this.getOAuthStrategy(),
+        defaultWebDavClient: this.canUseDefaultWebDavClient(),
+      });
     }
     return this._instance;
   }
 
   /**
-   * Check if WebDAV credentials are available (Basic or OAuth including implicit).
+   * Whether this command can use WebDAV with a browser login through the
+   * built-in public client when neither Basic auth nor an API client is
+   * configured. The user's Business Manager permissions then authorize the
+   * requests. Override to return `true` in commands whose instance access is
+   * WebDAV-only; OCAPI and SCAPI calls never use the built-in client.
+   */
+  protected supportsDefaultWebDavClient(): boolean {
+    return false;
+  }
+
+  /**
+   * For commands that support the built-in WebDAV client, whether an API
+   * client is available for OCAPI and SCAPI. Without a configured client ID,
+   * the OAuth resolver only reuses a stored session when it is the only one,
+   * and the built-in public client's session has no OCAPI or SCAPI access.
+   */
+  protected override hasOAuthCredentials(): boolean {
+    if (!this.supportsDefaultWebDavClient()) return super.hasOAuthCredentials();
+    // The built-in client has no OCAPI or SCAPI access.
+    if (this.useDefaultClient) return false;
+    if (this.resolvedConfig.hasOAuthConfig()) return true;
+    const sessions = listAuthSessions();
+    return sessions.length === 1 && sessions[0].clientId !== getDefaultPublicClientId(this.accountManagerHost);
+  }
+
+  /**
+   * Code-version backend: SCAPI or OCAPI with an API client, otherwise WebDAV,
+   * which lists versions and finds the active one but cannot activate.
+   */
+  protected createScriptsBackend(): ScriptsBackend {
+    return this.hasOAuthCredentials()
+      ? this.createBackend(createScriptsBackend)
+      : new WebDavScriptsBackend(this.instance);
+  }
+
+  /**
+   * Check if WebDAV credentials are available (Basic, OAuth including implicit,
+   * or a browser login with the built-in client for commands that support it).
    */
   protected hasWebDavCredentials(): boolean {
     // Basic auth, or OAuth (client-credentials needs secret, implicit only needs clientId)
-    return this.resolvedConfig.hasBasicAuthConfig() || this.resolvedConfig.hasOAuthConfig();
+    return (
+      this.resolvedConfig.hasBasicAuthConfig() ||
+      this.resolvedConfig.hasOAuthConfig() ||
+      this.canUseDefaultWebDavClient()
+    );
+  }
+
+  private canUseDefaultWebDavClient(): boolean {
+    if (!this.supportsDefaultWebDavClient()) return false;
+    const authMethods = this.resolvedConfig.values.authMethods;
+    return !authMethods || authMethods.includes('user');
   }
 
   /**

@@ -6,6 +6,34 @@
     "description": "Set up how a storefront or other headless commerce application is deployed to Managed Runtime. <br /><br />Note: Where possible, we changed noninclusive terms to align with our company value of Equality. We maintained certain terms to avoid any effect on customer implementations."
   },
   "paths": {
+    "/api/maintenance-status/": {
+      "get": {
+        "operationId": "maintenance_status_retrieve",
+        "tags": [
+          "maintenance-status"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceStatus"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/organizations/": {
       "get": {
         "operationId": "organizations_list",
@@ -67,7 +95,8 @@
                             "browse": true,
                             "create_project": true,
                             "delete_organization": true,
-                            "edit_organization": true
+                            "edit_organization": true,
+                            "view_members": true
                           }
                         }
                       ]
@@ -968,6 +997,278 @@
         }
       }
     },
+    "/api/organizations/{organization_slug}/scapi-identity-headers/": {
+      "get": {
+        "operationId": "organizations_scapi_identity_headers_list",
+        "description": "GET: list the organization's per-instance SCAPI Identity Headers with their\nrotation status.\nPUT: set or rotate the header for an instance (instance_id + value in the\nbody).",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPISCAPIIdentityHeaderList"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "put": {
+        "operationId": "organizations_scapi_identity_headers_update",
+        "description": "GET: list the organization's per-instance SCAPI Identity Headers with their\nrotation status.\nPUT: set or rotate the header for an instance (instance_id + value in the\nbody).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APISCAPIIdentityHeader"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/APISCAPIIdentityHeader"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/APISCAPIIdentityHeader"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APISCAPIIdentityHeader"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/scapi-identity-headers/{instance_id}/": {
+      "get": {
+        "operationId": "organizations_scapi_identity_headers_retrieve",
+        "description": "GET: retrieve a single instance's SCAPI Identity Header (with rotation\nstatus).\nDELETE: remove the instance's header and redeploy its environments so the\nheader is no longer injected.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APISCAPIIdentityHeader"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "operationId": "organizations_scapi_identity_headers_destroy",
+        "description": "GET: retrieve a single instance's SCAPI Identity Header (with rotation\nstatus).\nDELETE: remove the instance's header and redeploy its environments so the\nheader is no longer injected.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body"
+          }
+        }
+      }
+    },
+    "/api/organizations/{organization_slug}/scapi-identity-headers/{instance_id}/targets/": {
+      "get": {
+        "operationId": "organizations_scapi_identity_headers_targets_list",
+        "description": "GET: list the environments in an instance's SCAPI Identity Header rotation\ncohort, each with its project, target, and per-environment propagation status.\n\nThis is the per-environment breakdown behind the aggregate rotation status\nreported by the header endpoints; it is kept on its own sub-resource so the\npolled status response stays a fixed-size aggregate.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "organization_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "organizations"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAPISCAPIIdentityHeaderTargetList"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/projects/": {
       "get": {
         "operationId": "projects_list",
@@ -992,13 +1293,20 @@
             }
           },
           {
-            "name": "organization",
-            "required": false,
             "in": "query",
-            "description": "An organization to search within.",
+            "name": "organization",
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Slug of the organization to scope the listing to. Omit to list projects across all organizations the caller can access; pass an empty value to list projects with no organization."
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive substring match against the project name, applied within the organization-scoped queryset."
           }
         ],
         "tags": [
@@ -1052,7 +1360,9 @@
                             "upload_bundle": true,
                             "edit_environment_variable": true,
                             "edit_access_control_header": true,
-                            "edit_data_access_layer_entry": true
+                            "edit_data_access_layer_entry": true,
+                            "storefront_preview": true,
+                            "view_access_control_header": true
                           },
                           "deletion_status": "ACTIVE",
                           "created_at": "2025-07-24T07:30:22.288165Z",
@@ -1146,7 +1456,9 @@
                         "upload_bundle": true,
                         "edit_environment_variable": true,
                         "edit_access_control_header": true,
-                        "edit_data_access_layer_entry": true
+                        "edit_data_access_layer_entry": true,
+                        "storefront_preview": true,
+                        "view_access_control_header": true
                       },
                       "deletion_status": "ACTIVE",
                       "created_at": "2025-07-24T07:30:22.288165Z",
@@ -1222,7 +1534,9 @@
                         "upload_bundle": true,
                         "edit_environment_variable": true,
                         "edit_access_control_header": true,
-                        "edit_data_access_layer_entry": true
+                        "edit_data_access_layer_entry": true,
+                        "storefront_preview": true,
+                        "view_access_control_header": true
                       },
                       "deletion_status": "ACTIVE",
                       "created_at": "2025-07-24T07:30:22.288165Z",
@@ -1324,7 +1638,9 @@
                         "upload_bundle": true,
                         "edit_environment_variable": true,
                         "edit_access_control_header": true,
-                        "edit_data_access_layer_entry": true
+                        "edit_data_access_layer_entry": true,
+                        "storefront_preview": true,
+                        "view_access_control_header": true
                       },
                       "deletion_status": "ACTIVE",
                       "created_at": "2025-07-24T07:30:22.288165Z",
@@ -1628,6 +1944,30 @@
         "description": "List bundles of a project",
         "parameters": [
           {
+            "in": "query",
+            "name": "created_by",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter bundles by uploader email (exact match)."
+          },
+          {
+            "in": "query",
+            "name": "deletion_status",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter bundles by deletion_status. Comma-separated values (e.g. `?deletion_status=ACTIVE,CLEANUP_FAILED`). Allowed values: ACTIVE (Active), CLEANUP_REQUESTED (Cleanup Requested), CLEANUP_IN_PROGRESS (Cleanup in Progress), CLEANUP_COMPLETE (Cleanup Complete), CLEANUP_FAILED (Cleanup Failed)."
+          },
+          {
+            "in": "query",
+            "name": "deployed_to_env",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter to bundles currently deployed to one of the given target slugs. Comma-separated for multiple values (e.g. `?deployed_to_env=staging,production`). Mirrors the `in_use_by` field in the response."
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",
@@ -1671,6 +2011,32 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter bundles by status. Comma-separated integers matching the `Bundle.Status` enum (e.g. `?status=0,1`). Allowed values: 0 (ok), 1 (broken), 2 (preparing)."
+          },
+          {
+            "in": "query",
+            "name": "uploaded_after",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Return bundles whose updated_at is on or after this ISO 8601 timestamp."
+          },
+          {
+            "in": "query",
+            "name": "uploaded_before",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Return bundles whose updated_at is on or before this ISO 8601 timestamp."
           }
         ],
         "tags": [
@@ -2032,6 +2398,31 @@
           },
           "500": {
             "description": "An unexpected error occurred during the bulk delete operation. The operation has been rolled back and no bundles were deleted."
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/deploys/search/": {
+      "post": {
+        "operationId": "projects_deploys_search_create",
+        "description": "Append ``MrtApiAccessPermission`` to a view's permissions so legacy MRT\n(v2) API calls are blocked when the project has ``is_mrt_api_enabled=False``\n(W-23913370). Gates ``project_slug``-scoped v2 views; SCAPI views are exempt\nsimply by not inheriting this mixin.\n\nThe permission is added **last** (after the view's resource/object\npermissions) on purpose: a caller who is not authorized on the project must\nbe denied by the resource permission first, so the ``mrt_api_disabled`` code\nis never returned to someone who lacks access -- otherwise the response code\nwould leak a project's ``is_mrt_api_enabled`` state to unauthorized callers.\n\nViews that override ``get_permissions`` bypass this via MRO and must add\n``MrtApiAccessPermission`` themselves (again, last).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string",
+              "pattern": "^[\\w-]+$"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "No response body"
           }
         }
       }
@@ -2766,7 +3157,7 @@
       },
       "post": {
         "operationId": "projects_target_create",
-        "description": "Create a new target.",
+        "description": "Create a new target. Optionally associate a B2C Commerce instance by passing `instance_id` (and `sites`); when provided, the B2C target info is created in the same database transaction as the target.",
         "parameters": [
           {
             "in": "path",
@@ -2811,6 +3202,17 @@
                     "log_level": "INFO",
                     "certificate_id": 0
                   }
+                },
+                "RequestExampleWithB2CInstance": {
+                  "value": {
+                    "name": "Testing EU",
+                    "instance_id": "aaaa_prd",
+                    "sites": [
+                      "DemoSite1",
+                      "DemoSite2"
+                    ]
+                  },
+                  "summary": "Create a target and pair it with a B2C instance"
                 }
               }
             },
@@ -2970,7 +3372,7 @@
                       "ssr_proxy_configs": [
                         {
                           "host": "www.proxyhost1.com",
-                          "protocol": "http"
+                          "protocol": "https"
                         },
                         {
                           "host": "www.proxyhost2.com",
@@ -3035,7 +3437,7 @@
                     "ssr_proxy_configs": [
                       {
                         "host": "www.proxyhost1.com",
-                        "protocol": "http"
+                        "protocol": "https"
                       },
                       {
                         "host": "www.proxyhost2.com",
@@ -3127,7 +3529,7 @@
                       "ssr_proxy_configs": [
                         {
                           "host": "www.proxyhost1.com",
-                          "protocol": "http"
+                          "protocol": "https"
                         },
                         {
                           "host": "www.proxyhost2.com",
@@ -3606,6 +4008,24 @@
         "description": "Get the deployment history of a target.",
         "parameters": [
           {
+            "in": "query",
+            "name": "created_after",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Return deploys whose created_at is on or after this ISO 8601 timestamp."
+          },
+          {
+            "in": "query",
+            "name": "created_before",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Return deploys whose created_at is on or before this ISO 8601 timestamp."
+          },
+          {
             "name": "limit",
             "required": false,
             "in": "query",
@@ -3633,6 +4053,14 @@
             "required": true
           },
           {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter deploys by status. Comma-separated for multiple values (e.g. `?status=queued,in_progress`). Accepted values: queued, in_progress, failed, finished."
+          },
+          {
             "in": "path",
             "name": "target_slug",
             "schema": {
@@ -3640,6 +4068,14 @@
             },
             "description": "The target identifier.",
             "required": true
+          },
+          {
+            "in": "query",
+            "name": "user",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter deploys by the email of the user that triggered them (exact match)."
           }
         ],
         "tags": [
@@ -4201,6 +4637,7 @@
                       "previous": "http://api.example.org/accounts/?offset=200&limit=100",
                       "results": [
                         {
+                          "uuid": "58c8da00-a596-4e62-9b93-dfc26a73528e",
                           "from_path": "/spring",
                           "to_url": "/summer",
                           "forward_querystring": false,
@@ -4323,6 +4760,7 @@
                   },
                   "ResponseExample2-SingleRedirectCreation": {
                     "value": {
+                      "uuid": "58c8da00-a596-4e62-9b93-dfc26a73528e",
                       "from_path": "/spring/*",
                       "to_url": "/summer",
                       "forward_querystring": false,
@@ -4482,6 +4920,7 @@
                 "examples": {
                   "ResponseExample1": {
                     "value": {
+                      "uuid": "58c8da00-a596-4e62-9b93-dfc26a73528e",
                       "from_path": "/spring",
                       "to_url": "/summer-newbranding",
                       "http_status_code": 301,
@@ -4519,6 +4958,242 @@
               "type": "string"
             },
             "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No response body. The request was processed successfully."
+          }
+        }
+      }
+    },
+    "/api/projects/{project_slug}/target/{target_slug}/redirect/{redirect_uuid}/": {
+      "get": {
+        "operationId": "projects_target_redirect_retrieve_2",
+        "description": "Read data about a redirect by its `uuid`. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "from_path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The redirect's `from_path`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "redirect_uuid",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The redirect's `uuid`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      },
+      "patch": {
+        "operationId": "projects_target_redirect_partial_update_2",
+        "description": "Update a redirect by its `uuid`. Unlike updating by `from_path`, addressing a redirect by its immutable `uuid` lets you change the `from_path` itself without the identifier changing. We recommend that you always change redirects in your staging target (environment), and then [clone](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=projects_target_redirect_clone_create) the changes to your production target. Changes may take up to 20 minutes to take effect on your site. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "from_path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The redirect's `from_path`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "redirect_uuid",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The redirect's `uuid`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "target_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target identifier.",
+            "required": true
+          }
+        ],
+        "tags": [
+          "projects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIRedirectV2CreateUpdate"
+              },
+              "examples": {
+                "RequestExample1": {
+                  "value": {
+                    "from_path": "/spring",
+                    "to_url": "/summer-newbranding",
+                    "http_status_code": 301
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIRedirectV2CreateUpdate"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedAPIRedirectV2CreateUpdate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Basic": []
+          },
+          {
+            "BearerToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+                },
+                "examples": {
+                  "ResponseExample1": {
+                    "value": {
+                      "uuid": "58c8da00-a596-4e62-9b93-dfc26a73528e",
+                      "from_path": "/spring",
+                      "to_url": "/summer-newbranding",
+                      "http_status_code": 301,
+                      "publishing_status": "Pending",
+                      "user_email": "john.doe@example.com",
+                      "updated_by": "john.doe@example.com",
+                      "created_at": "2024-05-23T00:00:00.000Z",
+                      "updated_at": "2024-05-23T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "The request was processed successfully."
+          }
+        }
+      },
+      "delete": {
+        "operationId": "projects_target_redirect_destroy_2",
+        "description": "Delete a redirect by its `uuid`. We recommend that you always delete redirects in your staging target (environment), and then [clone](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/references/mrt-admin?meta=projects_target_redirect_clone_create) the changes to your production target. Changes may take up to 20 minutes to take effect on your site. When you delete a redirect, you no longer see it in Runtime Admin. See [Redirects](https://developer.salesforce.com/docs/commerce/pwa-kit-managed-runtime/guide/managed-runtime-administration.html#redirects).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "from_path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The redirect's `from_path`.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "project_slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The project identifier.",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "redirect_uuid",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The redirect's `uuid`.",
             "required": true
           },
           {
@@ -4689,6 +5364,7 @@
                     "value": {
                       "node_deprecation_notifications": true,
                       "custom_domain_certificate_notifications": true,
+                      "x86_retirement_notifications": true,
                       "created_at": "2024-01-15T10:30:00Z",
                       "updated_at": "2024-01-15T10:30:00Z"
                     }
@@ -4716,7 +5392,8 @@
                 "RequestExample1": {
                   "value": {
                     "node_deprecation_notifications": false,
-                    "custom_domain_certificate_notifications": false
+                    "custom_domain_certificate_notifications": false,
+                    "x86_retirement_notifications": false
                   }
                 }
               }
@@ -4753,6 +5430,7 @@
                     "value": {
                       "node_deprecation_notifications": false,
                       "custom_domain_certificate_notifications": false,
+                      "x86_retirement_notifications": false,
                       "created_at": "2024-01-15T10:30:00Z",
                       "updated_at": "2024-01-15T10:35:00Z"
                     }
@@ -4918,6 +5596,13 @@
             "type": "boolean",
             "readOnly": true,
             "description": "Enable SSR architecture selection (x86 or arm64) for this organization"
+          },
+          "x86_grace_period_end_date": {
+            "type": "string",
+            "format": "date",
+            "readOnly": true,
+            "nullable": true,
+            "description": "If set, x86 deployments are temporarily allowed for this org's projects through this date (post-EOL grace period). Null means no grace period (x86 blocked strictly after EOL)."
           }
         },
         "required": [
@@ -5157,6 +5842,12 @@
               },
               "edit_data_access_layer_entry": {
                 "type": "boolean"
+              },
+              "storefront_preview": {
+                "type": "boolean"
+              },
+              "view_access_control_header": {
+                "type": "boolean"
               }
             },
             "readOnly": true
@@ -5182,6 +5873,21 @@
               }
             ]
           },
+          "allow_cookies": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default cookie setting for new targets in this project. Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default preserve-user-agent setting for new targets in this project. Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
+          },
+          "static_ips_default": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default static-IP setting for new targets in this project. When true, new targets are created with ssr_static_ips enabled. Requires the organization's static_ips_enabled gate to be on."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5206,6 +5912,38 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "mrt_project_type": {
+            "nullable": true,
+            "description": "Storefront categorization of the project. One of: sfnext, pwa, core, generic.\n\n* `sfnext` - sfnext\n* `pwa` - pwa\n* `core` - core\n* `generic` - generic",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MrtProjectTypeEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "ui_managed_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UiManagedAtEnum"
+              }
+            ],
+            "readOnly": true,
+            "description": "Where the project's governance is managed. Read-only on create — a new project is always mrt; switch to b2c later via update.\n\n* `mrt` - mrt\n* `b2c` - b2c"
+          },
+          "is_mrt_api_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "is_scapi_enabled": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "required": [
@@ -5316,6 +6054,12 @@
               },
               "edit_data_access_layer_entry": {
                 "type": "boolean"
+              },
+              "storefront_preview": {
+                "type": "boolean"
+              },
+              "view_access_control_header": {
+                "type": "boolean"
               }
             },
             "readOnly": true
@@ -5341,6 +6085,21 @@
               }
             ]
           },
+          "allow_cookies": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default cookie setting for new targets in this project. Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default preserve-user-agent setting for new targets in this project. Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
+          },
+          "static_ips_default": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default static-IP setting for new targets in this project. When true, new targets are created with ssr_static_ips enabled. Requires the organization's static_ips_enabled gate to be on."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5365,6 +6124,41 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "mrt_project_type": {
+            "nullable": true,
+            "description": "Storefront categorization of the project. One of: sfnext, pwa, core, generic.\n\n* `sfnext` - sfnext\n* `pwa` - pwa\n* `core` - core\n* `generic` - generic",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MrtProjectTypeEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "ui_managed_at": {
+            "nullable": true,
+            "description": "Where the project's governance is managed (mrt or b2c). Null is treated as mrt by default.\n\n* `mrt` - mrt\n* `b2c` - b2c",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UiManagedAtEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "is_mrt_api_enabled": {
+            "type": "boolean",
+            "description": "Enables MRT API access for this project. Defaults to True."
+          },
+          "is_scapi_enabled": {
+            "type": "boolean",
+            "description": "When false, this project's storefront is disabled from the SCAPI surface. Defaults to true for existing and new projects. Writable only by trusted callers, mirroring is_mrt_api_enabled."
           }
         },
         "required": [
@@ -5386,6 +6180,13 @@
       "APIRedirectV2CreateUpdate": {
         "type": "object",
         "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "nullable": true,
+            "description": "Unique identifier for this redirect"
+          },
           "from_path": {
             "type": "string",
             "description": "A relative URL. For example, the `from_path` value `/spring` redirects shoppers from the URL `www.example.com/spring`. An asterisk (`*`) at the end of the `from_path` indicates a wildcard. For example, a redirect from `/a/*` matches `/a/`, `/a/b`, and `/a/b/c`.",
@@ -5450,6 +6251,93 @@
           "from_path",
           "to_url"
         ]
+      },
+      "APISCAPIIdentityHeader": {
+        "type": "object",
+        "description": "Serializes a per-instance SCAPI Identity Header.\n\nWrite: accepts ``instance_id`` (``<realm>_<type>``) and ``value`` (the\nsecret, validated and encrypted in the view, never echoed back by default).\nRead: returns the masked value (``*...*`` + the secret's last 4 characters,\nwhich ECOM matches against the last-4 MRT reports the edge is live on), the\n``secret_updated_at`` timestamp (when the secret was last pushed to MRT),\n``instance_type``, version, and the instance-wide rotation status aggregated\nfrom the header's per-environment deployment rows. For development and\nsandbox instances the decrypted secret is also returned in plaintext (see\n``to_representation``).",
+        "properties": {
+          "instance_id": {
+            "type": "string",
+            "description": "ECOM instance this identity header applies to, in <realm>_<type> format (e.g. 'blnd_prd').",
+            "maxLength": 8
+          },
+          "value": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "The secret value to set for the instance. Must be 8-128 characters, alphanumeric plus hyphen and underscore."
+          },
+          "instance_type": {
+            "type": "string",
+            "readOnly": true
+          },
+          "masked_value": {
+            "type": "string",
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "user_email": {
+            "type": "string",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "secret_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "rotation_status": {
+            "type": "string",
+            "readOnly": true
+          },
+          "environments_total": {
+            "type": "string",
+            "readOnly": true
+          },
+          "environments_updated": {
+            "type": "string",
+            "readOnly": true
+          },
+          "environments_failed": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "instance_id",
+          "value"
+        ]
+      },
+      "APISCAPIIdentityHeaderTarget": {
+        "type": "object",
+        "description": "Serializes one environment in an instance's SCAPI Identity Header rotation\ncohort: the project and target slugs that identify the environment, and its\nper-environment propagation status. Serialized from a\nSCAPIIdentityHeaderDeployment row (see SCAPIIdentityHeader.cohort_deployments).",
+        "properties": {
+          "project": {
+            "type": "string",
+            "readOnly": true,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "target": {
+            "type": "string",
+            "readOnly": true,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "status": {
+            "type": "string",
+            "readOnly": true
+          }
+        }
       },
       "APITargetV2Clone": {
         "type": "object",
@@ -5591,13 +6479,27 @@
                   "type": "string"
                 },
                 "protocol": {
-                  "type": "string"
+                  "type": "string",
+                  "enum": [
+                    "https"
+                  ]
                 }
               },
               "required": [
                 "host"
               ]
             }
+          },
+          "ssr_static_ips": {
+            "type": "boolean",
+            "description": "Whether this target makes outbound requests from static IPs. If omitted on create, the project's static-IP default is inherited."
+          },
+          "ssr_static_outbound_ips": {
+            "type": "object",
+            "additionalProperties": {},
+            "readOnly": true,
+            "nullable": true,
+            "description": "The static outbound IP addresses assigned to this Target at publish time (populated from the deploy's external publish details). Read-only via the API."
           },
           "cdn_domain_name": {
             "type": "string",
@@ -5609,10 +6511,25 @@
             "title": "Production",
             "description": "Treat this target as a production environment."
           },
+          "production_capacity_enabled": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether this target is provisioned with production-tier capacity. Mirrors is_production."
+          },
+          "uptime_monitoring_enabled": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether uptime monitoring is enabled for this target. Mirrors is_production."
+          },
           "allow_cookies": {
             "type": "boolean",
             "nullable": true,
             "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
           },
           "enable_source_maps": {
             "type": "boolean",
@@ -5631,6 +6548,17 @@
               }
             ]
           },
+          "distributed_tracing": {
+            "type": "boolean",
+            "description": "Set true to enable distributed tracing for this target."
+          },
+          "distributed_tracing_sampling_rate": {
+            "type": "number",
+            "format": "double",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "description": "Fraction (0.0–1.0) of requests sampled for distributed tracing."
+          },
           "certificate_id": {
             "type": "integer",
             "minimum": 0,
@@ -5644,7 +6572,6 @@
             "description": "The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name."
           },
           "configured_cdn": {
-            "readOnly": true,
             "nullable": true,
             "description": "The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.\n\n* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn",
             "oneOf": [
@@ -5652,15 +6579,12 @@
                 "$ref": "#/components/schemas/ConfiguredCdnEnum"
               },
               {
+                "$ref": "#/components/schemas/BlankEnum"
+              },
+              {
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
-          },
-          "cdn_public_hostname": {
-            "type": "string",
-            "readOnly": true,
-            "nullable": true,
-            "description": "Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain."
           },
           "source": {
             "readOnly": true,
@@ -5674,6 +6598,29 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
+          },
+          "instance_id": {
+            "type": "string",
+            "writeOnly": true,
+            "nullable": true,
+            "description": "Optional B2C Commerce instance ID to associate with the new target. When set, the B2C target info is created in the same transaction.",
+            "maxLength": 8
+          },
+          "sites": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 32
+            },
+            "writeOnly": true,
+            "nullable": true,
+            "description": "Optional list of B2C site IDs to associate with the new target. Required when pairing a production target."
           }
         },
         "required": [
@@ -5802,13 +6749,27 @@
                   "type": "string"
                 },
                 "protocol": {
-                  "type": "string"
+                  "type": "string",
+                  "enum": [
+                    "https"
+                  ]
                 }
               },
               "required": [
                 "host"
               ]
             }
+          },
+          "ssr_static_ips": {
+            "type": "boolean",
+            "description": "Whether this target makes outbound requests from static IPs. If omitted on create, the project's static-IP default is inherited."
+          },
+          "ssr_static_outbound_ips": {
+            "type": "object",
+            "additionalProperties": {},
+            "readOnly": true,
+            "nullable": true,
+            "description": "The static outbound IP addresses assigned to this Target at publish time (populated from the deploy's external publish details). Read-only via the API."
           },
           "cdn_domain_name": {
             "type": "string",
@@ -5820,10 +6781,25 @@
             "title": "Production",
             "description": "Treat this target as a production environment."
           },
+          "production_capacity_enabled": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether this target is provisioned with production-tier capacity. Mirrors is_production."
+          },
+          "uptime_monitoring_enabled": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether uptime monitoring is enabled for this target. Mirrors is_production."
+          },
           "allow_cookies": {
             "type": "boolean",
             "nullable": true,
             "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
           },
           "enable_source_maps": {
             "type": "boolean",
@@ -5842,6 +6818,17 @@
               }
             ]
           },
+          "distributed_tracing": {
+            "type": "boolean",
+            "description": "Set true to enable distributed tracing for this target."
+          },
+          "distributed_tracing_sampling_rate": {
+            "type": "number",
+            "format": "double",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "description": "Fraction (0.0–1.0) of requests sampled for distributed tracing."
+          },
           "certificate_id": {
             "type": "integer",
             "minimum": 0,
@@ -5855,7 +6842,6 @@
             "description": "The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name."
           },
           "configured_cdn": {
-            "readOnly": true,
             "nullable": true,
             "description": "The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.\n\n* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn",
             "oneOf": [
@@ -5863,15 +6849,12 @@
                 "$ref": "#/components/schemas/ConfiguredCdnEnum"
               },
               {
+                "$ref": "#/components/schemas/BlankEnum"
+              },
+              {
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
-          },
-          "cdn_public_hostname": {
-            "type": "string",
-            "readOnly": true,
-            "nullable": true,
-            "description": "Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain."
           },
           "source": {
             "readOnly": true,
@@ -5885,6 +6868,12 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
           }
         },
         "required": [
@@ -6113,7 +7102,7 @@
               }
             ],
             "readOnly": true,
-            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed\n* `validation_failed_caa` - Validation Failed (CAA)"
           },
           "validation_record": {
             "type": "string",
@@ -6209,7 +7198,7 @@
               }
             ],
             "readOnly": true,
-            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed\n* `validation_failed_caa` - Validation Failed (CAA)"
           },
           "validation_record": {
             "type": "string",
@@ -6316,6 +7305,11 @@
       "DeployList": {
         "type": "object",
         "properties": {
+          "deploy_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
           "user": {
             "type": "string",
             "format": "email",
@@ -6550,6 +7544,43 @@
         "type": "string",
         "description": "* `TRACE` - TRACE\n* `DEBUG` - DEBUG\n* `INFO` - INFO\n* `WARN` - WARN\n* `ERROR` - ERROR\n* `FATAL` - FATAL"
       },
+      "MaintenanceStatus": {
+        "type": "object",
+        "description": "Read-only view of the MRT API's maintenance (read-only) state.",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "read_only": {
+            "type": "boolean"
+          },
+          "maintenance_started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status_page": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "maintenance_started_at",
+          "read_only",
+          "status",
+          "status_page"
+        ]
+      },
+      "MrtProjectTypeEnum": {
+        "enum": [
+          "sfnext",
+          "pwa",
+          "core",
+          "generic"
+        ],
+        "type": "string",
+        "description": "* `sfnext` - sfnext\n* `pwa` - pwa\n* `core` - core\n* `generic` - generic"
+      },
       "NullEnum": {
         "enum": [
           null
@@ -6767,6 +7798,68 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/APIRedirectV2CreateUpdate"
+            }
+          }
+        }
+      },
+      "PaginatedAPISCAPIIdentityHeaderList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APISCAPIIdentityHeader"
+            }
+          }
+        }
+      },
+      "PaginatedAPISCAPIIdentityHeaderTargetList": {
+        "type": "object",
+        "required": [
+          "count",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 123
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=400&limit=100"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.org/accounts/?offset=200&limit=100"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APISCAPIIdentityHeaderTarget"
             }
           }
         }
@@ -7121,6 +8214,12 @@
               },
               "edit_data_access_layer_entry": {
                 "type": "boolean"
+              },
+              "storefront_preview": {
+                "type": "boolean"
+              },
+              "view_access_control_header": {
+                "type": "boolean"
               }
             },
             "readOnly": true
@@ -7146,6 +8245,21 @@
               }
             ]
           },
+          "allow_cookies": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default cookie setting for new targets in this project. Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default preserve-user-agent setting for new targets in this project. Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
+          },
+          "static_ips_default": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Default static-IP setting for new targets in this project. When true, new targets are created with ssr_static_ips enabled. Requires the organization's static_ips_enabled gate to be on."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -7170,12 +8284,54 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "mrt_project_type": {
+            "nullable": true,
+            "description": "Storefront categorization of the project. One of: sfnext, pwa, core, generic.\n\n* `sfnext` - sfnext\n* `pwa` - pwa\n* `core` - core\n* `generic` - generic",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MrtProjectTypeEnum"
+              },
+              {
+                "$ref": "#/components/schemas/BlankEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "ui_managed_at": {
+            "nullable": true,
+            "description": "Where the project's governance is managed (mrt or b2c). Null is treated as mrt by default.\n\n* `mrt` - mrt\n* `b2c` - b2c",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UiManagedAtEnum"
+              },
+              {
+                "$ref": "#/components/schemas/NullEnum"
+              }
+            ]
+          },
+          "is_mrt_api_enabled": {
+            "type": "boolean",
+            "description": "Enables MRT API access for this project. Defaults to True."
+          },
+          "is_scapi_enabled": {
+            "type": "boolean",
+            "description": "When false, this project's storefront is disabled from the SCAPI surface. Defaults to true for existing and new projects. Writable only by trusted callers, mirroring is_mrt_api_enabled."
           }
         }
       },
       "PatchedAPIRedirectV2CreateUpdate": {
         "type": "object",
         "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "nullable": true,
+            "description": "Unique identifier for this redirect"
+          },
           "from_path": {
             "type": "string",
             "description": "A relative URL. For example, the `from_path` value `/spring` redirects shoppers from the URL `www.example.com/spring`. An asterisk (`*`) at the end of the `from_path` indicates a wildcard. For example, a redirect from `/a/*` matches `/a/`, `/a/b`, and `/a/b/c`.",
@@ -7330,13 +8486,27 @@
                   "type": "string"
                 },
                 "protocol": {
-                  "type": "string"
+                  "type": "string",
+                  "enum": [
+                    "https"
+                  ]
                 }
               },
               "required": [
                 "host"
               ]
             }
+          },
+          "ssr_static_ips": {
+            "type": "boolean",
+            "description": "Whether this target makes outbound requests from static IPs. If omitted on create, the project's static-IP default is inherited."
+          },
+          "ssr_static_outbound_ips": {
+            "type": "object",
+            "additionalProperties": {},
+            "readOnly": true,
+            "nullable": true,
+            "description": "The static outbound IP addresses assigned to this Target at publish time (populated from the deploy's external publish details). Read-only via the API."
           },
           "cdn_domain_name": {
             "type": "string",
@@ -7348,10 +8518,25 @@
             "title": "Production",
             "description": "Treat this target as a production environment."
           },
+          "production_capacity_enabled": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether this target is provisioned with production-tier capacity. Mirrors is_production."
+          },
+          "uptime_monitoring_enabled": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Whether uptime monitoring is enabled for this target. Mirrors is_production."
+          },
           "allow_cookies": {
             "type": "boolean",
             "nullable": true,
             "description": "Set true to forward the HTTP cookie header sent by clients to your origin and ensure the Set-Cookie header sent by your app is respected and not stripped."
+          },
+          "preserve_proxy_user_agent": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Set true to forward the original client User-Agent header to proxy origins instead of overwriting it with \"Amazon CloudFront\"."
           },
           "enable_source_maps": {
             "type": "boolean",
@@ -7370,6 +8555,17 @@
               }
             ]
           },
+          "distributed_tracing": {
+            "type": "boolean",
+            "description": "Set true to enable distributed tracing for this target."
+          },
+          "distributed_tracing_sampling_rate": {
+            "type": "number",
+            "format": "double",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "description": "Fraction (0.0–1.0) of requests sampled for distributed tracing."
+          },
           "certificate_id": {
             "type": "integer",
             "minimum": 0,
@@ -7383,7 +8579,6 @@
             "description": "The certificate domain used by this target. For MRT default domains, returns wildcard format (e.g., *.mobify-storefront-staging.com). For custom domains, returns the certificate domain name."
           },
           "configured_cdn": {
-            "readOnly": true,
             "nullable": true,
             "description": "The content delivery network used for content, traffic, and security. A B2C instance must be connected to this environment to select eCDN.\n\n* `unknown` - unknown\n* `mrt_cdn` - mrt_cdn\n* `ecdn` - ecdn\n* `stacked_cdn` - stacked_cdn",
             "oneOf": [
@@ -7391,15 +8586,12 @@
                 "$ref": "#/components/schemas/ConfiguredCdnEnum"
               },
               {
+                "$ref": "#/components/schemas/BlankEnum"
+              },
+              {
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
-          },
-          "cdn_public_hostname": {
-            "type": "string",
-            "readOnly": true,
-            "nullable": true,
-            "description": "Add a publicly visible hostname. Enter a subdomain if one is not already provided with your organization’s certified domain."
           },
           "source": {
             "readOnly": true,
@@ -7413,6 +8605,12 @@
                 "$ref": "#/components/schemas/NullEnum"
               }
             ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Timestamp in the extended ISO 8601 format for when the object was created."
           }
         }
       },
@@ -7442,7 +8640,7 @@
               }
             ],
             "readOnly": true,
-            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+            "description": "Current validation status of the certificate\n\n* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed\n* `validation_failed_caa` - Validation Failed (CAA)"
           },
           "validation_record": {
             "type": "string",
@@ -7604,6 +8802,11 @@
             "type": "boolean",
             "description": "Receive email notifications about custom domain certificate changes"
           },
+          "x86_retirement_notifications": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Receive email notifications about x86 retirement"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -7747,6 +8950,14 @@
         "type": "integer",
         "description": "* `0` - Pending\n* `1` - Completed\n* `2` - Failed"
       },
+      "UiManagedAtEnum": {
+        "enum": [
+          "mrt",
+          "b2c"
+        ],
+        "type": "string",
+        "description": "* `mrt` - mrt\n* `b2c` - b2c"
+      },
       "UserEmailPreferences": {
         "type": "object",
         "properties": {
@@ -7757,6 +8968,11 @@
           "custom_domain_certificate_notifications": {
             "type": "boolean",
             "description": "Receive email notifications about custom domain certificate changes"
+          },
+          "x86_retirement_notifications": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Receive email notifications about x86 retirement"
           },
           "created_at": {
             "type": "string",
@@ -7776,10 +8992,11 @@
         "enum": [
           "pending_validation",
           "validation_succeeded",
-          "validation_failed"
+          "validation_failed",
+          "validation_failed_caa"
         ],
         "type": "string",
-        "description": "* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed"
+        "description": "* `pending_validation` - Pending Validation\n* `validation_succeeded` - Validation Succeeded\n* `validation_failed` - Validation Failed\n* `validation_failed_caa` - Validation Failed (CAA)"
       }
     },
     "securitySchemes": {

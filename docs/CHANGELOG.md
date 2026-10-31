@@ -1,5 +1,47 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.11
+
+### Patch Changes
+
+- [#811](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/811) [`d52f6e2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/d52f6e220733dac2992ce5a2db460817e4a0339a) - Expanded the Agent Sandboxing guide with running a coding agent such as Claude Code in an OpenShell sandbox, copying projects in and out, removing a sandbox and its providers, and private network tips. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.10
+
+### Patch Changes
+
+- [#807](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/807) [`b02559a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b02559a16b90e6a6049d01ca04b9696577c3ec6d) - `b2c cap validate` now requires `app-configuration/translations/` when a CAP includes `tasksList.json`. Add the required Business Manager locales, and make sure `en-US.json` covers every config task key. Install runs this check unless you pass `--skip-validate`. (Thanks [@shauryemahajanSF](https://github.com/shauryemahajanSF)!)
+
+## 0.4.9
+
+### Patch Changes
+
+- [#806](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/806) [`cca5471`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/cca5471c868b61cb2016ed12e6f4f39896b84a15) - eCDN guidance now covers the SCAPI (API) zone: which rules it supports and how to scope rules per instance. The edge traffic runbook now covers API/SLAS abuse and edge error spikes as well as bots. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#805](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/805) [`72f8c89`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/72f8c89160fb849fa4dd59df160132b72a6a0102) - The logs guide and the `b2c-logs` skill explain how to read custom logger files (`custom-*.log`) and how `--filter` matches them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#793](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/793) [`49eea71`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49eea71ebc08b0e69efae1aef9a81b0f5d736b48) - Refresh Developer Center and Salesforce Help content in `b2c docs` search. New guides cover Dynamic Imaging Service (now documented on the Developer Center), Agentforce Commerce Client customization and overrides, Payments Orchestration and Commerce Apps for payments, fraud, and gift cards (Beta), UCP order updates, and Storefront Next migration and SCAPI-based storefront creation. Help adds the Traffic Sources dashboard and updating authoritative DNS for eCDN zones. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#804](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/804) [`48bc461`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/48bc461686ae1c8113c0a1fdfd8ded21d3e0032c) - Documented where `setup instance create` stores an instance, how to use it from other directories, and how to change an existing instance. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#803](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/803) [`bf27150`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/bf27150b9cf4061e6dbc71cb35e8179ec8c6020e) - Corrected the WebDAV access key setup steps (user menu > Manage Access Keys, or `b2c bm access-key create`), clarified that the Account Manager password is not accepted for WebDAV or the script debugger, and added troubleshooting for 401 responses on WebDAV. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.8
+
+### Patch Changes
+
+- [#785](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/785) [`e0cca21`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e0cca21399576d1f8d3dcfee11552a519420903d) - Added a Desktop Assistants guide for installing the B2C MCP and skills in Claude Cowork and ChatGPT Work. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#775](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/775) [`6c6e1b2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/6c6e1b27aefafccfeb5e73de7a1314df0a30cfe0) - Removed the `mrt_bundle_push` MCP tool. Use `b2c mrt bundle deploy` or your project's push script (such as `sfnext push`) to publish Managed Runtime bundles. The `MRT` toolset now includes the MRT log tools. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.7
+
+### Patch Changes
+
+- [#759](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/759) [`3b4534b`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3b4534b29225c5eba8627b5b0a90233785051c96) - Document `b2c job export --all` and the `all` ID for `--site`, `--catalog`, `--library`, `--inventory-list`, and `--price-book`, so agents choose these flags over hand-written data-units JSON. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#761](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/761) [`0497681`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/04976817b080f6a7afe809ccd7177bcdb36e6340) - Refresh Developer Center and Salesforce Help content in `b2c docs` search. New guides cover Storefront Next environments, deployments, users, and the Developer Workspace, along with SCAPI request identification and SCAPI CDN zones. Help now includes the reorganized eCDN zone, WAF, and Logpush topics, Log Center anomaly detectors and Microsoft Teams alerts, and partial syncs for POS catalog unification. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.6
 
 ### Patch Changes

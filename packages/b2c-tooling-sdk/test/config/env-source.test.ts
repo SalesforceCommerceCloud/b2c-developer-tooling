@@ -169,6 +169,12 @@ describe('config/EnvSource', () => {
       const result = source.load({});
       expect(result!.config.cipHost).to.equal('cip.example.com');
     });
+
+    it('maps SFCC_SCAPI_BASE_URL to scapiBaseUrl', () => {
+      const source = new EnvSource({SFCC_SCAPI_BASE_URL: 'https://localhost:25010'});
+      const result = source.load({});
+      expect(result!.config.scapiBaseUrl).to.equal('https://localhost:25010');
+    });
   });
 
   describe('apiBackend (SFCC_API_BACKEND)', () => {
@@ -249,6 +255,13 @@ describe('config/EnvSource', () => {
   });
 
   describe('boolean parsing', () => {
+    it('parses SFCC_SELFSIGNED_API=true as boolean selfSignedApi', () => {
+      const source = new EnvSource({SFCC_SELFSIGNED_API: 'true'});
+      const result = source.load({});
+      expect(result!.config.selfSignedApi).to.equal(true);
+      expect(result!.config.selfSigned).to.be.undefined;
+    });
+
     it('parses SFCC_SELFSIGNED=true as boolean true', () => {
       const source = new EnvSource({SFCC_SELFSIGNED: 'true'});
       const result = source.load({});
@@ -279,6 +292,12 @@ describe('config/EnvSource', () => {
       const source = new EnvSource({SFCC_IMPORT_SET_EXCLUDE: 'fixtures, test/integration'});
       const result = source.load({});
       expect(result?.config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
+    });
+
+    it('parses cartridge ignore directories', () => {
+      const source = new EnvSource({SFCC_CARTRIDGE_IGNORE_DIRS: 'node_modules, build'});
+      const result = source.load({});
+      expect(result?.config.cartridgeIgnoreDirs).to.deep.equal(['node_modules', 'build']);
     });
 
     it('parses SFCC_OAUTH_SCOPES as comma-separated array', () => {

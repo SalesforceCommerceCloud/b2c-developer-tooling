@@ -5,7 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {MrtCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {deleteRedirect} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {deleteRedirectWithBackend} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../../i18n/index.js';
 import {confirm} from '../../../../prompts.js';
 
@@ -14,8 +14,10 @@ import {confirm} from '../../../../prompts.js';
  */
 export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDelete> {
   static args = {
-    fromPath: Args.string({
-      description: 'Source path of the redirect to delete',
+    identifier: Args.string({
+      // Legacy keys a redirect by its source path (from_path); SCAPI keys it by
+      // its UUID. Accept whichever the resolved backend expects.
+      description: 'Redirect identifier: the source path (legacy) or the redirect UUID (SCAPI)',
       required: true,
     }),
   };
@@ -30,6 +32,7 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
   static examples = [
     '<%= config.bin %> <%= command.id %> /old-page --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> /old-page -p my-storefront -e staging --force',
+    '<%= config.bin %> <%= command.id %> 3f9b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d -p my-storefront -e staging --mrt-backend scapi',
   ];
 
   static flags = {
@@ -41,13 +44,15 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
     }),
   };
 
-  async run(): Promise<{fromPath: string; deleted: boolean}> {
+  protected operations = {
+    deleteRedirectWithBackend,
+  };
+
+  async run(): Promise<{identifier: string; fromPath: string; deleted: boolean}> {
     // Prevent deletion in safe mode
     this.assertDestructiveOperationAllowed('delete redirect');
 
-    this.requireMrtCredentials();
-
-    const {fromPath} = this.args;
+    const {identifier} = this.args;
     const {mrtProject: project, mrtEnvironment: environment} = this.resolvedConfig.values;
 
     if (!project) {
@@ -66,39 +71,42 @@ export default class MrtRedirectDelete extends MrtCommand<typeof MrtRedirectDele
     // Confirm deletion unless --force is specified
     if (!force && !this.jsonEnabled()) {
       const confirmed = await confirm(
-        t('commands.mrt.redirect.delete.confirm', 'Are you sure you want to delete redirect "{{fromPath}}"?', {
-          fromPath,
+        t('commands.mrt.redirect.delete.confirm', 'Are you sure you want to delete redirect "{{identifier}}"?', {
+          identifier,
         }),
       );
       if (!confirmed) {
         this.log(t('commands.mrt.redirect.delete.cancelled', 'Deletion cancelled.'));
-        return {fromPath, deleted: false};
+        // `fromPath` mirrors `identifier` for backward compatibility with scripts
+        // that read the legacy `--json` key (the source path on legacy).
+        return {identifier, fromPath: identifier, deleted: false};
       }
     }
 
-    this.log(t('commands.mrt.redirect.delete.deleting', 'Deleting redirect {{fromPath}}...', {fromPath}));
+    const {preference, scapiConnection, legacyAuth} = this.getMrtBackendContext();
 
-    try {
-      await deleteRedirect(
-        {
-          projectSlug: project,
-          targetSlug: environment,
-          fromPath,
-          origin: this.resolvedConfig.values.mrtOrigin,
-        },
-        this.getMrtAuth(),
-      );
+    this.log(t('commands.mrt.redirect.delete.deleting', 'Deleting redirect {{identifier}}...', {identifier}));
 
-      this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{fromPath}} deleted.', {fromPath}));
+    await this.operations.deleteRedirectWithBackend({
+      preference,
+      scapiConnection,
+      legacyAuth,
+      projectSlug: project,
+      environment,
+      identifier,
+      origin: this.resolvedConfig.values.mrtOrigin,
+      onFallback: (reason) => this.warn(reason),
+      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deleting redirect via backend'),
+    });
 
-      return {fromPath, deleted: true};
-    } catch (error) {
-      if (error instanceof Error) {
-        this.error(
-          t('commands.mrt.redirect.delete.failed', 'Failed to delete redirect: {{message}}', {message: error.message}),
-        );
-      }
-      throw error;
+    if (!this.jsonEnabled()) {
+      this.log(t('commands.mrt.redirect.delete.success', 'Redirect {{identifier}} deleted.', {identifier}));
     }
+
+    return {identifier, fromPath: identifier, deleted: true};
+  }
+
+  protected override supportsScapiMrt(): boolean {
+    return true;
   }
 }

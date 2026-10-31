@@ -4,7 +4,14 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {createSlasClient, getApiErrorMessage} from '@salesforce/b2c-tooling-sdk';
-import {buildTenantScope, createScapiSchemasClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
+import {
+  buildTenantScope,
+  createScapiSchemasClient,
+  getApiFetch,
+  getScapiOrigin,
+  toOrganizationId,
+  type ApiFetch,
+} from '@salesforce/b2c-tooling-sdk/clients';
 import type {SlasComponents} from '@salesforce/b2c-tooling-sdk/clients';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {getGuestToken} from '@salesforce/b2c-tooling-sdk/slas';
@@ -23,7 +30,7 @@ import {
   cloneBundledSpec,
   isLiveSource,
 } from './offline.js';
-import {prefillParameters} from './prefill.js';
+import {prefillParameters, stripParameterExamples} from './prefill.js';
 import {resolveApiBrowserTenantId} from './tenant.js';
 
 type SlasClientEntry = SlasComponents['schemas']['Client'];
@@ -34,6 +41,19 @@ function tokenSetupHint(apiType: ApiType): string {
   return apiType === 'Shopper'
     ? 'Check slas-client-id and site-id; private clients also need slas-client-secret. See Setup Help.'
     : 'Check Account Manager credentials and API scopes. See Setup Help.';
+}
+
+/**
+ * Whether the webview may proxy a request to this URL: HTTPS to a Commerce Cloud API host only, matching the
+ * webview's `connect-src` policy so the proxy can't be used to reach other hosts.
+ */
+export function isCommerceCloudUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.commercecloud.salesforce.com');
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -187,6 +207,7 @@ export function injectCustomApiOrgPathPrefix(spec: Record<string, unknown>): voi
 async function resolveExternalRefs(
   spec: Record<string, unknown>,
   authHeader: string | undefined,
+  apiFetch: ApiFetch,
   log: vscode.OutputChannel,
 ): Promise<void> {
   const visited = new Set<string>();
@@ -212,7 +233,7 @@ async function resolveExternalRefs(
       try {
         const headers: Record<string, string> = {};
         if (authHeader) headers['Authorization'] = authHeader;
-        const res = await fetch(refUrl, {headers});
+        const res = await apiFetch(refUrl, {headers});
         if (res.ok) {
           const resolved = (await res.json()) as Record<string, unknown>;
           // Inline the resolved content, removing the $ref
@@ -303,7 +324,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       const oauthOptions = await this.configProvider.getImplicitAuthOptions();
       const oauthStrategy = config.createOAuth(oauthOptions);
       const authHeader = await oauthStrategy.getAuthorizationHeader?.();
-      await resolveExternalRefs(spec, authHeader, this.log);
+      await resolveExternalRefs(spec, authHeader, getApiFetch(oauthStrategy), this.log);
     }
 
     // Custom APIs author paths relative to their resource; the platform routes
@@ -319,11 +340,12 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     // Override servers to point to the correct base URL. Without a short code (offline only) keep the contract's own.
     if (shortCode) {
-      const baseUrl = `https://${shortCode}.api.commercecloud.salesforce.com/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
+      const baseUrl = `${getScapiOrigin(shortCode)}/${schema.apiFamily}/${schema.apiName}/${schema.apiVersion}`;
       spec.servers = [{url: baseUrl}];
     }
 
-    // Pre-fill known parameters (organizationId, siteId)
+    // Start optional fields empty, then pre-fill known parameters (organizationId, siteId)
+    stripParameterExamples(spec);
     const defaults: Record<string, string> = {};
     if (organizationId) defaults.organizationId = organizationId;
     const siteId = config?.values.siteId as string | undefined;
@@ -528,6 +550,16 @@ export class SwaggerWebviewManager implements vscode.Disposable {
 
     this.log.appendLine(`[API Browser Proxy] ${method} ${url} (${requestId})`);
 
+    if (!isCommerceCloudUrl(url)) {
+      this.log.appendLine(`[API Browser Proxy] ${requestId} → rejected: not a Commerce Cloud API URL`);
+      this.safePostMessage(panel, {
+        type: 'proxyResponse',
+        requestId,
+        error: 'Only Commerce Cloud API URLs can be proxied.',
+      });
+      return;
+    }
+
     // Track the AbortController so panel disposal can abort in-flight fetches.
     const controllers = this.proxyControllers.get(panel);
     const controller = new AbortController();
@@ -536,7 +568,8 @@ export class SwaggerWebviewManager implements vscode.Disposable {
     }
 
     try {
-      const res = await fetch(url, {
+      const apiFetch = getApiFetch(this.configProvider.getConfig()?.values);
+      const res = await apiFetch(url, {
         method,
         headers,
         body: body || undefined,
@@ -645,6 +678,7 @@ export class SwaggerWebviewManager implements vscode.Disposable {
       slasClientSecret,
       siteId,
       redirectUri,
+      selfSignedApi: config.values.selfSignedApi,
     });
 
     return tokenResponse.access_token;

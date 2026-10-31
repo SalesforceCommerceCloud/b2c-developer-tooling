@@ -25,6 +25,8 @@ Use the CLI for watches, recursive downloads, and extra deployment flags.
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
+With only a server configured, the first command opens a browser for the user to sign in with their Account Manager account and waits until they do; tell the user to finish signing in. Their Business Manager roles decide access, and a 403 names the missing permission (for example `WebDAV_Manage_Customization` for `Cartridges`). Code goes to the active code version; activating one (`code activate`, `--activate`, `--reload`) needs an API client.
+
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Examples
@@ -52,6 +54,9 @@ b2c code deploy -c app_storefront_base -c plugin_applepay
 
 # exclude specific cartridges from deployment
 b2c code deploy -x test_cartridge
+
+# replace the directory names skipped inside cartridges (default: node_modules,.git,coverage,.cache,tmp,temp)
+b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
 ```
 
 ### Download Cartridges

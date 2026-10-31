@@ -12,12 +12,12 @@ For help obtaining credentials and assigning access, see [Authentication](./auth
 
 | Task                                                 | What to configure                                                                                                                                                   |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Manage code versions, jobs, sites, or Admin API data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.    |
-| Upload cartridges, browse files, or read logs        | `hostname` plus `username` and `password` (a WebDAV access key), or [OAuth WebDAV access](./authentication#option-b-oauth-based-webdav-api-client-access).          |
+| Upload cartridges, browse files, or read logs        | Just `hostname`. You sign in with your Account Manager account the first time. For automation, use an [access key or API client](./authentication#webdav-access) instead. |
+| Activate code versions, run jobs, manage sites or data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.    |
 | Obtain shopper tokens                                | `short-code`, `tenant-id`, `slas-client-id`, and `site-id`. Add `slas-client-secret` for a private SLAS client.                                                     |
 | Work with Managed Runtime                            | An MRT API key and project/environment defaults. Supported SCAPI MRT operations can use Account Manager credentials instead. See [MRT configuration](#mrt-api-key). |
 | Analyze sales, searches, or performance with CIP     | Account Manager `client-id`, `client-secret`, and `tenant-id`, plus [CIP access](./analytics-reports-cip-ccac#authentication-and-access).                           |
-| Manage sandboxes, SLAS clients, or Account Manager   | These CLI commands support browser sign-in with a built-in public client. Your user still needs the appropriate roles and tenant access.                            |
+| Manage sandboxes, SLAS clients, or Account Manager   | Nothing; these CLI commands sign you in with your Account Manager account. Your user still needs the appropriate roles and tenant access. |
 
 Account Manager and SLAS clients serve different purposes. `client-id` / `client-secret` are for administrative access; `slas-client-id` / `slas-client-secret` are for shopper authentication. Configuring one does not configure the other.
 
@@ -43,6 +43,10 @@ This example supports Admin APIs and WebDAV on a sandbox:
 ```
 
 Use your instance's short code and an existing code version. `tenant-id` accepts both the tenant form (`abcd_001`) and organization form (`f_ecom_abcd_001`). Staging and production tenants typically use `abcd_stg` and `abcd_prd`.
+
+::: tip Only uploading code or reading logs?
+`hostname` is the only required field for code upload, files, and logs: you sign in with your Account Manager account when asked. Add the other fields as you need the tasks in [Choose Your Connection](#choose-your-connection).
+:::
 
 ::: warning Keep credentials out of version control
 Add `dw.json` and `.env` to `.gitignore`. These files store secrets as plain text. For encrypted credential storage, see the [macOS Keychain](./third-party-plugins#macos-keychain-plugin) and [Password Store](./third-party-plugins#password-store-plugin) plugins. Non-secret project defaults can go in [package.json](#project-configuration-package-json).
@@ -96,7 +100,7 @@ Use a `configs` array and give each entry a name. Each entry contains its own co
 }
 ```
 
-Here, `sandbox` is the default. The `dev` entry uses OAuth only; WebDAV access requires the corresponding API client permissions. Each entry can also define [Safety Mode](./safety#per-instance-configuration) restrictions.
+Here, `sandbox` is the default. The `dev` entry uses only an API client, which needs [WebDAV Client Permissions](./authentication#option-b-oauth-based-webdav-api-client-access) for WebDAV. Each entry can also define [Safety Mode](./safety#per-instance-configuration) restrictions.
 
 Select an instance for one CLI command:
 
@@ -141,7 +145,9 @@ The primary `dw.json` path is selected in this order:
 3. `SFCC_CONFIG` from the env file (the project's `.env`, or the file given with `--dotenv-file`).
 4. `dw.json` in the project directory.
 
-A relative `SFCC_CONFIG` in `.env` is resolved from that project directory. The [global file](#global-default-configuration), when configured, also supplies available instances unless you pass an explicit path. An empty `--config ""` or `SFCC_CONFIG=` uses no `dw.json`.
+::: info Details
+A relative `SFCC_CONFIG` in `.env` is resolved from the project directory. The [global file](#global-default-configuration), when configured, also supplies instances unless you pass an explicit path. An empty `--config ""` or `SFCC_CONFIG=` uses no `dw.json`.
+:::
 
 ```bash
 # Use another project directory
@@ -168,9 +174,11 @@ The primary and global files supply one list of available instances:
 | No instance name is specified            | Use the primary file's active entry or root configuration. Otherwise, use the global file's active entry or root configuration. |
 | Both files have settings for an instance | Select one complete entry; fields are not merged between the files.                                                             |
 
-Within each file, an active entry in `configs` takes precedence over the root configuration. A root configuration is an implicit default unless it has `"active": false`. If you use only a `configs` array, mark one entry active or select it by name.
+Use `b2c setup inspect` to check which file supplies your selected connection.
 
-Instance-management commands use these same files. Creation writes to the primary file when present, otherwise the global file; removal and changing the default update the file that owns the entry. Use `b2c setup inspect` to check which file supplies your selected connection.
+::: info Details
+Within each file, an active entry in `configs` takes precedence over the root configuration. A root configuration is the default unless it has `"active": false`; with only a `configs` array, mark one entry active or select it by name. `b2c setup instance create` writes to the primary file when present, otherwise the global file; removing an instance or changing the default updates the file that owns the entry.
+:::
 
 To stop using the global file:
 
@@ -262,9 +270,7 @@ Installed configuration plugins can supply values before or after the file sourc
 
 ### Credential Grouping
 
-File and plugin sources keep these credential pairs together: Account Manager client ID/secret, SLAS client ID/secret, and WebDAV username/password. Once a higher-priority source supplies either member of a pair, a lower-priority source cannot fill in the other. Keep each pair in the same source.
-
-Explicit overrides can replace individual fields. If an override changes the Account Manager or SLAS client ID, the stored secret for the old ID is discarded. Supply the matching secret, or choose an authentication flow that does not require one.
+Keep each credential pair in the same source: Account Manager client ID and secret, SLAS client ID and secret, and WebDAV username and password. When a higher-priority source sets one half of a pair, lower-priority sources can't fill in the other half. A flag or variable that changes a client ID drops the stored secret for the old ID.
 
 ::: warning Changing the hostname
 If a server override differs from the configured hostname, the lower-priority connection settings are ignored to avoid reusing another instance's credentials. Select a named instance instead, or provide the complete connection for the new server. Environment variables can also trigger this protection.
@@ -322,7 +328,7 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 | `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                     |
 | `jwt-passphrase`<br>`SFCC_JWT_PASSPHRASE`             | Passphrase for an encrypted private key.                                                                                         |
 | `auth-methods`<br>`SFCC_AUTH_METHODS`                 | Ordered JSON array or comma-separated environment value; see [authentication methods](#overriding-authentication-behavior).      |
-| `user-auth`                                           | Boolean shorthand for `"auth-methods": ["user"]`. Do not set both fields. CLI flag: `--user-auth`.                               |
+| `user-auth`                                           | Set `true` to sign in with your Account Manager account in the browser. Don't combine with `auth-methods`. CLI flag: `--user-auth`. |
 | `account-manager-host`<br>`SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname override.                                                                                               |
 
 ### Client Authentication Method {#client-authentication-method}
@@ -335,7 +341,7 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 | `basic-unencoded` | A Basic header with the raw client ID and secret.                                                          |
 | `body`            | `client_id` and `client_secret` in the form-encoded request body. Use when a proxy or gateway requires it. |
 
-The default works for most setups. Inside an [OpenShell sandbox](./agent-sandboxing#openshell), where the secret is a placeholder, the CLI and MCP server use `basic-unencoded` automatically unless you set a value.
+The default works for most setups. Inside an [OpenShell sandbox](./agent-sandboxing#openshell), the default is `basic-unencoded`.
 
 For certificate setup, see [JWT Authentication](./authentication#jwt-authentication-certificate-based). When sharing configuration across projects or processes, absolute certificate paths avoid ambiguity about the working directory.
 
@@ -369,6 +375,7 @@ Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [
 | `libraries`<br>`SFCC_LIBRARIES`                   | Library IDs. JSON accepts strings or `{ "id": "RefArch", "siteLibrary": true }` entries; see [content libraries](#content-libraries-example).                    |
 | `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
 | `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
+| `cartridge-ignore-dirs`<br>`SFCC_CARTRIDGE_IGNORE_DIRS`| Directory names skipped inside cartridges on deploy. Replaces the default list; see [ignored directories](/cli/code#ignored-directories).                        |
 | `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
 | `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders, or http(s) URLs, for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
 
@@ -411,7 +418,7 @@ These are not `dw.json` fields:
 | `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                          |
 | `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                            |
 | `SFCC_OAUTH_LOCAL_PORT`      | Browser-login redirect server port; default `8080`.                                                             |
-| `SFCC_DISABLE_PKCE_FALLBACK` | Set to `1` to disable the transitional [PKCE-to-implicit fallback](./authentication#implicit-flow-deprecation). |
+| `SFCC_DISABLE_PKCE_FALLBACK` | Set to `1` to turn off the automatic fallback to the deprecated [implicit sign-in](./authentication#implicit-flow-deprecation). |
 | `SFCC_SAFETY_LEVEL`          | `NONE`, `NO_DELETE`, `NO_UPDATE`, or `READ_ONLY`.                                                               |
 | `SFCC_SAFETY_CONFIRM`        | Set to `true` or `1` to enable supported safety confirmations.                                                  |
 | `SFCC_SAFETY_CONFIG`         | Path to a shared safety configuration file.                                                                     |
@@ -444,6 +451,7 @@ Only these fields are read from `package.json` (camelCase and kebab-case are acc
 | --------------------- | --------------------------------------------------------------- |
 | API and site defaults | `shortCode`, `clientId`, `siteId`                               |
 | Content and imports   | `contentLibrary`, `libraries`, `assetQuery`, `importSetExclude` |
+| Code                  | `cartridgeIgnoreDirs` |
 | Managed Runtime       | `mrtProject`, `mrtOrigin`                                       |
 | Platform defaults     | `accountManagerHost`, `sandboxApiHost`, `realm`                 |
 
@@ -475,7 +483,7 @@ Use `b2c <command> --help` for available flags, or the [CLI Reference](/cli/). F
 
 ## Overriding Authentication Behavior
 
-For OAuth, the usual credential selection order is client credentials, JWT, then browser-based user authentication. Existing CLI login sessions can also be reused; see [Auth Commands](/cli/auth). This is credential selection, not a promise to retry a rejected request with every method.
+For OAuth, the CLI uses client credentials, then JWT, then signing in with your account, and reuses a saved [`b2c auth login`](/cli/auth) sign-in. A rejected request isn't retried with the next method.
 
 ### Available Auth Methods
 
@@ -483,8 +491,8 @@ For OAuth, the usual credential selection order is client credentials, JWT, then
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `client-credentials` | Account Manager client ID and secret; supported by SCAPI Admin, OCAPI, and OAuth WebDAV. Required for CIP.                        |
 | `jwt`                | Account Manager client ID and PEM certificate/private key; supported by SCAPI Admin, OCAPI, and OAuth WebDAV.                     |
-| `user`               | Browser-based Authorization Code + PKCE. Supported by applicable platform commands, OCAPI, and WebDAV; not SCAPI Admin execution. |
-| `implicit`           | Deprecated browser flow; explicit opt-in. See [PKCE migration](./authentication#implicit-flow-deprecation).                       |
+| `user`               | Sign in with your Account Manager account in the browser. Works with OCAPI, WebDAV, and account-level commands; not SCAPI Admin APIs. |
+| `implicit`           | Deprecated browser sign-in, used only when set explicitly. See [Implicit Flow Deprecation](./authentication#implicit-flow-deprecation). |
 | `basic`              | WebDAV username and access key; not an OAuth method.                                                                              |
 | `api-key`            | MRT API key; not an OAuth method.                                                                                                 |
 
@@ -498,7 +506,7 @@ For OAuth, the usual credential selection order is client credentials, JWT, then
 
 The equivalent environment value is `SFCC_AUTH_METHODS=client-credentials,jwt`; CLI flags accept `--auth-methods client-credentials,jwt` or repeated `--auth-methods` flags. Supported methods depend on the operation. These settings do not select SLAS shopper token flows.
 
-For browser login only, use `"user-auth": true` or CLI `--user-auth`. Do not combine it with `auth-methods`. See [Authentication](./authentication) for client registration and access requirements.
+To only sign in with your account, use `"user-auth": true` or `--user-auth` instead.
 
 ## MRT API Key
 

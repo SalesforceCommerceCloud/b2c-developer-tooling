@@ -1,0 +1,11 @@
+[
+  {"query": "I want our CI pipeline to replicate the MySite site data from staging to production every night after the content team finishes. How do I automate that without clicking through the Business Manager replication wizard?", "should_trigger": true},
+  {"query": "How can I transfer and activate the active code version from staging to production from a script?", "should_trigger": true},
+  {"query": "My data replication job failed with an 'Optimistic locking failure' and ErrorGeneric. It's a brand new site that's never been on production. What went wrong?", "should_trigger": true},
+  {"query": "Which replication task names do I use to replicate just catalogs and price books to the development instance?", "should_trigger": true},
+  {"query": "I need a job definition that runs ExecuteDataReplication with a JSON configuration. What does the ReplicationConfiguration parameter look like?", "should_trigger": true},
+  {"query": "Publish this one product from staging to production right now without replicating the whole catalog.", "should_trigger": false},
+  {"query": "Rebuild the product search index on my sandbox and wait for it to finish.", "should_trigger": false},
+  {"query": "Export the storefront catalog from my sandbox so I can diff it against production.", "should_trigger": false},
+  {"query": "How do I write a chunk-oriented custom job step that reads orders and writes a CSV?", "should_trigger": false}
+]

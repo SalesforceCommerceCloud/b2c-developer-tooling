@@ -11,13 +11,44 @@ import {
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
   ocapiDeprecatedMessage,
+  ocapiPermissionHint,
+  redactAccessTokens,
 } from '../../src/clients/error-utils.js';
+
+const JWT = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.c2lnbmF0dXJl-_x';
+
+describe('redactAccessTokens', () => {
+  it('replaces JWTs', () => {
+    expect(redactAccessTokens(`The access token '${JWT}' is invalid.`)).to.equal(
+      "The access token 'REDACTED' is invalid.",
+    );
+  });
+
+  it('replaces bearer credentials', () => {
+    expect(redactAccessTokens('Authorization: Bearer abc.def-123')).to.equal('Authorization: Bearer REDACTED');
+  });
+
+  it('leaves other text alone', () => {
+    expect(redactAccessTokens('Code version v1 not found')).to.equal('Code version v1 not found');
+  });
+});
 
 describe('getApiErrorMessage', () => {
   // Mock response object for testing
   const mockResponse = (status: number, statusText: string) => ({
     status,
     statusText,
+  });
+
+  it('does not echo the access token from an OCAPI fault', () => {
+    const error = {
+      fault: {
+        type: 'InvalidAccessTokenException',
+        message: `Unauthorized request! The access token '${JWT}' is invalid.`,
+      },
+    };
+    const message = getApiErrorMessage(error, mockResponse(401, 'Unauthorized'));
+    expect(message).to.equal("Unauthorized request! The access token 'REDACTED' is invalid.");
   });
 
   describe('ODS/SLAS error pattern', () => {
@@ -45,6 +76,19 @@ describe('getApiErrorMessage', () => {
       const error = {fault: {type: 'NotFoundException', message: 'Site not found'}};
       const response = mockResponse(404, 'Not Found');
       expect(getApiErrorMessage(error, response)).to.equal('Site not found');
+    });
+
+    it('appends a Business Manager permission hint for client access faults', () => {
+      const error = {
+        fault: {
+          type: 'ClientAccessForbiddenException',
+          message: "Access to resource 'GET /data/v25_6/code_versions' isn't allowed for the current client.",
+        },
+      };
+      const message = getApiErrorMessage(error, mockResponse(403, 'Forbidden'));
+      expect(message).to.match(/^Access to resource 'GET \/data\/v25_6\/code_versions' isn't allowed/);
+      expect(message).to.include('"resource_id":"/code_versions"');
+      expect(message).to.include('#configuring-ocapi-in-business-manager');
     });
 
     it('ignores fault if message is not a string', () => {
@@ -264,5 +308,52 @@ describe('getApiErrorMessage', () => {
         expect(err.cause).to.equal(fault);
       }
     });
+  });
+});
+
+describe('ocapiPermissionHint', () => {
+  const fault = (resource: string) => `Access to resource '${resource}' isn't allowed for the current client.`;
+
+  it('suggests the resource entry for a collection', () => {
+    const hint = ocapiPermissionHint(fault('GET /data/v25_6/code_versions'));
+    expect(hint).to.include(
+      '{"resource_id":"/code_versions","methods":["get"],"read_attributes":"(**)","write_attributes":"(**)"}',
+    );
+  });
+
+  it('replaces identifiers with wildcards', () => {
+    expect(ocapiPermissionHint(fault('POST /data/v24_5/sites/RefArch/cartridges'))).to.include(
+      '"resource_id":"/sites/*/cartridges","methods":["post"]',
+    );
+    expect(ocapiPermissionHint(fault('POST /data/v25_6/jobs/sfcc-site-archive-export/executions'))).to.include(
+      '"resource_id":"/jobs/*/executions"',
+    );
+  });
+
+  it('follows the Data API path templates rather than segment position', () => {
+    const custom = ocapiPermissionHint(fault('GET /data/v25_6/custom_objects/MyType/secretKey123'));
+    expect(custom).to.include('"resource_id":"/custom_objects/*/*"').and.not.include('secretKey123');
+    expect(
+      ocapiPermissionHint(fault('PATCH /data/v25_6/global_preferences/preference_groups/MyGroup/sandbox')),
+    ).to.include('"resource_id":"/global_preferences/preference_groups/*/*"');
+    expect(
+      ocapiPermissionHint(
+        fault('GET /s/-/dw/data/v25_6/sites/RefArch/site_preferences/preference_groups/MyGroup/sandbox'),
+      ),
+    ).to.include('"resource_id":"/sites/*/site_preferences/preference_groups/*/*"');
+  });
+
+  it('omits the hint for paths outside the Data API spec', () => {
+    expect(ocapiPermissionHint(fault('GET /data/v25_6/not_a_resource/abc'))).to.equal(undefined);
+  });
+
+  it('keeps the literal "this" segment and drops query strings', () => {
+    expect(ocapiPermissionHint(fault('GET /data/v25_6/users/this?expand=roles'))).to.include(
+      '"resource_id":"/users/this"',
+    );
+  });
+
+  it('returns undefined for other faults', () => {
+    expect(ocapiPermissionHint('Site not found')).to.equal(undefined);
   });
 });

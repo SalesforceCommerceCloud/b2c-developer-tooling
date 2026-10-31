@@ -81,15 +81,17 @@ export {
 export type {CodeVersion, CodeVersionActivationResult, CodeVersionResult} from './versions.js';
 
 // Scripts (code versions) backend abstraction — supports OCAPI + SCAPI
-export {createScriptsBackend, reloadCodeVersion} from './scripts-backend.js';
+export {createScriptsBackend, reloadCodeVersion, WebDavLookupFallbackScriptsBackend} from './scripts-backend.js';
 export type {ScriptsBackendConfig} from './scripts-backend.js';
 export {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 export {ScapiScriptsBackend} from './scapi-scripts-backend.js';
+export {ACTIVATION_NEEDS_API_CLIENT, WebDavScriptsBackend, parseCodeVersionFile} from './webdav-scripts-backend.js';
+export type {CodeVersionFileEntry} from './webdav-scripts-backend.js';
 export type {ScapiScriptsBackendConfig} from './scapi-scripts-backend.js';
 export type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';
 
 // Deployment
-export {findAndDeployCartridges, uploadCartridges, deleteCartridges} from './deploy.js';
+export {findAndDeployCartridges, uploadCartridges, deleteCartridges, DEFAULT_CARTRIDGE_IGNORE_DIRS} from './deploy.js';
 export type {DeployOptions, DeployResult, UploadOptions, UploadProgressInfo} from './deploy.js';
 
 // Download

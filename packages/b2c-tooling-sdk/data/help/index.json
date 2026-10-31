@@ -1,9 +1,9 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-25T17:45:16.307Z",
+  "generatedAt": "2026-10-20T16:40:44.437Z",
   "source": {
-    "sha": "8c308e33a5ce66f5de8d7004005f0491ad8ca620",
-    "committedAt": "2026-09-25T10:44:42+05:30",
+    "sha": "dc1b60684d3ac4d5518cfeff400e2012f5cc7060",
+    "committedAt": "2026-10-20T12:24:04-04:00",
     "ref": "current"
   },
   "entries": [
@@ -65,6 +65,15 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_access_keys_for_business_manager.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_access_keys_for_business_manager.md",
       "summary": "For organizations using unified authentication, B2C Commerce offers an alternative form of authentication when logging into to Business Manager via external applications: WebDAV File Access, UX Studio Agent, User Login, Open Commerce API (OCAPI), and Protected Storefront Access These access keys act as a substitute for your unified authentication password. Access keys expire after a year. If you enter an access key incorrectly six times, you can't use that access key or your password to log in to that authentication scope."
+    },
+    {
+      "id": "help-admin/b2c_access_scapi_zone",
+      "title": "Access the SCAPI Zone in Business Manager",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_access_scapi_zone.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_access_scapi_zone.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_access_scapi_zone.md",
+      "summary": "Open the Salesforce-managed SCAPI zone from the Production instance in Business Manager to configure supported security controls, view HTTP and security analytics, and purge cache for B2C Commerce."
     },
     {
       "id": "help-admin/b2c_account_manager_activate_account",
@@ -649,26 +658,13 @@
       "summary": "Activate the payment methods you want to offer shoppers in your Storefront Reference Architecture (SFRA), Composable Storefront, or Storefront Next site. Offer Checkout, Express Checkout, or both."
     },
     {
-      "id": "help-admin/b2c_add_a_certificate_to_a_zone",
-      "title": "Add an SSL Certificate to an eCDN Zone and Configure DNS Mapping",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_add_a_certificate_to_a_zone.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_add_a_certificate_to_a_zone.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_add_a_certificate_to_a_zone.md",
-      "summary": "Add SSL certificates to your hostnames for Zones, and map DNS values from B2C Commerce to your DNS provider account. Add eCDN managed certificates and self-managed certificates.",
-      "relatedEntries": [
-        "help-admin/b2c_add_managed_ssl_certificates",
-        "help-admin/b2c_add_self_managed_ssl_certificates"
-      ]
-    },
-    {
       "id": "help-admin/b2c_add_managed_ssl_certificates",
-      "title": "Add Managed SSL Certificates",
+      "title": "Add a Managed SSL Certificate for B2C Commerce",
       "category": "help-admin",
       "filePath": "help-admin/b2c_add_managed_ssl_certificates.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_add_managed_ssl_certificates.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_add_managed_ssl_certificates.md",
-      "summary": "Add eCDN managed SSL certificates to your hostnames for zones, and map your origin endpoints in B2C Commerce."
+      "summary": "Add an eCDN managed SSL certificate to a hostname for a zone, validate it, and map DNS so the hostname's traffic routes to its zone. eCDN managed certificates are issued and auto-renewed by Salesforce."
     },
     {
       "id": "help-admin/b2c_add_salesforce_payments_functionality_to_site_genesis",
@@ -689,21 +685,12 @@
     },
     {
       "id": "help-admin/b2c_add_self_managed_ssl_certificates",
-      "title": "Add Self-Managed SSL Certificates",
+      "title": "Add a Self-Managed SSL Certificate for B2C Commerce",
       "category": "help-admin",
       "filePath": "help-admin/b2c_add_self_managed_ssl_certificates.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_add_self_managed_ssl_certificates.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_add_self_managed_ssl_certificates.md",
-      "summary": "Add self-managed SSL certificates to your B2C Commerce hostnames for Zones, and map your origin endpoints."
-    },
-    {
-      "id": "help-admin/b2c_add_stacked_proxy_to_firewall_allowlist",
-      "title": "Add Stacked Proxy to the Firewall Allowlist",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_add_stacked_proxy_to_firewall_allowlist.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_add_stacked_proxy_to_firewall_allowlist.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_add_stacked_proxy_to_firewall_allowlist.md",
-      "summary": "Use the B2C Commerce CDN Zones API custom rules to selectively skip the web application firewall (WAF), other custom rules, rate limits, or security levels for third-party IP addresses that you specify."
+      "summary": "Add a self-managed SSL certificate to a hostname for a zone, validate it, and map DNS so the hostname's traffic routes to its zone. You upload and renew self-managed certificates yourself."
     },
     {
       "id": "help-admin/b2c_add_wildcard_custom_hostname",
@@ -725,12 +712,12 @@
     },
     {
       "id": "help-admin/b2c_adding_hostnames",
-      "title": "Add Hostnames (Subdomains)",
+      "title": "Add Hostnames to an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_adding_hostnames.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_adding_hostnames.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_adding_hostnames.md",
-      "summary": "Subdomains of the same zone can be configured on the same Salesforce B2C Commerce instance, or on different instances of different realms of the same retailer."
+      "summary": "You can configure subdomains of the same zone on the same Salesforce B2C Commerce instance, or on different instances of different realms of the same retailer."
     },
     {
       "id": "help-admin/b2c_administering_your_organization",
@@ -825,7 +812,11 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_anomaly_detection.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_anomaly_detection.md",
       "headings": "Reading the Anomaly Detector Results",
-      "summary": "Identify performance regressions, operational issues, and suspicious activity from unusual patterns in B2C Commerce Log Center. Log Center continuously analyzes incoming log data and compares the data with learned baseline behavior. When data deviates from the baseline and meets your thresholds, Log Center flags the anomaly. Each user can configure up to ten detectors. Use these guidelines to reduce false positives and improve detector accuracy."
+      "summary": "Identify performance regressions, operational issues, and suspicious activity from unusual patterns in B2C Commerce Log Center. Log Center continuously analyzes incoming log data and compares the data with learned baseline behavior. When data deviates from the baseline and meets your thresholds, Log Center flags the anomaly. Each user can configure up to ten detectors. Use these guidelines to reduce false positives and improve detector accuracy.",
+      "relatedEntries": [
+        "help-admin/b2c_set_up_anomaly_detectors",
+        "help-admin/b2c_manage_anomaly_detectors"
+      ]
     },
     {
       "id": "help-admin/b2c_apply_defense_in_depth",
@@ -1147,12 +1138,12 @@
     },
     {
       "id": "help-admin/b2c_clear_ecdn_cache_task",
-      "title": "Clear eCDN Cache",
+      "title": "Refresh a Static Asset in the eCDN Cache",
       "category": "help-admin",
       "filePath": "help-admin/b2c_clear_ecdn_cache_task.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_clear_ecdn_cache_task.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_clear_ecdn_cache_task.md",
-      "summary": "B2C Commerce stores static storefront content in eCDN cache or the web tier static content cache."
+      "summary": "To show an updated static storefront asset before its B2C Commerce eCDN cache interval expires, upload the new version. B2C Commerce assigns the asset a new fingerprint and URL, so eCDN retrieves it. You don't need to clear the eCDN cache or file a support ticket."
     },
     {
       "id": "help-admin/b2c_clear_sftp_known_good_hosts",
@@ -1348,12 +1339,12 @@
     },
     {
       "id": "help-admin/b2c_configure_eCDN_page_shield_policy",
-      "title": "Configure a Page Shield Policy for the eCDN",
+      "title": "Configure a Page Shield Policy for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_eCDN_page_shield_policy.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_eCDN_page_shield_policy.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_eCDN_page_shield_policy.md",
-      "summary": "Set up a Page Shield policy to make sure only trusted scripts run on sensitive store pages like cart and checkout. A Page Shield policy helps your B2C Commerce store comply with the Payment Card Industry Data Security Standard (PCI DSS) 4.0 client-side security requirements."
+      "summary": "Set up a Page Shield policy to make sure only trusted scripts run on sensitive store pages like cart and checkout. A Page Shield policy helps detect client-side script changes and supply chain risks, and helps your B2C Commerce store comply with the Payment Card Industry Data Security Standard (PCI DSS) 4.0.1 client-side security requirements."
     },
     {
       "id": "help-admin/b2c_configure_enforce_https_global_preference",
@@ -1366,7 +1357,7 @@
     },
     {
       "id": "help-admin/b2c_configure_event_types",
-      "title": "Set Up Eventing in B2C Commerce (Pilot)",
+      "title": "Set Up Eventing in B2C Commerce",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_event_types.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_event_types.htm&type=5",
@@ -1377,17 +1368,19 @@
         "help-admin/b2c_event_common_headers",
         "help-admin/b2c_event_replication",
         "help-admin/b2c_event_replication_granular",
-        "help-admin/b2c_event_shopper_registered"
+        "help-admin/b2c_event_shopper_registered",
+        "help-admin/b2c_event_order_placed",
+        "help-admin/b2c_event_custom"
       ]
     },
     {
       "id": "help-admin/b2c_configure_hsts",
-      "title": "Configure HSTS for B2C Commerce",
+      "title": "Configure HSTS for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_hsts.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_hsts.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_hsts.md",
-      "summary": "HTTP Strict Transport Security (HSTS) secures your site by instructing web browsers to access your domain using only HTTPS. HSTS prevents attackers from using downgrade attacks against your site. For extra security, enable preload, which forces web browsers to open your site in HTTPS the first time it's requested. Read the Internet Engineering Task Force (IETF) on HSTS for more information."
+      "summary": "Enable HTTP Strict Transport Security (HSTS) for a B2C Commerce eCDN zone to make web browsers connect to your domain over HTTPS only. Set the max age, choose whether HSTS applies to subdomains, and optionally enable preload."
     },
     {
       "id": "help-admin/b2c_configure_hsts_for_business_manager",
@@ -1469,6 +1462,15 @@
       "summary": "Use Shopper Profile Sync to synchronize registered shoppers between B2C Commerce and your Salesforce org as person accounts."
     },
     {
+      "id": "help-admin/b2c_configure_site_url_aliases_for_my_domains",
+      "title": "Configure Site URL Aliases for .my Domains",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_configure_site_url_aliases_for_my_domains.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_site_url_aliases_for_my_domains.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_site_url_aliases_for_my_domains.md",
+      "summary": "Prevent cross-origin (CORS) errors after your B2C Commerce storefront moves to the `.my` Default Domain, manually add the `.my` hostname to your site URL aliases file."
+    },
+    {
       "id": "help-admin/b2c_configure_system_use_notification_message_settings",
       "title": "Add a System Use Notification Message in B2C Commerce",
       "category": "help-admin",
@@ -1478,114 +1480,64 @@
       "summary": "Create a system use notification message that displays when your users log in. You can also require them to acknowledge this message before continuing to log in."
     },
     {
-      "id": "help-admin/b2c_configure_the_embedded_cdn",
-      "title": "Configure the Embedded CDN",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_configure_the_embedded_cdn.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_the_embedded_cdn.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_the_embedded_cdn.md",
-      "headings": "eCDN on On-Demand Sandboxes (ODS) • Configure Site URL Aliases for .my Domains",
-      "summary": "The embedded CDN (eCDN) is a geographically distributed network of proxy servers. Configuring the eCDN improves availability and performance, ultimately enhancing the ability to scale your B2C Commerce site (or sites).",
-      "relatedEntries": [
-        "help-admin/b2c_default_domain",
-        "help-admin/b2c_scapi_zone",
-        "help-admin/b2c_creating_a_zone",
-        "help-admin/b2c_add_a_certificate_to_a_zone",
-        "help-admin/b2c_update_a_zones_certificate",
-        "help-admin/b2c_configuring_a_zone",
-        "help-admin/b2c_adding_hostnames",
-        "help-admin/b2c_migrating_proxy_zones",
-        "help-admin/b2c_configure_eCDN_page_shield_policy",
-        "help-admin/b2c_create_eCDN_firewall_rule",
-        "help-admin/b2c_eCDN_configure_host_header_override",
-        "help-admin/b2c_eCDN_create_rate_limiting_rule",
-        "help-admin/b2c_analyze_eCDN_traffic",
-        "help-admin/b2c_fast_storefront_setup_ecdn",
-        "help-admin/b2c_ecdn_cache_rules_and_purge_overview"
-      ]
-    },
-    {
-      "id": "help-admin/b2c_configure_zone_analytics",
-      "title": "Analytics for an eCDN Zone for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_configure_zone_analytics.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_analytics.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_analytics.md",
-      "headings": "What's New in Configure Zones Analytics • Accessing Zone Analytics",
-      "summary": "View HTTP and security traffic metrics for an eCDN zone, including the Traffic Analysis timeline chart and top statistics, using the Configure Zones interface in Business Manager."
-    },
-    {
       "id": "help-admin/b2c_configure_zone_crypto_settings",
-      "title": "Configure Crypto Settings for an eCDN Zone for B2C Commerce",
+      "title": "Configure Crypto Settings for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_crypto_settings.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_crypto_settings.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_crypto_settings.md",
-      "summary": "Configure SSL/TLS and cryptography settings for an eCDN zone, including Transport Layer Security (TLS) version and HTTP Strict Transport Security (HSTS), using the Configure Zones interface in Business Manager."
+      "summary": "Configure SSL/TLS and cryptography settings for a B2C Commerce eCDN zone, including Transport Layer Security (TLS) version and HTTP Strict Transport Security (HSTS), using the Configure Zone screen in Business Manager."
     },
     {
       "id": "help-admin/b2c_configure_zone_custom_error_pages",
-      "title": "Configure Custom Error Pages for an eCDN Zone for B2C Commerce",
+      "title": "Configure Custom Error Pages for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_custom_error_pages.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_custom_error_pages.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_custom_error_pages.md",
-      "summary": "Set custom HTML error pages for 500-class and 1000-class errors generated by the embedded CDN for a zone."
-    },
-    {
-      "id": "help-admin/b2c_configure_zone_firewall_settings",
-      "title": "Configure Firewall Settings for an eCDN Zone for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_configure_zone_firewall_settings.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_firewall_settings.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_firewall_settings.md",
-      "summary": "Configure firewall settings for an eCDN zone using the Configure Zones interface in Business Manager."
-    },
-    {
-      "id": "help-admin/b2c_configure_zone_host_header_override_rules",
-      "title": "Configure Host Header Override Rules for an eCDN Zone",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_configure_zone_host_header_override_rules.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_host_header_override_rules.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_host_header_override_rules.md",
-      "summary": "Create rules that override the HTTP Host header sent to your origin server for a B2C Commerce eCDN zone, using the Configure Zones interface in Business Manager."
+      "summary": "Set custom HTML error pages for 500-class and 1000-class errors generated by the embedded CDN for a B2C Commerce zone, using the Configure Zone screen in Business Manager."
     },
     {
       "id": "help-admin/b2c_configure_zone_logs",
-      "title": "Configure Logpush and Logpull for an eCDN Zone",
+      "title": "Logpush and Logpull for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_logs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_logs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_logs.md",
-      "summary": "Stream B2C Commerce eCDN request, security, and Page Shield logs to your own storage or observability platform (Amazon S3, Google Cloud Storage, Azure Blob Storage, Datadog, or Splunk), or download recent logs on demand - all from the Logs tab on the Configure Zone screen in Business Manager."
+      "headings": "How Logpush and Logpull Differ • Supported Destinations and Datasets • Configure Logging for a Zone • The Logs Tab Isn't Showing",
+      "summary": "Stream B2C Commerce eCDN request, security, and Page Shield logs to your own storage or observability platform (Amazon S3, Google Cloud Storage, Azure Blob Storage, Datadog, or Splunk), or download recent logs on demand, all from the Logs tab on the Configure Zone screen in Business Manager.",
+      "relatedEntries": [
+        "help-admin/b2c_create_ecdn_logpush_job",
+        "help-admin/b2c_manage_ecdn_logpush_jobs",
+        "help-admin/b2c_download_ecdn_logs_logpull",
+        "help-admin/b2c_ecdn_logpush_destination_settings"
+      ]
     },
     {
       "id": "help-admin/b2c_configure_zone_notifications",
-      "title": "Configure Notifications for an eCDN Zone",
+      "title": "eCDN Zone Notifications",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_notifications.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_notifications.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_notifications.md",
-      "summary": "Get notified when eCDN events on your B2C Commerce storefront that matter to you happen, such as a Logpush job failure on a PCI-bound zone, a security incident, or a configuration change, without having to watch dashboards. The Notifications tab on the Configure Zone screen lets you configure webhook destinations (such as a Slack incoming webhook or your own HTTPS endpoint) and wire them up to one or more zones."
-    },
-    {
-      "id": "help-admin/b2c_configure_zone_page_shield_policies",
-      "title": "Configure Page Shield Policies for an eCDN Zone",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_configure_zone_page_shield_policies.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_page_shield_policies.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_page_shield_policies.md",
-      "summary": "Configure Page Shield policies that detect and identify supply chain attacks affecting your B2C Commerce storefront, using the Configure Zones interface in Business Manager."
+      "headings": "How eCDN Notifications Work • Configure Notifications for a Zone • The Notifications Tab Isn't Showing",
+      "summary": "Get notified when eCDN events on your B2C Commerce storefront that matter to you happen, such as a Logpush job failure on a PCI-bound zone, a security incident, or a configuration change, without having to watch dashboards. The Notifications tab on the Configure Zone screen lets you configure webhook destinations and wire them up to one or more zones.",
+      "relatedEntries": [
+        "help-admin/b2c_create_ecdn_notification_destination",
+        "help-admin/b2c_create_ecdn_notification_rule",
+        "help-admin/b2c_set_up_ecdn_pci_alerts",
+        "help-admin/b2c_manage_ecdn_notification_rules"
+      ]
     },
     {
       "id": "help-admin/b2c_configure_zone_realm_security_rules",
-      "title": "Realm Security Rules for eCDN Zones for B2C Commerce",
+      "title": "Realm Security Rules for eCDN Zones",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_realm_security_rules.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_realm_security_rules.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_realm_security_rules.md",
-      "headings": "Overview • Accessing Realm Security Rules • Account-Level vs. Zone-Level Scope • Behavior: What Traffic Is Bypassed • Permissions",
-      "summary": "Realm Security Rules let you define Managed IP Address Lists and Custom Firewall Rules that control how trusted IP traffic is handled across **all** your eCDN zones. These rules replace the legacy Trusted IP configuration.",
+      "headings": "The Realm Security Rules Tab in B2C Commerce • Realm Security Rules Permissions in B2C Commerce",
+      "summary": "Realm Security Rules let you define Managed IP Address Lists and custom firewall rules that control how trusted IP traffic is handled across **all** your eCDN zones for B2C Commerce. These rules replace the legacy Trusted IP configuration.",
       "relatedEntries": [
         "help-admin/b2c_manage_trusted_ip_address_lists",
         "help-admin/b2c_migrate_trusted_ips_to_custom_rules"
@@ -1593,24 +1545,24 @@
     },
     {
       "id": "help-admin/b2c_configure_zone_speed_settings",
-      "title": "Configure Speed Settings for an eCDN Zone for B2C Commerce",
+      "title": "Configure Speed Settings for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_speed_settings.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_speed_settings.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_speed_settings.md",
-      "summary": "Optimize zone performance by enabling speed settings such as Early Hints, HTTP/3, and image compression via the Configure Zones interface in Business Manager.",
+      "summary": "Optimize B2C Commerce eCDN zone performance by enabling speed settings such as Early Hints, HTTP/3, and image compression via the Configure Zone screen in Business Manager.",
       "relatedEntries": [
         "help-admin/b2c_enhance_site_speedxml"
       ]
     },
     {
       "id": "help-admin/b2c_configure_zone_waf_settings",
-      "title": "Configure WAF Settings for an eCDN Zone for B2C Commerce",
+      "title": "Configure WAF Settings for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configure_zone_waf_settings.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_zone_waf_settings.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configure_zone_waf_settings.md",
-      "summary": "Configure Web Application Firewall (WAF) managed rulesets for an eCDN zone by using the Security Rules tab in Configure Zones in Business Manager."
+      "summary": "Configure web application firewall (WAF) managed rulesets for an eCDN zone for B2C Commerce by using the Security Rules tab in Configure Zones in Business Manager."
     },
     {
       "id": "help-admin/b2c_configuring_a_business_manager_site",
@@ -1623,24 +1575,23 @@
     },
     {
       "id": "help-admin/b2c_configuring_a_zone",
-      "title": "Configure an eCDN Zone for B2C Commerce in Business Manager",
+      "title": "eCDN Zone Settings in Business Manager",
       "category": "help-admin",
       "filePath": "help-admin/b2c_configuring_a_zone.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configuring_a_zone.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configuring_a_zone.md",
-      "summary": "Configure SSL/TLS, certificates, security rules, performance, custom pages, request logs, and Under Attack Mode for an eCDN zone by using the Configure Zone screen in Business Manager.",
+      "summary": "Use the Configure Zone screen in Business Manager to manage settings for an embedded CDN (eCDN) zone for B2C Commerce, including certificates, security rules, performance, custom pages, notifications, and logs.",
       "relatedEntries": [
         "help-admin/b2c_configure_zone_crypto_settings",
-        "help-admin/b2c_configure_zone_waf_settings",
-        "help-admin/b2c_configure_zone_firewall_settings",
-        "help-admin/b2c_configure_zone_realm_security_rules",
-        "help-admin/b2c_configure_zone_analytics",
+        "help-admin/b2c_ecdn_security_rules",
+        "help-admin/b2c_analyze_eCDN_traffic",
         "help-admin/b2c_configure_zone_speed_settings",
-        "help-admin/b2c_configure_zone_host_header_override_rules",
-        "help-admin/b2c_configure_zone_page_shield_policies",
+        "help-admin/b2c_eCDN_configure_host_header_override",
+        "help-admin/b2c_configure_eCDN_page_shield_policy",
         "help-admin/b2c_configure_zone_custom_error_pages",
         "help-admin/b2c_configure_zone_notifications",
-        "help-admin/b2c_configure_zone_logs"
+        "help-admin/b2c_configure_zone_logs",
+        "help-admin/b2c_enable_under_attack_mode"
       ]
     },
     {
@@ -1662,9 +1613,8 @@
       "filePath": "help-admin/b2c_configuring_an_external_cdn.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configuring_an_external_cdn.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configuring_an_external_cdn.md",
-      "summary": "Use your own content delivery network (CDN) with Salesforce B2C Commerce's embedded CDN to deliver static and dynamic content to your customers. Deploy your CDN (or a reverse proxy) in front of B2C Commerce to improve performance and security, or to provide extra functionality using your CDN.",
+      "summary": "Use your own content delivery network (CDN) with Salesforce B2C Commerce's embedded CDN to deliver static and dynamic content to your customers. Deploy your CDN (or a reverse proxy) in front of B2C Commerce to improve performance and security, or to provide extra functionality.",
       "relatedEntries": [
-        "help-admin/b2c_add_stacked_proxy_to_firewall_allowlist",
         "help-admin/b2c_verify_third_party_requests"
       ]
     },
@@ -1865,6 +1815,15 @@
       "summary": "Monitor conditions and send notifications in B2C Commerce Log Center. Catch behavioral anomalies early, get notified when a log delivery pipeline fails, or create an alert for a specific incident."
     },
     {
+      "id": "help-admin/b2c_create_a_microsoft_teams_channel_for_log_center_alerts",
+      "title": "Create a Microsoft Teams Channel for Log Center Alerts",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_create_a_microsoft_teams_channel_for_log_center_alerts.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_a_microsoft_teams_channel_for_log_center_alerts.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_a_microsoft_teams_channel_for_log_center_alerts.md",
+      "summary": "In B2C Commerce, use a Microsoft Teams notification channel to send Log Center alerts to a Teams chat or channel through a Power Automate workflow."
+    },
+    {
       "id": "help-admin/b2c_create_a_pagerduty_channel_for_log_center_alerts",
       "title": "Create a PagerDuty Channel for Log Center Alerts",
       "category": "help-admin",
@@ -1890,15 +1849,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_a_slack_channel_for_log_center_alerts.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_a_slack_channel_for_log_center_alerts.md",
       "summary": "To keep your teams aligned during incidents, set up Slack notifications in B2C Commerce."
-    },
-    {
-      "id": "help-admin/b2c_create_an_ecdn_zone_and_certificate",
-      "title": "Create an eCDN Zone and Hostnames",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_create_an_ecdn_zone_and_certificate.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_an_ecdn_zone_and_certificate.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_an_ecdn_zone_and_certificate.md",
-      "summary": "When a custom SSL certificate isn’t installed to your B2C Commerce development, staging, or production instance POD, or a custom SSL certificate installed to the POD doesn't cover the hostname, create an eCDN zone, and upload the certificate for each domain name."
     },
     {
       "id": "help-admin/b2c_create_code_replication_process",
@@ -1937,6 +1887,33 @@
       "summary": "Configure a custom firewall rule to control incoming traffic to your B2C Commerce storefront based on specified request parameters."
     },
     {
+      "id": "help-admin/b2c_create_ecdn_logpush_job",
+      "title": "Create a Logpush Job",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_create_ecdn_logpush_job.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_ecdn_logpush_job.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_ecdn_logpush_job.md",
+      "summary": "Create a Logpush job to stream eCDN request, security, and Page Shield logs from your B2C Commerce storefront continuously to a customer-owned destination. The New Logpush Job wizard walks through destination setup and job configuration in two steps."
+    },
+    {
+      "id": "help-admin/b2c_create_ecdn_notification_destination",
+      "title": "Create a Notification Destination",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_create_ecdn_notification_destination.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_ecdn_notification_destination.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_ecdn_notification_destination.md",
+      "summary": "Register a webhook destination that receives eCDN notification payloads for your B2C Commerce storefront, such as a Slack incoming webhook or a custom HTTPS endpoint. A destination is reusable across multiple notification rules and across zones."
+    },
+    {
+      "id": "help-admin/b2c_create_ecdn_notification_rule",
+      "title": "Create a Notification Rule",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_create_ecdn_notification_rule.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_ecdn_notification_rule.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_ecdn_notification_rule.md",
+      "summary": "Create a notification rule to bind a webhook destination to one or more eCDN zones for your B2C Commerce storefront and control whether delivery is enabled. Toggling a rule off pauses delivery without deleting the rule."
+    },
+    {
       "id": "help-admin/b2c_create_global_parameter_for_jobs",
       "title": "Create a Job Parameter",
       "category": "help-admin",
@@ -1965,12 +1942,12 @@
     },
     {
       "id": "help-admin/b2c_creating_a_zone",
-      "title": "Create a Zone in B2C Commerce",
+      "title": "Create an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_creating_a_zone.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_creating_a_zone.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_creating_a_zone.md",
-      "summary": "The CDN configuration is organized around zones. A zone represents a root or apex domain (for example, example.com). A hostname is a subdomain of a specific zone (for example, www.example.com)."
+      "summary": "The embedded CDN (eCDN) configuration is organized around zones. A zone represents a root or apex domain (for example, `example.com`). A hostname is a subdomain of a specific zone (for example, `www.example.com`). Create a zone in Business Manager to route your B2C Commerce storefront traffic through the eCDN."
     },
     {
       "id": "help-admin/b2c_creating_custom_preferences",
@@ -2373,21 +2350,21 @@
       "filePath": "help-admin/b2c_default_domain.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_default_domain.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_default_domain.md",
-      "headings": "What Is the Default Domain? • 1. Accessing the Default Domain • 2. Configuring eCDN on the Default Domain • 3. Impact on Custom Domains • 4. Key Caveats (Important)",
-      "summary": "Default Domain provides a Salesforce-managed, eCDN-enabled hostname for each instance (Development, Staging, and Production) so teams can test without manual DNS, custom domain registration, or certificate management.",
+      "headings": "Accessing the Default Domain • Configuring eCDN on the Default Domain • Impact on Custom Domains • Key Caveats",
+      "summary": "Default Domain is a Salesforce-managed, eCDN-enabled hostname provided for each B2C Commerce instance (development, staging, and production), so you can test without manual DNS, custom domain registration, or certificate management. Use the Default Domain for developer testing, load testing, and preproduction review, whether you're working alongside an existing custom branded domain (for example, www.example.com) or haven't set one up yet.",
       "relatedEntries": [
         "help-admin/b2c_default_domain_ods"
       ]
     },
     {
       "id": "help-admin/b2c_default_domain_ods",
-      "title": "Default Domain on On-Demand Sandboxes (ODS)",
+      "title": "Default Domain on On-Demand Sandboxes",
       "category": "help-admin",
       "filePath": "help-admin/b2c_default_domain_ods.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_default_domain_ods.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_default_domain_ods.md",
-      "headings": "Vanity Domains on ODS",
-      "summary": "B2C Commerce On-Demand Sandboxes (ODS) are served exclusively through the Salesforce-managed Default Domain. Custom (vanity) domains on ODS via eCDN aren't supported and aren't planned."
+      "headings": "Feature Parity with Production • Custom Domains on ODS",
+      "summary": "B2C Commerce On-Demand Sandboxes (ODS) are served exclusively through the Salesforce-managed Default Domain starting with the 26.6 release. When you create a development, production, or partner ODS instance, B2C Commerce provisions the Default Domain automatically and handles DNS and certificates for you."
     },
     {
       "id": "help-admin/b2c_delta_exports",
@@ -2428,7 +2405,6 @@
       "filePath": "help-admin/b2c_denial_of_service_protection.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_denial_of_service_protection.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_denial_of_service_protection.md",
-      "headings": "SCAPI Zone Applicability",
       "summary": "In a denial-of-service (DoS) attack, the attacker attempts to deny computer resources to a network’s users. Attackers usually accomplish this by overwhelming the target computer system’s resources with unauthorized requests, which prevent valid users from accessing the network."
     },
     {
@@ -2469,12 +2445,12 @@
     },
     {
       "id": "help-admin/b2c_disable_hsts",
-      "title": "Disable HTTP Strict Transport Security (HSTS) for B2C Commerce",
+      "title": "Disable HSTS for an eCDN Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_disable_hsts.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_disable_hsts.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_disable_hsts.md",
-      "summary": "Disabling HSTS is a two-step process. You first let shoppers access your site using an insecure connection and then, stop your site from sending HSTS in the header."
+      "summary": "Disabling HTTP Strict Transport Security (HSTS) for a B2C Commerce eCDN zone is a two-step process. You first let shoppers access your site over an insecure connection by setting the max age to 0, and then you stop your site from sending the HSTS header."
     },
     {
       "id": "help-admin/b2c_disconnect_cross_cloud_tenant_group",
@@ -2486,17 +2462,23 @@
       "summary": "To disconnect a cross cloud tenant group, clear the tenant group information from the B2C Commerce database."
     },
     {
-      "id": "help-admin/b2c_ecdn_additional_resources",
-      "title": "Additional Embedded CDN Resources",
+      "id": "help-admin/b2c_dns_mapping_for_ecdn_zones",
+      "title": "DNS Mapping for eCDN Zones in B2C Commerce",
       "category": "help-admin",
-      "filePath": "help-admin/b2c_ecdn_additional_resources.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_additional_resources.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_additional_resources.md",
-      "summary": "We've prepared some resources to help you optimize your B2C Commerce experience with Embedded CDN.",
-      "relatedEntries": [
-        "help-admin/b2c_ecdn_proxy_zone_faq",
-        "help-admin/b2c_ecdn_ods_faq"
-      ]
+      "filePath": "help-admin/b2c_dns_mapping_for_ecdn_zones.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_dns_mapping_for_ecdn_zones.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_dns_mapping_for_ecdn_zones.md",
+      "headings": "Mapping Rules • Certificate Validation Methods • Certificate Limits for B2C Commerce",
+      "summary": "To route a hostname's traffic through its embedded CDN (eCDN) zone, map DNS from your provider to the zone and validate the zone's SSL certificate. Understand the mapping rules, validation methods, and certificate limits before you add or update a certificate."
+    },
+    {
+      "id": "help-admin/b2c_download_ecdn_logs_logpull",
+      "title": "Download Logs with Logpull",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_download_ecdn_logs_logpull.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_download_ecdn_logs_logpull.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_download_ecdn_logs_logpull.md",
+      "summary": "Use Logpull to download recent eCDN request logs for a zone on your B2C Commerce storefront on demand. Logs are available for the past 7 days only."
     },
     {
       "id": "help-admin/b2c_ecdn_cache_rules_and_purge_overview",
@@ -2505,11 +2487,25 @@
       "filePath": "help-admin/b2c_ecdn_cache_rules_and_purge_overview.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_cache_rules_and_purge_overview.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_cache_rules_and_purge_overview.md",
-      "headings": "Where Cache Rules and Cache Purge Are Available • How SCAPI Zones Differ • How eCDN Decides What to Cache • Best Practices • Troubleshooting",
+      "headings": "Purge Cache for SCAPI Zones • How B2C Commerce eCDN Decides What to Cache • Best Practices for B2C Commerce eCDN Caching • Troubleshooting B2C Commerce eCDN Caching",
       "summary": "Cache rules control which content is eligible for caching at the eCDN edge, and cache purge selectively invalidates cached content by tag or path. Both capabilities are available in Business Manager for your B2C Commerce storefront.",
       "relatedEntries": [
         "help-admin/b2c_create_ecdn_cache_rule",
         "help-admin/b2c_purge_ecdn_cache"
+      ]
+    },
+    {
+      "id": "help-admin/b2c_ecdn_caching_and_fingerprinting",
+      "title": "eCDN Caching and Cache Fingerprinting",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_ecdn_caching_and_fingerprinting.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_caching_and_fingerprinting.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_caching_and_fingerprinting.md",
+      "headings": "How Static Caching and Fingerprinting Work for B2C Commerce eCDN",
+      "summary": "B2C Commerce eCDN caches static storefront content on edge servers, which are servers located close to your shoppers, and refreshes it automatically using a fingerprint value in each content asset's URL. Understand how caching and fingerprinting work before you clear the cache or add cache rules for dynamic content.",
+      "relatedEntries": [
+        "help-admin/b2c_clear_ecdn_cache_task",
+        "help-admin/b2c_ecdn_cache_rules_and_purge_overview"
       ]
     },
     {
@@ -2531,24 +2527,30 @@
       "summary": "Configure a rate limiting rule to specify rate limits for requests that match a particular expression and then perform an action when requests reach those rate limits. Rate limiting rules improve B2C Commerce storefront availability, target specific traffic patterns and combat threats, such as bots."
     },
     {
-      "id": "help-admin/b2c_ecdn_ods_faq",
-      "title": "eCDN on On-Demand Sandboxes – FAQ",
+      "id": "help-admin/b2c_ecdn_logpush_destination_settings",
+      "title": "eCDN Logpush Destination Settings",
       "category": "help-admin",
-      "filePath": "help-admin/b2c_ecdn_ods_faq.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_ods_faq.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_ods_faq.md",
-      "headings": "Provisioning and setup • Shared zone model • Feature parity with production environments • Vanity domains on ODS • Certificates",
-      "summary": "Find answers to common questions about eCDN on B2C Commerce On-Demand Sandbox (ODS) instances, including what's auto-provisioned, the shared zone model, vanity domain support, and feature parity with production environments."
+      "filePath": "help-admin/b2c_ecdn_logpush_destination_settings.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_logpush_destination_settings.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_logpush_destination_settings.md",
+      "headings": "Amazon S3 • Google Cloud Storage • Azure Blob Storage • Datadog • Splunk",
+      "summary": "Required and optional fields for each eCDN Logpush destination type on your B2C Commerce storefront: Amazon S3, Google Cloud Storage, Azure Blob Storage, Datadog, and Splunk."
     },
     {
-      "id": "help-admin/b2c_ecdn_proxy_zone_faq",
-      "title": "eCDN Proxy Zone FAQ for B2C Commerce",
+      "id": "help-admin/b2c_ecdn_security_rules",
+      "title": "eCDN Zone Security Rules",
       "category": "help-admin",
-      "filePath": "help-admin/b2c_ecdn_proxy_zone_faq.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_proxy_zone_faq.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_proxy_zone_faq.md",
-      "headings": "Proxy Zone and Legacy Zone • Rollout and Timeline Schedule • On-Boarding and Activation",
-      "summary": "Find answers to your eCDN proxy zone questions."
+      "filePath": "help-admin/b2c_ecdn_security_rules.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_security_rules.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_security_rules.md",
+      "headings": "What the Security Rules Tab Covers in B2C Commerce • Example: Rate Limit Logins That Use Leaked Credentials • Behavior: What Traffic Is Bypassed • DDoS Layer 7 Override Details • Zone Type Eligibility • Feature Switch",
+      "summary": "Use the Security Rules tab on the Configure Zone screen to protect a B2C Commerce embedded CDN (eCDN) zone with web application firewall (WAF) managed rulesets, realm and zone security rules, custom firewall rules, and rate limiting. Learn what each control does, which zone types are eligible, and how traffic from trusted sources bypasses security checks.",
+      "relatedEntries": [
+        "help-admin/b2c_configure_zone_waf_settings",
+        "help-admin/b2c_configure_zone_realm_security_rules",
+        "help-admin/b2c_create_eCDN_firewall_rule",
+        "help-admin/b2c_eCDN_create_rate_limiting_rule"
+      ]
     },
     {
       "id": "help-admin/b2c_edit_alert_settings",
@@ -2566,16 +2568,17 @@
       "filePath": "help-admin/b2c_embedded_cdn.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_embedded_cdn.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_embedded_cdn.md",
-      "summary": "Salesforce B2C Commerce comes with an embedded Content Delivery Network (CDN). To ensure low response times for consumers, the embedded CDN serves content from a location close to the consumer, enhancing the ability to scale sites. Contact Salesforce Support to enable the embedded CDN for your organization.",
+      "summary": "Salesforce B2C Commerce includes an embedded content delivery network (eCDN) that serves content from locations close to your shoppers for fast response times. eCDN also absorbs high or sudden increases in traffic, so your sites stay fast and responsive as demand grows.",
       "relatedEntries": [
         "help-admin/b2c_embedded_cdn_overview",
-        "help-admin/b2c_configure_the_embedded_cdn",
-        "help-admin/b2c_use_cdn_zones_api_to_configure_ecdn",
-        "help-admin/b2c_clear_ecdn_cache_task",
+        "help-admin/b2c_set_up_ecdn_zones_and_hostnames",
+        "help-admin/b2c_manage_ssl_certificates_for_ecdn_zones",
+        "help-admin/b2c_configuring_a_zone",
+        "help-admin/b2c_migrating_proxy_zones",
         "help-admin/b2c_configuring_an_external_cdn",
-        "help-admin/b2c_waf_application",
-        "help-admin/b2c_manage_hsts",
-        "help-admin/b2c_ecdn_additional_resources"
+        "help-admin/b2c_ecdn_caching_and_fingerprinting",
+        "help-admin/b2c_waf_protection",
+        "help-admin/b2c_manage_hsts"
       ]
     },
     {
@@ -2585,7 +2588,8 @@
       "filePath": "help-admin/b2c_embedded_cdn_overview.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_embedded_cdn_overview.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_embedded_cdn_overview.md",
-      "summary": "Salesforce B2C Commerce provides digital customers an embedded content delivery network (eCDN) designed to accelerate site speed access and content delivery. The eCDN provides low response times for consumers using proxy servers. The use of proxy servers provides digital content."
+      "headings": "eCDN Zone Types • Where the eCDN Is Available • Managing the eCDN • Additional Configuration Notes",
+      "summary": "Salesforce B2C Commerce includes an embedded content delivery network (eCDN) that accelerates site performance and content delivery. The eCDN serves content from locations close to your shoppers for fast response times, and supports web application firewall (WAF) and HTTP Strict Transport Security (HSTS)."
     },
     {
       "id": "help-admin/b2c_enable_granular_replication_for_your_site",
@@ -2604,6 +2608,15 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_enable_shop_the_store.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_enable_shop_the_store.md",
       "summary": "Enable Shop the Store for up to ten B2C stores. With this feature, shoppers can search in-store inventory online. Either import store inventory lists or integrate with Omnichannel. Shoppers can then browse store-specific inventory and conveniently pick-up purchases from a preferred location."
+    },
+    {
+      "id": "help-admin/b2c_enable_under_attack_mode",
+      "title": "Enable Under Attack Mode for an eCDN Zone",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_enable_under_attack_mode.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_enable_under_attack_mode.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_enable_under_attack_mode.md",
+      "summary": "Turn on Under Attack Mode from the Configure Zone screen in Business Manager to present a challenge to every visitor to your B2C Commerce storefront during an active DDoS attack. Use it only as a last resort."
     },
     {
       "id": "help-admin/b2c_encryption_and_cryptography",
@@ -2626,7 +2639,7 @@
     },
     {
       "id": "help-admin/b2c_enhance_site_speedxml",
-      "title": "Enhance Site Speed",
+      "title": "Site Speed Enhancements for eCDN Zones",
       "category": "help-admin",
       "filePath": "help-admin/b2c_enhance_site_speedxml.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_enhance_site_speedxml.htm&type=5",
@@ -2643,6 +2656,26 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_event_common_headers.md",
       "headings": "Notes",
       "summary": "Every B2C Commerce event includes the same set of standard `x-sf-cc-*` headers, so your connector can identify and correlate events consistently regardless of the event type."
+    },
+    {
+      "id": "help-admin/b2c_event_custom",
+      "title": "Custom Events",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_event_custom.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_event_custom.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_event_custom.md",
+      "headings": "Declare an event • Send an event • Site context and routing • Delivery and limits",
+      "summary": "Declare your own B2C Commerce event types in a cartridge and send them from script. Custom events appear in Business Manager with platform events, and you route them to the same connectors."
+    },
+    {
+      "id": "help-admin/b2c_event_order_placed",
+      "title": "Order Placed Event",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_event_order_placed.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_event_order_placed.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_event_order_placed.md",
+      "headings": "Event ID • HTTP headers • JSON payload • Example: order placed event • Order placed implementation notes",
+      "summary": "B2C Commerce fires an order placed event when an order reaches a placed state and the placement transaction commits. The webhook body is the order representation from the Orders API, and you can route the event by site."
     },
     {
       "id": "help-admin/b2c_event_replication",
@@ -2729,12 +2762,12 @@
     },
     {
       "id": "help-admin/b2c_fast_storefront_setup_ecdn",
-      "title": "Storefront Fast Setup – eCDN Step",
+      "title": "eCDN Step in Storefront Fast Setup",
       "category": "help-admin",
       "filePath": "help-admin/b2c_fast_storefront_setup_ecdn.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_fast_storefront_setup_ecdn.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_fast_storefront_setup_ecdn.md",
-      "headings": "What the SetupEcdnForStorefront job step does • What gets provisioned • Troubleshooting",
+      "headings": "What the SetupEcdnForStorefront Job Step Does • What Gets Provisioned • Troubleshooting: CDN-API default-domain/hostnames Call Failed • Troubleshooting: Storefront Creation Takes Longer Than Expected • Troubleshooting: Pilot Customers with Vanity Domains",
       "summary": "The Storefront Next Fast Setup workflow in Business Manager for B2C Commerce automatically provisions an eCDN Default Domain zone as part of storefront creation via the `SetupEcdnForStorefront` job step."
     },
     {
@@ -2794,15 +2827,6 @@
         "help-admin/b2c_prevent_ecommerce_fraud",
         "help-admin/b2c_incorporate_third-party_apps"
       ]
-    },
-    {
-      "id": "help-admin/b2c_generate_a_shortcode_and_api_client_id",
-      "title": "Generate a Short Code and Create an API Client ID",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_generate_a_shortcode_and_api_client_id.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_generate_a_shortcode_and_api_client_id.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_generate_a_shortcode_and_api_client_id.md",
-      "summary": "To use the B2C Commerce API (SCAPI), you need:"
     },
     {
       "id": "help-admin/b2c_generate_private_key",
@@ -3410,12 +3434,12 @@
     },
     {
       "id": "help-admin/b2c_legacy_configure_proxy_zone_settings",
-      "title": "Configure Proxy Zone Settings for B2C Commerce",
+      "title": "Configure Proxy Zone Settings",
       "category": "help-admin",
       "filePath": "help-admin/b2c_legacy_configure_proxy_zone_settings.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_configure_proxy_zone_settings.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_configure_proxy_zone_settings.md",
-      "summary": "Configure Proxy Zone Settings for Legacy Zone Migration."
+      "summary": "After you migrate a B2C Commerce legacy zone to a proxy zone, most settings transfer automatically. Manually copy the two settings that don't transfer, Logpush and rate limiting rules, from the legacy zone to the new proxy zone."
     },
     {
       "id": "help-admin/b2c_legacy_create_custom_hostname_with_custom_cert",
@@ -3424,16 +3448,16 @@
       "filePath": "help-admin/b2c_legacy_create_custom_hostname_with_custom_cert.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_create_custom_hostname_with_custom_cert.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_create_custom_hostname_with_custom_cert.md",
-      "summary": "When you migrate a legacy zone to a proxy zone, a certificate is automatically created with the validation method set to \"http\". If you need a different validation method, delete the generated certificate and add a custom one. Create the custom certificate in Business Manager for B2C Commerce or use the `addCertificateForZone`API."
+      "summary": "When you migrate a legacy zone to a proxy zone, a certificate is automatically created with the validation method set to \"http\". If you need a different validation method, delete the generated certificate and add a custom one. Create the custom certificate in Business Manager for B2C Commerce or use the `addCertificateForZone` API."
     },
     {
       "id": "help-admin/b2c_legacy_delete_legacy_zone",
-      "title": "Delete the Legacy Zone for B2C Commerce",
+      "title": "Delete a Legacy Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_legacy_delete_legacy_zone.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_delete_legacy_zone.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_delete_legacy_zone.md",
-      "summary": "After you move all subdomains to the proxy zone, delete the legacy zone using the remove zone option."
+      "summary": "After you move all subdomains from the B2C Commerce legacy zone to the proxy zone, delete the legacy zone with the Remove Zone option. This is the final step of the proxy zone migration."
     },
     {
       "id": "help-admin/b2c_legacy_jobs",
@@ -3449,30 +3473,21 @@
     },
     {
       "id": "help-admin/b2c_legacy_migrate_to_proxy_zone",
-      "title": "Migrate to a Proxy Zone for B2C Commerce",
+      "title": "Migrate a Legacy Zone to a Proxy Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_legacy_migrate_to_proxy_zone.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_migrate_to_proxy_zone.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_migrate_to_proxy_zone.md",
-      "summary": "To enhance security, improve load balancing, and comply with regulatory requirements, migrate legacy zones to proxy zones."
+      "summary": "Start the migration of a B2C Commerce legacy zone to a proxy zone in Business Manager or with the CDN-API. Proxy zones use standard eCDN configuration and the latest security features and prevent common hierarchy-assignment issues. This migration is required to move to Hyperforce, which doesn't support legacy zones."
     },
     {
       "id": "help-admin/b2c_legacy_update_auth_dns",
-      "title": "Update Auth DNS",
+      "title": "Update Authoritative DNS",
       "category": "help-admin",
       "filePath": "help-admin/b2c_legacy_update_auth_dns.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_update_auth_dns.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_update_auth_dns.md",
-      "summary": "Update your B2C Commerce storefront DNS records. To get the DNS CNAME record value, use the `getZonesInfo` name property."
-    },
-    {
-      "id": "help-admin/b2c_legacy_validate_new_certificate",
-      "title": "Validate a New Certificate for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_legacy_validate_new_certificate.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_validate_new_certificate.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_validate_new_certificate.md",
-      "summary": "Validate the new certificate for your eCDN zone using the managed or self-managed process."
+      "summary": "Point your B2C Commerce storefront's DNS records at the new proxy zone. Get the DNS CNAME record value from the `getZonesInfo` name property or from Business Manager, and then update the record with your authoritative DNS provider."
     },
     {
       "id": "help-admin/b2c_limit_order_access_settings",
@@ -3521,7 +3536,6 @@
         "help-admin/b2c_log_center_configuration",
         "help-admin/b2c_log_streaming_faq",
         "help-admin/b2c_anomaly_detection",
-        "help-admin/b2c_set_up_anomaly_detectors",
         "help-admin/b2c_cc_view_the_audit_log",
         "help-admin/b2c_metrics_dashboard",
         "help-admin/b2c_traces",
@@ -3544,12 +3558,13 @@
       "filePath": "help-admin/b2c_log_center_alerts.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_log_center_alerts.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_log_center_alerts.md",
-      "summary": "Monitor custom alerts across all Log Center data sources from a centralized interface. Configure notifications to identify application performance degradations before they affect your users. Route alerts in real time via email, Slack, and PagerDuty to help your teams respond to critical system events.",
+      "summary": "Monitor custom alerts across all Log Center data sources from a centralized interface. Configure notifications to identify application performance degradations before they affect your users, and route alerts via email, Slack, Microsoft Teams, and PagerDuty to help your teams respond to critical system events.",
       "relatedEntries": [
         "help-admin/b2c_log_center_alert_types_in_b2c_commerce",
         "help-admin/b2c_create_a_log_center_alert",
         "help-admin/b2c_create_a_slack_channel_for_log_center_alerts",
         "help-admin/b2c_create_a_pagerduty_channel_for_log_center_alerts",
+        "help-admin/b2c_create_a_microsoft_teams_channel_for_log_center_alerts",
         "help-admin/b2c_how_notification_channels_respond_to_alert_states",
         "help-admin/b2c_access_control_for_log_center_alerts",
         "help-admin/b2c_troubleshoot_log_center_alerts"
@@ -3575,7 +3590,8 @@
       "filePath": "help-admin/b2c_log_center_dashboard.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_log_center_dashboard.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_log_center_dashboard.md",
-      "summary": "The B2C Commerce Log Center dashboard is populated based on your Account Manager tenant filters and realm assignment. Users with Admin and Support roles can set the dashboard to show data for any company realm. The dashboard's default settings shows a histogram of the top stack traces over the last ten days. To show the exact count for each stack trace, hover over the bar in the chart."
+      "headings": "Dashboard Sections • Traffic • Requests • Top Stack Traces • Tips for Using the Dashboard",
+      "summary": "The Log Center dashboard shows request traffic, the busiest requests, and recurring stack traces for one realm and instance over a selected time range."
     },
     {
       "id": "help-admin/b2c_log_streaming_faq",
@@ -3602,18 +3618,6 @@
       "summary": "In Business Manager, it's important to configure user password restrictions and login lockout policies."
     },
     {
-      "id": "help-admin/b2c_maintenance_and_configuration",
-      "title": "eCDN Maintenance",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_maintenance_and_configuration.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_maintenance_and_configuration.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_maintenance_and_configuration.md",
-      "summary": "Use either Business Manager or the CDN zones API to manage the zones created to support eCDN on your B2C Commerce development, staging, and production instance.",
-      "relatedEntries": [
-        "help-admin/b2c_rotate_a_certificate"
-      ]
-    },
-    {
       "id": "help-admin/b2c_make_security_usable",
       "title": "Make Security Usable",
       "category": "help-admin",
@@ -3621,6 +3625,16 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_make_security_usable.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_make_security_usable.md",
       "summary": "A difficult-to-use security feature is one that's turned off. Write security features in a way that makes them easy for B2C Commerce users to understand. To help users understand the security decisions they make, give them visibility into and control of their security settings."
+    },
+    {
+      "id": "help-admin/b2c_manage_anomaly_detectors",
+      "title": "Manage Anomaly Detectors in Log Center",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_manage_anomaly_detectors.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_anomaly_detectors.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_anomaly_detectors.md",
+      "headings": "Who Can View, Edit, and Delete Detectors • View Results • Edit and Delete • Considerations • Edit a Detector • Pause or Resume Detection • Delete a Detector • Create a Detector from a Log Search • Salesforce-Managed Detectors • View Detector Alerts • Manage Notification Channels • Availability",
+      "summary": "View, edit, pause, resume, and delete anomaly detectors in B2C Commerce Log Center, and create a detector from a log search you already ran. What you can change depends on your Log Center role and the realms you can access."
     },
     {
       "id": "help-admin/b2c_manage_custom_caches_bm",
@@ -3632,13 +3646,31 @@
       "summary": "You enable or disable caching, monitor custom cache statistics, and clear caches for your B2C Commerce storefront, all from the Custom Caches page."
     },
     {
+      "id": "help-admin/b2c_manage_ecdn_logpush_jobs",
+      "title": "Manage Logpush Jobs",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_manage_ecdn_logpush_jobs.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_ecdn_logpush_jobs.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_ecdn_logpush_jobs.md",
+      "summary": "Pause, edit, or delete the eCDN Logpush jobs configured for a zone on your B2C Commerce storefront. The Logpush table on the Logs tab lists every job configured for the zone, with a header counter such as Logpush (2) and You have used 2 out of 2 Logpush jobs."
+    },
+    {
+      "id": "help-admin/b2c_manage_ecdn_notification_rules",
+      "title": "Manage Notification Rules",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_manage_ecdn_notification_rules.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_ecdn_notification_rules.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_ecdn_notification_rules.md",
+      "summary": "Pause, resume, edit, or delete the eCDN notification rules that target a zone on your B2C Commerce storefront. The Notifications table shows every rule that targets the current zone, along with the destination it delivers to, the full zone list, and an Enabled toggle."
+    },
+    {
       "id": "help-admin/b2c_manage_hsts",
-      "title": "Manage HSTS in B2C Commerce",
+      "title": "HTTP Strict Transport Security (HSTS) for eCDN",
       "category": "help-admin",
       "filePath": "help-admin/b2c_manage_hsts.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_hsts.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_hsts.md",
-      "summary": "To secure your site, HTTP Strict Transport Security (HSTS) instructs web browsers to access your domain using only HTTPS.",
+      "summary": "HTTP Strict Transport Security (HSTS) secures your B2C Commerce site by instructing web browsers to access your domain using only HTTPS, which prevents downgrade attacks. You enable and disable HSTS per eCDN zone in Business Manager.",
       "relatedEntries": [
         "help-admin/b2c_configure_hsts",
         "help-admin/b2c_disable_hsts"
@@ -3654,13 +3686,32 @@
       "summary": "Organize your custom Business Manager app by creating sections, adding modules, and dragging modules between sections to reorder them."
     },
     {
+      "id": "help-admin/b2c_manage_ssl_certificates_for_ecdn_zones",
+      "title": "Manage SSL Certificates for eCDN Zones in B2C Commerce",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_manage_ssl_certificates_for_ecdn_zones.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_ssl_certificates_for_ecdn_zones.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_ssl_certificates_for_ecdn_zones.md",
+      "headings": "Certificates in Legacy and Proxy Zones",
+      "summary": "Every embedded CDN (eCDN) zone requires a valid SSL certificate. Proxy zones can use either an eCDN managed certificate that's issued and auto-renewed by Salesforce or a self-managed certificate that you upload and renew yourself in Business Manager before it expires. Legacy (root) zones, for example, brand.com, support only a self-managed certificate. After adding or updating a certificate, map DNS so the hostname's traffic routes to its eCDN zone.",
+      "relatedEntries": [
+        "help-admin/b2c_dns_mapping_for_ecdn_zones",
+        "help-admin/b2c_map_dns_to_ecdn_zone",
+        "help-admin/b2c_add_managed_ssl_certificates",
+        "help-admin/b2c_add_self_managed_ssl_certificates",
+        "help-admin/b2c_update_a_zones_managed_certificate",
+        "help-admin/b2c_update_a_zones_self_managed_certificate",
+        "help-admin/b2c_update_auth_dns"
+      ]
+    },
+    {
       "id": "help-admin/b2c_manage_trusted_ip_address_lists",
-      "title": "Create and Manage Trusted IP Address Lists",
+      "title": "Manage IP Address Lists for eCDN Zones",
       "category": "help-admin",
       "filePath": "help-admin/b2c_manage_trusted_ip_address_lists.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_trusted_ip_address_lists.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_trusted_ip_address_lists.md",
-      "summary": "Create named lists of trusted IP addresses or CIDR ranges to use with Custom Firewall Rules that bypass security checks for trusted traffic on your B2C Commerce storefront."
+      "summary": "Create named lists of trusted IP addresses or CIDR ranges to use with custom firewall rules that bypass security checks for trusted traffic on your B2C Commerce storefront."
     },
     {
       "id": "help-admin/b2c_managing_attributes_via_a_backend_system",
@@ -3718,6 +3769,15 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manually_running_import_export.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manually_running_import_export.md",
       "summary": "Manually run import and export processes."
+    },
+    {
+      "id": "help-admin/b2c_map_dns_to_ecdn_zone",
+      "title": "Map DNS to an eCDN Zone for B2C Commerce",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_map_dns_to_ecdn_zone.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_map_dns_to_ecdn_zone.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_map_dns_to_ecdn_zone.md",
+      "summary": "After a hostname is active, map DNS at your provider so that the hostname's traffic routes to its embedded CDN (eCDN) zone. Use this procedure whenever you add or update a certificate for a zone."
     },
     {
       "id": "help-admin/b2c_marking_a_site_as_live",
@@ -3816,52 +3876,31 @@
       "summary": "SCAPI Hook metrics help website administrators and DevOps teams monitor and analyze the performance of SCAPI hooks. These metrics help identify issues with slow performance and failures of SCAPI hooks. SCAPI Hook metrics appear in the Metrics Dashboard with a delay of up to 10 minutes."
     },
     {
-      "id": "help-admin/b2c_migrate_legacy_zone_to_proxy_zone",
-      "title": "Migrate a Legacy Zone to a Proxy Zone",
+      "id": "help-admin/b2c_migrate_trusted_ips_to_custom_rules",
+      "title": "Trusted IP Migration to WAF Custom Rules",
       "category": "help-admin",
-      "filePath": "help-admin/b2c_migrate_legacy_zone_to_proxy_zone.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrate_legacy_zone_to_proxy_zone.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrate_legacy_zone_to_proxy_zone.md",
-      "summary": "Migrate legacy zones to proxy zones using B2C Commerce Business Manager or the CDN-API. Proxy zones employ standard eCDN configuration, the latest security features, and prevent common hierarchy assignment issues. Migrating a legacy system to a proxy zone involves several key steps that provide a smooth transition and maintain system integrity. This migration is essential for moving to Hyperforce, as legacy zones aren’t supported.",
+      "filePath": "help-admin/b2c_migrate_trusted_ips_to_custom_rules.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrate_trusted_ips_to_custom_rules.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrate_trusted_ips_to_custom_rules.md",
+      "headings": "What Is Changing • What Salesforce Does Automatically",
+      "summary": "Salesforce automatically migrates your legacy B2C Commerce Trusted IP configurations to web application firewall (WAF) custom rules and Managed IP Address Lists in the new Realm Security Rules tab. Learn what the migration does and how to verify your migrated configuration."
+    },
+    {
+      "id": "help-admin/b2c_migrating_proxy_zones",
+      "title": "Proxy Zone Migration Overview",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_migrating_proxy_zones.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrating_proxy_zones.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrating_proxy_zones.md",
+      "headings": "Migration Steps",
+      "summary": "Migrate legacy zones to proxy zones by using B2C Commerce Business Manager or the CDN-API. Proxy zones give you standard eCDN configuration and the latest security features, and they prevent common hierarchy-assignment issues. Migration is required to move to Hyperforce, which doesn't support legacy zones.",
       "relatedEntries": [
         "help-admin/b2c_legacy_migrate_to_proxy_zone",
         "help-admin/b2c_legacy_configure_proxy_zone_settings",
         "help-admin/b2c_legacy_create_custom_hostname_with_custom_cert",
         "help-admin/b2c_legacy_update_auth_dns",
         "help-admin/b2c_remove_subdomain_from_legacy",
-        "help-admin/b2c_legacy_validate_new_certificate",
         "help-admin/b2c_legacy_delete_legacy_zone"
-      ]
-    },
-    {
-      "id": "help-admin/b2c_migrate_site_traffic",
-      "title": "Migrate Site Traffic for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_migrate_site_traffic.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrate_site_traffic.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrate_site_traffic.md",
-      "summary": "Configure traffic migration to move traffic over to eCDN"
-    },
-    {
-      "id": "help-admin/b2c_migrate_trusted_ips_to_custom_rules",
-      "title": "About the Trusted IP Migration to web application firewall (WAF) Custom Rules",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_migrate_trusted_ips_to_custom_rules.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrate_trusted_ips_to_custom_rules.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrate_trusted_ips_to_custom_rules.md",
-      "headings": "What Is Changing • What Salesforce Does Automatically • How Behavior Changes • DDoS Layer 7 Override Details • Zone Type Eligibility • Feature Switch",
-      "summary": "Learn how Salesforce automatically migrates your legacy B2C Commerce Trusted IP configurations to WAF Custom Rules and Managed IP Address Lists, and how to verify your migrated configuration."
-    },
-    {
-      "id": "help-admin/b2c_migrating_proxy_zones",
-      "title": "Migrating Proxy Zones",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_migrating_proxy_zones.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrating_proxy_zones.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrating_proxy_zones.md",
-      "summary": "USe B2C Commerce Business Manager or the CDN-API to migrate legacy proxy zones. Migrating these zones give you the latest security features, and prevents common hierarchy assignment issues.",
-      "relatedEntries": [
-        "help-admin/b2c_migrate_legacy_zone_to_proxy_zone"
       ]
     },
     {
@@ -4275,15 +4314,6 @@
       "summary": "Looking for information that helps you address a specific area or insight when planning your next project? Well, look no further! We offer B2C Commerce Playbooks, Platform Adoption Playbooks, and additional resources that provide best practices for implementing, administering, and developing your ecommerce sites."
     },
     {
-      "id": "help-admin/b2c_post_migration_process",
-      "title": "Post-Migration Tasks for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_post_migration_process.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_post_migration_process.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_post_migration_process.md",
-      "summary": "Post-migration tasks validate your eCDN traffic flow and setup. To complete the post-migration process, coordinate with B2C Commerce Engineering. B2C Commerce Engineering creates and activates a staging Business Manager zone to handle your Business Manager traffic that goes through only your Business Manager host name, for example, `staging-<realm>-<customer>.demandware.net.`Business Manager supports eCDN for staging instances."
-    },
-    {
       "id": "help-admin/b2c_prevent_ecommerce_fraud",
       "title": "Prevent Ecommerce Fraud",
       "category": "help-admin",
@@ -4491,7 +4521,7 @@
       "filePath": "help-admin/b2c_purge_ecdn_cache.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_purge_ecdn_cache.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_purge_ecdn_cache.md",
-      "summary": "Selectively invalidate cached content by cache tag or path directly from Business Manager. Click **Purge Cache** for your B2C Commerce storefront."
+      "summary": "Selectively invalidate content in the B2C Commerce eCDN cache by cache tag or path directly from Business Manager."
     },
     {
       "id": "help-admin/b2c_reading_data_replication_logs",
@@ -4538,12 +4568,12 @@
     },
     {
       "id": "help-admin/b2c_remove_subdomain_from_legacy",
-      "title": "Remove the Subdomain from the Legacy Zone.",
+      "title": "Remove a Subdomain from a Legacy Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_remove_subdomain_from_legacy.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_remove_subdomain_from_legacy.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_remove_subdomain_from_legacy.md",
-      "summary": "Make sure the old certificate doesn't show in your B2C Commerce storefront, when you remove the subdomain from the legacy zone."
+      "summary": "After you migrate a subdomain to the proxy zone, remove it from the legacy zone and delete the old certificate so that the legacy certificate no longer shows on your B2C Commerce storefront."
     },
     {
       "id": "help-admin/b2c_removing_outdated_objects",
@@ -4641,15 +4671,6 @@
         "help-admin/b2c_administrator_role",
         "help-admin/b2c_web_dav_client_permissions"
       ]
-    },
-    {
-      "id": "help-admin/b2c_rotate_a_certificate",
-      "title": "Renew a Certificate for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_rotate_a_certificate.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_rotate_a_certificate.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_rotate_a_certificate.md",
-      "summary": "Development, staging, and production zone certificates require renewal when you use self-managed SSL certificates."
     },
     {
       "id": "help-admin/b2c_run_job_manually",
@@ -4788,8 +4809,11 @@
       "filePath": "help-admin/b2c_scapi_zone.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_scapi_zone.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_scapi_zone.md",
-      "headings": "What Is a SCAPI Zone? • Access the SCAPI Zone • Controls Available on SCAPI Zones • Related Tasks",
-      "summary": "A SCAPI zone is the Salesforce-managed eCDN zone that fronts Salesforce Commerce API (SCAPI) traffic. Starting with B2C Commerce 26.10, the Production instance includes a subset of eCDN security controls and analytics for this zone in Business Manager and the CDN API, with no support case required."
+      "headings": "What Is a SCAPI Zone? • Controls Available on SCAPI Zones • Managed Runtime SCAPI Request Identification • Related Tasks",
+      "summary": "A SCAPI zone is the Salesforce-managed eCDN zone that fronts Salesforce Commerce API (SCAPI) traffic. Starting with B2C Commerce 26.10, the Production instance includes a subset of eCDN security controls and analytics for this zone in Business Manager and the CDN API, with no support case required.",
+      "relatedEntries": [
+        "help-admin/b2c_access_scapi_zone"
+      ]
     },
     {
       "id": "help-admin/b2c_schedule_object_import_export",
@@ -5108,6 +5132,33 @@
       "summary": "Identify unusual log patterns in B2C Commerce Log Center and optionally send alerts when anomalies meet your alert threshold. Log Center continuously analyzes incoming log data and compares the data with learned baseline behavior. When data deviates from the baseline and meets your thresholds, Log Center flags the anomaly."
     },
     {
+      "id": "help-admin/b2c_set_up_ecdn_pci_alerts",
+      "title": "Set Up PCI Compliance Alerts",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_set_up_ecdn_pci_alerts.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_set_up_ecdn_pci_alerts.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_set_up_ecdn_pci_alerts.md",
+      "summary": "Get alerted when an eCDN Logpush job fails on a zone that carries PCI-scoped traffic for your B2C Commerce storefront. Wiring a notification rule to your SIEM or on-call tool lets you detect a stalled PCI log stream before the audit window expires."
+    },
+    {
+      "id": "help-admin/b2c_set_up_ecdn_zones_and_hostnames",
+      "title": "Set Up eCDN Zones and Hostnames",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_set_up_ecdn_zones_and_hostnames.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_set_up_ecdn_zones_and_hostnames.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_set_up_ecdn_zones_and_hostnames.md",
+      "summary": "Create embedded CDN (eCDN) zones and add the hostnames that route your Salesforce B2C Commerce storefront traffic through the CDN. Use Default Domain for a Salesforce-managed hostname, or add your own custom hostnames and site URL aliases.",
+      "relatedEntries": [
+        "help-admin/b2c_creating_a_zone",
+        "help-admin/b2c_adding_hostnames",
+        "help-admin/b2c_add_wildcard_custom_hostname",
+        "help-admin/b2c_default_domain",
+        "help-admin/b2c_scapi_zone",
+        "help-admin/b2c_configure_site_url_aliases_for_my_domains",
+        "help-admin/b2c_fast_storefront_setup_ecdn"
+      ]
+    },
+    {
       "id": "help-admin/b2c_set_up_log_streaming",
       "title": "Set Up Log Streaming to Third-Party Monitoring Tools",
       "category": "help-admin",
@@ -5379,6 +5430,7 @@
       "filePath": "help-admin/b2c_sorting_rule_import_export.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_sorting_rule_import_export.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_sorting_rule_import_export.md",
+      "headings": "Validation",
       "summary": "The sort.xsd schema defines sorting rules, dynamic attributes, and sorting options."
     },
     {
@@ -5612,6 +5664,7 @@
       "filePath": "help-admin/b2c_troubleshoot_log_center_alerts.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_troubleshoot_log_center_alerts.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_troubleshoot_log_center_alerts.md",
+      "headings": "Troubleshoot Microsoft Teams Notifications",
       "summary": "If you’re missing Log Center notifications in B2C Commerce, check these likely causes and fixes."
     },
     {
@@ -5690,22 +5743,8 @@
       "summary": "When you undo a data replication, data on the target instance reverts to the values from before the most recent data replication process that included publishing. Only run an undo process after a data replication process of type Publishing or Transfer & Publishing."
     },
     {
-      "id": "help-admin/b2c_update_a_zones_certificate",
-      "title": "Update an eCDN Zone's Certificate",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_update_a_zones_certificate.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_update_a_zones_certificate.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_update_a_zones_certificate.md",
-      "summary": "When your SSL certificate expires, or you update the hostnames assigned to an SSL certificate, update the certificate in Business Manager for B2C Commerce. Update eCDN managed certificates and self-manged certificates",
-      "relatedEntries": [
-        "help-admin/b2c_update_a_zones_managed_certificate",
-        "help-admin/b2c_update_a_zones_self_managed_certificate",
-        "help-admin/b2c_add_wildcard_custom_hostname"
-      ]
-    },
-    {
       "id": "help-admin/b2c_update_a_zones_managed_certificate",
-      "title": "Update an eCDN Zone's Managed Certificate",
+      "title": "Update a Managed SSL Certificate",
       "category": "help-admin",
       "filePath": "help-admin/b2c_update_a_zones_managed_certificate.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_update_a_zones_managed_certificate.htm&type=5",
@@ -5714,12 +5753,21 @@
     },
     {
       "id": "help-admin/b2c_update_a_zones_self_managed_certificate",
-      "title": "Update an eCDN Zone's Self-Managed Certificate",
+      "title": "Update a Self-Managed SSL Certificate",
       "category": "help-admin",
       "filePath": "help-admin/b2c_update_a_zones_self_managed_certificate.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_update_a_zones_self_managed_certificate.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_update_a_zones_self_managed_certificate.md",
-      "summary": "When your self-managed SSL certificate expires, or you update the hostnames assigned to an SSL certificate, update the certificate in Business Manager for B2C Commerce."
+      "summary": "When your self-managed SSL certificate expires, or you update the hostnames assigned to a self-managed SSL certificate, upload a replacement certificate in Business Manager for B2C Commerce and remap DNS."
+    },
+    {
+      "id": "help-admin/b2c_update_auth_dns",
+      "title": "Update Authoritative DNS for an eCDN Zone",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_update_auth_dns.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_update_auth_dns.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_update_auth_dns.md",
+      "summary": "Point your B2C Commerce storefront's DNS records at your embedded CDN (eCDN) zone. Get the DNS CNAME record value from the `getZonesInfo` name property or from Business Manager, and then update the record with your authoritative DNS provider."
     },
     {
       "id": "help-admin/b2c_url_rules_object_import_export",
@@ -5748,22 +5796,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_use_a_positive_security_model.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_use_a_positive_security_model.md",
       "summary": "A positive security model, also known as a safelist approach, defines what is allowed and rejects everything else. Use this approach in B2C Commerce to make sure that you can allowlist only the known good input instead of trying to disallow all possible bad input."
-    },
-    {
-      "id": "help-admin/b2c_use_cdn_zones_api_to_configure_ecdn",
-      "title": "Use the CDN Zones API to Configure eCDN",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_use_cdn_zones_api_to_configure_ecdn.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_use_cdn_zones_api_to_configure_ecdn.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_use_cdn_zones_api_to_configure_ecdn.md",
-      "summary": "To set up B2C Commerce development, staging, or production zones, your development team uses the CDN Zones APIs to upload customer certificates to test an Shopper Commerce API (SCAPI) implementation and configure vanity host names for development, staging, and production instances on eCDN.",
-      "relatedEntries": [
-        "help-admin/b2c_generate_a_shortcode_and_api_client_id",
-        "help-admin/b2c_create_an_ecdn_zone_and_certificate",
-        "help-admin/b2c_migrate_site_traffic",
-        "help-admin/b2c_post_migration_process",
-        "help-admin/b2c_maintenance_and_configuration"
-      ]
     },
     {
       "id": "help-admin/b2c_use_secure_defaults",
@@ -5913,12 +5945,12 @@
     },
     {
       "id": "help-admin/b2c_verify_third_party_requests",
-      "title": "Verify Third-Party Requests with Secret Headers",
+      "title": "Trusted Proxies and eCDN Request Blocking",
       "category": "help-admin",
       "filePath": "help-admin/b2c_verify_third_party_requests.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_verify_third_party_requests.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_verify_third_party_requests.md",
-      "summary": "Use secret headers as an alternative to maintaining the firewall allowlist for verified third-party servers on storefront, Default Domain, and SCAPI zones in B2C Commerce. A secret header is an extra HTTP header typically attached at the CDN level."
+      "summary": "When you stack a third-party CDN or proxy in front of B2C Commerce eCDN, the eCDN security feature can mistake the proxy for an attacker and block it. Verify trusted proxy traffic so that legitimate requests aren't blocked."
     },
     {
       "id": "help-admin/b2c_videos",
@@ -5949,127 +5981,57 @@
     },
     {
       "id": "help-admin/b2c_waf_application",
-      "title": "eCDN Web Application Firewall",
+      "title": "eCDN WAF on On-Demand Sandboxes",
       "category": "help-admin",
       "filePath": "help-admin/b2c_waf_application.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_application.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_application.md",
-      "headings": "WAF on On-Demand Sandboxes (ODS)",
-      "summary": "Embedded Content Delivery Network (eCDN) Web Application Firewall (WAF) helps protect your B2C Commerce storefront using extra layer 7 protection.",
-      "relatedEntries": [
-        "help-admin/b2c_waf_protection",
-        "help-admin/b2c_waf_owasp_wafv2_managed_ruleset",
-        "help-admin/b2c_waf_ecdn_wafv2_managed_ruleset",
-        "help-admin/b2c_waf_ecdn_wafv2_exposed_credentials_check",
-        "help-admin/b2c_waf_using_waf_first_time",
-        "help-admin/b2c_waf_net_traffic_logs",
-        "help-admin/b2c_waf_configuring_how",
-        "help-admin/b2c_waf_log_ocapi_references"
-      ]
+      "summary": "B2C Commerce On-Demand Sandbox (ODS) Default Domain zones support the full embedded CDN (eCDN) web application firewall (WAF) feature set. Because ODS uses a shared zone model, plan rule changes carefully. The rules apply to every ODS instance in the realm."
     },
     {
-      "id": "help-admin/b2c_waf_configuring_how",
-      "title": "Modify eCDN WAF Settings",
+      "id": "help-admin/b2c_waf_log_fields_json_output",
+      "title": "eCDN WAF Log Fields and JSON Output",
       "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_configuring_how.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_configuring_how.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_configuring_how.md",
-      "summary": "The eCDN Web Application Firewall (WAF) analyzes and interprets your HTTP/s traffic to protect your B2C Commerce storefront. WAF stops application level attacks that attempt to exploit code-level vulnerabilities. Configure the security sensitivity level, and decide what action WAF takes when a suspicious web request attempts to access your storefront."
+      "filePath": "help-admin/b2c_waf_log_fields_json_output.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_log_fields_json_output.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_log_fields_json_output.md",
+      "summary": "Request B2C Commerce eCDN-WAF log files through the Open Commerce API (OCAPI). This reference covers the request constraints, an example call, the JSON log output, and the fields each log returns."
     },
     {
-      "id": "help-admin/b2c_waf_ecdn_wafv2_exposed_credentials_check",
-      "title": "eCDN WAFv2 Exposed Credentials Check",
+      "id": "help-admin/b2c_waf_managed_rulesets",
+      "title": "eCDN WAF Managed Rulesets",
       "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_ecdn_wafv2_exposed_credentials_check.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_ecdn_wafv2_exposed_credentials_check.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_ecdn_wafv2_exposed_credentials_check.md",
-      "summary": "Exposed Credentials Check is a deprecated B2C Commerce eCDN WAFv2 managed ruleset that doesn’t work with Leaked Credentials Detection. To act on leaked credentials, create a custom firewall rule or a rate-limiting rule that uses the Leaked Credentials Detection fields."
-    },
-    {
-      "id": "help-admin/b2c_waf_ecdn_wafv2_managed_ruleset",
-      "title": "eCDN WAFv2 Managed Ruleset",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_ecdn_wafv2_managed_ruleset.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_ecdn_wafv2_managed_ruleset.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_ecdn_wafv2_managed_ruleset.md",
-      "summary": "The eCDN WAFv2 managed ruleset is the current-generation rule set the eCDN security team maintains for broad web application protection across your B2C Commerce applications. Enabled by default, it's updated frequently to cover new vulnerabilities and reduce false positives."
-    },
-    {
-      "id": "help-admin/b2c_waf_log_ocapi_call",
-      "title": "Request eCDN-web application firewall (WAF) Logs with an Open Commerce API (OCAPI) Call for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_log_ocapi_call.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_log_ocapi_call.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_log_ocapi_call.md",
-      "summary": "Use an OCAPI call to request the eCDN-WAF log. A minimum period of five minutes is now enforced for retrieving WAF logs."
-    },
-    {
-      "id": "help-admin/b2c_waf_log_ocapi_json_log_outputs",
-      "title": "JSON Log Output",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_log_ocapi_json_log_outputs.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_log_ocapi_json_log_outputs.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_log_ocapi_json_log_outputs.md",
-      "summary": "All B2C Commerce Open Commerce API (OCAPI) calls return all fields shown in the JavaScript Object Notation (JSON) log output."
-    },
-    {
-      "id": "help-admin/b2c_waf_log_ocapi_log_fields",
-      "title": "Log Field Information for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_log_ocapi_log_fields.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_log_ocapi_log_fields.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_log_ocapi_log_fields.md",
-      "summary": "The JSON request format provides category, field, and descriptions for the log output."
-    },
-    {
-      "id": "help-admin/b2c_waf_log_ocapi_references",
-      "title": "eCDN-web application firewall (WAF) Log OCAPI References",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_log_ocapi_references.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_log_ocapi_references.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_log_ocapi_references.md",
-      "summary": "Request B2C Commerce eCDN-WAF log files through the Open Commerce API (OCAPI). Each realm supports up to 24 pending log request downloads, and a minimum of five minutes is enforced between a log request's end time and the current time.",
-      "relatedEntries": [
-        "help-admin/b2c_waf_log_ocapi_call",
-        "help-admin/b2c_waf_log_ocapi_json_log_outputs",
-        "help-admin/b2c_waf_log_ocapi_log_fields"
-      ]
+      "filePath": "help-admin/b2c_waf_managed_rulesets.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_managed_rulesets.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_managed_rulesets.md",
+      "headings": "eCDN WAFv2 Managed Ruleset • OWASP WAFv2 Managed Ruleset",
+      "summary": "The embedded CDN (eCDN) web application firewall (WAF) protects your B2C Commerce storefront through two managed rulesets: the eCDN WAFv2 Managed Ruleset and the OWASP WAFv2 Managed Ruleset. You enable and tune each ruleset per zone."
     },
     {
       "id": "help-admin/b2c_waf_net_traffic_logs",
-      "title": "web application firewall (WAF) and Network Traffic Logs",
+      "title": "eCDN WAF Logs",
       "category": "help-admin",
       "filePath": "help-admin/b2c_waf_net_traffic_logs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_net_traffic_logs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_net_traffic_logs.md",
-      "summary": "The logs contain all B2C Commerce eCDN network traffic, not just the traffic that WAF identifies. Track IP-reputation blocked traffic and analyze how much of your traffic doesn’t trigger WAF settings."
-    },
-    {
-      "id": "help-admin/b2c_waf_owasp_wafv2_managed_ruleset",
-      "title": "OWASP WAFv2 Managed Ruleset",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_owasp_wafv2_managed_ruleset.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_owasp_wafv2_managed_ruleset.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_owasp_wafv2_managed_ruleset.md",
-      "summary": "When responding to a potential web application threat, eCDN web application firewall (WAF) looks at each incoming request to your B2C Commerce storefront, assigns the request a threat score, and responds appropriately. Each incoming request that triggers an OWASP rule increases the overall threat score. Some rules impact the score more than others."
+      "summary": "eCDN logs include information about all of your B2C Commerce network traffic, not just the traffic that the web application firewall (WAF) acts on. Use the logs to track IP-reputation–blocked traffic and to see how much of your traffic doesn't trigger WAF.",
+      "relatedEntries": [
+        "help-admin/b2c_waf_log_fields_json_output"
+      ]
     },
     {
       "id": "help-admin/b2c_waf_protection",
-      "title": "Web Application Firewall (WAF) Protection for B2C Commerce",
+      "title": "eCDN Web Application Firewall (WAF)",
       "category": "help-admin",
       "filePath": "help-admin/b2c_waf_protection.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_protection.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_protection.md",
-      "summary": "Enabled by default when creating proxy zones, WAF is a layered approach to security and an important component of a multitiered approach to bad actor mitigation."
-    },
-    {
-      "id": "help-admin/b2c_waf_using_waf_first_time",
-      "title": "Using web application firewall (WAF) for the First Time",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_waf_using_waf_first_time.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_using_waf_first_time.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_using_waf_first_time.md",
-      "summary": "When using WAF for the first time on your B2C Commerce storefront, we recommend that you run WAF in Log or Simulate mode for at least one week."
+      "summary": "The embedded CDN (eCDN) web application firewall (WAF) is a layer 7 defense that inspects HTTP and HTTPS traffic to your B2C Commerce storefront and blocks requests that try to exploit code-level vulnerabilities. WAF is enabled by default when you create a Proxy Zone and is one part of a multitiered approach to bad-actor mitigation.",
+      "relatedEntries": [
+        "help-admin/b2c_waf_managed_rulesets",
+        "help-admin/b2c_waf_application",
+        "help-admin/b2c_waf_net_traffic_logs"
+      ]
     },
     {
       "id": "help-admin/b2c_web_dav_client_permissions",
@@ -6572,7 +6534,7 @@
       "filePath": "help-merchant/b2c_acs_prerequisites.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_acs_prerequisites.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_acs_prerequisites.md",
-      "headings": "Prerequisite Checklist • Catalog Data Requirements • Event Types Required • Record Shopper Activity Data • Storefront Compatibility • Inventory Data • Locale Support",
+      "headings": "Prerequisite Checklist • Catalog Data Requirements • Event Types Required • Record Shopper Activity Data • Storefront Compatibility • Inventory Data",
       "summary": "Confirm that your catalog data, event instrumentation, pricing, and inventory meet requirements for Agentic Commerce Search for B2C Commerce before provisioning. Incomplete or missing data reduces search relevance and keeps pricing sort options from working correctly."
     },
     {
@@ -6938,13 +6900,13 @@
     },
     {
       "id": "help-merchant/b2c_annotating_images",
-      "title": "Annotate Images",
+      "title": "Image Alt Text and Title Annotations in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_annotating_images.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_annotating_images.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_annotating_images.md",
-      "headings": "Attribute Markers • Annotation Processing",
-      "summary": "Explicitly annotate each image assignment with a combination of relative image path, view type or B2C Commerce variation product, and a localizable *alt *description and image title."
+      "headings": "Alt Text and Title Markers • Alt Text and Title Lookup Order • See Also",
+      "summary": "B2C Commerce lets you annotate each image assignment with a combination of relative image path, view type or B2C Commerce variation product, and a localizable alt description and image title. Set those values on one image, or set a catalog pattern that fills them in."
     },
     {
       "id": "help-merchant/b2c_api_support",
@@ -7805,12 +7767,12 @@
     },
     {
       "id": "help-merchant/b2c_configuring_variation_attributes_for_image_assignment",
-      "title": "Configure Variation Attributes for Image Assignment by Catalog",
+      "title": "Configure Catalog Image Settings in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_configuring_variation_attributes_for_image_assignment.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configuring_variation_attributes_for_image_assignment.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_configuring_variation_attributes_for_image_assignment.md",
-      "summary": "B2C Commerce's catalog image settings support multiple variation attributes. The settings enable you to specify images for combinations of variation attributes, for example color (red, green, blue) and fabric (leather, textile) for all new products."
+      "summary": "In B2C Commerce, configure catalog image settings only when the settings created with the catalog differ from what you want, or to add a catalog-level variation attribute. Default alt text and title fill in only when an image has none of its own, so you leave them unchanged before you assign images."
     },
     {
       "id": "help-merchant/b2c_connect_commerce_to_salesforce",
@@ -8154,7 +8116,7 @@
       "filePath": "help-merchant/b2c_create_boost_bury_merchant_agent.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_boost_bury_merchant_agent.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_create_boost_bury_merchant_agent.md",
-      "summary": "Use the Merchant Agent to create boost and bury rules with natural language prompts."
+      "summary": "Use the Merchant Agent to create boost and bury rules with natural language prompts. Agentic rule creation is available only for categories. Create search term boost and bury rules manually."
     },
     {
       "id": "help-merchant/b2c_create_customer_group_based_on_data_cloud_segment",
@@ -8747,6 +8709,7 @@
         "help-merchant/b2c_on_site_search_dashboard",
         "help-merchant/b2c_search_conversion_dashboard",
         "help-merchant/b2c_traffic_dashboard",
+        "help-merchant/b2c_traffic_sources_dashboard",
         "help-merchant/b2c_shopper_journey_dashboard",
         "help-merchant/b2c_einstein_dashboard",
         "help-merchant/b2c_inventory_dashboard",
@@ -8893,12 +8856,12 @@
     },
     {
       "id": "help-merchant/b2c_demandware_image_storage",
-      "title": "Salesforce B2C Commerce Image Storage",
+      "title": "Image Storage Locations in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_demandware_image_storage.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_demandware_image_storage.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_demandware_image_storage.md",
-      "summary": "B2C Commerce supports three static content locations where it stores images."
+      "summary": "B2C Commerce stores images in three static content locations, depending on image type."
     },
     {
       "id": "help-merchant/b2c_deploying_a_test_segment",
@@ -8963,7 +8926,7 @@
       "filePath": "help-merchant/b2c_dynamic_customer_group_attributes.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_dynamic_customer_group_attributes.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_dynamic_customer_group_attributes.md",
-      "headings": "Related Links",
+      "headings": "Profile Attributes • Address Attributes • Active Data Attributes • Request Attributes • Geolocation Attributes • Storefront Session Attributes • Related Links",
       "summary": "Use these attributes for dynamic customer groups."
     },
     {
@@ -8995,15 +8958,6 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_dynamic_group_attribute_types.md",
       "headings": "Related Links",
       "summary": "There are seven supported attribute types."
-    },
-    {
-      "id": "help-merchant/b2c_dynamic_imaging_service_overview",
-      "title": "Related Dynamic Imaging Service Topics",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_dynamic_imaging_service_overview.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_dynamic_imaging_service_overview.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_dynamic_imaging_service_overview.md",
-      "summary": "Find B2C Commerce Dynamic Imaging Service help on URL path structure, order of operations, responsive formats, an optional community project, and troubleshooting."
     },
     {
       "id": "help-merchant/b2c_dynamic_mapping_of_incoming_url_for_source_codes",
@@ -9432,71 +9386,30 @@
     },
     {
       "id": "help-merchant/b2c_image_management",
-      "title": "Image Management",
+      "title": "Image Management in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_image_management.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_management.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_management.md",
-      "summary": "Use B2C Commerce's Image Management System to create a matrix of images for each product.",
+      "headings": "B2C Commerce Image Terms • B2C Commerce Image Limitations • B2C Commerce Image Location and Path • Choose the topic for the job",
+      "summary": "Before you assign product images in B2C Commerce, learn the terms, limits, and catalog location. Then choose the topic for assigning images, catalog settings, view types, swatches, alt text, storage, or a size, crop, or format.",
       "relatedEntries": [
         "help-merchant/b2c_managing_images",
         "help-merchant/b2c_understanding_view_types",
-        "help-merchant/b2c_working_with_image_variants",
         "help-merchant/b2c_working_with_swatches",
         "help-merchant/b2c_annotating_images",
         "help-merchant/b2c_demandware_image_storage",
-        "help-merchant/b2c_image_transformation_service",
-        "help-merchant/b2c_image_transformation_url_structure",
-        "help-merchant/b2c_image_transformation_responsive_formats",
-        "help-merchant/b2c_image_transformation_community_wrapper",
-        "help-merchant/b2c_image_transformation_troubleshooting_and_migration",
-        "help-merchant/b2c_dynamic_imaging_service_overview"
+        "help-merchant/b2c_image_transformation_service"
       ]
     },
     {
-      "id": "help-merchant/b2c_image_transformation_community_wrapper",
-      "title": "Optional community DIS product image wrapper",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_community_wrapper.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_community_wrapper.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_community_wrapper.md",
-      "summary": "The optional open-source dis-product-image-wrapper project helps some Salesforce Reference Architecture (SFRA) and SiteGenesis projects centralize product image parameters and use JavaScript helpers. It isn't a required replacement for URLUtils and MediaFile from the B2C Commerce API."
-    },
-    {
-      "id": "help-merchant/b2c_image_transformation_responsive_formats",
-      "title": "Responsive Images and Modern Image Formats (AVIF and WebP)",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_responsive_formats.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_responsive_formats.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_responsive_formats.md",
-      "summary": "Load AVIF and WebP for smaller file sizes with modern browsers on your B2C Commerce storefront, and use JPEG (or PNG for lossless or transparency) as a fallback. Output formats, quality, and the URLUtils and MediaFile rules for DIS are in the Dynamic Imaging Service topic."
-    },
-    {
       "id": "help-merchant/b2c_image_transformation_service",
-      "title": "Dynamic Imaging Service",
+      "title": "B2C Commerce Dynamic Imaging Service",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_image_transformation_service.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_service.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_service.md",
-      "summary": "The B2C Commerce Dynamic Imaging Service eliminates the need to upload different-sized images to meet your storefront requirements. After you upload a high-resolution source image, Dynamic Imaging formats the correct size for each image application—your product page, catalog page, recommended products, search results, and so on. Apply parameters to control image size, crop, overlay, format, background color, and quality settings."
-    },
-    {
-      "id": "help-merchant/b2c_image_transformation_troubleshooting_and_migration",
-      "title": "Troubleshooting and migration",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_troubleshooting_and_migration.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_troubleshooting_and_migration.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_troubleshooting_and_migration.md",
-      "summary": "When a B2C Commerce Dynamic Imaging Service image URL fails, times out, or looks wrong, check the source file, the full URL, and the limits documented in the Dynamic Imaging Service topic. This topic also helps you migrate from other hostnames and from Adobe Scene7 (Dynamic Media) query strings."
-    },
-    {
-      "id": "help-merchant/b2c_image_transformation_url_structure",
-      "title": "Image Transformation URL Structure, Validation, and Order of Operations",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_url_structure.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_url_structure.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_url_structure.md",
-      "summary": "Image transformation requests use a /dw/image/v2/ path and query string. The B2C Commerce Dynamic Imaging Service applies those parameters in a fixed order."
+      "summary": "Use the B2C Commerce Dynamic Imaging Service when storefront code requests a specific image size, crop, or format, and assign the source image in Business Manager. Transformation details are in the B2C Commerce developer guide."
     },
     {
       "id": "help-merchant/b2c_implementing_choice_of_bonus_product_discount",
@@ -9814,15 +9727,14 @@
     },
     {
       "id": "help-merchant/b2c_managing_images",
-      "title": "Manage Images",
+      "title": "Assign Images to Products in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_managing_images.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_managing_images.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_managing_images.md",
-      "summary": "Use the Image Management System to create a matrix of internal or external images that 's associated with B2C Commerce products.",
+      "summary": "In B2C Commerce, attach an image to a product so the storefront can show it. Assign images on the base product, and a variation product uses those images.",
       "relatedEntries": [
-        "help-merchant/b2c_configuring_variation_attributes_for_image_assignment",
-        "help-merchant/b2c_upload_an_image_to_the_file_browser_window"
+        "help-merchant/b2c_configuring_variation_attributes_for_image_assignment"
       ]
     },
     {
@@ -10519,7 +10431,7 @@
       "summary": "Use catalog unification to manage product data in B2C Commerce and automatically sync updates to Salesforce Point of Sale.",
       "relatedEntries": [
         "help-merchant/b2c_pos_link_verify_catalog",
-        "help-merchant/b2c_pos_schedule_monitor_feeds",
+        "help-merchant/b2c_pos_sync_product_data",
         "help-merchant/b2c_pos_map_product_fields",
         "help-merchant/b2c_pos_view_unified_data"
       ]
@@ -10544,12 +10456,34 @@
     },
     {
       "id": "help-merchant/b2c_pos_schedule_monitor_feeds",
-      "title": "Schedule and Monitor Product Feeds for B2C Commerce and POS Catalog Unification",
+      "title": "Schedule a Product Sync for B2C Commerce and POS Catalog Unification",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_pos_schedule_monitor_feeds.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_pos_schedule_monitor_feeds.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_pos_schedule_monitor_feeds.md",
-      "summary": "Define how frequently product data syncs from B2C Commerce to Point of Sale. Monitor the status of the product feeds."
+      "summary": "Define how frequently to sync product data from B2C Commerce to Point of Sale."
+    },
+    {
+      "id": "help-merchant/b2c_pos_set_up_delta_feeds",
+      "title": "Set Up Partial Syncs for B2C Commerce and POS Catalog Unification",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_pos_set_up_delta_feeds.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_pos_set_up_delta_feeds.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_pos_set_up_delta_feeds.md",
+      "summary": "Sync only the product data that changed since the last sync from B2C Commerce to Point of Sale. Delta Feed checks for changes every 15 minutes."
+    },
+    {
+      "id": "help-merchant/b2c_pos_sync_product_data",
+      "title": "Sync Product Data for B2C Commerce and POS Catalog Unification",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_pos_sync_product_data.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_pos_sync_product_data.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_pos_sync_product_data.md",
+      "summary": "Choose how product data syncs from B2C Commerce to Point of Sale. Run a scheduled sync of your full catalog, and set up partial syncs that update only what changed.",
+      "relatedEntries": [
+        "help-merchant/b2c_pos_schedule_monitor_feeds",
+        "help-merchant/b2c_pos_set_up_delta_feeds"
+      ]
     },
     {
       "id": "help-merchant/b2c_pos_view_unified_data",
@@ -10746,7 +10680,7 @@
       "filePath": "help-merchant/b2c_product_lists.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_product_lists.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_product_lists.md",
-      "summary": "A product list shows the products for your site. Create multiple product lists and customize them to find the information that’s the most relevant to you."
+      "summary": "A product list shows the products for your site. Create multiple product lists and customize them to find the information that’s the most relevant to you. Product lists are shared across all users in your site. When you delete a product list, you delete the list for all users."
     },
     {
       "id": "help-merchant/b2c_product_options",
@@ -11729,7 +11663,7 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_shopper_journey_dashboard.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_shopper_journey_dashboard.md",
       "headings": "Shopper Journey Funnel • Top 10 Checkout Steps • Shopper Journey Graphs",
-      "summary": "Use the B2C Commerce Reports & Dashboards Shopper Journey dashboard to evaluate how shoppers move from site visit to order conversion. The dashboard is available as a selection on the Traffic Report tab."
+      "summary": "Use the B2C Commerce Reports & Dashboards Shopper Journey dashboard to evaluate how shoppers move from site visit to order conversion. The dashboard is available as a selection on the Traffic tab."
     },
     {
       "id": "help-merchant/b2c_show_orderable_products_only_at_the_product_level",
@@ -12184,6 +12118,16 @@
       "summary": "Visits analyze data about the visitors to your B2C Commerce site. For example, review the number of site visits, the visits by device, and visit duration."
     },
     {
+      "id": "help-merchant/b2c_traffic_sources_dashboard",
+      "title": "Traffic Sources Dashboard",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_traffic_sources_dashboard.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_traffic_sources_dashboard.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_traffic_sources_dashboard.md",
+      "headings": "Traffic and Conversion Trends • Top Selling Products • Revenue by Medium • Traffic Sources",
+      "summary": "Use the B2C Commerce Reports & Dashboards Traffic Sources dashboard to compare revenue, orders, and conversion for shoppers who reach your storefront from an external source. The dashboard is available as a selection on the Traffic tab."
+    },
+    {
       "id": "help-merchant/b2c_translateandrefinewithai",
       "title": "Translate and Refine Product Information with AI",
       "category": "help-merchant",
@@ -12254,12 +12198,13 @@
     },
     {
       "id": "help-merchant/b2c_understanding_view_types",
-      "title": "View Types",
+      "title": "Image View Types and Variants in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_understanding_view_types.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_understanding_view_types.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_understanding_view_types.md",
-      "summary": "Use B2C Commerce *view types* to group images according to usage context, for example, by the image's size."
+      "headings": "Default View Types in B2C Commerce • View Type Rules in B2C Commerce • Image Variants in a View Type • See Also",
+      "summary": "Use B2C Commerce view types to group product images by usage context, such as large, medium, small, and swatch, and assign different images to each product variation."
     },
     {
       "id": "help-merchant/b2c_unit_level_rounding",
@@ -12296,15 +12241,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_updating_indexes.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_updating_indexes.md",
       "summary": "If you change your B2C Commerce search configuration, rebuild the appropriate index to see the changes in your storefront."
-    },
-    {
-      "id": "help-merchant/b2c_upload_an_image_to_the_file_browser_window",
-      "title": "Upload an Image to the File Browser Window",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_upload_an_image_to_the_file_browser_window.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_upload_an_image_to_the_file_browser_window.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_upload_an_image_to_the_file_browser_window.md",
-      "summary": "Use this window to upload internal image files so that you can assign them to B2C Commerce products, product variations, or product variation attributes."
     },
     {
       "id": "help-merchant/b2c_uploading_your_robots_txt_file",
@@ -12648,8 +12584,8 @@
       "filePath": "help-merchant/b2c_value_calculation_for_active_data.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_value_calculation_for_active_data.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_value_calculation_for_active_data.md",
-      "headings": "Value Calculation for Attributes with Null Values • Active Data Attributes • Sorting Attributes • Special Sorting Attributes • Product Attributes • Value Calculation Example",
-      "summary": "In B2C Commerce, base product calculations ignore variations that 's null or stale data when calculating the value of an attribute. Sliced variation calculations ignore sliced variations that 's null or stale data when calculating the value of an attribute."
+      "headings": "Value Calculation for Attributes with Null Values • Active Data Attribute Exceptions • Active Data Attribute Calculation Formulas • Sorting Attributes • Special Sorting Attributes • Product Attributes • Value Calculation Example",
+      "summary": "In B2C Commerce, base product calculations ignore variations that have null or stale data when calculating the value of an attribute. Sliced variation calculations ignore sliced variations that have null or stale data when calculating the value of an attribute."
     },
     {
       "id": "help-merchant/b2c_variation_attribute_values",
@@ -12870,15 +12806,6 @@
       ]
     },
     {
-      "id": "help-merchant/b2c_working_with_image_variants",
-      "title": "Image Variants",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_working_with_image_variants.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_working_with_image_variants.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_working_with_image_variants.md",
-      "summary": "There are four standard view types: large, medium, small, and swatch. You can represent each B2C Commerce product with multiple images per view type."
-    },
-    {
       "id": "help-merchant/b2c_working_with_slot_configurations",
       "title": "Slot Configurations in B2C Commerce",
       "category": "help-merchant",
@@ -12890,12 +12817,12 @@
     },
     {
       "id": "help-merchant/b2c_working_with_swatches",
-      "title": "Swatches",
+      "title": "Swatch Images for B2C Commerce Variation Products",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_working_with_swatches.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_working_with_swatches.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_working_with_swatches.md",
-      "summary": "A swatch image typically shows the key difference between B2C Commerce variation products in relation to a product variation attribute."
+      "summary": "A swatch image shows the key difference between B2C Commerce variation products, such as color or fabric. Keep the swatch view type on the catalog, and assign one swatch image on the base product."
     }
   ]
 }

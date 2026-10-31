@@ -1,5 +1,17 @@
 # @salesforce/b2c-tooling-sdk-python
 
+## 0.4.3
+
+### Patch Changes
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Fix Metrics API series tags: dimensions no longer include the `<realm>_<environment>` prefix, and empty placeholder series no longer get bogus dimensions. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.2
+
+### Patch Changes
+
+- [#814](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/814) [`b56cfbe`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b56cfbe55d2b3b5c421318037b7822ff4708123d) - Debug logs no longer include the first characters of an API key (or the whole key when it is short). (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.1
 
 ### Patch Changes

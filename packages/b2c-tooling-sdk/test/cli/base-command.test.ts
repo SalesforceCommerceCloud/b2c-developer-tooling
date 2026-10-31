@@ -6,9 +6,21 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {Config} from '@oclif/core';
-import {BaseCommand, ERROR_CODE, augmentDuplicateFlagError, classifyError} from '@salesforce/b2c-tooling-sdk/cli';
+import {
+  BaseCommand,
+  ERROR_CODE,
+  augmentDuplicateFlagError,
+  classifyError,
+  serializeErrorCause,
+} from '@salesforce/b2c-tooling-sdk/cli';
 import {globalMiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
-import {preloadEnvFile, takePreloadedEnvFile} from '@salesforce/b2c-tooling-sdk/config';
+import {
+  getAuthSessionBackend,
+  InMemoryAuthSessionBackend,
+  resetAuthSessionStoreForTesting,
+  setAuthSessionBackend,
+} from '@salesforce/b2c-tooling-sdk/auth';
+import {preloadEnvFile, takePreloadedEnvFile, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import {stubParse} from '../helpers/stub-parse.js';
@@ -54,6 +66,10 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
     return this.addTelemetryContext();
   }
 
+  public testFlagOrConfig(flag: string | undefined, key: 'siteId') {
+    return this.flagOrConfig(flag, key);
+  }
+
   public testConfigDocsHint() {
     return this.configDocsHint();
   }
@@ -64,6 +80,10 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
 
   public testGetBaseConfigOptions() {
     return this.getBaseConfigOptions();
+  }
+
+  public testCollectPluginAuthSessionStore() {
+    return this.collectPluginAuthSessionStore();
   }
 }
 
@@ -638,6 +658,29 @@ describe('cli/base-command', () => {
       });
     });
 
+    describe('serializeErrorCause()', () => {
+      it('preserves an object cause so --json nests it instead of "[object Object]"', () => {
+        const cause = {title: 'Conflict', detail: "Environment can't be deleted while it is 'building'."};
+        expect(serializeErrorCause(cause)).to.deep.equal(cause);
+      });
+
+      it('renders an Error cause as {name, message}', () => {
+        const cause = new TypeError('boom');
+        expect(serializeErrorCause(cause)).to.deep.equal({name: 'TypeError', message: 'boom'});
+      });
+
+      it('redacts access tokens in API response bodies', () => {
+        const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.c2lnbmF0dXJl-_x';
+        const cause = {title: 'Invalid Access Token', detail: 'The access token is invalid.', accessToken: jwt};
+        expect(serializeErrorCause(cause)).to.deep.equal({...cause, accessToken: 'REDACTED'});
+      });
+
+      it('stringifies primitive causes', () => {
+        expect(serializeErrorCause('plain string')).to.equal('plain string');
+        expect(serializeErrorCause(42)).to.equal('42');
+      });
+    });
+
     describe('augmentDuplicateFlagError()', () => {
       const projectFlag = {char: 'p', aliases: ['storefront'], charAliases: ['s']};
 
@@ -677,13 +720,22 @@ describe('cli/base-command', () => {
         const hint = command.testConfigDocsHint();
         expect(hint).to.include('configuration.html');
         expect(hint).to.include('No configuration was found');
+        expect(hint).to.include('setup inspect');
       });
 
-      it('returns empty string when a config source contributed', () => {
+      it('names the loaded sources without paths when a config source contributed', () => {
         command.setResolvedConfig({
-          sources: [{name: 'DwJsonSource'}],
+          sources: [
+            {name: 'DwJsonSource', location: '/home/user/project/dw.json'},
+            {name: 'SandboxHostname'},
+            {name: 'StorefrontNextEnvSource', location: 'environment variables'},
+          ],
         } as unknown as ReturnType<typeof command.getResolvedConfig>);
-        expect(command.testConfigDocsHint()).to.equal('');
+        const hint = command.testConfigDocsHint();
+        expect(hint).to.include('loaded from dw.json, Storefront Next environment variables, but it does not set');
+        expect(hint).to.include('setup inspect');
+        expect(hint).to.not.include('/home/user');
+        expect(hint).to.not.include('SandboxHostname');
       });
 
       it('returns empty string when resolvedConfig is unset', () => {
@@ -943,6 +995,105 @@ describe('cli/base-command', () => {
         expect(attributes.duration).to.be.a('number');
         expect(attributes.duration).to.be.at.least(100);
       });
+    });
+  });
+  describe('flagOrConfig', () => {
+    it('prefers the flag value over config', () => {
+      command.setResolvedConfig({values: {siteId: 'FromConfig'}} as unknown as ResolvedB2CConfig);
+      expect(command.testFlagOrConfig('FromFlag', 'siteId')).to.equal('FromFlag');
+    });
+
+    it('falls back to config when the flag is unset', () => {
+      command.setResolvedConfig({values: {siteId: 'FromConfig'}} as unknown as ResolvedB2CConfig);
+      expect(command.testFlagOrConfig(undefined, 'siteId')).to.equal('FromConfig');
+    });
+
+    it('returns undefined when neither is set', () => {
+      command.setResolvedConfig({values: {}} as unknown as ResolvedB2CConfig);
+      expect(command.testFlagOrConfig(undefined, 'siteId')).to.be.undefined;
+    });
+  });
+
+  describe('collectPluginAuthSessionStore', () => {
+    let savedSkip: string | undefined;
+
+    beforeEach(() => {
+      savedSkip = process.env.B2C_SKIP_PLUGIN_HOOKS;
+      delete process.env.B2C_SKIP_PLUGIN_HOOKS;
+      resetAuthSessionStoreForTesting();
+    });
+
+    afterEach(() => {
+      if (savedSkip === undefined) delete process.env.B2C_SKIP_PLUGIN_HOOKS;
+      else process.env.B2C_SKIP_PLUGIN_HOOKS = savedSkip;
+      resetAuthSessionStoreForTesting();
+    });
+
+    function stubHook(successes: Array<{plugin: string; result: unknown}>, failures: string[] = []) {
+      sinon.stub(config, 'runHook').resolves({
+        successes: successes.map((s) => ({plugin: {name: s.plugin}, result: s.result})),
+        failures: failures.map((name) => ({plugin: {name}, error: new Error('boom')})),
+      } as never);
+    }
+
+    it('installs the backend returned by a plugin', async () => {
+      stubParse(command);
+      await command.init();
+      const backend = new InMemoryAuthSessionBackend();
+      stubHook([{plugin: 'keychain-plugin', result: {backend}}]);
+
+      await command.testCollectPluginAuthSessionStore();
+
+      expect(getAuthSessionBackend()).to.equal(backend);
+    });
+
+    it('keeps the current backend when plugins return no backend', async () => {
+      stubParse(command);
+      await command.init();
+      const current = new InMemoryAuthSessionBackend();
+      setAuthSessionBackend(current);
+      stubHook([{plugin: 'other-plugin', result: {}}], ['broken-plugin']);
+
+      await command.testCollectPluginAuthSessionStore();
+
+      expect(getAuthSessionBackend()).to.equal(current);
+    });
+
+    it('uses the first plugin by name and warns about the others', async () => {
+      stubParse(command);
+      await command.init();
+      const first = new InMemoryAuthSessionBackend();
+      const second = new InMemoryAuthSessionBackend();
+      stubHook([
+        {plugin: 'z-plugin', result: {backend: second}},
+        {plugin: 'a-plugin', result: {backend: first}},
+      ]);
+      const warn = sinon.stub(command['logger'], 'warn');
+
+      await command.testCollectPluginAuthSessionStore();
+
+      expect(getAuthSessionBackend()).to.equal(first);
+      expect(warn.calledOnce).to.be.true;
+      expect(String(warn.firstCall.args[0])).to.match(
+        /z-plugin also provides an auth session store; using the one from a-plugin/,
+      );
+    });
+  });
+
+  describe('auth session flush', () => {
+    afterEach(() => resetAuthSessionStoreForTesting());
+
+    it('flushes the auth session store in finally()', async () => {
+      stubParse(command);
+      await command.init();
+      const backend = new InMemoryAuthSessionBackend();
+      const flush = sinon.stub().resolves();
+      Object.assign(backend, {flush});
+      setAuthSessionBackend(backend);
+
+      await command.testFinally(undefined);
+
+      expect(flush.calledOnce).to.be.true;
     });
   });
 });

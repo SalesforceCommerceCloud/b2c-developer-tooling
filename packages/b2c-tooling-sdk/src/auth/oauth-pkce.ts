@@ -7,12 +7,16 @@ import {createHash, randomBytes} from 'node:crypto';
 import {createServer, type Server, type IncomingMessage, type ServerResponse} from 'node:http';
 import type {Socket} from 'node:net';
 import {URL} from 'node:url';
-import type {AuthStrategy, AccessTokenResponse, DecodedJWT, FetchInit} from './types.js';
+import type {AuthStrategy, AccessTokenResponse, BrowserLogin, DecodedJWT, FetchInit} from './types.js';
+import {openUrlInBrowser} from './open-browser.js';
 import {dispatchFetch} from './dispatch-fetch.js';
+import {getApiFetch, type HttpTransportOptions} from '../clients/http-transport.js';
+import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {findAuthSession, saveAuthSession, type AuthSession} from './session-store.js';
+import {describeSignIn} from './instance-auth.js';
 
 const DEFAULT_LOCAL_PORT = 8080;
 
@@ -87,7 +91,7 @@ function isPkceGrantUnsupportedError(oauthError: string | undefined): boolean {
 /**
  * Configuration for the OAuth Authorization Code + PKCE flow.
  */
-export interface PkceOAuthConfig {
+export interface PkceOAuthConfig extends HttpTransportOptions {
   clientId: string;
   scopes?: string[];
   accountManagerHost?: string;
@@ -95,8 +99,8 @@ export interface PkceOAuthConfig {
   localPort?: number;
   /** Override redirect URI (default `http://localhost:${localPort}` or SFCC_REDIRECT_URI). */
   redirectUri?: string;
-  /** Custom browser opener. Receives the authorization URL. */
-  openBrowser?: (url: string) => Promise<void>;
+  /** Custom browser opener. Receives the authorization URL and a handle to cancel the pending login. */
+  openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
   /**
    * Persist tokens (access + refresh) to disk between CLI invocations,
    * keyed by clientId. When a refresh token is available it is used to
@@ -104,6 +108,12 @@ export interface PkceOAuthConfig {
    * Defaults to `true`.
    */
   persistSession?: boolean;
+  /**
+   * Renew a stored sign-in with its refresh token even when the access token
+   * is still valid, so it gets a new expiry (used by `b2c auth login`). Falls
+   * back to the browser flow when there is no refresh token or renewal fails.
+   */
+  forceRefresh?: boolean;
 }
 
 function base64url(buf: Buffer): string {
@@ -125,15 +135,6 @@ function parseOAuthErrorBody(text: string): {error?: string; errorDescription?: 
     };
   } catch {
     return {};
-  }
-}
-
-async function openBrowserDefault(url: string): Promise<void> {
-  try {
-    const open = await import('open');
-    await open.default(url);
-  } catch {
-    getLogger().debug('Could not automatically open browser');
   }
 }
 
@@ -180,6 +181,11 @@ export class PkceOAuthStrategy implements AuthStrategy {
     );
   }
 
+  /** See {@link AuthStrategy.selfSignedApi}. @internal */
+  get selfSignedApi(): boolean | undefined {
+    return this.config.selfSignedApi;
+  }
+
   /**
    * Load any persisted session for this clientId. Idempotent.
    */
@@ -191,7 +197,9 @@ export class PkceOAuthStrategy implements AuthStrategy {
       if (!stored || stored.flow !== 'pkce') return;
       this._sub = stored.sub ?? '';
       this._refreshToken = stored.refreshToken ?? null;
-      if (!ACCESS_TOKEN_CACHE.has(this.config.clientId) && stored.accessToken) {
+      if (this.config.forceRefresh && this._refreshToken) {
+        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
+      } else if (!ACCESS_TOKEN_CACHE.has(this.config.clientId) && stored.accessToken) {
         const expires = stored.expiresAt ? new Date(stored.expiresAt) : new Date(0);
         ACCESS_TOKEN_CACHE.set(this.config.clientId, {
           accessToken: stored.accessToken,
@@ -344,7 +352,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
 
     let response: Response;
     try {
-      response = await dispatchFetch(tokenUrl, {
+      response = await getApiFetch(this.config)(tokenUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: body.toString(),
@@ -412,6 +420,18 @@ export class PkceOAuthStrategy implements AuthStrategy {
     }
     this.persistTokens(tokenResponse);
     logger.debug({clientId: this.config.clientId}, '[Auth] PKCE token refreshed silently');
+    if (this.config.forceRefresh) {
+      logger.info(
+        describeSignIn({
+          action: 'renewed',
+          clientId: this.config.clientId,
+          accountManagerHost: this.accountManagerHost,
+          user: this._sub,
+          expiresAt: tokenResponse.expires,
+          refreshToken: this._refreshToken,
+        }),
+      );
+    }
     return tokenResponse;
   }
 
@@ -478,11 +498,11 @@ export class PkceOAuthStrategy implements AuthStrategy {
     logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
     logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
 
-    const code = await this.waitForAuthCode(state, async () => {
+    const code = await this.waitForAuthCode(state, async (login) => {
       if (this.config.openBrowser) {
-        await this.config.openBrowser(authorizeUrl);
+        await this.config.openBrowser(authorizeUrl, login);
       } else {
-        await openBrowserDefault(authorizeUrl);
+        await openUrlInBrowser(authorizeUrl);
       }
     });
     logger.debug({codePrefix: code.slice(0, 8)}, '[Auth] Got authorization code, exchanging for token');
@@ -507,11 +527,16 @@ export class PkceOAuthStrategy implements AuthStrategy {
       '[Auth REQ BODY] POST /dwsso/oauth2/access_token',
     );
 
-    const tokenRes = await dispatchFetch(tokenUrl, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: tokenBody.toString(),
-    });
+    let tokenRes: Response;
+    try {
+      tokenRes = await getApiFetch(this.config)(tokenUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: tokenBody.toString(),
+      });
+    } catch (err) {
+      throw wrapNetworkError(err, {operation: 'PKCE token exchange', host: new URL(tokenUrl).host});
+    }
     const rawText = await tokenRes.text();
     logger.debug(
       {url: tokenUrl, status: tokenRes.status},
@@ -591,11 +616,20 @@ export class PkceOAuthStrategy implements AuthStrategy {
       // access token is not a JWT; nothing to trace
     }
     this.persistTokens(tokenResponse);
+    logger.info(
+      describeSignIn({
+        clientId: this.config.clientId,
+        accountManagerHost: this.accountManagerHost,
+        user: this._sub,
+        expiresAt: tokenResponse.expires,
+        refreshToken: this._refreshToken,
+      }),
+    );
 
     return tokenResponse;
   }
 
-  private waitForAuthCode(expectedState: string, openBrowser: () => Promise<void>): Promise<string> {
+  private waitForAuthCode(expectedState: string, openBrowser: (login: BrowserLogin) => Promise<void>): Promise<string> {
     const logger = getLogger();
     return new Promise<string>((resolve, reject) => {
       const sockets: Set<Socket> = new Set();
@@ -663,7 +697,9 @@ export class PkceOAuthStrategy implements AuthStrategy {
         logger.debug({port: this.localPort}, `[Auth] PKCE redirect server listening on port ${this.localPort}`);
         logger.info('Waiting for user to authenticate...');
         try {
-          await openBrowser();
+          await openBrowser({
+            cancel: (reason = 'Login cancelled') => settleAfterClose(() => reject(new Error(reason))),
+          });
         } catch (error) {
           const browserError = error instanceof Error ? error : new Error(String(error));
           settleAfterClose(() => reject(browserError));

@@ -13,11 +13,12 @@ import {GuidanceCatalog, type GuidanceManifest, type GuidanceRead} from '@salesf
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
 import {createToolAdapter, jsonResult} from '../src/tools/adapter.js';
-import {createGuidanceTool} from '../src/guidance.js';
+import {createGuidanceTool, registerGuidanceResources} from '../src/guidance.js';
 import {Services} from '../src/services.js';
 import {createMockResolvedConfig} from './test-helpers.js';
 import {MCP_SKILL_REFERENCES} from '../src/skill-references.js';
 import {toToolAnnotations} from '../src/utils/index.js';
+import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(packageRoot, '../..');
@@ -32,6 +33,8 @@ describe('guidance distribution and result contracts', () => {
       'b2c-checkout-triage',
       'b2c-order-failure-triage',
       'b2c-edge-traffic-triage',
+      'b2c-performance-triage',
+      'b2c-integration-triage',
     ];
     const tool = createGuidanceTool();
     expect(catalog.resources().some((resource) => resource.uri.startsWith('skill://b2c-ops/'))).to.equal(false);
@@ -133,6 +136,45 @@ describe('guidance distribution and result contracts', () => {
     );
     const response = await tool.handler({query: 'components', workspace: 'pwa-kit-v3'});
     expect(response.isError).not.to.equal(true);
+  });
+
+  it('records which skill content was read and through which avenue', async () => {
+    const events: {name: string; attributes: Record<string, unknown>}[] = [];
+    const sendEvent = (name: string, attributes: Record<string, unknown> = {}) => events.push({name, attributes});
+    const telemetry = {
+      addAttributes() {},
+      sendEvent,
+      async sendEventAndFlush(...args: Parameters<typeof sendEvent>) {
+        sendEvent(...args);
+      },
+    } as unknown as Telemetry;
+    const server = new B2CDxMcpServer({name: 'reads', version: '1'}, {telemetry});
+    const tool = createGuidanceTool();
+    server.addTool(tool.name, tool.description, tool.inputSchema, tool.handler, {outputSchema: tool.outputSchema});
+    registerGuidanceResources(server);
+    const client = new Client({name: 'reads-test', version: '1'});
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    try {
+      const uri = 'skill://mcp/b2c-mcp-cip/SKILL.md';
+      await client.readResource({uri});
+      await client.readResource({uri: 'skill://index'});
+      await client.request({method: 'skills/get', params: {uri}}, z.object({skill: z.unknown()}));
+      await client.callTool({name: 'skills_read', arguments: {uri}});
+      await client.callTool({name: 'skills_read', arguments: {query: 'cip'}});
+      await client.callTool({name: 'skills_read', arguments: {id: 'mcp/missing'}});
+      const reads = events.filter((event) => event.name === 'CONTENT_READ').map((event) => event.attributes);
+      expect(reads).to.deep.equal([
+        {contentType: 'skill', contentId: 'mcp/b2c-mcp-cip', contentUri: uri, via: 'resources/read'},
+        {contentType: 'skill', contentId: 'index', contentUri: 'skill://index', via: 'resources/read'},
+        {contentType: 'skill', contentId: 'mcp/b2c-mcp-cip', contentUri: uri, via: 'skills/get'},
+        {contentType: 'skill', contentId: 'mcp/b2c-mcp-cip', contentUri: uri, offset: 0, via: 'skills_read'},
+      ]);
+    } finally {
+      await client.close();
+      await server.close();
+    }
   });
 
   it('validates the final enriched result and preserves payload plus resolution', async () => {

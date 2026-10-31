@@ -43,7 +43,7 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     filter: Flags.string({
       char: 'f',
       description:
-        'Log prefixes to filter (can specify multiple). Use a path like "internal/server" to tail logs in a subdirectory.',
+        'Log prefixes to tail (can specify multiple); replaces the default (error, customerror), e.g. --filter custom- for custom logger files. Matches the start of the file name or of its category. Use a path like "internal/server" to tail logs in a subdirectory.',
       multiple: true,
       default: DEFAULT_PREFIXES,
     }),
@@ -165,5 +165,9 @@ export default class LogsTail extends InstanceCommand<typeof LogsTail> {
     }
 
     this.log(t('commands.logs.tail.stopped', 'Log tailing stopped.'));
+  }
+
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
   }
 }

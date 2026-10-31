@@ -362,6 +362,14 @@ See [Test Helpers Reference](./references/HELPERS.md) for a full list of helpers
 
 **Test output is noisy**: Use `runSilent()` to suppress stdout/stderr from commands. The `stubParse` helper automatically sets `'log-level': 'silent'` to quiet pino logger output.
 
+## Test Expectations
+
+- **Behavior changes need tests.** A new feature or behavior change needs a test that would fail without the change. A bug fix needs a regression test that reproduces the bug.
+- **Assert on observable outcomes**: return values, `--json` output, logged or printed text, requests sent (see the request capture pattern), and error messages. A test that only runs code without asserting a result proves little. The same applies to tests that check a mocked value comes back unchanged (see [Low-Value Tests to Avoid](./references/COMMAND-TESTING-PATTERNS.md#low-value-tests-to-avoid)).
+- **Cover the error path** for code that handles API failures, missing configuration, or refused access, in addition to the success path.
+- **Never commit `.only`.** To skip tests that need real credentials or a particular platform, call `this.skip()` conditionally with the reason, as the E2E tests do. Do not skip a failing test unconditionally to get a change through.
+- **Report what you ran.** Name the test files or packages you ran, and do not describe a targeted run as a full-suite pass.
+
 ## Writing Tests Checklist
 
 1. Create test file in `test/` mirroring source structure
