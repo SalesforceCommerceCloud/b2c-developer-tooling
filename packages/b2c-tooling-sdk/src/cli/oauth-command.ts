@@ -34,6 +34,9 @@ import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
  */
 const DEFAULT_OAUTH_AUTH_METHODS: AuthMethod[] = ['client-credentials', 'jwt', 'user'];
 
+/** Client flags that contradict `--default-client` when given on the command line. */
+const DEFAULT_CLIENT_CONFLICTS = ['--client-id', '--client-secret', '--jwt-cert', '--jwt-key', '--auth-methods'];
+
 /**
  * Base command for operations requiring OAuth authentication.
  * Use this for platform-level operations like ODS, APIs.
@@ -104,6 +107,13 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       exclusive: ['auth-methods'],
       helpGroup: 'AUTH',
     }),
+    'default-client': Flags.boolean({
+      description:
+        'Use browser sign-in with the built-in client, ignoring any configured OAuth client (env: SFCC_DEFAULT_CLIENT)',
+      env: 'SFCC_DEFAULT_CLIENT',
+      default: false,
+      helpGroup: 'AUTH',
+    }),
     'account-manager-host': Flags.string({
       description: `Account Manager hostname for OAuth (default: ${DEFAULT_ACCOUNT_MANAGER_HOST})`,
       env: 'SFCC_ACCOUNT_MANAGER_HOST',
@@ -138,6 +148,16 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
       hidden: true,
     }),
   };
+
+  /** Whether `--default-client` (or SFCC_DEFAULT_CLIENT) replaces any configured OAuth client. */
+  protected get useDefaultClient(): boolean {
+    return (this.flags as Record<string, unknown> | undefined)?.['default-client'] === true;
+  }
+
+  public override async init(): Promise<void> {
+    await super.init();
+    if (this.useDefaultClient) this.applyDefaultClient();
+  }
 
   protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig(extractOAuthFlags(this.flags as Record<string, unknown>), this.getBaseConfigOptions());
@@ -199,12 +219,23 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     const accountManagerHost = this.accountManagerHost;
     const requiredScopes = config.scopes ?? [];
 
+    // Only Account Manager, sandbox and WebDAV access work with the built-in client.
+    if (this.useDefaultClient && !this.getDefaultClientId('user')) {
+      throw new Error(
+        t(
+          'error.defaultClientUnsupported',
+          'This command needs an API client; the built-in client used by --default-client has no OCAPI or SCAPI access.',
+        ),
+      );
+    }
+
     const explicitAuthFlags = this.detectExplicitAuthFlags();
     // Only a client ID resolved from user configuration constrains stateful auth.
     // getDefaultClientId() is a stateless fallback and must not prevent an
     // otherwise valid stored session from being reused.
     const configuredClientId = config.clientId;
-    const unconfiguredSessions = configuredClientId ? [] : listAuthSessions();
+    // --default-client never reuses another client's stored session.
+    const unconfiguredSessions = configuredClientId || this.useDefaultClient ? [] : listAuthSessions();
     // The new multi-session store is safe to reuse without a configured client
     // only when the choice is unambiguous. The pre-PKCE auth-session.json file
     // is never loaded, so an upgrade still requires the requested re-login.
@@ -352,6 +383,33 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
   }
 
   /**
+   * Drops the configured OAuth client (from any source, including env vars and dw.json) and
+   * selects browser sign-in, so the built-in public client is used. Instance settings such as
+   * the server stay as configured. Client flags on the command line contradict the flag.
+   */
+  private applyDefaultClient(): void {
+    const conflict = DEFAULT_CLIENT_CONFLICTS.find((flag) =>
+      this._rawArgv.some((arg) => arg === flag || arg.startsWith(`${flag}=`)),
+    );
+    if (conflict) {
+      this.error(
+        t('error.defaultClientConflict', '{{flag}} cannot also be provided when using --default-client', {
+          flag: conflict,
+        }),
+        {code: ERROR_CODE.VALIDATION},
+      );
+    }
+    const values = this.resolvedConfig.values;
+    delete values.clientId;
+    delete values.clientSecret;
+    delete values.clientAuthMethod;
+    delete values.jwtCertPath;
+    delete values.jwtKeyPath;
+    delete values.jwtPassphrase;
+    values.authMethods = ['user'];
+  }
+
+  /**
    * Detects explicit CLI flags that indicate intent to use stateless auth.
    * Only flags that mandate a specific auth flow are considered:
    * - --client-secret: indicates client-credentials flow
@@ -375,7 +433,9 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
    * or if a default client ID is available for browser flows.
    */
   protected hasOAuthCredentials(): boolean {
-    if (this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined) return true;
+    if (this.useDefaultClient || this.resolvedConfig.hasOAuthConfig() || this.getDefaultClientId() !== undefined) {
+      return true;
+    }
     const clientId = this.resolvedConfig.values.clientId;
     return clientId ? findAuthSession(clientId) !== null : listAuthSessions().length > 0;
   }

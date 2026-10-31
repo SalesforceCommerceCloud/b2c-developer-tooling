@@ -25,6 +25,9 @@ b2c auth login
 # With your own API client
 b2c auth login --client-id your-client-id
 
+# With the built-in client, even when a client is configured
+b2c auth login --default-client
+
 # Deprecated implicit flow, for clients not yet migrated
 b2c auth login --client-id your-client-id --auth-methods implicit
 ```
@@ -42,6 +45,7 @@ To sign in with your own API client, register it as described in [Redirect URLs]
 | Flag                     | Environment Variable        | Description                                                          |
 | ------------------------ | --------------------------- | -------------------------------------------------------------------- |
 | `--client-id`            | `SFCC_CLIENT_ID`            | Client ID (default: the configured client, then the built-in client) |
+| `--default-client`       | `SFCC_DEFAULT_CLIENT`       | Use the built-in client, ignoring any configured client              |
 | `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname                                             |
 | `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                            |
 | `--auth-methods`         | `SFCC_AUTH_METHODS`         | `user` (default) or `implicit` (deprecated)                          |
@@ -180,6 +184,7 @@ b2c auth token
 | `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                                                                                  |
 | `--auth-methods`         | `SFCC_AUTH_METHODS`         | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key                                                       |
 | `--user-auth`            |                             | Sign in with your Account Manager account in the browser                                                                                                                |
+| `--default-client`       | `SFCC_DEFAULT_CLIENT`       | Sign in in the browser with the built-in client, ignoring any configured API client, secret, JWT, or access key                                                         |
 | `--jwt-cert`             | `SFCC_JWT_CERT`             | Path to JWT certificate file (cert.pem) for JWT Bearer authentication                                                                                                   |
 | `--jwt-key`              | `SFCC_JWT_KEY`              | Path to JWT private key file (key.pem) for JWT Bearer authentication                                                                                                    |
 | `--jwt-passphrase`       | `SFCC_JWT_PASSPHRASE`       | Passphrase for encrypted JWT private key                                                                                                                                |

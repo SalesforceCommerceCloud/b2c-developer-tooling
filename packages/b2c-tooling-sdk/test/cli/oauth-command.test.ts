@@ -216,6 +216,43 @@ describe('cli/oauth-command', () => {
     });
   });
 
+  describe('--default-client', () => {
+    it('ignores a client ID and secret from env or config and uses browser sign-in', async () => {
+      const commandWithDefault = new TestOAuthCommandWithDefault([], config);
+      // Parsed flag values stand in for env-sourced values: they are not on the command line.
+      stubParse(commandWithDefault, {'client-id': 'env-client', 'client-secret': 'env-secret', 'default-client': true});
+      await commandWithDefault.init();
+
+      const strategy = commandWithDefault.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
+      const pkceConfig = (strategy as unknown as {config: {clientId: string}}).config;
+      expect(pkceConfig.clientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('rejects a client ID given on the command line', async () => {
+      const commandWithDefault = new TestOAuthCommandWithDefault(
+        ['--default-client', '--client-id', 'cli-client'],
+        config,
+      );
+      stubParse(commandWithDefault, {'client-id': 'cli-client', 'default-client': true});
+
+      try {
+        await commandWithDefault.init();
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('--client-id cannot also be provided when using --default-client');
+      }
+    });
+
+    it('fails clearly for commands that need an API client', async () => {
+      stubParse(command, {'client-id': 'env-client', 'default-client': true});
+      await command.init();
+
+      expect(command.testHasOAuthCredentials()).to.be.true;
+      expect(() => command.testGetOAuthStrategy()).to.throw(/no OCAPI or SCAPI access/);
+    });
+  });
+
   describe('implicit flow deprecation', () => {
     it('returns ImplicitOAuthStrategy when --auth-methods implicit is selected', async () => {
       stubParse(command, {

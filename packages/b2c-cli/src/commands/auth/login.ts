@@ -23,6 +23,9 @@ const LOGIN_AUTH_METHODS = ['user', 'implicit'] as const;
 
 type LoginAuthMethod = (typeof LOGIN_AUTH_METHODS)[number];
 
+/** Command-line flags that contradict --default-client. */
+const DEFAULT_CLIENT_CONFLICTS = ['--client-id', '--auth-methods'];
+
 /**
  * Log in via browser (Authorization Code + PKCE) and persist the session for
  * stateful auth. PKCE sessions use the CLI's unified multi-session store; old
@@ -48,6 +51,10 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
       command: '<%= config.bin %> <%= command.id %> --client-id your-client-id',
     },
     {
+      description: 'Sign in with the built-in client even when a client is configured',
+      command: '<%= config.bin %> <%= command.id %> --default-client',
+    },
+    {
       description: 'Use the deprecated implicit flow for a client not yet migrated to PKCE',
       command: '<%= config.bin %> <%= command.id %> --client-id your-client-id --auth-methods implicit',
     },
@@ -58,6 +65,12 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
       description: 'Client ID for OAuth (default: configured client, then the built-in client)',
       env: 'SFCC_CLIENT_ID',
       default: async () => process.env.SFCC_OAUTH_CLIENT_ID || undefined,
+      helpGroup: 'AUTH',
+    }),
+    'default-client': Flags.boolean({
+      description: 'Sign in with the built-in client, ignoring any configured client (env: SFCC_DEFAULT_CLIENT)',
+      env: 'SFCC_DEFAULT_CLIENT',
+      default: false,
       helpGroup: 'AUTH',
     }),
     'account-manager-host': Flags.string({
@@ -109,11 +122,14 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
   async run(): Promise<void> {
     const accountManagerHost = this.resolvedConfig.values.accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
     const {scopes, selfSignedApi} = this.resolvedConfig.values;
-    const method = this.selectMethod();
+    if (this.flags['default-client']) this.rejectDefaultClientConflicts();
+    const method = this.flags['default-client'] ? 'user' : this.selectMethod();
     // Without a configured client, sign in with the built-in client that WebDAV, sandbox, and
-    // Account Manager commands use, so they don't prompt again.
+    // Account Manager commands use, so they don't prompt again. --default-client ignores a
+    // configured client from any source.
+    const configuredClientId = this.flags['default-client'] ? undefined : this.resolvedConfig.values.clientId;
     const clientId =
-      this.resolvedConfig.values.clientId ??
+      configuredClientId ??
       (method === 'implicit'
         ? getLegacyImplicitPublicClientId(accountManagerHost)
         : getDefaultPublicClientId(accountManagerHost));
@@ -154,6 +170,23 @@ export default class AuthLogin extends BaseCommand<typeof AuthLogin> {
           user: previous.sub,
           expiresAt: token.expires,
           refreshToken: previous.refreshToken,
+        }),
+      );
+    }
+  }
+
+  /**
+   * --default-client overrides a client from env vars or config, but not one given on the command line.
+   */
+  private rejectDefaultClientConflicts(): void {
+    const conflict =
+      this.args.clientId === undefined
+        ? DEFAULT_CLIENT_CONFLICTS.find((flag) => this.argv.some((arg) => arg === flag || arg.startsWith(`${flag}=`)))
+        : 'CLIENTID';
+    if (conflict) {
+      this.error(
+        t('error.defaultClientConflict', '{{flag}} cannot also be provided when using --default-client', {
+          flag: conflict,
         }),
       );
     }
