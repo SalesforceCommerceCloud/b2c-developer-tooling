@@ -23,7 +23,7 @@ catalog:
   eslint-config-prettier: ^10
   eslint-plugin-header: ^3.1.1
   eslint-plugin-prettier: ^5.5.5
-  glob: 13.0.0
+  glob: 14.0.2
   jsonschema: 1.5.0
   mocha: ^11
   msw: ^2.12.4
@@ -48,7 +48,9 @@ minimumReleaseAgeExclude:
     # Renovate security update: node-forge@1.4.1
     node-forge@1.4.1,
     # Renovate security update: qs@6.16.1
-    qs@6.16.1
+    qs@6.16.1,
+    # Renovate security update: glob@14.0.2
+    glob@14.0.2
   ]
 
 nodeLinker: hoisted
