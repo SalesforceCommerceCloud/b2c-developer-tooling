@@ -89,6 +89,17 @@ describe('guidance distribution and result contracts', () => {
           .sort(),
       ).to.deep.equal(folders);
     }
+    const capDev = readdirSync(join(packageRoot, 'vendor/cap-dev/skills'), {withFileTypes: true})
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `cap-dev/${entry.name}`)
+      .sort();
+    expect(capDev.length).to.be.greaterThan(0);
+    expect(
+      manifest.entries
+        .filter((entry) => entry.collection === 'cap-dev')
+        .map((entry) => entry.id)
+        .sort(),
+    ).to.deep.equal(capDev);
     for (const entry of manifest.entries) {
       for (const file of entry.files) {
         const read = catalog.read({id: entry.id, file: file.path}) as GuidanceRead;
@@ -97,6 +108,12 @@ describe('guidance distribution and result contracts', () => {
         expect(read.content, `${entry.id}/${file.path}`).to.equal(readFileSync(source, 'utf8'));
       }
     }
+  });
+
+  it('gives every bundled skill a short index summary', () => {
+    const manifest = JSON.parse(readFileSync(join(bundleRoot, 'index.json'), 'utf8')) as GuidanceManifest;
+    const missing = manifest.entries.filter((entry) => !entry.indexSummary).map((entry) => entry.id);
+    expect(missing, 'add these to skills/index-summaries.json').to.deep.equal([]);
   });
 
   it('does not load configuration for guidance and rejects unexpected input', async () => {
@@ -126,7 +143,7 @@ describe('guidance distribution and result contracts', () => {
     const tool = createGuidanceTool();
     expect(tool.inputSchema).not.to.have.property('projectDirectory');
     await Promise.all(
-      ['b2c', 'b2c-cli', 'b2c-ops', 'storefront-next', 'mcp'].map(async (collection) => {
+      ['b2c', 'b2c-cli', 'b2c-ops', 'storefront-next', 'cap-dev', 'mcp'].map(async (collection) => {
         const response = await tool.handler({collection});
         expect(response.isError).not.to.equal(true);
         const page = (response.structuredContent as {result: {entries: {id: string}[]}}).result;

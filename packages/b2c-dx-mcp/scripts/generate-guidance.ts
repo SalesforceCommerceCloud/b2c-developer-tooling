@@ -29,11 +29,17 @@ const config = JSON.parse(readFileSync(join(packageRoot, 'skills/collections.jso
   collections: GuidanceCollectionSource[];
 };
 if (config.version !== 1) throw new Error('Unsupported guidance collections manifest');
+// Short skill://index lines; skill descriptions and search are unaffected.
+const indexSummaries = JSON.parse(readFileSync(join(packageRoot, 'skills/index-summaries.json'), 'utf8')) as Record<
+  string,
+  string
+>;
 const result = bundleGuidance({
   repoRoot,
   baseDirectory: packageRoot,
   collections: config.collections,
   featuredResources: config.featuredResources,
+  indexSummaries,
   destination: join(packageRoot, 'content/guidance'),
 });
 process.stdout.write(`Bundled ${result.entries} guidance entries and ${result.files} Markdown files.\n`);
