@@ -180,6 +180,7 @@ describe('am clients create', () => {
         name: 'New Client',
         orgs: 'org-123',
         password: 'SecureP@ssword12',
+        force: true,
       };
       stubCommandConfigAndLogger(command);
       stubJsonEnabled(command, true);
@@ -198,8 +199,14 @@ describe('am clients create', () => {
           return HttpResponse.json({id: 'org-123', name: 'Test Org'});
         }),
         http.post(`${BASE_URL}/apiclients`, async ({request}) => {
-          const body = (await request.json()) as {name?: string; organizations?: string[]; password?: string};
+          const body = (await request.json()) as {
+            name?: string;
+            organizations?: string[];
+            password?: string;
+            tokenEndpointAuthMethod?: string;
+          };
           expect(body.name).to.equal('New Client');
+          expect(body.tokenEndpointAuthMethod).to.equal('client_secret_basic');
           expect(body.organizations).to.deep.equal(['org-123']);
           return HttpResponse.json(mockCreated);
         }),
@@ -207,8 +214,110 @@ describe('am clients create', () => {
 
       const result = await command.run();
 
-      expect(result.id).to.equal('new-client-id');
-      expect(result.name).to.equal('New Client');
+      expect(result?.id).to.equal('new-client-id');
+      expect(result?.name).to.equal('New Client');
+    });
+  });
+
+  describe('confirmation', () => {
+    function orgHandler() {
+      return http.get(`${BASE_URL}/organizations/org-123`, () => HttpResponse.json({id: 'org-123', name: 'Test Org'}));
+    }
+
+    function newCommand(flags: Record<string, unknown> = {}) {
+      const command = new ClientCreate([], {} as any);
+      (command as any).flags = {
+        name: 'New Client',
+        orgs: 'org-123',
+        password: 'SecureP@ssword12',
+        roles: 'SALESFORCE_COMMERCE_API',
+        'role-tenant-filter': 'SALESFORCE_COMMERCE_API:abcd_001',
+        scopes: 'mail,sfcc.jobs.rw',
+        ...flags,
+      };
+      stubCommandConfigAndLogger(command);
+      stubImplicitOAuthStrategy(command);
+      makeCommandThrowOnError(command);
+      return command;
+    }
+
+    it('shows the client details without the password and creates it when confirmed', async () => {
+      const command = newCommand();
+      const confirmStub = sinon.stub().resolves(true);
+      (command as any).operations = {confirm: confirmStub};
+      let posted = false;
+      server.use(
+        orgHandler(),
+        http.post(`${BASE_URL}/apiclients`, () => {
+          posted = true;
+          return HttpResponse.json({id: 'new-client-id', name: 'New Client'});
+        }),
+      );
+
+      const result = await command.run();
+
+      expect(posted).to.be.true;
+      expect(result?.id).to.equal('new-client-id');
+      const message = confirmStub.firstCall.args[0] as string;
+      expect(message).to.include('New Client');
+      expect(message).to.include('org-123');
+      expect(message).to.include('SALESFORCE_COMMERCE_API:abcd_001');
+      expect(message).to.include('mail, sfcc.jobs.rw');
+      expect(message).to.not.include('SecureP@ssword12');
+    });
+
+    it('does not create the client when declined', async () => {
+      const command = newCommand();
+      (command as any).operations = {confirm: sinon.stub().resolves(false)};
+      server.use(orgHandler());
+
+      const result = await command.run();
+
+      expect(result).to.be.undefined;
+    });
+
+    it('keeps an explicit token endpoint auth method', async () => {
+      const command = newCommand({force: true, 'token-endpoint-auth-method': 'private_key_jwt'});
+      let method: string | undefined;
+      server.use(
+        orgHandler(),
+        http.post(`${BASE_URL}/apiclients`, async ({request}) => {
+          method = ((await request.json()) as {tokenEndpointAuthMethod?: string}).tokenEndpointAuthMethod;
+          return HttpResponse.json({id: 'new-client-id', name: 'New Client'});
+        }),
+      );
+
+      await command.run();
+
+      expect(method).to.equal('private_key_jwt');
+    });
+
+    it('skips the prompt with --force', async () => {
+      const command = newCommand({force: true});
+      const confirmStub = sinon.stub().resolves(false);
+      (command as any).operations = {confirm: confirmStub};
+      server.use(
+        orgHandler(),
+        http.post(`${BASE_URL}/apiclients`, () => HttpResponse.json({id: 'new-client-id', name: 'New Client'})),
+      );
+
+      const result = await command.run();
+
+      expect(confirmStub.called).to.be.false;
+      expect(result?.id).to.equal('new-client-id');
+    });
+
+    it('requires --force in JSON mode', async () => {
+      const command = newCommand();
+      stubJsonEnabled(command, true);
+      server.use(orgHandler());
+
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error: unknown) {
+        expect((error as Error).message).to.match(/Re-run with --force/);
+      }
     });
   });
 });

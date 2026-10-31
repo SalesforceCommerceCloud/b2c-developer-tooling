@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-29T20:38:17.710Z",
+  "generatedAt": "2026-10-30T16:42:08.019Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -444,6 +444,15 @@
       "preview": "Optional project recommendations for working with the Agentic B2C Developer Toolkit and your AI assistant."
     },
     {
+      "id": "guide-realm-setup",
+      "title": "Realm Setup",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/realm-setup.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/realm-setup.md",
+      "headings": "Before You Start • Protect Shared Instances • Storefront Datasets • Set Up a Sandbox • Set Up a Realm • 1. Prepare Staging • 2. Replicate to Production • 3. Connect the Storefront • Troubleshooting • Related",
+      "preview": "Set up a new sandbox or realm with sample storefront data, search indexes, Storefront Next storefronts, and replication from staging to production."
+    },
+    {
       "id": "guide-safety",
       "title": "Safety Mode",
       "category": "tooling",
@@ -503,8 +512,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md",
-      "headings": "Start with Storefront Setup • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
-      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Manage environment variables, tail logs, and work with deployments."
+      "headings": "Start with Storefront Setup • Set Up Storefronts from the CLI • Create a Storefront • API Client • Generate the Project Code • Get the Environment File • Add Another Instance • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
+      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts and their API client, generate project code, get the environment file, add instances to an MRT project, manage environment variables, tail logs, and work with deployments."
     },
     {
       "id": "guide-third-party-plugins",

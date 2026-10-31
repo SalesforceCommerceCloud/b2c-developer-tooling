@@ -114,6 +114,7 @@ Keep the global and site jobs separate so the same jobs work for new and existin
 
 ## Related Skills
 
+- `b2c-cli:b2c-setup` — end-to-end realm setup, including where replication fits
 - `b2c-cli:b2c-job` — run, wait for, and inspect jobs
 - `b2c:b2c-custom-job-steps` — `jobs.xml` format, triggers, and custom steps
 - `b2c-cli:b2c-storefronts` — moving Storefront Next storefronts between instances

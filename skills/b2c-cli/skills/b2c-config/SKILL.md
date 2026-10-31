@@ -116,7 +116,7 @@ For the full field reference, see the [Configuration guide](https://salesforceco
 
 Most commands that interact with a B2C Commerce instance require authentication. The CLI supports several methods:
 
-- **Client credentials (API client):** Configure `clientId` and `clientSecret` in dw.json or environment variables. This is the default for automated/CI use.
+- **Client credentials (API client):** Configure `clientId` and `clientSecret` in dw.json or environment variables. This is the default for automated/CI use. No API client yet? The user can create one with their own sign-in (`b2c-cli:b2c-am`, Create Client); confirm every detail with them first.
 - **Sign in with your account:** Use `--user-auth` on any OAuth-enabled command to sign in with your Account Manager account in the browser.
 - **Basic auth:** Configure `username` and `password` for WebDAV operations.
 - **Stateful sessions:** Use `b2c auth login` to stay signed in; later commands reuse the saved session when no other client is configured. Client credentials need no session (each command gets a token); `b2c auth client` exists for `sfcc-ci client:auth` compatibility.

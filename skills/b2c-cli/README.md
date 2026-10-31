@@ -26,6 +26,7 @@ For file-copy install to any supported IDE, use `b2c setup skills b2c-cli`. See 
 
 Skills covering the major B2C CLI surfaces:
 
+- **`b2c-setup`** — start here to set up a sandbox or realm: sample data, storefronts, and replication
 - **`b2c-code`** — cartridge deploy, code version management, watch mode
 - **`b2c-sandbox`** — On-Demand Sandbox lifecycle
 - **`b2c-job`** — job execution and monitoring

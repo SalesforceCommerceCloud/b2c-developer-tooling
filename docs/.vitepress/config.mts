@@ -165,6 +165,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
     text: 'Operations & Administration',
     collapsed: false,
     items: [
+      {text: 'Realm Setup', link: '/guide/realm-setup'},
       {text: 'Operations', link: '/guide/operations'},
       {text: 'Account Manager', link: '/guide/account-manager'},
       {text: 'Analytics Reports', link: '/guide/analytics-reports-cip-ccac'},
