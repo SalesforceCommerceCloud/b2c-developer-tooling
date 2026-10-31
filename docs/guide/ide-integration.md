@@ -24,6 +24,8 @@ If you have the Salesforce B2C Commerce VS Code extension installed, IntelliSens
 
 You can disable the feature with the `b2c-dx.features.scriptTypes` setting (default: `true`).
 
+The extension only runs in trusted workspaces. It reads instance settings and credentials from workspace files such as `dw.json`, so VS Code keeps it disabled in Restricted Mode; trust the workspace to use it.
+
 The plugin also resolves SFCC cartridge-style requires, matching runtime semantics:
 
 - `require('~/cartridge/scripts/foo')` — resolves only within the cartridge that contains the current file (the SFCC `~` shortcut for "current cartridge"). If `foo` doesn't exist there, IntelliSense reports it unresolved — same as runtime.
