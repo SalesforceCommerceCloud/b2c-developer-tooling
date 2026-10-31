@@ -97,6 +97,7 @@
     "prepack": "pnpm run generate:guidance && node scripts/prepare-sdk-bundle.mjs && oclif manifest",
     "postpack": "shx rm -f oclif.manifest.json",
     "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
+    "sync:cap-dev-skills": "node scripts/sync-cap-dev-skills.mjs",
     "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
   },
   "dependencies": {

@@ -126,7 +126,7 @@ describe('guidance over real stdio', function () {
     expect(ids.length).to.equal(total);
     expect(new Set(ids).size).to.equal(total);
     expect(new Set(ids.map((id) => id.split('/')[0]))).to.deep.equal(
-      new Set(['b2c', 'b2c-cli', 'b2c-ops', 'mcp', 'storefront-next']),
+      new Set(['b2c', 'b2c-cli', 'b2c-ops', 'cap-dev', 'mcp', 'storefront-next']),
     );
     expect(ids).to.include('mcp/b2c-mcp-server');
   });
@@ -213,7 +213,7 @@ describe('guidance over real stdio', function () {
     }
     expect(Buffer.byteLength(JSON.stringify(listed))).to.be.lessThan(3000);
     const index = (await client.call('resources/read', {uri: 'skill://index'})) as {contents: {text: string}[]};
-    expect(Buffer.byteLength(index.contents[0].text)).to.be.lessThan(16 * 1024);
+    expect(Buffer.byteLength(index.contents[0].text)).to.be.lessThan(24 * 1024);
     const links = [...index.contents[0].text.matchAll(/\[([^\]]+)\]\((skill:\/\/[^)]+)\)/g)];
     const directory = (await call({})).structuredContent.result as GuidancePage;
     expect(links.length).to.equal(directory.total);

@@ -8,7 +8,9 @@ under `references/`.
 
 This package's `skills/collections.json` selects entire plugin collections by their existing name in
 the repository's `skills/plugins.json`; it does not duplicate the per-skill inventory. Collections
-can instead name a package-relative directory for MCP-only skills. `isGA`
+can instead name a package-relative directory for MCP-only skills. The `cap-dev` collection is a
+directory collection of skills vendored from the public commerce-apps repository; see
+[`vendor/cap-dev/README.md`](../vendor/cap-dev/README.md) for how to refresh it. `isGA`
 is internal collection metadata; MCP includes every selected collection regardless of it.
 `workspaces` only influences ranking. Discovery responses expose only collection
 IDs and titles; `isGA` and `workspaces` are absent from the MCP output schema. Neither native
@@ -20,15 +22,20 @@ skill installation nor `--docs-topics` defines the skill catalog.
 chosen by the top-level `featuredResources` IDs in `skills/collections.json`. Featuring
 an entry controls listing only. All available skills and references are readable
 through the resource template and `skills_read`, grouped into `b2c`, `b2c-cli`,
-`b2c-ops`, `storefront-next`, and `mcp`. Every tool discovery/read result includes a URI. MCP resources are always registered.
+`b2c-ops`, `storefront-next`, `cap-dev`, and `mcp`. Every tool discovery/read result includes a URI. MCP resources are always registered.
 When `skills_read` is omitted from an individual tool selection, the index and
 resource template expose only the `mcp` collection; all other collections are
 excluded from discovery and direct reads.
 
 The index is generated from the filtered manifest at read time: collection,
-skill ID, entrypoint URI, and a description of at most 120 code points per entry.
+skill ID, entrypoint URI, and a short summary per entry. Summaries come from
+`skills/index-summaries.json` (at most 100 code points, keyed by entry ID) and are
+used only in the index; skill descriptions, `skills_read` results, the skills
+extension, and search keep the full `description`. An entry without a summary
+falls back to its description truncated to 120 code points; a test requires
+every bundled skill to have one, so add a summary when you add a skill.
 It includes no skill bodies or reference inventory. Current bundled index content
-stays below 16 KiB; the runtime resource ceiling is 64 KiB. It is not another
+stays below 24 KiB; the runtime resource ceiling is 64 KiB. It is not another
 authored skill and does not increase the skill count. Clients can discover files
 through the index or tool search without template argument completion.
 Passing the index URI to `skills_read` returns its normal paginated catalog

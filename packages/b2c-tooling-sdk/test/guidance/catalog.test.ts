@@ -202,6 +202,20 @@ describe('offline guidance catalog', () => {
     expect(() => catalog.read({id: 'next/deploy', section: 'missing'})).to.throw('not available');
   });
 
+  it('uses index summaries only in the skill index', () => {
+    const plain = new GuidanceCatalog(root, {allowNonGa: true}).read({query: 'zeppelin'});
+    manifest.entries[0].indexSummary = 'Short deploy zeppelin line.';
+    writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
+    const catalog = new GuidanceCatalog(root, {allowNonGa: true});
+    const index = catalog.readResource('skill://index');
+    expect(index).to.include('[b2c/deploy](skill://b2c/deploy/SKILL.md): Short deploy zeppelin line.');
+    expect(index).to.include('[next/deploy](skill://next/deploy/SKILL.md): Deploy cartridges with cleanup');
+    const page = catalog.read({collection: 'b2c'}) as GuidancePage;
+    expect(page.entries[0].description).to.equal('Deploy cartridges with cleanup');
+    expect(catalog.read({query: 'zeppelin'})).to.deep.equal(plain);
+    expect(catalog.resources()[0].description).to.equal('Deploy cartridges with cleanup');
+  });
+
   it('lists only featured entrypoints while allowing all catalog files through resources', () => {
     manifest.entries[0].featured = false;
     writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
