@@ -1,5 +1,15 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.11.0
+
+### Minor Changes
+
+- [#838](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/838) [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288) - Add `--default-client` (or `SFCC_DEFAULT_CLIENT=true`) to sign in with the CLI's built-in client when another client or access key is configured, so WebDAV, code upload, logs, sandbox and Account Manager commands work with your Account Manager account without changing your config (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#839](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/839) [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527) - `b2c sites cartridges` commands with `--bm` now read and update the Business Manager cartridge path through the SCAPI Sites API instead of failing or running a site archive import. Site archive import remains the fallback when SCAPI isn't configured. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.10.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.12
+
+### Patch Changes
+
+- [`3fcff81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fcff8107f5eded39aa27e165cf61aecd0eb892f) - Recommend turning on auto-update for the Claude Code plugin marketplace, which Claude Code leaves off by default for third-party marketplaces, so installed plugins pick up new releases. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.11
 
 ### Patch Changes
