@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.13.1
+
+### Patch Changes
+
+- [#839](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/839) [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527) - The b2c-sites skill now explains that Business Manager cartridge path updates use the SCAPI Sites API. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#838](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/838) [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288) - Add `--default-client` (or `SFCC_DEFAULT_CLIENT=true`) to sign in with the CLI's built-in client when another client or access key is configured, so WebDAV, code upload, logs, sandbox and Account Manager commands work with your Account Manager account without changing your config (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.13.0
 
 ### Minor Changes
