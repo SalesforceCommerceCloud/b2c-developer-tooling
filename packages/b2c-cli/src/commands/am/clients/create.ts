@@ -7,6 +7,7 @@ import {Flags} from '@oclif/core';
 import {AmCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {isValidRoleTenantFilter, type AccountManagerApiClient, type APIClientCreate} from '@salesforce/b2c-tooling-sdk';
 import {t} from '../../../i18n/index.js';
+import {confirm} from '../../../prompts.js';
 import {resolveOrgId} from '../../../utils/am/resolve-org.js';
 
 function splitCommaSeparated(s: string): string[] {
@@ -27,6 +28,7 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
   static examples = [
     '<%= config.bin %> <%= command.id %> --name my-client --orgs org-id-1 --password "SecureP@ss123"',
     '<%= config.bin %> <%= command.id %> --name my-client --orgs "My Organization" --password "SecureP@ss123" --roles SALESFORCE_COMMERCE_API',
+    '<%= config.bin %> <%= command.id %> --name my-client --orgs org-id-1 --password "SecureP@ss123" --force',
   ];
 
   static flags = {
@@ -74,15 +76,25 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
       description: 'Comma-separated version control system identifiers',
     }),
     'token-endpoint-auth-method': Flags.string({
-      description: 'Token endpoint auth method: private_key_jwt, client_secret_post, client_secret_basic, or none',
+      description:
+        'Token endpoint auth method: private_key_jwt, client_secret_post, client_secret_basic, or none (default: client_secret_basic)',
       options: ['private_key_jwt', 'client_secret_post', 'client_secret_basic', 'none'],
     }),
     'jwt-public-key': Flags.string({
       description: 'Public key for JWT authentication (PEM or inline)',
     }),
+    force: Flags.boolean({
+      char: 'f',
+      description: 'Skip confirmation prompt',
+      default: false,
+    }),
   };
 
-  async run(): Promise<AccountManagerApiClient> {
+  protected operations = {
+    confirm,
+  };
+
+  async run(): Promise<AccountManagerApiClient | undefined> {
     const flags = this.flags;
     const nameTrimmed = flags.name.trim();
     const orgInputs = splitCommaSeparated(flags.orgs);
@@ -92,6 +104,23 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
     const orgIds = await Promise.all(orgInputs.map((o) => resolveOrgId(this.accountManagerClient, o)));
 
     const body = this.buildCreateBody(flags, nameTrimmed, orgIds);
+
+    if (!flags.force) {
+      // A --json consumer can't answer a prompt, and stdout must stay clean JSON.
+      if (this.jsonEnabled()) {
+        this.error(
+          t(
+            'commands.client.create.jsonRequiresForce',
+            'Confirmation is required to create an API client. Re-run with --force in --json (non-interactive) mode.',
+          ),
+        );
+      }
+      const confirmed = await this.operations.confirm(this.formatConfirmation(body));
+      if (!confirmed) {
+        this.log(t('commands.client.create.cancelled', 'API client creation cancelled'));
+        return undefined;
+      }
+    }
 
     this.log(t('commands.client.create.creating', 'Creating API client {{name}}...', {name: flags.name}));
 
@@ -139,13 +168,38 @@ export default class ClientCreate extends AmCommand<typeof ClientCreate> {
     if (flags['version-control']) {
       body.versionControl = splitCommaSeparated(flags['version-control']);
     }
-    if (flags['token-endpoint-auth-method']) {
-      body.tokenEndpointAuthMethod = flags['token-endpoint-auth-method'] as APIClientCreate['tokenEndpointAuthMethod'];
-    }
+    // Account Manager otherwise defaults new clients to private_key_jwt, which rejects the client secret.
+    body.tokenEndpointAuthMethod = (flags['token-endpoint-auth-method'] ??
+      'client_secret_basic') as APIClientCreate['tokenEndpointAuthMethod'];
     if (flags['jwt-public-key'] !== undefined) {
       body.jwtPublicKey = flags['jwt-public-key'].trim().length > 0 ? flags['jwt-public-key'].trim() : null;
     }
     return body;
+  }
+
+  /**
+   * Summarizes the client to be created for the confirmation prompt. Never includes the password.
+   */
+  private formatConfirmation(body: APIClientCreate): string {
+    const none = t('commands.client.create.confirmNone', '(none)');
+    const list = (values?: string[]) => (values && values.length > 0 ? values.join(', ') : none);
+    const lines = [
+      t('commands.client.create.confirmHeader', 'API client to create in Account Manager ({{host}}):', {
+        host: this.accountManagerHost,
+      }),
+      `  Name:                 ${body.name}`,
+      `  Organizations:        ${list(body.organizations)}`,
+      `  Roles:                ${list(body.roles)}`,
+      `  Role tenant filter:   ${body.roleTenantFilter ?? none}`,
+      `  Scopes:               ${list(body.scopes)}`,
+      `  Default scopes:       ${list(body.defaultScopes)}`,
+      `  Redirect URLs:        ${list(body.redirectUrls)}`,
+      `  Token auth method:    ${body.tokenEndpointAuthMethod}`,
+      `  Active:               ${body.active ? 'yes' : 'no'}`,
+      t('commands.client.create.confirmNote', 'Clients cannot be deleted until they have been disabled for 7 days.'),
+      t('commands.client.create.confirmPrompt', 'Create the client?'),
+    ];
+    return lines.join('\n');
   }
 
   private validateCreateInput(flags: typeof ClientCreate.prototype.flags, nameTrimmed: string, orgIds: string[]): void {

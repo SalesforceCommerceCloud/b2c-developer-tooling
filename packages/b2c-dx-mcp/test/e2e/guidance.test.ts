@@ -203,11 +203,16 @@ describe('guidance over real stdio', function () {
       'b2c-mcp-debugger',
       'b2c-mcp-scapi',
       'b2c-mcp-server',
+      'b2c-setup',
       'skill-index',
     ]);
     for (const resource of listed.resources) {
       expect(resource.uri).to.equal(
-        resource.name === 'skill-index' ? 'skill://index' : `skill://mcp/${resource.name}/SKILL.md`,
+        resource.name === 'skill-index'
+          ? 'skill://index'
+          : resource.name === 'b2c-setup'
+            ? 'skill://b2c-cli/b2c-setup/SKILL.md'
+            : `skill://mcp/${resource.name}/SKILL.md`,
       );
       expect(resource.description.length).to.be.within(1, 1024);
     }
@@ -243,9 +248,11 @@ describe('guidance over real stdio', function () {
       'b2c-mcp-debugger',
       'b2c-mcp-scapi',
       'b2c-mcp-server',
+      'b2c-setup',
     ]);
     for (const skill of skills) {
-      expect(skill.uri).to.equal(`skill://mcp/${skill.frontmatter.name}/SKILL.md`);
+      const collection = skill.frontmatter.name === 'b2c-setup' ? 'b2c-cli' : 'mcp';
+      expect(skill.uri).to.equal(`skill://${collection}/${skill.frontmatter.name}/SKILL.md`);
       expect(skill.resources.map((resource) => resource.uri)).to.include(skill.uri);
       for (const resource of skill.resources) {
         const {contents} = (await client.call('resources/read', {uri: resource.uri})) as {contents: {text: string}[]};

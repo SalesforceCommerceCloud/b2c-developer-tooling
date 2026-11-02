@@ -19,6 +19,7 @@
   "b2c-cli/b2c-scapi-custom": "Check custom SCAPI endpoint registration; debug 404 or endpoint-not-found errors.",
   "b2c-cli/b2c-scapi-schemas": "Browse SCAPI OpenAPI specs: endpoints, request/response shapes, and versions.",
   "b2c-cli/b2c-site-import-export": "Author, validate, import, and verify site archives and metadata XML; export data.",
+  "b2c-cli/b2c-setup": "Set up a sandbox or realm: sample datasets, indexes, code, Storefront Next, and replication.",
   "b2c-cli/b2c-sites": "List sites and status, and view or edit site and Business Manager cartridge paths.",
   "b2c-cli/b2c-slas": "SLAS clients: create, update scopes, rotate secrets, and get shopper tokens.",
   "b2c-cli/b2c-storefronts": "Set up, connect, export, and import Storefront Next storefronts across instances.",

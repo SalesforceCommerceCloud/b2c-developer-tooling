@@ -68,7 +68,7 @@ Each run transfers the selected data (or code) and, for `transfer_and_publish` /
 
 To change what a run replicates, re-import the job with an updated configuration. Keep one job per configuration you run (for example, a code job, a global-data job, and one per site) rather than editing a single job.
 
-`<triggers>` is required. The disabled `run-once` trigger registers the job for on-demand runs. To schedule replication, use a `<run-recurring>` trigger (see `b2c:b2c-custom-job-steps`) or run `b2c job run` from a scheduled CI pipeline.
+`<triggers>` is required. The disabled `run-once` trigger registers the job for on-demand runs. To schedule replication, use a `<run-recurring>` trigger that lists every weekday the job should run (a trigger without `<day-of-week>` never fires; see `b2c:b2c-custom-job-steps`), or run `b2c job run` from a scheduled CI pipeline.
 
 ## Configuration
 
@@ -111,9 +111,13 @@ Keep the global and site jobs separate so the same jobs work for new and existin
 - **Generic failure, no detail in the job log.** Look for the cause in the staging instance logs around the run time (`b2c logs get --level INFO --since 30m -g replication`). Lines such as `Skipping site ... because it is not replicated to 'Production' yet` or `Empty replication task encountered` point to the first-replication order above.
 - **Job is OK but nothing replicated.** Check the step exit status. `NO_STAGING_INSTANCE` means the job ran on an instance other than staging; the step succeeds without doing anything.
 - **Storefronts.** Composable storefronts (Storefront Next) do not replicate. Import them on the target; see `b2c-cli:b2c-storefronts`.
+- **Not carried by data replication.** Inventory lists, job definitions and schedules, and SLAS clients are not replication tasks. Set them up on each target: import inventory and job definitions there (for example with a target-specific import set, see `b2c-cli:b2c-import-set-migrations`), and create SLAS clients with `b2c slas client create -i <target>`.
+- **Site is in maintenance on the target.** A newly replicated site can stay in maintenance mode on production. Check `b2c sites list -i production` and bring it online in Business Manager or with a `site.xml` import on the target (see `b2c-cli:b2c-sites` for what that import resets).
+- **A code fix doesn't reach production.** Deploying to staging changes only staging. Run the code replication job again after each fix that production needs.
 
 ## Related Skills
 
+- `b2c-cli:b2c-setup` — end-to-end realm setup, including where replication fits
 - `b2c-cli:b2c-job` — run, wait for, and inspect jobs
 - `b2c:b2c-custom-job-steps` — `jobs.xml` format, triggers, and custom steps
 - `b2c-cli:b2c-storefronts` — moving Storefront Next storefronts between instances
