@@ -51,8 +51,12 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
     const backend = createSitesBackend({instance: this.instance});
     this.logger.debug(`Using ${backend.name} backend for cartridge path read`);
 
-    const site = await backend.getSite(siteId);
-    const cartridges = (site.cartridges ?? '').trim();
+    // SCAPI has no site resource for Business Manager (getSite 404s), but its custom-cartridges resource works.
+    const cartridges = (
+      siteId === BM_SITE_ID
+        ? await backend.getCartridgePath(siteId)
+        : ((await backend.getSite(siteId)).cartridges ?? '')
+    ).trim();
     const result: CartridgePathResult = {
       siteId,
       cartridges,

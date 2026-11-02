@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {expect} from 'chai';
+import sinon from 'sinon';
 import {
   describeAuthSession,
   describeInstanceAuth,
@@ -111,8 +112,21 @@ describe('auth/instance-auth', () => {
   });
 
   describe('describeSignIn', () => {
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-    const time = expiresAt.toLocaleString(undefined, {timeStyle: 'short'});
+    let clock: sinon.SinonFakeTimers;
+    let expiresAt: Date;
+    let time: string;
+
+    // Pin "now" to local midday so a 30-minute expiry never crosses midnight
+    // (which would add the date to the message).
+    beforeEach(() => {
+      clock = sinon.useFakeTimers({now: new Date(2026, 9, 23, 12, 0), toFake: ['Date']});
+      expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      time = expiresAt.toLocaleString(undefined, {timeStyle: 'short'});
+    });
+
+    afterEach(() => {
+      clock.restore();
+    });
 
     it('names the user and when access expires', () => {
       expect(describeSignIn({clientId: DEFAULT_PUBLIC_CLIENT_ID, user: 'dev@example.com', expiresAt})).to.equal(

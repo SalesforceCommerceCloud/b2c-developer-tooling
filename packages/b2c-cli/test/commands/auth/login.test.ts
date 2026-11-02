@@ -61,6 +61,43 @@ describe('auth login', () => {
     expect(clientIds).to.deep.equal(['flag-client', 'arg-client']);
   });
 
+  it('signs in with the built-in client under --default-client even when a client is configured', async () => {
+    let clientId: string | undefined;
+    sinon.stub(PkceOAuthStrategy.prototype, 'getTokenResponse').callsFake(async function (this: any) {
+      clientId = this.config.clientId;
+      return {accessToken: 'fake-access-token', expires: new Date(Date.now() + 30 * 60 * 1000), scopes: []};
+    });
+    process.env.SFCC_CLIENT_ID = 'env-client';
+    process.env.SFCC_AUTH_METHODS = 'implicit';
+    try {
+      const command = createCommand(['--default-client']);
+      await command.init();
+      sinon.stub(command, 'log');
+      await command.run();
+    } finally {
+      delete process.env.SFCC_CLIENT_ID;
+      delete process.env.SFCC_AUTH_METHODS;
+    }
+
+    expect(clientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+  });
+
+  for (const args of [
+    ['--default-client', '--client-id', 'flag-client'],
+    ['arg-client', '--default-client'],
+  ]) {
+    it(`rejects --default-client with a command-line client ID (${args.join(' ')})`, async () => {
+      const command = createCommand(args);
+      await command.init();
+      try {
+        await command.run();
+        expect.fail('Should have thrown');
+      } catch (error) {
+        expect((error as Error).message).to.include('cannot also be provided when using --default-client');
+      }
+    });
+  }
+
   it('says so when a valid sign-in that cannot renew is reused', async () => {
     saveAuthSession({
       clientId: DEFAULT_PUBLIC_CLIENT_ID,

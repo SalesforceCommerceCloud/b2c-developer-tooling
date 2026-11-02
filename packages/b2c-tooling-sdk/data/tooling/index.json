@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-30T16:42:08.019Z",
+  "generatedAt": "2026-11-02T22:52:18.861Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -386,7 +386,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/import-sets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/import-sets.md",
-      "headings": "Before You Start • Import Sources and Order • Cartridge Metadata • One Archive • An Ordered Collection • Project Migrations • Naming Archives • Preview and Apply • Post-Import Notes • Excluding Source Directories • How Repeat Runs Behave • Teams and CI/CD • Resetting Import History • Start a Fresh History • Clear the Current History • Recovering an Interrupted Run",
+      "headings": "Before You Start • Import Sources and Order • Cartridge Metadata • One Archive • An Ordered Collection • Project Migrations • Naming Archives • Preview and Apply • Post-Import Notes • Excluding Source Directories • How Repeat Runs Behave • Teams and CI/CD • Per-Environment Sets • Resetting Import History • Start a Fresh History • Clear the Current History • Recovering an Interrupted Run",
       "preview": "Deploy B2C Commerce metadata as an ordered, repeatable import history from cartridges and project migrations."
     },
     {
@@ -539,7 +539,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Startup configuration {#advanced-manual-configuration} • Project defaults {#project-directory} • Tools and toolsets {#toolset-selection} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Local SCAPI contracts {#local-scapi-schemas} • Logging",
+      "headings": "Startup configuration {#advanced-manual-configuration} • Project defaults {#project-directory} • Tools and toolsets {#toolset-selection} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Local SCAPI contracts {#local-scapi-schemas} • Update check • Logging",
       "preview": "Customize B2C MCP tools, documentation topics, startup defaults, and saved workflows."
     },
     {

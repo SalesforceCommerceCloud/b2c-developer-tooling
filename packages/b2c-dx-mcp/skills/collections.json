@@ -37,6 +37,12 @@
       "workspaces": ["storefront-next"]
     },
     {
+      "id": "cap-dev",
+      "title": "Commerce App Package Development",
+      "directory": "vendor/cap-dev/skills",
+      "isGA": true
+    },
+    {
       "id": "mcp",
       "title": "MCP Workflows",
       "directory": "skills",

@@ -23,6 +23,8 @@ Install B2C Commerce agent skills and plugins in your AI-powered editor. Three p
     /plugin install b2c-dx-mcp@b2c-developer-tooling
     ```
 
+    Claude Code does not auto-update third-party marketplaces by default. To get new releases automatically, run `/plugin` again, open **Marketplaces**, select `b2c-developer-tooling`, and choose **Enable auto-update**.
+
 - **VS Code (GitHub Copilot)**: Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) → **Chat: Install Plugin From Source** → enter the repo `SalesforceCommerceCloud/b2c-developer-tooling`.
 
 - **GitHub Copilot CLI**:

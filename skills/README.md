@@ -38,6 +38,8 @@ claude plugin install storefront-next
 claude plugin install storefront-next-figma
 ```
 
+Claude Code does not auto-update third-party marketplaces by default. To get new releases automatically, run `/plugin`, open **Marketplaces**, select `b2c-developer-tooling`, and choose **Enable auto-update**.
+
 ### B2C CLI (any supported IDE)
 
 ```bash

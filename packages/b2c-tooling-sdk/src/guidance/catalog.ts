@@ -85,6 +85,7 @@ export class GuidanceCatalog {
         !collectionIds.has(entry.collection) ||
         entry.id.split('/')[0] !== entry.collection ||
         (entry.featured !== undefined && typeof entry.featured !== 'boolean') ||
+        (entry.indexSummary !== undefined && typeof entry.indexSummary !== 'string') ||
         !entry.files.some((file) => file.path === entry.entrypoint) ||
         typeof entry.frontmatter !== 'object' ||
         entry.frontmatter === null ||
@@ -172,7 +173,7 @@ export class GuidanceCatalog {
     return content;
   }
 
-  /** On-demand inventory; descriptions and links only, filtered like every other read. */
+  /** On-demand inventory; index summaries (or truncated descriptions) and links only, filtered like every other read. */
   private resourceIndex(): string {
     const lines = ['# B2C Skills', '', `${this.entries.size} skills. Read a linked URI for content.`];
     for (const collection of this.manifest.collections) {
@@ -181,12 +182,13 @@ export class GuidanceCatalog {
         if (entry.collection !== collection.id) continue;
         const words = Array.from(entry.description.replace(/\s+/g, ' ').trim());
         const description =
-          words.length > 120
+          entry.indexSummary ??
+          (words.length > 120
             ? `${words
                 .slice(0, 117)
                 .join('')
                 .replace(/\s+\S*$/, '')}...`
-            : words.join('');
+            : words.join(''));
         lines.push(`- [${entry.id}](${guidanceUri(entry.id, entry.entrypoint)}): ${description}`);
       }
     }

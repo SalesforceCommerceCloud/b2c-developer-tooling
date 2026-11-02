@@ -71,7 +71,7 @@ b2c sites cartridges set "app_storefront_base:plugin_applepay:plugin_wishlists" 
 b2c sites cartridges list --site-id RefArch --json
 ```
 
-When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartridge commands automatically fall back to site archive import/export. Business Manager (`--bm`) updates always use site archive import.
+When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartridge commands automatically fall back to site archive import/export. Business Manager (`--bm`) updates use SCAPI (`sfcc.sites.rw`), then site archive import; OCAPI can't update the BM site.
 
 **Key flags (inherited from InstanceCommand):**
 

@@ -27,6 +27,7 @@ process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 // Never send test runs to production telemetry. CI sets this too, but forks and
 // local runs don't, and their command tests would otherwise report real events.
 process.env.SFCC_DISABLE_TELEMETRY = 'true';
+process.env.SFCC_DISABLE_UPDATE_CHECK = 'true';
 
 export const mochaHooks = {
   beforeEach() {

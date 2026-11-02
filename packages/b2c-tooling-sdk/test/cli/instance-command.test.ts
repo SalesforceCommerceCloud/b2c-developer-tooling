@@ -61,6 +61,10 @@ class TestInstanceCommand extends InstanceCommand<typeof TestInstanceCommand> {
 class DefaultWebDavCommand extends TestInstanceCommand {
   static id = 'test:default-webdav';
 
+  public testHasOAuthCredentials() {
+    return this.hasOAuthCredentials();
+  }
+
   public testHasWebDavCredentials() {
     return this.hasWebDavCredentials();
   }
@@ -236,6 +240,27 @@ describe('cli/instance-command', () => {
       stubParse(webdavCommand, {server: 'test.demandware.net', 'auth-methods': ['client-credentials']});
       await webdavCommand.init();
       expect(webdavCommand.testHasWebDavCredentials()).to.equal(false);
+    });
+  });
+
+  describe('--default-client', () => {
+    it('uses the built-in client for WebDAV instead of configured Basic auth and API client', async () => {
+      const webdavCommand = new DefaultWebDavCommand([], config);
+      stubParse(webdavCommand, {
+        server: 'test.demandware.net',
+        username: 'bm-user',
+        password: 'access-key',
+        'client-id': 'project-client',
+        'client-secret': 'project-secret',
+        'default-client': true,
+      });
+      await webdavCommand.init();
+
+      const instance = webdavCommand.testInstance();
+      void instance.webdav;
+      expect(instance.webdavUsesUserAuth).to.equal(true);
+      expect(webdavCommand.oauthStrategyCalls).to.equal(0);
+      expect(webdavCommand.testHasOAuthCredentials()).to.equal(false);
     });
   });
 
