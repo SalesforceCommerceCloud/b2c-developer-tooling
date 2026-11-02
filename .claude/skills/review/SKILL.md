@@ -66,7 +66,8 @@ For each serious finding:
 **Release and docs**
 
 - There is a changeset for user-facing changes, with the right packages and bump (see "Changesets" in `AGENTS.md`).
-- Docs in `docs/`, user-facing skills in `skills/`, and the tooling documentation index are updated when commands, flags, tools, or output change.
+- Docs in `docs/` and user-facing skills in `skills/` are updated when commands, flags, tools, or output change.
+- The tooling documentation index is regenerated, with an SDK changeset, when any page under `docs/guide/`, `docs/cli/`, `docs/mcp/`, or `docs/vscode-extension/` changes.
 - Platform dependencies (a required platform release, a feature toggle, or an API that is not generally available) are stated in the PR. Unfinished multi-step work is not exposed on `main`.
 
 **Public repository hygiene**

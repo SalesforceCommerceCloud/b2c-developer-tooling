@@ -19,6 +19,9 @@ if (userWantsTelemetryEnabled) {
   process.env.SFCC_DISABLE_TELEMETRY = 'true';
 }
 
+// The dev version is never a release, so skip the registry update check unless asked for.
+process.env.SFCC_DISABLE_UPDATE_CHECK ??= 'true';
+
 import {execute} from '@oclif/core';
 
 await execute({development: true, dir: import.meta.url});
