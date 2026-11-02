@@ -173,6 +173,16 @@ This makes the command suitable for a standard deployment step:
 
 Use `--set-id` only when the same instance intentionally needs a separate import history. Changing a local directory path does not require a different set ID.
 
+### Per-Environment Sets
+
+On a realm, staging gets the shared `migrations` set and production gets most data by replication. Keep configuration that replication doesn't carry, or that differs per instance, in its own directory and set ID, and apply it only to that instance:
+
+```bash
+b2c job import-set production-only --set-id production-only -i production
+```
+
+Cartridge metadata is applied with every set unless you pass `--no-cartridge-metadata`, so this also keeps production's job definitions current.
+
 ## Resetting Import History
 
 There is no dedicated reset command. Choose between starting a separate history or clearing the current one.

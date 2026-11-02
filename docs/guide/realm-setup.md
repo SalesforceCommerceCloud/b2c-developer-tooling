@@ -109,7 +109,12 @@ b2c job run Reindex -i staging --wait
 b2c mrt project create "Market Street" --site MarketStreet -i staging --mrt-backend scapi
 ```
 
-For cartridge storefronts, deploy and activate a code version; see [code commands](/cli/code).
+For cartridge storefronts, deploy and activate a code version; see [code commands](/cli/code). Then set the site cartridge path, and add cartridges with custom job steps or Business Manager extensions to the Business Manager path; both replicate with the site:
+
+```bash
+b2c sites cartridges set "app_custom:app_storefront_base" --site-id MarketStreet -i staging
+b2c sites cartridges add my_jobs --bm -i staging
+```
 
 Staging instances normally require two-factor (mTLS) code upload, so cartridge uploads without a client certificate fail, usually with `403 Forbidden`. On legacy realms, the client certificate is signed by a CA bundle from Salesforce Support and uploads go to the `cert.staging` hostname. On Hyperforce realms, you register your own CA through eCDN; see [Set Up Two-Factor Code Upload](/guide/hyperforce#set-up-two-factor-code-upload). To configure the certificate, see [Two-Factor Authentication](/guide/configuration#two-factor-authentication-mtls).
 
@@ -126,6 +131,8 @@ b2c job run Replicate-MarketStreet -i staging --wait --show-log
 ```
 
 Replication changes production. Review what each job replicates before you run it.
+
+Data replication doesn't carry job definitions, inventory lists, or SLAS clients. Import job definitions and inventory on production (for example with a production-only [import set](./import-sets)), and create SLAS clients there. A newly replicated site can stay in maintenance on production until you bring it online. Code deployed to staging reaches production only by code replication, so replicate again after each fix.
 
 ### 3. Connect the Storefront
 
