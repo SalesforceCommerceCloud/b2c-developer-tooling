@@ -42,10 +42,13 @@ The server declares the `io.modelcontextprotocol/skills` extension
 - `skills/list` returns the featured MCP skills, with no pagination. Each entry has
   the entrypoint `uri`, the verbatim YAML `frontmatter` as JSON, and every bundled
   file of the skill as a `{uri, digest, size}` resource. A `cursor` is rejected.
-  Modern-era requests (protocol 2026-07-28 and later) also receive
-  `ttlMs: 300000` and `cacheScope: "private"`.
 - `skills/get` returns any skill served by the current catalog, listed or not.
   URIs that are not an available `SKILL.md` return `-32602`.
+
+Modern-era results for both methods (protocol 2026-07-28 and later) also carry
+`ttlMs: 300000` and `cacheScope: "private"`, as the stable extension page
+requires. The server does not declare `directoryRead`: every skill publishes a
+complete manifest, from which hosts can answer directory questions.
 
 Digests (`sha256:<hex>`) and sizes are computed at generation time over the exact
 bundled bytes, which `resources/read` returns unchanged. The catalog rejects a
