@@ -33,7 +33,7 @@ export function createDiagnosticsTools(
   injections?: DiagnosticsToolInjections,
 ): McpTool[] {
   return [
-    createConfigInspectTool(loadServices),
+    createConfigInspectTool(loadServices, serverContext?.updateCheck),
     createDebugListSessionsTool(loadServices, serverContext),
     createDebugStartSessionTool(loadServices, serverContext),
     createDebugEndSessionTool(loadServices, serverContext),
