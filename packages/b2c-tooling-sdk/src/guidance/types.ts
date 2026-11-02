@@ -30,6 +30,8 @@ export interface GuidanceEntry {
   collection: string;
   title: string;
   description: string;
+  /** Short line for the `skill://index` listing only; never used for search or skill metadata. */
+  indexSummary?: string;
   entrypoint: string;
   /** Entrypoint YAML frontmatter as JSON, verbatim; `name` equals the entry folder. */
   frontmatter: Record<string, unknown>;

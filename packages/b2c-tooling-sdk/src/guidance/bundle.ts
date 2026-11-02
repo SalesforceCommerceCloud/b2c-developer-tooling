@@ -37,6 +37,11 @@ export interface BundleGuidanceOptions {
   /** Entry IDs advertised individually as MCP resources. */
   featuredResources?: string[];
   /**
+   * Short `skill://index` lines by entry ID, replacing the truncated description there only.
+   * Keys must name bundled entries; entries without one fall back to the truncated description.
+   */
+  indexSummaries?: Record<string, string>;
+  /**
    * Require every `skill://` URI to name a bundled file. Disable for a partial
    * bundle whose skills reference collections bundled elsewhere. Defaults to `true`.
    */
@@ -49,6 +54,9 @@ export interface BundleGuidanceResult {
   entries: number;
   files: number;
 }
+
+/** Maximum `skill://index` summary length in code points. */
+const GUIDANCE_INDEX_SUMMARY_MAX = 100;
 
 const DOCS_SITE = 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/';
 
@@ -309,6 +317,22 @@ export function bundleGuidance(options: BundleGuidanceOptions): BundleGuidanceRe
   }
   for (const entry of manifest.entries) {
     if (resources.includes(entry.id)) entry.featured = true;
+  }
+  for (const [id, summary] of Object.entries(options.indexSummaries ?? {})) {
+    const entry = manifest.entries.find((candidate) => candidate.id === id);
+    if (!entry) throw new Error(`Index summary names an unknown entry: ${id}`);
+    if (
+      typeof summary !== 'string' ||
+      summary !== summary.trim() ||
+      /\s{2,}|[\n<>]/.test(summary) ||
+      Array.from(summary).length === 0 ||
+      Array.from(summary).length > GUIDANCE_INDEX_SUMMARY_MAX
+    ) {
+      throw new Error(
+        `Index summary for ${id} must be one trimmed line of 1-${GUIDANCE_INDEX_SUMMARY_MAX} characters without angle brackets`,
+      );
+    }
+    entry.indexSummary = summary;
   }
 
   rmSync(destination, {recursive: true, force: true});

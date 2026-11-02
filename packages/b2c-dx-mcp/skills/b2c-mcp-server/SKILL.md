@@ -28,8 +28,8 @@ Read only the skill that matches the task; each links its own references.
 Every skill and reference file is readable as an MCP resource
 (`skill://<collection>/<skill>/<file>`) or with `skills_read({uri})`.
 Collections: `b2c` (platform/cartridges), `b2c-cli` (CLI), `b2c-ops`
-(operator/admin runbooks), `storefront-next` (storefronts), `mcp` (server/tool
-workflows). Search with `skills_read({query, collection})` or browse `skill://index`.
+(operator/admin runbooks), `storefront-next` (storefronts), `cap-dev` (authoring
+Commerce App Packages), `mcp` (server/tool workflows). Search with `skills_read({query, collection})` or browse `skill://index`.
 
 ## Server configuration and tool availability
 
