@@ -90,7 +90,7 @@ Explore every SCAPI API your instance exposes and try requests against them in a
 
 ### Object Types
 
-Browse system object types (Product, Order, Customer, and others), their custom and system attributes, and attribute groups in the **B2C-DX: APIs** sidebar. Expand an enum attribute to see its values, copy an attribute's script ID (`c_myAttribute`), open its full definition, or export an object type as metadata XML. **Write Custom Attribute Types to Project** in the view toolbar adds the attributes to Script API IntelliSense.
+Browse system object types (Product, Order, Customer, and others), their custom and system attributes, and attribute groups in the **B2C-DX: APIs** sidebar. Expand an enum attribute to see its values, copy an attribute's effective ID as used in OCAPI and SCAPI (`c_myAttribute`), open its full definition, or export an object type as metadata XML. **Write Custom Attribute Types to Project** in the view toolbar adds the attributes to Script API IntelliSense.
 
 To change a custom attribute, open its definition, edit the JSON, and save. The extension compares your edit with the instance and asks you to confirm before it changes anything. Properties such as the display name, flags, and lengths are updated through the Object Definitions API. Enum values and default values, which that API cannot set, are imported with a site import that runs the site archive import job. That needs the instance hostname and WebDAV and job access. Values you leave out of the list are kept. Remove values in Business Manager. The value type and attribute ID cannot be changed. System attributes open read-only.
 

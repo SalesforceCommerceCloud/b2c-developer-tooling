@@ -21,7 +21,7 @@ b2c object-types apply meta/system-objecttype-extensions.xml --dry-run
 - **Enum values can't be written.** The API ignores `valueDefinitions` on create and update. To add or change the values of `enum_of_string` or `enum_of_int` attributes, use a site import (`meta/system-objecttype-extensions.xml`, see [`b2c job import`](/cli/jobs#b2c-job-import)). You can still read the values with `attributes get` or `attributes list --values`.
 - **The value type is fixed** once an attribute is created.
 - **`--replace` replaces the whole definition.** Any property you leave out is reset to its default. If you only want to change some properties, use `attributes update`.
-- **The `c_` prefix is optional.** The API addresses custom attributes by their plain ID (`fabric`). The CLI accepts either `fabric` or `c_fabric`. The `effectiveId` in the output is the ID you use in scripts (`product.custom.fabric`, `c_fabric` in OCAPI and SCAPI).
+- **The `c_` prefix is optional.** The API addresses custom attributes by their plain ID (`fabric`). The CLI accepts either `fabric` or `c_fabric`. The `effectiveId` in the output is the ID used in OCAPI and SCAPI (`c_fabric`). Scripts use the plain ID (`product.custom.fabric`).
 
 ## Authentication
 

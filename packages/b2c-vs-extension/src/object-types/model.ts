@@ -63,7 +63,7 @@ export function isValuesUnavailable(error: unknown): boolean {
   return status === 401 || status === 403 || isInvalidScopeError(error);
 }
 
-/** Effective script ID of an attribute (`c_` prefix for custom attributes). */
+/** Effective ID of an attribute as used in OCAPI and SCAPI (`c_` prefix for custom attributes). */
 export function effectiveAttributeId(attr: ObjectAttributeDefinition): string {
   if (attr.effectiveId) return attr.effectiveId;
   return attr.system ? attr.id : `c_${attr.id}`;
@@ -79,7 +79,7 @@ export function attributeSummary(attr: ObjectAttributeDefinition): string {
   return parts.join(', ');
 }
 
-/** Markdown tooltip with the display name, description, and script ID. */
+/** Markdown tooltip with the display name, description, and effective ID. */
 export function attributeTooltip(attr: ObjectAttributeDefinition): string {
   const lines: string[] = [];
   const name = localizedDefault(attr.displayName);
@@ -200,7 +200,7 @@ export function describeSyncPlan(plan: ObjectTypeSyncPlan): {api: string[]; impo
 export function validateAttributeId(id: string): string | undefined {
   const value = id.trim();
   if (!value) return 'Enter an attribute ID.';
-  if (value.startsWith('c_')) return 'Leave out the c_ prefix; it is added for custom attributes.';
+  if (value.startsWith('c_')) return 'Leave out the c_ prefix (OCAPI and SCAPI add it).';
   if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(value)) return 'Use letters, digits, and underscores, starting with a letter.';
   if (value.length > 256) return 'Use at most 256 characters.';
   return undefined;

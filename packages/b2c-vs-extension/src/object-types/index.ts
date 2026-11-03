@@ -130,7 +130,7 @@ export function registerObjectTypes(
       const id = (
         await vscode.window.showInputBox({
           title: `${title} (1/3)`,
-          prompt: 'Attribute ID (scripts use it with the c_ prefix)',
+          prompt: 'Attribute ID',
           validateInput: validateAttributeId,
         })
       )?.trim();
