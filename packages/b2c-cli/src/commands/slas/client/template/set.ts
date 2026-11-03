@@ -12,7 +12,7 @@ import {
   actionTypeFlag,
   actionTypeHelp,
   fetchTemplates,
-  flattenTemplateGroups,
+  normalizeTemplateResponse,
   printTemplate,
   templateTypeFlag,
   type PasswordActionTemplate,
@@ -157,7 +157,7 @@ export default class SlasClientTemplateSet extends SlasTemplateCommand<typeof Sl
     }
 
     const saved =
-      flattenTemplateGroups([data]).find(
+      normalizeTemplateResponse(data).find(
         (tpl) => tpl.locale.toLowerCase() === locale && tpl.templateType === templateType,
       ) ?? ({...body, clientId} as PasswordActionTemplate);
 

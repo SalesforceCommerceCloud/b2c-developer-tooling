@@ -6,7 +6,7 @@
 
 import {expect} from 'chai';
 import {buildIdpRequest, isValidIdpName, redactIdp} from '../../../src/utils/slas/idp.js';
-import {flattenTemplateGroups} from '../../../src/utils/slas/template.js';
+import {flattenTemplateGroups, normalizeTemplateResponse} from '../../../src/utils/slas/template.js';
 import {parseLoginIdList, summarizeLogoutError} from '../../../src/commands/slas/shopper/logout.js';
 
 describe('slas utils', () => {
@@ -45,6 +45,34 @@ describe('slas utils', () => {
     ]);
     expect(flat.map((x) => x.locale)).to.deep.equal(['en-us', 'fr-fr']);
     expect(flat[0]).to.include({clientId: 'c', channelId: 's', actionType: 'PWD_RESET_ACTION', link: 'l'});
+  });
+
+  it('normalizes template responses in the service shape and the published contract shape', () => {
+    const group = {
+      client_id: 'c',
+      channel_id: 's',
+      action_type: 'PWDLESS_LOGIN',
+      link: 'l',
+      templates: [{locale: 'en-us', templateType: 'EMAIL', name: 'n', subject: 'x', template: 't'}],
+    };
+    const contract = {
+      channelId: 's',
+      actionType: 'PWDLESS_LOGIN',
+      link: 'l',
+      locale: 'en-us',
+      templateType: 'EMAIL',
+      name: 'n',
+      subject: 'x',
+      template: 't',
+    };
+    const expected = {channelId: 's', actionType: 'PWDLESS_LOGIN', link: 'l', locale: 'en-us', templateType: 'EMAIL'};
+
+    expect(normalizeTemplateResponse([group])[0]).to.include({...expected, clientId: 'c'});
+    expect(normalizeTemplateResponse(group)[0]).to.include(expected);
+    expect(normalizeTemplateResponse(contract)).to.have.length(1);
+    expect(normalizeTemplateResponse(contract)[0]).to.include(expected);
+    expect(normalizeTemplateResponse([contract])[0]).to.include(expected);
+    expect(normalizeTemplateResponse(undefined)).to.deep.equal([]);
   });
 
   it('parses login ID files and summarizes logout errors', () => {

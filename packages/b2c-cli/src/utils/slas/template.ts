@@ -66,6 +66,38 @@ export function flattenTemplateGroups(groups: PasswordActionTemplateGroup[]): Pa
   );
 }
 
+/**
+ * Normalize a password action template response into flat templates.
+ *
+ * The service returns snake_case template groups (an array from GET, one group from PUT), while the
+ * published contract describes a single camelCase template. Accept either, so the commands keep
+ * working if the service is changed to match the contract.
+ */
+export function normalizeTemplateResponse(data: unknown): PasswordActionTemplate[] {
+  const items = (Array.isArray(data) ? data : [data]).filter(
+    (item): item is Record<string, unknown> => typeof item === 'object' && item !== null,
+  );
+  return items.flatMap((item) => {
+    if ('action_type' in item || Array.isArray(item.templates)) {
+      return flattenTemplateGroups([item as PasswordActionTemplateGroup]);
+    }
+    const str = (key: string) => (typeof item[key] === 'string' ? (item[key] as string) : '');
+    return [
+      {
+        actionType: item.actionType as PasswordActionType,
+        channelId: str('channelId'),
+        clientId: str('clientId'),
+        link: str('link'),
+        locale: str('locale'),
+        name: str('name'),
+        subject: str('subject'),
+        template: str('template'),
+        templateType: item.templateType as PasswordTemplateType,
+      },
+    ];
+  });
+}
+
 export const actionTypeFlag = Flags.option({
   description: 'Password action the template is used for',
   options: ACTION_TYPES,
@@ -176,7 +208,7 @@ export async function fetchTemplates(
     );
   }
   // Each template carries its own templateType; keep only the requested one.
-  return flattenTemplateGroups(data ?? []).filter(
+  return normalizeTemplateResponse(data ?? []).filter(
     (tpl) => !tpl.templateType || tpl.templateType === query.templateType,
   );
 }
