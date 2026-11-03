@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-29T20:38:17.710Z",
+  "generatedAt": "2026-11-03T03:13:49.919Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -251,8 +251,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md",
-      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
-      "preview": "Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients."
+      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes • b2c slas client template list • Usage • Flags • Examples • b2c slas client template get • Usage • Examples • b2c slas client template set • Usage • Flags • Examples • b2c slas client template delete • Usage • Examples • b2c slas tenant get • Usage • Examples • b2c slas tenant set • Usage • Flags • Examples • Notes • b2c slas idp list • Usage • Flags • b2c slas idp get • Usage • b2c slas idp set • Usage • Flags • Examples • Notes • b2c slas idp delete • Usage • b2c slas shopper logout • Usage • Flags • Examples • Notes • b2c slas shopper delete • Usage • Examples",
+      "preview": "Commands for managing Shopper Login and API Access Service (SLAS) tenants, clients, password action templates, identity providers, and shopper sessions."
     },
     {
       "id": "cli-validate",

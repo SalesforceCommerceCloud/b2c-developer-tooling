@@ -218,4 +218,88 @@ describe('slas client update', () => {
     expect(options.body.clientId).to.equal('configured-client');
     expect(options.body.secret).to.equal('new-secret');
   });
+
+  const existingPrivate = {
+    clientId: 'my-client',
+    name: 'Existing',
+    channels: ['Site1'],
+    scopes: 'a',
+    redirectUri: ['http://r1'],
+    isPrivateClient: true,
+    loginEpRestrict: true,
+    isSixDigitOtp: true,
+    strictClientAuth: true,
+  };
+
+  it('keeps existing login, OTP and strict-auth settings and omits the secret when not rotating', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123', channels: ['Site2']}, {clientId: 'my-client'});
+    stubAuthAndJson(command);
+
+    const getStub = sinon.stub().resolves({data: existingPrivate, error: undefined});
+    const putStub = sinon.stub().resolves({data: existingPrivate, error: undefined});
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub, PUT: putStub} as any);
+
+    await command.run();
+
+    const [, options] = putStub.firstCall.args as [string, any];
+    expect(options.body.loginEpRestrict).to.equal(true);
+    expect(options.body.isSixDigitOtp).to.equal(true);
+    expect(options.body.strictClientAuth).to.equal(true);
+    expect(options.body).to.not.have.property('secret');
+  });
+
+  it('applies --no-login-restricted, --six-digit-otp and --no-strict-client-auth', async () => {
+    const command: any = await createCommand(
+      {'tenant-id': 'abcd_123', 'login-restricted': false, 'six-digit-otp': false, 'strict-client-auth': false},
+      {clientId: 'my-client'},
+    );
+    stubAuthAndJson(command);
+
+    const getStub = sinon.stub().resolves({data: existingPrivate, error: undefined});
+    const putStub = sinon.stub().resolves({data: {...existingPrivate, loginEpRestrict: false}, error: undefined});
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub, PUT: putStub} as any);
+
+    const result = await command.run();
+
+    const [, options] = putStub.firstCall.args as [string, any];
+    expect(options.body.loginEpRestrict).to.equal(false);
+    expect(options.body.isSixDigitOtp).to.equal(false);
+    expect(options.body.strictClientAuth).to.equal(false);
+    expect(result.loginEpRestrict).to.equal(false);
+  });
+
+  it('switches a private client to public without sending a secret or strict auth', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123', public: true}, {clientId: 'my-client'});
+    stubAuthAndJson(command);
+
+    const getStub = sinon.stub().resolves({data: existingPrivate, error: undefined});
+    const putStub = sinon.stub().resolves({data: {...existingPrivate, isPrivateClient: false}, error: undefined});
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub, PUT: putStub} as any);
+
+    await command.run();
+
+    const [, options] = putStub.firstCall.args as [string, any];
+    expect(options.body.isPrivateClient).to.equal(false);
+    expect(options.body).to.not.have.property('secret');
+    expect(options.body).to.not.have.property('strictClientAuth');
+  });
+
+  it('generates a secret when switching a public client to private', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123', private: true}, {clientId: 'my-client'});
+    stubAuthAndJson(command);
+
+    const getStub = sinon.stub().resolves({
+      data: {...existingPrivate, isPrivateClient: false, strictClientAuth: false},
+      error: undefined,
+    });
+    const putStub = sinon.stub().resolves({data: {...existingPrivate}, error: undefined});
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub, PUT: putStub} as any);
+
+    const result = await command.run();
+
+    const [, options] = putStub.firstCall.args as [string, any];
+    expect(options.body.isPrivateClient).to.equal(true);
+    expect(options.body.secret).to.match(/^sk_[0-9a-f]{32}$/);
+    expect(result.secret).to.equal(options.body.secret);
+  });
 });

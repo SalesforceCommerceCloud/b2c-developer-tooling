@@ -246,4 +246,85 @@ describe('slas client create', () => {
     expect(ensureStub.firstCall.args[0]).to.equal(slasClient);
     expect(ensureStub.firstCall.args[1]).to.equal('abcd_123');
   });
+
+  it('sends client settings and applies --login-restricted with a follow-up update', async () => {
+    const command: any = await createCommand(
+      {
+        'tenant-id': 'abcd_123',
+        name: 'My Client',
+        channels: ['RefArch'],
+        scopes: ['sfcc.shopper-products'],
+        'default-scopes': false,
+        'redirect-uri': ['http://localhost/callback'],
+        public: false,
+        'create-tenant': false,
+        secret: 'my-secret',
+        'login-restricted': true,
+        'six-digit-otp': true,
+      },
+      {clientId: 'my-client'},
+    );
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    const created = {
+      clientId: 'my-client',
+      name: 'My Client',
+      scopes: 'sfcc.shopper-products',
+      channels: ['RefArch'],
+      redirectUri: ['http://localhost/callback'],
+      isPrivateClient: true,
+      secret: 'my-secret',
+      isSixDigitOtp: true,
+      loginEpRestrict: false,
+    };
+    const putStub = sinon.stub();
+    putStub.onFirstCall().resolves({data: created, error: undefined, response: {status: 201}});
+    putStub.onSecondCall().resolves({
+      data: {...created, secret: undefined, loginEpRestrict: true},
+      error: undefined,
+      response: {status: 200},
+    });
+    sinon.stub(command, 'getSlasClient').returns({PUT: putStub} as any);
+    sinon.stub(command, 'ensureTenantExists').resolves(void 0);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    const result = await command.run();
+
+    expect(putStub.calledTwice).to.equal(true);
+    const [, first] = putStub.firstCall.args as [string, any];
+    expect(first.body.isSixDigitOtp).to.equal(true);
+    expect(first.body.loginEpRestrict).to.equal(true);
+    expect(result.loginEpRestrict).to.equal(true);
+    expect(result.isSixDigitOtp).to.equal(true);
+    expect(result.secret).to.equal('my-secret');
+  });
+
+  it('does not send a follow-up update when --login-restricted is not set', async () => {
+    const command: any = await createCommand(
+      {
+        'tenant-id': 'abcd_123',
+        name: 'My Client',
+        channels: ['RefArch'],
+        scopes: ['sfcc.shopper-products'],
+        'default-scopes': false,
+        'redirect-uri': ['http://localhost/callback'],
+        public: true,
+        'create-tenant': false,
+      },
+      {clientId: 'my-client'},
+    );
+
+    sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    const putStub = sinon.stub().resolves({
+      data: {clientId: 'my-client', name: 'My Client', isPrivateClient: false},
+      error: undefined,
+      response: {status: 201},
+    });
+    sinon.stub(command, 'getSlasClient').returns({PUT: putStub} as any);
+    sinon.stub(command, 'ensureTenantExists').resolves(void 0);
+    sinon.stub(command, 'jsonEnabled').returns(true);
+
+    await command.run();
+    expect(putStub.calledOnce).to.equal(true);
+  });
 });

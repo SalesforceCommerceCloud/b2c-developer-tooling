@@ -7,6 +7,8 @@ import {Args, Flags} from '@oclif/core';
 import {randomUUID} from 'node:crypto';
 import {
   SlasClientCommand,
+  clientSettingFlags,
+  clientSettingsFromFlags,
   type Client,
   type ClientOutput,
   normalizeClientResponse,
@@ -57,6 +59,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --name "My Client" --channels RefArch --scopes sfcc.shopper-products --redirect-uri http://localhost:3000/callback --public',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --name "My Client" --channels RefArch --scopes sfcc.shopper-products --redirect-uri http://localhost:3000/callback --json',
     '<%= config.bin %> <%= command.id %> --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback',
+    '<%= config.bin %> <%= command.id %> --tenant-id abcd_123 --channels RefArch --default-scopes --redirect-uri http://localhost:3000/callback --six-digit-otp --strict-client-auth',
   ];
 
   static flags = {
@@ -107,6 +110,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       default: true,
       allowNo: true,
     }),
+    ...clientSettingFlags,
   };
 
   async run(): Promise<ClientOutput> {
@@ -124,6 +128,16 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       'create-tenant': createTenant,
     } = this.flags;
     const tenantId = this.requireTenantId();
+    const settings = clientSettingsFromFlags(this.flags);
+
+    if (isPublic && settings.strictClientAuth) {
+      this.warn(
+        t(
+          'commands.slas.client.strictClientAuthPublic',
+          '--strict-client-auth applies only to private clients; SLAS ignores it for public clients.',
+        ),
+      );
+    }
 
     // Validate that either --scopes or --default-scopes is provided
     if (!scopes && !useDefaultScopes) {
@@ -164,6 +178,7 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       redirectUri: parsedRedirectUri,
       callbackUri: parsedCallbackUri,
       isPrivateClient: !isPublic,
+      ...settings,
     };
 
     // Only include secret for private clients
@@ -187,8 +202,28 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
       );
     }
 
-    const client = data as Client;
+    let client = data as Client;
     const wasCreated = response.status === 201;
+
+    // SLAS ignores loginEpRestrict when a client is first created; apply it with a follow-up update.
+    if (settings.loginEpRestrict !== undefined && (client.loginEpRestrict ?? false) !== settings.loginEpRestrict) {
+      this.logger.debug({clientId}, 'Applying loginEpRestrict with a follow-up update');
+      const followUp = await slasClient.PUT('/tenants/{tenantId}/clients/{clientId}', {
+        params: {path: {tenantId, clientId}},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        body: body as any,
+      });
+      if (followUp.error) {
+        this.error(
+          t(
+            'commands.slas.client.create.loginRestrictError',
+            'SLAS client {{clientId}} was saved, but setting login restriction failed: {{message}}',
+            {clientId, message: formatApiError(followUp.error, followUp.response)},
+          ),
+        );
+      }
+      client = {...client, ...(followUp.data as Client), secret: client.secret};
+    }
 
     const output = normalizeClientResponse(client);
     // Use our parsed values as fallback if API doesn't return them
