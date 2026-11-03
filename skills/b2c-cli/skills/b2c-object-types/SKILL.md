@@ -16,7 +16,7 @@ object-types
 ├── list                                   - system object types with attribute/group counts
 ├── get <type>
 ├── export <type...> [-o file] [--format xml|json]   - custom attributes + groups as metadata XML
-├── apply <file|dir> [--dry-run] [-t type] [--force]  - create/update from metadata XML or JSON
+├── apply <file|dir> [--dry-run] [-t type] [--import] [--force]  - create/update from metadata XML or JSON
 ├── attributes
 │   ├── list <type> [--custom|--system] [-q text] [-g group] [--values]
 │   ├── get <type> <id>                    - includes enum values
@@ -93,15 +93,18 @@ b2c object-types export Product Order -o site-data/meta/system-objecttype-extens
 b2c object-types apply site-data --dry-run
 b2c object-types apply site-data --force
 
+# Also set enum values and default values (runs a site import for just those attributes)
+b2c object-types apply site-data --import --force
+
 # Only one object type from a larger file
 b2c object-types apply site-data/meta/system-objecttype-extensions.xml -t Product --dry-run
 ```
 
-`apply` is additive: it creates missing attributes and groups, updates properties that differ, and assigns missing group members. It never deletes or unassigns. Enum values, default values, value type changes, and custom object types are reported as warnings; import those with `b2c job import`.
+`apply` is additive: it creates missing attributes and groups, updates properties that differ, and assigns missing group members. It never deletes or unassigns. Enum values and default values are listed as needing an import; add `--import` to set them with a site import of just those attributes (needs the hostname and WebDAV and job access). The import keeps every value already on the instance and applies the file's changes. Value type changes and custom object types are reported as warnings.
 
 ## Limits — When to Use a Site Import Instead
 
-- **Enum values can't be written.** `valueDefinitions` is ignored on create and update. For `enum_of_string` or `enum_of_int` values, use `meta/system-objecttype-extensions.xml` with `b2c job import` (see `b2c:b2c-metadata`). You can read the values with `attributes get`.
+- **Enum values can't be written through the API.** `valueDefinitions` is ignored on create and update. Use `apply --import`, or `meta/system-objecttype-extensions.xml` with `b2c job import` (see `b2c:b2c-metadata`). A metadata import replaces an attribute's whole value list, so include every value you want to keep. You can read the values with `attributes get`.
 - **Custom object types aren't supported.** Use `custom-objecttype-definitions.xml` instead.
 - **The value type can't change** after an attribute is created. Delete the attribute and recreate it, which removes its stored values.
 - **`create --replace` replaces the whole definition.** Properties you leave out are reset to their defaults. Use `update` for partial changes.

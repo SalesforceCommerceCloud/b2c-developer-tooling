@@ -37,9 +37,11 @@ export type {
   CustomAttributeTypesResult,
   GenerateCustomAttributeTypesOptions,
 } from './script-types.js';
-export {applyObjectTypeSync, exportObjectTypes, planObjectTypeSync} from './sync.js';
+export {applyObjectTypeSync, exportObjectTypes, importObjectTypeExtensions, planObjectTypeSync} from './sync.js';
 export type {
   ExportObjectTypesOptions,
+  ImportObjectTypeExtensionsOptions,
+  ObjectTypeImportItem,
   ObjectTypeSyncAction,
   ObjectTypeSyncPlan,
   ObjectTypeSyncWarning,

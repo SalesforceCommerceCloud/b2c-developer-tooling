@@ -90,11 +90,90 @@ describe('operations/object-types/sync', () => {
       'assign lining',
     ]);
     expect(plan.actions[1]).to.deep.include({changes: ['visible'], body: {visible: true}});
-    // fabric matches (desired locales are a subset), care differs only in unapplicable fields, existing group matches
-    expect(plan.unchanged).to.equal(3);
+    // fabric matches (desired locales are a subset), existing group matches; care needs an import
+    expect(plan.unchanged).to.equal(2);
+    expect(plan.importRequired).to.deep.equal([
+      {
+        objectType: 'Product',
+        id: 'care',
+        changes: ['new value 2'],
+        attribute: {id: 'care', valueType: 'enum_of_string', valueDefinitions: [{value: '1'}, {value: '2'}]},
+      },
+    ]);
     const messages = plan.warnings.map((warning) => `${warning.id}: ${warning.message}`);
-    expect(messages.some((m) => m.startsWith('care: Enum values') && m.includes('2'))).to.equal(true);
     expect(messages.some((m) => m.startsWith('care: Value type differs'))).to.equal(true);
+  });
+
+  it('imports display value changes with the full live value list', async () => {
+    const liveEnum = [
+      {
+        id: 'activity',
+        system: false,
+        valueType: 'enum_of_string',
+        valueDefinitions: [
+          {value: 'Hiking', displayValue: {default: 'Hiking', fr: 'Randonnée'}},
+          {value: 'Climbing', displayValue: {default: 'Climbing'}},
+        ],
+      },
+    ] as ObjectAttributeDefinition[];
+    const plan = await planObjectTypeSync(fakeClient(liveEnum, []), [
+      {
+        objectType: 'Product',
+        attributes: [
+          {
+            id: 'activity',
+            valueDefinitions: [{value: 'Hiking', displayValue: {default: 'Hiking2'}}, {value: 'Skiing'}],
+            defaultValue: {value: 'Hiking'},
+          },
+        ],
+        systemAttributes: [],
+        groups: [],
+      },
+    ]);
+    expect(plan.actions).to.deep.equal([]);
+    expect(plan.unchanged).to.equal(0);
+    expect(plan.importRequired).to.have.length(1);
+    expect(plan.importRequired[0].changes).to.deep.equal([
+      'display value of Hiking',
+      'new value Skiing',
+      'default value',
+    ]);
+    // Live values are kept (an import replaces the list), other locales survive, new values are appended.
+    expect(plan.importRequired[0].attribute).to.deep.equal({
+      id: 'activity',
+      valueType: 'enum_of_string',
+      valueDefinitions: [
+        {value: 'Hiking', displayValue: {default: 'Hiking2', fr: 'Randonnée'}},
+        {value: 'Climbing', displayValue: {default: 'Climbing'}},
+        {value: 'Skiing'},
+      ],
+      defaultValue: {value: 'Hiking'},
+    });
+    expect(plan.warnings.map((warning) => warning.message).join()).to.include('Climbing');
+  });
+
+  it('does not import when values and the default match', async () => {
+    const liveEnum = [
+      {
+        id: 'size',
+        system: false,
+        valueType: 'enum_of_string',
+        defaultValue: {value: 's'},
+        valueDefinitions: [{value: 's', displayValue: {default: 'Small', fr: 'Petit'}}],
+      },
+    ] as ObjectAttributeDefinition[];
+    const plan = await planObjectTypeSync(fakeClient(liveEnum, []), [
+      {
+        objectType: 'Product',
+        attributes: [
+          {id: 'size', valueDefinitions: [{value: 's', displayValue: {default: 'Small'}}], defaultValue: {value: 's'}},
+        ],
+        systemAttributes: [],
+        groups: [],
+      },
+    ]);
+    expect(plan.importRequired).to.deep.equal([]);
+    expect(plan.unchanged).to.equal(1);
   });
 
   it('warns about missing object types and system attributes', async () => {
@@ -115,6 +194,7 @@ describe('operations/object-types/sync', () => {
     await applyObjectTypeSync(client, {
       unchanged: 0,
       warnings: [],
+      importRequired: [],
       actions: [
         {action: 'create-group', objectType: 'Product', id: 'g', body: {id: 'g'}},
         {action: 'assign', objectType: 'Product', group: 'g', id: 'a'},

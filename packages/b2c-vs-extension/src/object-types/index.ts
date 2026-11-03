@@ -4,19 +4,48 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {buildObjectTypeExtensionsXml, exportObjectTypes} from '@salesforce/b2c-tooling-sdk/operations/object-types';
+import type {ObjectAttributeValueType} from '@salesforce/b2c-tooling-sdk/operations/object-types';
 import * as vscode from 'vscode';
 
 import type {B2CExtensionConfig} from '../config-provider.js';
-import {registerSafeCommand} from '../safety.js';
-import {describeObjectTypesError} from './model.js';
+import {registerSafeCommand, runWithSafety} from '../safety.js';
+import {ATTRIBUTE_SCHEME, AttributeFileSystemProvider} from './attribute-fs-provider.js';
+import {describeObjectTypesError, validateAttributeId} from './model.js';
 import {
   AttributeTreeItem,
+  FolderTreeItem,
   ObjectTypeTreeItem,
   ObjectTypesTreeDataProvider,
   VIEW_ID,
 } from './object-types-tree-provider.js';
 
 const DETAILS_SCHEME = 'b2c-object-type';
+
+const VALUE_TYPES: Array<{type: ObjectAttributeValueType; detail: string}> = [
+  {type: 'string', detail: 'Text up to 4000 characters'},
+  {type: 'text', detail: 'Long text'},
+  {type: 'html', detail: 'HTML markup'},
+  {type: 'int', detail: 'Integer'},
+  {type: 'double', detail: 'Decimal number'},
+  {type: 'boolean', detail: 'Yes / no'},
+  {type: 'date', detail: 'Date'},
+  {type: 'datetime', detail: 'Date and time'},
+  {type: 'email', detail: 'Email address'},
+  {type: 'image', detail: 'Image reference'},
+  {type: 'password', detail: 'Encrypted text'},
+  {type: 'money', detail: 'Amount with currency'},
+  {type: 'quantity', detail: 'Amount with unit'},
+  {type: 'enum_of_string', detail: 'Choice from text values (add values after creating)'},
+  {type: 'enum_of_int', detail: 'Choice from integer values (add values after creating)'},
+  {type: 'set_of_string', detail: 'Set of text values'},
+  {type: 'set_of_int', detail: 'Set of integers'},
+  {type: 'set_of_double', detail: 'Set of decimal numbers'},
+];
+
+function statusOf(error: unknown): number | undefined {
+  const status = (error as {status?: unknown} | null)?.status;
+  return typeof status === 'number' ? status : undefined;
+}
 
 export function registerObjectTypes(
   context: vscode.ExtensionContext,
@@ -29,7 +58,13 @@ export function registerObjectTypes(
     treeView.message = message;
   });
 
-  // Read-only documents for attribute definitions.
+  // Custom attributes open as editable documents; saving applies the change after a confirmation.
+  const attributeFs = new AttributeFileSystemProvider(configProvider, treeProvider, log);
+  const attributeFsSub = vscode.workspace.registerFileSystemProvider(ATTRIBUTE_SCHEME, attributeFs, {
+    isCaseSensitive: true,
+  });
+
+  // System attributes open read-only.
   const documents = new Map<string, string>();
   const documentChanges = new vscode.EventEmitter<vscode.Uri>();
   const detailsProvider = vscode.workspace.registerTextDocumentContentProvider(DETAILS_SCHEME, {
@@ -41,12 +76,14 @@ export function registerObjectTypes(
 
   const openAttributeCmd = registerSafeCommand('b2c-dx.objectTypes.openAttribute', async (item: AttributeTreeItem) => {
     if (!(item instanceof AttributeTreeItem)) return;
-    const uri = vscode.Uri.from({
-      scheme: DETAILS_SCHEME,
-      path: `/${item.objectType}/${item.attribute.id}.json`,
-    });
-    documents.set(uri.toString(), `${JSON.stringify(item.attribute, null, 2)}\n`);
-    documentChanges.fire(uri);
+    let uri: vscode.Uri;
+    if (item.attribute.system) {
+      uri = vscode.Uri.from({scheme: DETAILS_SCHEME, path: `/${item.objectType}/${item.attribute.id}.json`});
+      documents.set(uri.toString(), `${JSON.stringify(item.attribute, null, 2)}\n`);
+      documentChanges.fire(uri);
+    } else {
+      uri = attributeFs.set(item.objectType, item.attribute);
+    }
     const doc = await vscode.workspace.openTextDocument(uri);
     await vscode.languages.setTextDocumentLanguage(doc, 'json');
     await vscode.window.showTextDocument(doc, {preview: true});
@@ -74,17 +111,102 @@ export function registerObjectTypes(
     }
   });
 
+  const createCmd = registerSafeCommand(
+    'b2c-dx.objectTypes.createAttribute',
+    async (item?: FolderTreeItem | ObjectTypeTreeItem) => {
+      const objectType =
+        item instanceof ObjectTypeTreeItem
+          ? item.definition.objectType!
+          : item instanceof FolderTreeItem
+            ? item.objectType
+            : await vscode.window.showInputBox({
+                title: 'New Custom Attribute',
+                prompt: 'System object type (for example Product, Order, Profile, SitePreferences)',
+                validateInput: (value) => (value.trim() ? undefined : 'Enter an object type.'),
+              });
+      if (!objectType) return;
+      const title = `New ${objectType} Custom Attribute`;
+
+      const id = (
+        await vscode.window.showInputBox({
+          title: `${title} (1/3)`,
+          prompt: 'Attribute ID (scripts use it with the c_ prefix)',
+          validateInput: validateAttributeId,
+        })
+      )?.trim();
+      if (!id) return;
+      const typePick = await vscode.window.showQuickPick(
+        VALUE_TYPES.map((entry) => ({label: entry.type, detail: entry.detail})),
+        {title: `${title} (2/3)`, placeHolder: 'Value type (cannot be changed later)'},
+      );
+      if (!typePick) return;
+      const displayName = await vscode.window.showInputBox({
+        title: `${title} (3/3)`,
+        prompt: 'Display name (optional)',
+        value: id,
+      });
+      if (displayName === undefined) return;
+
+      try {
+        const client = await treeProvider.getClient();
+        // PUT replaces an existing definition, so check first.
+        const exists = await client.getAttributeDefinition(objectType, id).then(
+          () => true,
+          (error: unknown) => {
+            if (statusOf(error) === 404) return false;
+            throw error;
+          },
+        );
+        if (exists) {
+          vscode.window.showErrorMessage(`B2C DX: ${objectType}.${id} already exists.`);
+          return;
+        }
+        const host = configProvider.getConfig()?.values.hostname ?? 'the instance';
+        const choice = await vscode.window.showWarningMessage(
+          `Create ${objectType}.${id} on ${host}?`,
+          {modal: true, detail: `Value type: ${typePick.label}${displayName ? `\nDisplay name: ${displayName}` : ''}`},
+          'Create',
+        );
+        if (choice !== 'Create') return;
+        const {definition} = await runWithSafety(
+          () =>
+            client.createOrReplaceAttributeDefinition(objectType, {
+              id,
+              valueType: typePick.label as ObjectAttributeValueType,
+              ...(displayName ? {displayName: {default: displayName}} : {}),
+            }),
+          `Create ${objectType}.${id}?`,
+        );
+        treeProvider.invalidate(objectType);
+        const doc = await vscode.workspace.openTextDocument(attributeFs.set(objectType, definition));
+        await vscode.languages.setTextDocumentLanguage(doc, 'json');
+        await vscode.window.showTextDocument(doc, {preview: false});
+        const hint = typePick.label.startsWith('enum_of_')
+          ? ' Add valueDefinitions in the document and save to import them.'
+          : '';
+        vscode.window.showInformationMessage(`B2C DX: Created ${objectType}.${id}.${hint}`);
+      } catch (error) {
+        log.appendLine(`[Object Types] Creating ${objectType}.${id} failed: ${String(error)}`);
+        vscode.window.showErrorMessage(
+          `B2C DX: Could not create ${objectType}.${id}. ${describeObjectTypesError(error, objectType).message}`,
+        );
+      }
+    },
+  );
+
   const resetSub = configProvider.onDidReset(() => treeProvider.reset());
 
   context.subscriptions.push(
     treeView,
     messageSub,
+    attributeFsSub,
     detailsProvider,
     documentChanges,
     refreshCmd,
     openAttributeCmd,
     copyIdCmd,
     exportCmd,
+    createCmd,
     resetSub,
   );
 }

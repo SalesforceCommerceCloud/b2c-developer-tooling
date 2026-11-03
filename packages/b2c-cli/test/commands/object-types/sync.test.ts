@@ -145,6 +145,66 @@ describe('object-types export/apply', () => {
     expect(result.actions).to.have.length(1);
   });
 
+  describe('enum values', () => {
+    const ENUM_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+    <type-extension type-id="Product">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="activity">
+                <type>enum-of-string</type>
+                <value-definitions>
+                    <value-definition><display xml:lang="x-default">Hiking2</display><value>Hiking</value></value-definition>
+                </value-definitions>
+            </attribute-definition>
+        </custom-attribute-definitions>
+    </type-extension>
+</metadata>`;
+
+    beforeEach(() => {
+      fake.listAttributeDefinitions.resolves([
+        {
+          id: 'activity',
+          system: false,
+          valueType: 'enum_of_string',
+          valueDefinitions: [{value: 'Hiking', displayValue: {default: 'Hiking'}}],
+        },
+      ]);
+    });
+
+    it('lists value changes without importing them by default', async () => {
+      const file = path.join(dir, 'meta.xml');
+      fs.writeFileSync(file, ENUM_XML);
+      const command = await createCommand(
+        ObjectTypesApply,
+        {'dry-run': false, force: true, import: false},
+        {path: file},
+      );
+      const importValues = sinon.stub(command, 'importValues').resolves();
+      const result = await command.run();
+      expect(result.importRequired.map((item: {changes: string[]}) => item.changes)).to.deep.equal([
+        ['display value of Hiking'],
+      ]);
+      expect(result.imported).to.equal(false);
+      expect(importValues.called).to.equal(false);
+    });
+
+    it('imports value changes with --import', async () => {
+      const file = path.join(dir, 'meta.xml');
+      fs.writeFileSync(file, ENUM_XML);
+      const command = await createCommand(
+        ObjectTypesApply,
+        {'dry-run': false, force: true, import: true, server: 'example.com'},
+        {path: file},
+      );
+      sinon.stub(command.resolvedConfig, 'hasB2CInstanceConfig').returns(true);
+      const importValues = sinon.stub(command, 'importValues').resolves();
+      const result = await command.run();
+      expect(result.imported).to.equal(true);
+      expect(result.applied).to.equal(false);
+      expect(importValues.calledOnce).to.equal(true);
+    });
+  });
+
   it('fails when no definitions are found', async () => {
     const file = path.join(dir, 'empty.xml');
     fs.writeFileSync(file, XML);

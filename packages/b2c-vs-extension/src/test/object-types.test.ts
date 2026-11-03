@@ -9,11 +9,14 @@ import {SafetyBlockedError} from '@salesforce/b2c-tooling-sdk';
 import type {ObjectAttributeDefinition} from '@salesforce/b2c-tooling-sdk/operations/object-types';
 import {
   attributeSummary,
+  definitionFromDocument,
   describeObjectTypesError,
+  describeSyncPlan,
   effectiveAttributeId,
   isValuesUnavailable,
   mergeAttributeGroups,
   splitAttributes,
+  validateAttributeId,
   withEnumValues,
 } from '../object-types/model.js';
 
@@ -112,5 +115,57 @@ suite('object types: mergeAttributeGroups', () => {
       groups[1].attributeDefinitions!.map((a) => a.id),
       ['a', 'b'],
     );
+  });
+});
+
+suite('object types: saving attribute documents', () => {
+  test('drops read-only fields and keeps value definitions', () => {
+    const desired = definitionFromDocument(
+      JSON.stringify({
+        id: 'activity',
+        system: false,
+        effectiveId: 'c_activity',
+        creationDate: '2020-01-01',
+        defaultValue: null,
+        valueType: 'enum_of_string',
+        valueDefinitions: [{id: 'Hiking', position: 0, value: 'Hiking', displayValue: {default: 'Hiking2'}}],
+      }),
+      'activity',
+    );
+    assert.deepStrictEqual(desired, {
+      id: 'activity',
+      valueType: 'enum_of_string',
+      valueDefinitions: [{value: 'Hiking', displayValue: {default: 'Hiking2'}}],
+    });
+  });
+
+  test('rejects invalid JSON and changed IDs', () => {
+    assert.throws(() => definitionFromDocument('{', 'a'), /not valid JSON/);
+    assert.throws(() => definitionFromDocument('[]', 'a'), /JSON object/);
+    assert.throws(() => definitionFromDocument('{"id": "b"}', 'a'), /cannot be changed/);
+  });
+
+  test('describes API and import changes for the confirmation', () => {
+    const lines = describeSyncPlan({
+      unchanged: 0,
+      warnings: [{objectType: 'Product', id: 'a', message: 'note'}],
+      actions: [{action: 'update-attribute', objectType: 'Product', id: 'a', changes: ['displayName'], body: {}}],
+      importRequired: [{objectType: 'Product', id: 'a', changes: ['display value of x'], attribute: {id: 'a'}}],
+    });
+    assert.deepStrictEqual(lines, {
+      api: ['Update a: displayName'],
+      importItems: ['a: display value of x'],
+      warnings: ['note'],
+    });
+  });
+});
+
+suite('object types: validateAttributeId', () => {
+  test('accepts plain IDs and rejects prefixes and bad characters', () => {
+    assert.strictEqual(validateAttributeId('myAttr_2'), undefined);
+    assert.ok(validateAttributeId(''));
+    assert.ok(validateAttributeId('c_myAttr')?.includes('c_'));
+    assert.ok(validateAttributeId('2bad'));
+    assert.ok(validateAttributeId('has-dash'));
   });
 });

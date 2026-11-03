@@ -10,6 +10,7 @@ import {TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {confirm} from '@salesforce/b2c-tooling-sdk/ux';
 import {
   applyObjectTypeSync,
+  importObjectTypeExtensions,
   parseObjectTypeExtensions,
   planObjectTypeSync,
   type ObjectTypeExtension,
@@ -22,6 +23,8 @@ import {t, withDocs} from '../../i18n/index.js';
 
 interface ApplyResult extends ObjectTypeSyncPlan {
   applied: boolean;
+  /** Whether enum values and default values were imported with a site import. */
+  imported: boolean;
   dryRun: boolean;
   files: string[];
   skippedCustomTypes: string[];
@@ -75,6 +78,31 @@ function merge(target: Map<string, ObjectTypeExtension>, ext: ObjectTypeExtensio
   existing.groups = [...existing.groups, ...ext.groups];
 }
 
+/** Reads and merges the object type definitions of every metadata XML or JSON file under `target`. */
+async function loadDefinitions(target: string): Promise<{
+  files: string[];
+  byType: Map<string, ObjectTypeExtension>;
+  skippedCustomTypes: string[];
+}> {
+  const files = collectFiles(target);
+  const byType = new Map<string, ObjectTypeExtension>();
+  const skippedCustomTypes: string[] = [];
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    if (file.toLowerCase().endsWith('.json')) {
+      const parsed = JSON.parse(content) as ObjectTypeExtension[] | {objectTypes: ObjectTypeExtension[]};
+      for (const ext of Array.isArray(parsed) ? parsed : (parsed.objectTypes ?? [])) merge(byType, ext);
+      continue;
+    }
+    if (!content.includes('<metadata')) continue;
+    // eslint-disable-next-line no-await-in-loop -- files are small and parsed in order
+    const parsed = await parseObjectTypeExtensions(content);
+    for (const ext of parsed.extensions) merge(byType, ext);
+    skippedCustomTypes.push(...parsed.skippedCustomTypes);
+  }
+  return {files, byType, skippedCustomTypes};
+}
+
 export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTypesApply> {
   static args = {
     path: Args.string({
@@ -98,6 +126,7 @@ export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTy
     '<%= config.bin %> <%= command.id %> meta/system-objecttype-extensions.xml --dry-run',
     '<%= config.bin %> <%= command.id %> ./site-data --force',
     '<%= config.bin %> <%= command.id %> product.json --type Product',
+    '<%= config.bin %> <%= command.id %> meta/system-objecttype-extensions.xml --import',
   ];
 
   static flags = {
@@ -106,12 +135,23 @@ export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTy
       default: false,
     }),
     force: forceFlag,
+    import: Flags.boolean({
+      description:
+        'Also set enum values and default values with a site import (needs --server and WebDAV and job access)',
+      default: false,
+    }),
     type: Flags.string({
       char: 't',
       description: 'Only apply these object types (repeatable)',
       multiple: true,
     }),
   };
+
+  /** Imports enum values and default values with a site import. */
+  protected async importValues(plan: ObjectTypeSyncPlan): Promise<void> {
+    const instance = this.resolvedConfig.createB2CInstance({oauthStrategy: () => this.getOAuthStrategy()});
+    await importObjectTypeExtensions(instance, plan.importRequired);
+  }
 
   async run(): Promise<ApplyResult> {
     this.requireOAuthCredentials();
@@ -120,22 +160,7 @@ export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTy
       this.error(t('commands.objectTypes.apply.notFound', 'Path not found: {{target}}', {target}));
     }
 
-    const files = collectFiles(target);
-    const byType = new Map<string, ObjectTypeExtension>();
-    const skippedCustomTypes: string[] = [];
-    for (const file of files) {
-      const content = fs.readFileSync(file, 'utf8');
-      if (file.toLowerCase().endsWith('.json')) {
-        const parsed = JSON.parse(content) as ObjectTypeExtension[] | {objectTypes: ObjectTypeExtension[]};
-        for (const ext of Array.isArray(parsed) ? parsed : (parsed.objectTypes ?? [])) merge(byType, ext);
-        continue;
-      }
-      if (!content.includes('<metadata')) continue;
-      // eslint-disable-next-line no-await-in-loop -- files are small and parsed in order
-      const parsed = await parseObjectTypeExtensions(content);
-      for (const ext of parsed.extensions) merge(byType, ext);
-      skippedCustomTypes.push(...parsed.skippedCustomTypes);
-    }
+    const {files, byType, skippedCustomTypes} = await loadDefinitions(target);
 
     const only = this.flags.type;
     const extensions = [...byType.values()].filter((ext) => !only || only.includes(ext.objectType));
@@ -149,6 +174,7 @@ export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTy
     const result: ApplyResult = {
       ...plan,
       applied: false,
+      imported: false,
       dryRun: this.flags['dry-run'],
       files,
       skippedCustomTypes,
@@ -156,22 +182,33 @@ export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTy
     const interactive = !this.jsonEnabled();
 
     if (interactive) this.printPlan(plan, skippedCustomTypes);
-    if (plan.actions.length === 0 || this.flags['dry-run']) return result;
+    const runImport = this.flags.import && plan.importRequired.length > 0;
+    const total = plan.actions.length + (runImport ? plan.importRequired.length : 0);
+    if (total === 0 || this.flags['dry-run']) return result;
+    if (runImport && !this.resolvedConfig.hasB2CInstanceConfig()) {
+      this.error(
+        t('commands.objectTypes.apply.serverRequired', '--import needs the instance hostname (--server or dw.json).'),
+      );
+    }
 
     if (!this.flags.force && interactive) {
-      const ok = await confirm(
-        t('commands.objectTypes.apply.confirm', 'Apply {{count}} changes?', {count: plan.actions.length}),
-      );
+      const ok = await confirm(t('commands.objectTypes.apply.confirm', 'Apply {{count}} changes?', {count: total}));
       if (!ok) {
         this.log(t('commands.objectTypes.cancelled', 'Cancelled.'));
         return result;
       }
     }
 
-    await applyObjectTypeSync(this.objectTypes, plan);
-    result.applied = true;
+    if (plan.actions.length > 0) {
+      await applyObjectTypeSync(this.objectTypes, plan);
+      result.applied = true;
+    }
+    if (runImport) {
+      await this.importValues(plan);
+      result.imported = true;
+    }
     if (interactive) {
-      this.log(t('commands.objectTypes.apply.done', 'Applied {{count}} changes.', {count: plan.actions.length}));
+      this.log(t('commands.objectTypes.apply.done', 'Applied {{count}} changes.', {count: total}));
     }
     return result;
   }
@@ -200,13 +237,22 @@ export default class ObjectTypesApply extends ObjectTypesCommand<typeof ObjectTy
     for (const warning of warnings) {
       this.warn(`${warning.objectType}${warning.id ? `.${warning.id}` : ''}: ${warning.message}`);
     }
-    if (warnings.some((warning) => warning.message.includes('site archive'))) {
-      ux.stdout(
-        t(
-          'commands.objectTypes.apply.importHint',
-          'To apply enum values and default values, import the metadata with "b2c job import".',
-        ),
-      );
+    if (plan.importRequired.length === 0) return;
+    for (const item of plan.importRequired) {
+      ux.stdout(`  ${item.objectType}.${item.id}: ${item.changes.join(', ')}`);
     }
+    ux.stdout(
+      this.flags.import
+        ? t(
+            'commands.objectTypes.apply.importPlanned',
+            '{{count}} attributes have enum or default value changes and will be imported with a site import.',
+            {count: plan.importRequired.length},
+          )
+        : t(
+            'commands.objectTypes.apply.importHint',
+            '{{count}} attributes have enum or default value changes the API cannot set. Rerun with --import to apply them with a site import.',
+            {count: plan.importRequired.length},
+          ),
+    );
   }
 }

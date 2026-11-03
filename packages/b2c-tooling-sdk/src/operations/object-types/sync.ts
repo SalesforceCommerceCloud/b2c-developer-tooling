@@ -5,6 +5,11 @@
  */
 import type {ObjectAttributeDefinition, ObjectAttributeGroup} from '../../clients/object-definitions.js';
 import type {ObjectTypesClient} from './object-types.js';
+import JSZip from 'jszip';
+import type {B2CInstance} from '../../instance/index.js';
+import {siteArchiveImport} from '../jobs/site-archive.js';
+import type {SiteArchiveImportOptions, SiteArchiveImportResult} from '../jobs/site-archive.js';
+import {buildObjectTypeExtensionsXml} from './meta-xml.js';
 import type {MetaAttributeDefinition, MetaAttributeGroup, ObjectTypeExtension} from './meta-xml.js';
 
 /** Writable attribute properties compared and sent by `apply`. */
@@ -76,10 +81,25 @@ export interface ObjectTypeSyncWarning {
   message: string;
 }
 
+/**
+ * A custom attribute whose enum values or default value differ from the
+ * instance. The API ignores these properties; a site import can set them.
+ */
+export interface ObjectTypeImportItem {
+  objectType: string;
+  id: string;
+  /** What differs, for example `new value hiking` or `default value`. */
+  changes: string[];
+  /** The definition to import: value type, the full desired value list, and the default value. */
+  attribute: MetaAttributeDefinition;
+}
+
 /** Result of {@link planObjectTypeSync}. */
 export interface ObjectTypeSyncPlan {
   actions: ObjectTypeSyncAction[];
   warnings: ObjectTypeSyncWarning[];
+  /** Custom attributes that need a site import (see {@link importObjectTypeExtensions}). */
+  importRequired: ObjectTypeImportItem[];
   /** Number of attributes and groups already matching. */
   unchanged: number;
 }
@@ -124,27 +144,67 @@ function pickWritable(attr: MetaAttributeDefinition, fields: ReadonlyArray<strin
   return result as Partial<MetaAttributeDefinition>;
 }
 
-function valueWarnings(objectType: string, desired: MetaAttributeDefinition, live?: ObjectAttributeDefinition) {
-  const warnings: ObjectTypeSyncWarning[] = [];
-  if (desired.valueDefinitions?.length) {
-    const have = new Set((live?.valueDefinitions ?? []).map((value) => value.value));
-    const missing = desired.valueDefinitions.filter((value) => !have.has(value.value)).map((value) => value.value);
-    if (missing.length > 0) {
-      warnings.push({
-        objectType,
-        id: desired.id,
-        message: `Enum values cannot be set through the API (${missing.length} missing: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ', ...' : ''}). Import them with a site archive.`,
-      });
+function localizedDiffers(desired: Record<string, string> | undefined, live: Record<string, string> | undefined) {
+  return Object.entries(desired ?? {}).some(([locale, value]) => (live ?? {})[locale] !== value);
+}
+
+/**
+ * Enum value and default value differences of a custom attribute. Only
+ * additions and changes count: a merge import keeps values the file omits.
+ */
+function importChanges(desired: MetaAttributeDefinition, live?: ObjectAttributeDefinition): string[] {
+  const changes: string[] = [];
+  if (desired.valueDefinitions) {
+    const have = new Map((live?.valueDefinitions ?? []).map((value) => [value.value, value]));
+    for (const value of desired.valueDefinitions) {
+      const existing = have.get(value.value);
+      if (!existing) changes.push(`new value ${value.value}`);
+      else if (localizedDiffers(value.displayValue, existing.displayValue)) {
+        changes.push(`display value of ${value.value}`);
+      }
     }
   }
-  if (desired.defaultValue !== undefined && desired.defaultValue !== null) {
-    warnings.push({
+  const defaultValue = desired.defaultValue?.value;
+  if (defaultValue !== undefined && defaultValue !== null && defaultValue !== live?.defaultValue?.value) {
+    changes.push('default value');
+  }
+  return changes;
+}
+
+/**
+ * The value list to import. An import replaces an attribute's whole value
+ * list, so this keeps every live value (in order), applies desired display
+ * values over the live ones (locale by locale), and appends new values.
+ */
+function mergeValues(
+  live: ObjectAttributeDefinition['valueDefinitions'],
+  desired: MetaAttributeDefinition['valueDefinitions'],
+): NonNullable<MetaAttributeDefinition['valueDefinitions']> {
+  const wanted = new Map((desired ?? []).map((value) => [value.value, value]));
+  const merged = (live ?? []).map((value) => {
+    const change = wanted.get(value.value);
+    wanted.delete(value.value);
+    const displayValue = {...value.displayValue, ...change?.displayValue};
+    return {value: value.value, ...(isEmpty(displayValue) ? {} : {displayValue})};
+  });
+  for (const value of wanted.values()) {
+    merged.push({value: value.value, ...(isEmpty(value.displayValue) ? {} : {displayValue: value.displayValue})});
+  }
+  return merged;
+}
+
+function removedValuesWarning(objectType: string, desired: MetaAttributeDefinition, live?: ObjectAttributeDefinition) {
+  if (!desired.valueDefinitions || !live?.valueDefinitions?.length) return [];
+  const want = new Set(desired.valueDefinitions.map((value) => value.value));
+  const removed = live.valueDefinitions.filter((value) => !want.has(value.value)).map((value) => value.value);
+  if (removed.length === 0) return [];
+  return [
+    {
       objectType,
       id: desired.id,
-      message: 'Default values cannot be set through the API. Import them with a site archive.',
-    });
-  }
-  return warnings;
+      message: `Enum values not listed are kept, not removed (${removed.length}: ${removed.slice(0, 5).join(', ')}${removed.length > 5 ? ', ...' : ''}). Remove values in Business Manager.`,
+    },
+  ];
 }
 
 /**
@@ -156,7 +216,7 @@ export async function planObjectTypeSync(
   client: ObjectTypesClient,
   extensions: ObjectTypeExtension[],
 ): Promise<ObjectTypeSyncPlan> {
-  const plan: ObjectTypeSyncPlan = {actions: [], warnings: [], unchanged: 0};
+  const plan: ObjectTypeSyncPlan = {actions: [], warnings: [], importRequired: [], unchanged: 0};
 
   for (const ext of extensions) {
     const {objectType} = ext;
@@ -179,7 +239,18 @@ export async function planObjectTypeSync(
 
     for (const desired of ext.attributes) {
       const live = attributesById.get(desired.id);
-      plan.warnings.push(...valueWarnings(objectType, desired, live));
+      if (!live?.system) {
+        const changes = importChanges(desired, live);
+        const valueType = desired.valueType ?? live?.valueType;
+        if (changes.length > 0 && valueType) {
+          const attribute: MetaAttributeDefinition = {id: desired.id, valueType};
+          const values = mergeValues(live?.valueDefinitions, desired.valueDefinitions);
+          if (values.length > 0) attribute.valueDefinitions = values;
+          if (desired.defaultValue) attribute.defaultValue = desired.defaultValue;
+          plan.importRequired.push({objectType, id: desired.id, changes, attribute});
+        }
+        plan.warnings.push(...removedValuesWarning(objectType, desired, live));
+      }
       if (!live) {
         if (!desired.valueType) {
           plan.warnings.push({objectType, id: desired.id, message: 'No value type given; cannot create.'});
@@ -208,7 +279,9 @@ export async function planObjectTypeSync(
           message: `Value type differs (${live.valueType} on the instance, ${desired.valueType} desired) and cannot be changed.`,
         });
       }
-      pushUpdate(plan, objectType, desired, live, ATTRIBUTE_FIELDS);
+      const pending = plan.importRequired.at(-1);
+      const needsImport = pending?.objectType === objectType && pending.id === desired.id;
+      if (!pushUpdate(plan, objectType, desired, live, ATTRIBUTE_FIELDS) && needsImport) plan.unchanged--;
     }
 
     for (const desired of ext.systemAttributes) {
@@ -217,7 +290,13 @@ export async function planObjectTypeSync(
         plan.warnings.push({objectType, id: desired.id, message: 'System attribute not found on the instance.'});
         continue;
       }
-      plan.warnings.push(...valueWarnings(objectType, desired, live));
+      if (importChanges(desired, live).length > 0) {
+        plan.warnings.push({
+          objectType,
+          id: desired.id,
+          message: 'Enum values and default values of system attributes are not applied.',
+        });
+      }
       pushUpdate(
         plan,
         objectType,
@@ -261,13 +340,13 @@ function pushUpdate(
   desired: MetaAttributeDefinition,
   live: ObjectAttributeDefinition,
   fields: ReadonlyArray<string>,
-): void {
+): boolean {
   const changes = fields.filter((field) =>
     differs(field, (desired as Record<string, unknown>)[field], (live as Record<string, unknown>)[field]),
   );
   if (changes.length === 0) {
     plan.unchanged++;
-    return;
+    return false;
   }
   plan.actions.push({
     action: 'update-attribute',
@@ -276,6 +355,7 @@ function pushUpdate(
     changes,
     body: pickWritable(desired, changes),
   });
+  return true;
 }
 
 function planGroup(
@@ -399,4 +479,33 @@ export async function exportObjectTypes(
     });
   }
   return result;
+}
+
+/** Options for {@link importObjectTypeExtensions}. */
+export type ImportObjectTypeExtensionsOptions = SiteArchiveImportOptions;
+
+/**
+ * Builds `meta/system-objecttype-extensions.xml` for the plan's import items
+ * and imports it with a site archive import (merge mode). This sets enum
+ * values and default values, which the Object Definitions API ignores. Needs
+ * WebDAV and job permissions on the instance.
+ */
+export async function importObjectTypeExtensions(
+  instance: B2CInstance,
+  items: ObjectTypeImportItem[],
+  options: ImportObjectTypeExtensionsOptions = {},
+): Promise<SiteArchiveImportResult> {
+  const byType = new Map<string, ObjectTypeExtension>();
+  for (const item of items) {
+    let ext = byType.get(item.objectType);
+    if (!ext) {
+      ext = {objectType: item.objectType, attributes: [], systemAttributes: [], groups: []};
+      byType.set(item.objectType, ext);
+    }
+    ext.attributes.push(item.attribute);
+  }
+  const zip = new JSZip();
+  zip.file('meta/system-objecttype-extensions.xml', buildObjectTypeExtensionsXml([...byType.values()]));
+  const buffer = await zip.generateAsync({type: 'nodebuffer'});
+  return siteArchiveImport(instance, buffer, options);
 }

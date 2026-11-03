@@ -165,6 +165,12 @@ export class ObjectTypesTreeDataProvider implements vscode.TreeDataProvider<Obje
     this._onDidChangeTreeData.fire();
   }
 
+  /** Reloads one object type after a change, keeping the rest of the tree. */
+  invalidate(objectType: string): void {
+    this.details.delete(objectType);
+    this._onDidChangeTreeData.fire();
+  }
+
   /** Clears cached data after a configuration change; stays unloaded if it was never loaded. */
   reset(): void {
     if (this.loaded) this.refresh();

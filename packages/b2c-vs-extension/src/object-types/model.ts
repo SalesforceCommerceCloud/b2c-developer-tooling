@@ -12,8 +12,10 @@ import {SafetyBlockedError} from '@salesforce/b2c-tooling-sdk';
 import {isInvalidScopeError} from '@salesforce/b2c-tooling-sdk/clients';
 import {localizedDefault} from '@salesforce/b2c-tooling-sdk/operations/object-types';
 import type {
+  MetaAttributeDefinition,
   ObjectAttributeDefinition,
   ObjectAttributeGroup,
+  ObjectTypeSyncPlan,
 } from '@salesforce/b2c-tooling-sdk/operations/object-types';
 
 /** Shown in the view when the Object Definitions API is unreachable. */
@@ -135,4 +137,71 @@ export function withEnumValues(
     const match = values.get(attr.id);
     return match ? {...attr, valueDefinitions: match.valueDefinitions} : attr;
   });
+}
+
+/** Read-only or computed properties of an attribute document that saving ignores. */
+const IGNORED_ON_SAVE = new Set(['creationDate', 'effectiveId', 'key', 'lastModified', 'readOnly', 'system']);
+
+/**
+ * Parses a saved attribute definition document into the desired definition.
+ * Rejects documents whose `id` no longer matches the attribute.
+ */
+export function definitionFromDocument(text: string, id: string): MetaAttributeDefinition {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`The document is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('The document must contain a JSON object.');
+  }
+  const record = parsed as Record<string, unknown>;
+  if (record.id !== undefined && record.id !== id) {
+    throw new Error(`The attribute ID cannot be changed (expected "${id}"). Create a new attribute instead.`);
+  }
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (!IGNORED_ON_SAVE.has(key) && value !== null) result[key] = value;
+  }
+  result.id = id;
+  if (Array.isArray(result.valueDefinitions)) {
+    result.valueDefinitions = (result.valueDefinitions as Array<Record<string, unknown>>).map((value) => ({
+      value: String(value?.value ?? ''),
+      ...(value?.displayValue && typeof value.displayValue === 'object' ? {displayValue: value.displayValue} : {}),
+    }));
+  }
+  return result as MetaAttributeDefinition;
+}
+
+/** What saving would do, as lines for a confirmation dialog. */
+export function describeSyncPlan(plan: ObjectTypeSyncPlan): {api: string[]; importItems: string[]; warnings: string[]} {
+  const api = plan.actions.map((action) => {
+    switch (action.action) {
+      case 'assign': {
+        return `Assign ${action.id} to group ${action.group}`;
+      }
+      case 'create-attribute': {
+        return `Create ${action.id} (${action.body.valueType})`;
+      }
+      case 'create-group': {
+        return `Create group ${action.id}`;
+      }
+      default: {
+        return `Update ${action.id}: ${action.changes.join(', ')}`;
+      }
+    }
+  });
+  const importItems = plan.importRequired.map((item) => `${item.id}: ${item.changes.join(', ')}`);
+  return {api, importItems, warnings: plan.warnings.map((warning) => warning.message)};
+}
+
+/** Attribute IDs: letters, digits, and underscores, starting with a letter (no `c_` prefix). */
+export function validateAttributeId(id: string): string | undefined {
+  const value = id.trim();
+  if (!value) return 'Enter an attribute ID.';
+  if (value.startsWith('c_')) return 'Leave out the c_ prefix; it is added for custom attributes.';
+  if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(value)) return 'Use letters, digits, and underscores, starting with a letter.';
+  if (value.length > 256) return 'Use at most 256 characters.';
+  return undefined;
 }

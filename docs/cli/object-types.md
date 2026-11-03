@@ -106,13 +106,15 @@ Compare metadata XML with the instance and make the differences through the API,
 b2c object-types apply meta/system-objecttype-extensions.xml --dry-run
 b2c object-types apply site-data --force
 b2c object-types apply site-data -t Product -t Order
+b2c object-types apply meta/system-objecttype-extensions.xml --import
 ```
 
-| Flag            | Description                                |
-| --------------- | ------------------------------------------ |
-| `--dry-run`     | Show the changes without applying them     |
-| `--type`, `-t`  | Only apply these object types (repeatable) |
-| `--force`, `-f` | Skip the confirmation prompt               |
+| Flag            | Description                                                            |
+| --------------- | ---------------------------------------------------------------------- |
+| `--dry-run`     | Show the changes without applying them                                 |
+| `--type`, `-t`  | Only apply these object types (repeatable)                             |
+| `--import`      | Also set enum values and default values with a site import (see below) |
+| `--force`, `-f` | Skip the confirmation prompt                                           |
 
 The changes are additive:
 
@@ -121,7 +123,9 @@ The changes are additive:
 - System attribute overrides (`<system-attribute-definitions>`) update the display name, description, visibility, and order-required flag.
 - Missing groups are created, and missing attributes are assigned to groups.
 
-Nothing is deleted or unassigned. The API can't apply some things in the file. Enum values, default values, value type changes, and custom object types are listed as warnings. To apply them, import the file with [`b2c job import`](/cli/jobs#b2c-job-import).
+Nothing is deleted or unassigned. The API ignores enum values and default values, so the command lists custom attributes whose new or changed values, display values, or default value differ from the instance. With `--import`, it builds a minimal `meta/system-objecttype-extensions.xml` for just those attributes and imports it with the site archive import job. That needs the instance hostname and WebDAV and job access. An import replaces an attribute's whole value list, so the import includes every value already on the instance, with your changes applied. Values missing from the file are kept, not removed.
+
+Value type changes and custom object types are listed as warnings. To apply those, import the file with [`b2c job import`](/cli/jobs#b2c-job-import).
 
 ---
 
