@@ -10,7 +10,7 @@ Page type → page → regions → components. Layout components (`Layout.grid` 
 own regions, nested in the same shape. Type IDs come from the site's cartridge path and have **no**
 `page.`/`component.` prefix (library XML uses `component.Content.hero`; the API uses `Content.hero`).
 
-## Build a page (draft)
+## Build a page
 
 1. `getPageTypes` and `getComponentTypes` (`siteId`, `limit` up to 200). Use
    `builtin/content-types-inspect` for a compact summary instead of returning raw types.
@@ -18,7 +18,8 @@ own regions, nested in the same shape. Type IDs come from the site's cartridge p
    `typeId`s from component types, attribute keys and enum `values` from `attributeDefinitionGroups`.
 3. `createOrUpdatePage`: `PUT /pages/{pageId}?siteId=`. `pageId` must equal `body.id`.
    Use `builtin/page-push`, which validates against the live types and then PUTs.
-4. Tell the user the page was saved as a **draft** and must be activated in Business Manager.
+4. Tell the user a new page is **offline** until they set it online in Business Manager. Updating
+   an online page changes the live storefront right away; the online state is never changed.
 
 ```json
 {
@@ -64,8 +65,8 @@ own regions, nested in the same shape. Type IDs come from the site's cartridge p
 - Value shapes: `image` → `{"path":"images/hero.jpg"}`; `url`, `string`, `text`, `markup`,
   `product`, `category`, `page` → strings; `boolean`, `integer` as JSON types.
 - Extra page fields must be `c_*` custom attributes.
-- **No admin read, list, delete or publish for pages.** Do not try Shopper `getPage`: it only
-  returns active, visible pages, never drafts. Library `getContent` returns 404 for Page Designer
+- **No admin read, list, delete or online toggle for pages.** Shopper `getPage` returns only online,
+  visible pages, so it can't read back a new (offline) page. Library `getContent` returns 404 for Page Designer
   pages and components. To read a page back, the user exports the library (CLI
   `b2c content export <pageId>`).
 

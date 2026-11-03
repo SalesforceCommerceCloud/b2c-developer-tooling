@@ -85,7 +85,7 @@ export default class ContentPush extends InstanceCommand<typeof ContentPush> {
   };
 
   static description =
-    'Create or update Page Designer pages on an instance as drafts through the Experiences API, validating them against the deployed page and component types first';
+    'Create or update Page Designer pages on an instance through the Experiences API, validating them against the deployed page and component types first';
 
   static enableJsonFlag = true;
 
@@ -250,7 +250,10 @@ export default class ContentPush extends InstanceCommand<typeof ContentPush> {
     }
     const pushed = results.filter((r) => r.status === 'created' || r.status === 'updated').length;
     if (pushed > 0) {
-      lines.push('', `${pushed} page(s) saved as drafts. Activate them in Business Manager to publish.`);
+      lines.push(
+        '',
+        `${pushed} page(s) saved. New pages are offline until you set them online in Business Manager; changes to an online page are live right away.`,
+      );
     } else if (dryRun) {
       lines.push('', 'Dry run: nothing was pushed.');
     }

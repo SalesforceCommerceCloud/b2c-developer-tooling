@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export, list, validate, and push Page Designer content in B2C Commerce libraries, manage classic content assets and folders, and manage content slot configurations. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, create or update a draft page from JSON, inspect the page and component types deployed to an instance, create or edit content assets and library folders, list or change content slot configurations (banners, schedules, customer groups), discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
+description: Export, list, validate, and push Page Designer content in B2C Commerce libraries, manage classic content assets and folders, and manage content slot configurations. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, create or update a page from JSON, inspect the page and component types deployed to an instance, create or edit content assets and library folders, list or change content slot configurations (banners, schedules, customer groups), discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill
@@ -173,13 +173,13 @@ b2c content types get Content.hero
 
 Run these before building a page body, so that region IDs, component type IDs, enum values and required attributes come from the instance and aren't guessed.
 
-### Push Pages (Draft)
+### Push Pages
 
 ```bash
 # validate a page body against the deployed types without pushing
 b2c content push pages/summer.json --site-id RefArch --dry-run
 
-# create or update the page as a draft
+# create or update the page
 b2c content push pages/summer.json --site-id RefArch
 
 # round-trip: export, edit library.xml, push back
@@ -192,7 +192,7 @@ b2c content validate --page pages/summer.json --types-dir ./cartridges
 
 A page body is `{id, name, typeId, data?, regions: [{id, components: [{id, typeId, data?, regions?}]}]}`. Layout components nest `regions` in the same shape.
 
-- Pushed pages are always **drafts**. Tell the user to activate them in Business Manager.
+- A new page is created **offline**; tell the user to set it online in Business Manager. An update keeps the page's online state, so changes to an online page are live right away.
 - Updates merge by region: a region you send replaces its components, and regions you leave out are kept.
 - An existing page's type can't be changed.
 - The API can't read, delete, or publish pages. Use `content export` to read pages back.

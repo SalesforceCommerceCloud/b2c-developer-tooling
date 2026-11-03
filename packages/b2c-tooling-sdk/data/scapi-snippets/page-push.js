@@ -105,6 +105,9 @@ async (input) => {
     typeId: r.data.typeId,
     regions: (r.data.regions ?? []).map((g) => ({id: g.id, components: (g.components ?? []).map((c) => c.id)})),
     warnings,
-    note: 'Saved as a draft. Activate it in Business Manager.',
+    note:
+      r.status === 201
+        ? 'Created offline. Set it online in Business Manager.'
+        : 'Updated. The online state is unchanged; if the page is online, the change is live.',
   };
 }

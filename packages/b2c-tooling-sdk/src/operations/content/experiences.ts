@@ -6,7 +6,7 @@
 /**
  * Page Designer operations through the SCAPI Admin Experiences API
  * (`experience/experiences/v1`): live page and component type metadata and
- * draft page push.
+ * page push.
  *
  * Every entry point here needs SCAPI system auth (client credentials or JWT),
  * a short code, a tenant ID, and the `sfcc.experiences` or
@@ -315,13 +315,18 @@ export interface PushPageResult {
 
 /**
  * Creates or updates a Page Designer page (with its regions and components)
- * as a **draft**, without a site-archive import.
+ * without a site-archive import.
  *
- * Update semantics (verified against the platform): regions included in the
- * request replace that region's component list; regions omitted are left as
- * they are; an existing page's type cannot be changed. Components removed
- * from a region remain in the library as unassigned components. The page is
- * never published; activate it in Business Manager.
+ * Behavior verified against the platform:
+ *
+ * - A new page is created offline. Set it online in Business Manager.
+ * - An update keeps the page's online state. Changes to an online page are
+ *   live right away (the Shopper Experience API returns them immediately);
+ *   there is no separate draft version.
+ * - Regions included in the request replace that region's component list;
+ *   regions omitted are left as they are. Component `data` is merged.
+ * - An existing page's type cannot be changed. Components removed from a
+ *   region remain in the library as unassigned components.
  *
  * @throws ExperiencesUnavailableError when the API cannot be used (config, auth, scope)
  * @throws PagePushError when the API rejects the page (400/404/409)

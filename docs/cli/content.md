@@ -14,17 +14,17 @@ Export a page from your instance with its nested components, reusable content bl
 
 The `content export` and `content list` commands require OAuth authentication:
 
-| Operation | Auth Required |
-|-----------|--------------|
-| `content export` | OAuth for the export job and WebDAV access for the archive and assets |
-| `content list` | OAuth for the export job and WebDAV access for the archive |
-| `content validate` | None (local file validation) |
-| `content types list`, `content types get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
-| `content push` | SCAPI: `sfcc.experiences.rw` |
-| `content asset get`, `content folder list` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
-| `content folder get`, and changes to assets and folders | SCAPI: `sfcc.experiences.rw` |
-| `content slot list`, `content slot get`, `content slot config list`, `content slot config get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
-| `content slot config put`, `update`, `delete` | SCAPI: `sfcc.experiences.rw` |
+| Operation                                                                                      | Auth Required                                                         |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `content export`                                                                               | OAuth for the export job and WebDAV access for the archive and assets |
+| `content list`                                                                                 | OAuth for the export job and WebDAV access for the archive            |
+| `content validate`                                                                             | None (local file validation)                                          |
+| `content types list`, `content types get`                                                      | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw`                    |
+| `content push`                                                                                 | SCAPI: `sfcc.experiences.rw`                                          |
+| `content asset get`, `content folder list`                                                     | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw`                    |
+| `content folder get`, and changes to assets and folders                                        | SCAPI: `sfcc.experiences.rw`                                          |
+| `content slot list`, `content slot get`, `content slot config list`, `content slot config get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw`                    |
+| `content slot config put`, `update`, `delete`                                                  | SCAPI: `sfcc.experiences.rw`                                          |
 
 Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` and the tenant scope. `--api-backend ocapi` selects OCAPI explicitly; the default `auto` mode supports OCAPI fallback. See [Job Authentication](./jobs.md#authentication) for setup.
 
@@ -55,28 +55,28 @@ b2c content export [PAGES...] --library <library-id>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `PAGES` | One or more content IDs to export (pages, content assets, components, or content blocks) | Yes |
+| Argument | Description                                                                              | Required |
+| -------- | ---------------------------------------------------------------------------------------- | -------- |
+| `PAGES`  | One or more content IDs to export (pages, content assets, components, or content blocks) | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
-| `--output`, `-o` | Output directory | `content-<timestamp>` |
-| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
-| `--asset-query`, `-q` | JSON dot-paths for static asset extraction (can be repeated) | `image.path` |
-| `--regex`, `-r` | Treat page IDs as regular expressions | `false` |
-| `--folder` | Filter by folder classification (can be repeated) | |
-| `--offline` | Skip asset downloads | `false` |
-| `--library-file` | Use a local library XML file instead of fetching from instance | |
-| `--keep-orphans` | Include orphan components (not linked to any page) in export | `false` |
-| `--show-tree` | Display tree structure of exported content | `true` |
-| `--timeout` | Export job timeout in seconds | |
-| `--dry-run` | Preview export without downloading assets or writing files | `false` |
+| Flag                                   | Description                                                                                                       | Default               |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `--library`                            | Library ID or site ID. Also configurable via `content-library` in dw.json.                                        |                       |
+| `--output`, `-o`                       | Output directory                                                                                                  | `content-<timestamp>` |
+| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config           |
+| `--asset-query`, `-q`                  | JSON dot-paths for static asset extraction (can be repeated)                                                      | `image.path`          |
+| `--regex`, `-r`                        | Treat page IDs as regular expressions                                                                             | `false`               |
+| `--folder`                             | Filter by folder classification (can be repeated)                                                                 |                       |
+| `--offline`                            | Skip asset downloads                                                                                              | `false`               |
+| `--library-file`                       | Use a local library XML file instead of fetching from instance                                                    |                       |
+| `--keep-orphans`                       | Include orphan components (not linked to any page) in export                                                      | `false`               |
+| `--show-tree`                          | Display tree structure of exported content                                                                        | `true`                |
+| `--timeout`                            | Export job timeout in seconds                                                                                     |                       |
+| `--dry-run`                            | Preview export without downloading assets or writing files                                                        | `false`               |
 
 ### Examples
 
@@ -129,10 +129,7 @@ Listing libraries under `b2c.libraries` in `package.json` (or `libraries` in `dw
 ```json
 {
   "b2c": {
-    "libraries": [
-      "RefArchSharedLibrary",
-      { "id": "SiteGenesis", "siteLibrary": true }
-    ]
+    "libraries": ["RefArchSharedLibrary", {"id": "SiteGenesis", "siteLibrary": true}]
   }
 }
 ```
@@ -189,17 +186,17 @@ b2c content list --library <library-id>
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
+| Flag                                   | Description                                                                                                       | Default     |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------- |
+| `--library`                            | Library ID or site ID. Also configurable via `content-library` in dw.json.                                        |             |
 | `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
-| `--library-file` | Use a local library XML file instead of fetching from instance | |
-| `--type` | Filter by node type: `page`, `content`, `component`, or `fragment` (content blocks) | |
-| `--components` | Include components in table output | `false` |
-| `--tree` | Show tree structure instead of table | `false` |
-| `--timeout` | Job timeout in seconds | |
-| `--columns`, `-c` | Columns to display (comma-separated). Available: id, type, typeId, children | All columns |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
+| `--library-file`                       | Use a local library XML file instead of fetching from instance                                                    |             |
+| `--type`                               | Filter by node type: `page`, `content`, `component`, or `fragment` (content blocks)                               |             |
+| `--components`                         | Include components in table output                                                                                | `false`     |
+| `--tree`                               | Show tree structure instead of table                                                                              | `false`     |
+| `--timeout`                            | Job timeout in seconds                                                                                            |             |
+| `--columns`, `-c`                      | Columns to display (comma-separated). Available: id, type, typeId, children                                       | All columns |
+| `--extended`, `-x`                     | Show all columns including extended fields                                                                        | `false`     |
 
 ### Examples
 
@@ -283,9 +280,9 @@ b2c content validate --page <files...> [--types-dir <dir>...]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `files` | One or more file paths, directories, or glob patterns | Yes |
+| Argument | Description                                           | Required |
+| -------- | ----------------------------------------------------- | -------- |
+| `files`  | One or more file paths, directories, or glob patterns | Yes      |
 
 When a directory is passed, all `*.json` files within it are validated recursively.
 
@@ -293,11 +290,11 @@ When a directory is passed, all `*.json` files within it are validated recursive
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--type`, `-t` | Schema type to validate against (skips auto-detection) | Auto-detected |
-| `--page` | Validate page bodies (page JSON or exported library XML) against page and component types instead of metadefinitions | `false` |
-| `--types-dir` | Directory searched for cartridge `experience/` type definitions in `--page` mode (repeatable) | Current directory |
+| Flag           | Description                                                                                                          | Default           |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `--type`, `-t` | Schema type to validate against (skips auto-detection)                                                               | Auto-detected     |
+| `--page`       | Validate page bodies (page JSON or exported library XML) against page and component types instead of metadefinitions | `false`           |
+| `--types-dir`  | Directory searched for cartridge `experience/` type definitions in `--page` mode (repeatable)                        | Current directory |
 
 Available schema types: `pagetype`, `componenttype`, `aspecttype`, `cmsrecord`, `customeditortype`, `contentassetpageconfig`, `contentassetcomponentconfig`, `contentassetstructuredcontentdata`, `image`.
 
@@ -383,11 +380,11 @@ b2c content types list [--site-id <site>] [--kind page|component]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--site-id` | Site whose cartridge path defines the types | `siteId` from configuration |
-| `--kind` | Only list `page` or `component` types | Both |
-| `--columns`, `--extended` | Select table columns (`id`, `kind`, `name`, `group`, `regions`, `attributes`, `archType`) | |
+| Flag                      | Description                                                                               | Default                     |
+| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------- |
+| `--site-id`               | Site whose cartridge path defines the types                                               | `siteId` from configuration |
+| `--kind`                  | Only list `page` or `component` types                                                     | Both                        |
+| `--columns`, `--extended` | Select table columns (`id`, `kind`, `name`, `group`, `regions`, `attributes`, `archType`) |                             |
 
 ### Examples
 
@@ -419,7 +416,7 @@ b2c content types get homePage --site-id RefArch --json
 
 ## b2c content push
 
-Create or update Page Designer pages, with their regions and components, through the Experiences API without a site archive import. Pages are always saved as **drafts**: activate them in Business Manager to publish.
+Create or update Page Designer pages, with their regions and components, through the Experiences API without a site archive import. A new page is created **offline**: set it online in Business Manager. An update keeps the page's online state, so changes to an online page are live on the storefront right away.
 
 Before pushing, each page is validated against the page and component types deployed for the site (the same checks as `content validate --page`). The platform accepts a page that is missing required attributes and silently drops unknown attribute keys, so this check catches problems the API would let through. Pages with validation errors are not pushed unless you pass `--force`.
 
@@ -431,9 +428,9 @@ b2c content push <files...> [--site-id <site>] [--page <id>...] [--dry-run]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `files` | Page JSON files (one page body or an array of pages) or exported library XML files | Yes |
+| Argument | Description                                                                        | Required |
+| -------- | ---------------------------------------------------------------------------------- | -------- |
+| `files`  | Page JSON files (one page body or an array of pages) or exported library XML files | Yes      |
 
 A page JSON file uses the Experiences API page body:
 
@@ -459,14 +456,14 @@ Layout components nest their own `regions` in the same shape. Library XML from `
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--site-id` | Site the pages belong to | `siteId` from configuration |
-| `--page` | Only push these page IDs from the input files (repeatable) | All pages |
-| `--dry-run` | Validate against the instance types without pushing | `false` |
-| `--[no-]validate` | Validate before pushing | `true` |
-| `--local-types` | Directory with cartridge `experience/` definitions that override instance types, for types not yet deployed (repeatable) | |
-| `--force` | Push pages even when validation reports errors | `false` |
+| Flag              | Description                                                                                                              | Default                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `--site-id`       | Site the pages belong to                                                                                                 | `siteId` from configuration |
+| `--page`          | Only push these page IDs from the input files (repeatable)                                                               | All pages                   |
+| `--dry-run`       | Validate against the instance types without pushing                                                                      | `false`                     |
+| `--[no-]validate` | Validate before pushing                                                                                                  | `true`                      |
+| `--local-types`   | Directory with cartridge `experience/` definitions that override instance types, for types not yet deployed (repeatable) |                             |
+| `--force`         | Push pages even when validation reports errors                                                                           | `false`                     |
 
 ### Examples
 
@@ -474,7 +471,7 @@ In addition to [global flags](./index#global-flags):
 # Validate only
 b2c content push pages/summer.json --site-id RefArch --dry-run
 
-# Push a page as a draft
+# Create or update a page
 b2c content push pages/summer.json --site-id RefArch
 
 # Round-trip an exported page
@@ -490,7 +487,7 @@ b2c content push pages/summer.json --local-types ./cartridges --dry-run
 ```
 summer-campaign (pages/summer.json): created
 
-1 page(s) saved as drafts. Activate them in Business Manager to publish.
+1 page(s) saved. New pages are offline until you set them online in Business Manager; changes to an online page are live right away.
 ```
 
 With `--json`, the command returns `{siteId, dryRun, pages: [{pageId, source, status, errors?, warnings?, message?}]}`, where `status` is `created`, `updated`, `validated` (dry run), `invalid`, or `failed`. The command exits with a non-zero status when any page is invalid or rejected.
@@ -521,19 +518,19 @@ b2c content asset delete <contentId> [--force]
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--library` | Library ID (shared library or site ID) |
-| `-f`, `--file` | JSON body (as printed by `get`); flags override its fields |
-| `--name`, `--description`, `--page-title`, `--page-description` | Localized values for `--locale` |
-| `--[no-]online` | Online in `--locale` |
-| `-a`, `--attribute c_id=value` | Localized string custom attribute (repeatable) |
-| `--markup c_id=<html>` | Localized markup custom attribute such as `c_body` (repeatable) |
-| `--template` | Rendering template |
-| `--locale` | Locale for localized values (default `default`) |
-| `--folder` | `put` only: assign the asset to this classification folder |
-| `--folders` | `get` only: include the folders the asset is in |
-| `--force` | `delete` only: skip the confirmation prompt |
+| Flag                                                            | Description                                                     |
+| --------------------------------------------------------------- | --------------------------------------------------------------- |
+| `--library`                                                     | Library ID (shared library or site ID)                          |
+| `-f`, `--file`                                                  | JSON body (as printed by `get`); flags override its fields      |
+| `--name`, `--description`, `--page-title`, `--page-description` | Localized values for `--locale`                                 |
+| `--[no-]online`                                                 | Online in `--locale`                                            |
+| `-a`, `--attribute c_id=value`                                  | Localized string custom attribute (repeatable)                  |
+| `--markup c_id=<html>`                                          | Localized markup custom attribute such as `c_body` (repeatable) |
+| `--template`                                                    | Rendering template                                              |
+| `--locale`                                                      | Locale for localized values (default `default`)                 |
+| `--folder`                                                      | `put` only: assign the asset to this classification folder      |
+| `--folders`                                                     | `get` only: include the folders the asset is in                 |
+| `--force`                                                       | `delete` only: skip the confirmation prompt                     |
 
 ### Examples
 
@@ -570,19 +567,19 @@ b2c content folder unassign <folderId> <contentId>
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--library` | Library ID (shared library or site ID) |
-| `--folder` | `list` only: starting folder (default `root`) |
-| `--depth` | `list` only: maximum depth below the starting folder |
-| `--folders-only` | `list` only: skip content assets |
-| `--tree` | `list` only: print a tree instead of a table |
-| `--parent` | `put`/`update`: parent folder (default `root`) |
-| `--name`, `--description`, `--page-title`, `--page-description`, `-a`, `--file`, `--locale` | Same as `content asset` |
-| `--[no-]online` | Folder online flag (not localized) |
-| `--default` | `assign` only: make this the asset's classification folder |
-| `--position` | `assign` only: sort position in the folder |
-| `--force` | `delete` only: skip the confirmation prompt |
+| Flag                                                                                        | Description                                                |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `--library`                                                                                 | Library ID (shared library or site ID)                     |
+| `--folder`                                                                                  | `list` only: starting folder (default `root`)              |
+| `--depth`                                                                                   | `list` only: maximum depth below the starting folder       |
+| `--folders-only`                                                                            | `list` only: skip content assets                           |
+| `--tree`                                                                                    | `list` only: print a tree instead of a table               |
+| `--parent`                                                                                  | `put`/`update`: parent folder (default `root`)             |
+| `--name`, `--description`, `--page-title`, `--page-description`, `-a`, `--file`, `--locale` | Same as `content asset`                                    |
+| `--[no-]online`                                                                             | Folder online flag (not localized)                         |
+| `--default`                                                                                 | `assign` only: make this the asset's classification folder |
+| `--position`                                                                                | `assign` only: sort position in the folder                 |
+| `--force`                                                                                   | `delete` only: skip the confirmation prompt                |
 
 ### Examples
 
@@ -615,11 +612,11 @@ b2c content slot list [--site-id <site>] [--context global|category|folder]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--site-id` | Site whose slots to list | `siteId` from configuration |
-| `--context` | Only slots of this context type | All |
-| `--columns`, `--extended` | Select table columns (`slotId`, `contextType`, `configurations`, `activeConfigurations`, `description`) | |
+| Flag                      | Description                                                                                             | Default                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `--site-id`               | Site whose slots to list                                                                                | `siteId` from configuration |
+| `--context`               | Only slots of this context type                                                                         | All                         |
+| `--columns`, `--extended` | Select table columns (`slotId`, `contextType`, `configurations`, `activeConfigurations`, `description`) |                             |
 
 ## b2c content slot get
 
@@ -647,12 +644,12 @@ b2c content slot config list [--site-id <site>] [--slot-id <slot>] [--context gl
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--site-id` | Site whose configurations to list | `siteId` from configuration |
-| `--slot-id` | Only configurations of this slot | All slots |
-| `--context` | Only configurations with this context | All |
-| `--columns`, `--extended` | Select table columns (`slotId`, `configurationId`, `context`, `enabled`, `active`, `default`, `rank`, `contentType`, `content`, `customerGroups`, `schedule`, `template`) | |
+| Flag                      | Description                                                                                                                                                               | Default                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `--site-id`               | Site whose configurations to list                                                                                                                                         | `siteId` from configuration |
+| `--slot-id`               | Only configurations of this slot                                                                                                                                          | All slots                   |
+| `--context`               | Only configurations with this context                                                                                                                                     | All                         |
+| `--columns`, `--extended` | Select table columns (`slotId`, `configurationId`, `context`, `enabled`, `active`, `default`, `rank`, `contentType`, `content`, `customerGroups`, `schedule`, `template`) |                             |
 
 `active` means the configuration is enabled and inside its schedule now.
 
@@ -678,21 +675,21 @@ b2c content slot config put <slotId> <configurationId> [content flag] --template
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description |
-|------|-------------|
-| `--site-id` | Site the slot belongs to (default: `siteId` from configuration) |
-| `-f`, `--file` | JSON file with the configuration body; flags override its fields |
-| `--content-assets` | Comma-separated content asset IDs |
-| `--products` | Comma-separated product IDs |
-| `--categories` | Comma-separated category IDs |
-| `--html` | HTML markup for the default locale |
-| `--template` | Rendering template, for example `slots/content/htmlslotcontainer.isml` |
-| `--context`, `--context-id` | `global` (default), or `category`/`folder` with the category or folder ID |
-| `--[no-]enabled`, `--[no-]default` | Enable the configuration, or make it the slot's default |
-| `--rank` | Rank used to order configurations |
-| `--customer-groups` | Comma-separated customer group IDs |
-| `--start-date`, `--end-date` | Schedule window (ISO 8601) |
-| `--description` | Configuration description |
+| Flag                               | Description                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `--site-id`                        | Site the slot belongs to (default: `siteId` from configuration)           |
+| `-f`, `--file`                     | JSON file with the configuration body; flags override its fields          |
+| `--content-assets`                 | Comma-separated content asset IDs                                         |
+| `--products`                       | Comma-separated product IDs                                               |
+| `--categories`                     | Comma-separated category IDs                                              |
+| `--html`                           | HTML markup for the default locale                                        |
+| `--template`                       | Rendering template, for example `slots/content/htmlslotcontainer.isml`    |
+| `--context`, `--context-id`        | `global` (default), or `category`/`folder` with the category or folder ID |
+| `--[no-]enabled`, `--[no-]default` | Enable the configuration, or make it the slot's default                   |
+| `--rank`                           | Rank used to order configurations                                         |
+| `--customer-groups`                | Comma-separated customer group IDs                                        |
+| `--start-date`, `--end-date`       | Schedule window (ISO 8601)                                                |
+| `--description`                    | Configuration description                                                 |
 
 Content (one of `--content-assets`, `--products`, `--categories`, `--html`, or `slotContent` in `--file`) and a template are required. Referenced content must exist: content assets are looked up in the site's library.
 

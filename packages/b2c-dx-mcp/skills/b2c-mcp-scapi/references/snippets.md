@@ -102,7 +102,7 @@ Input JSON Schema:
 
 ## builtin/page-push
 
-Validate a Page Designer page body against the site's live page and component types, then create or update it as a draft.
+Validate a Page Designer page body against the site's live page and component types, then create or update it.
 
 Effect: write.
 

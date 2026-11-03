@@ -1,5 +1,5 @@
 ---
-description: Page Designer page creation through the Admin Experiences API is grounded in the content reference (live types first, PUT a draft, no read-back) without live calls.
+description: Page Designer page creation through the Admin Experiences API is grounded in the content reference (live types first, PUT creates an offline page, no read-back) without live calls.
 tags: [tier0, scapi, content]
 max_turns: 12
 ---

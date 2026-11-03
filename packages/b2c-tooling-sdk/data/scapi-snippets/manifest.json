@@ -254,7 +254,7 @@
     },
     {
       "name": "builtin/page-push",
-      "description": "Validate a Page Designer page body against the site's live page and component types, then create or update it as a draft.",
+      "description": "Validate a Page Designer page body against the site's live page and component types, then create or update it.",
       "effect": "write",
       "file": "page-push.js",
       "inputSchema": {
