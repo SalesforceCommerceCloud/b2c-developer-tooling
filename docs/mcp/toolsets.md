@@ -267,8 +267,10 @@ See [file access](./security#instance-files).
 Your assistant can check which custom attributes exist (for example `c_color` on
 Product), their value types, and their enum values before it writes code that uses
 them. Requires an API client with the `sfcc.object-definitions` scope, plus
-`short-code` and `tenant-id`. Filtering and enum values need
-`sfcc.object-definitions.rw`. Custom object types aren't covered. To change
+`short-code` and `tenant-id`. Enum values need `sfcc.object-definitions.rw`
+and a safety level that allows the attribute search, which is a POST request. When
+the search is blocked, the tool returns the definitions without values and says
+why. Custom object types aren't covered. To change
 definitions, use [`b2c object-types`](../cli/object-types).
 
 <ExamplePrompt>

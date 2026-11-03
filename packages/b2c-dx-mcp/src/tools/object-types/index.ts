@@ -16,8 +16,9 @@ import {
   localizedDefault,
   type ObjectAttributeDefinition,
   type ObjectAttributeGroup,
-  type ObjectDefinitionsQuery,
+  type ObjectTypesClient,
 } from '@salesforce/b2c-tooling-sdk/operations/object-types';
+import {SafetyBlockedError} from '@salesforce/b2c-tooling-sdk/safety';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
@@ -98,6 +99,56 @@ function compactGroups(groups: ObjectAttributeGroup[]): NonNullable<ObjectTypesD
   return [...byId.values()];
 }
 
+function plainId(id: string): string {
+  return id.startsWith('c_') ? id.slice(2) : id;
+}
+
+/** Applies kind, ids, and search filters to listed attribute definitions. */
+export function filterAttributes(
+  attributes: ObjectAttributeDefinition[],
+  args: Pick<ObjectTypesDescribeInput, 'ids' | 'kind' | 'search'>,
+): ObjectAttributeDefinition[] {
+  const ids = args.ids?.length ? new Set(args.ids.map((id) => plainId(id))) : undefined;
+  const phrase = args.search?.trim().toLowerCase();
+  return attributes.filter((attr) => {
+    if (args.kind === 'custom' && attr.system) return false;
+    if (args.kind === 'system' && !attr.system) return false;
+    if (ids && !ids.has(attr.id)) return false;
+    if (phrase) {
+      const names = [attr.id, attr.effectiveId, ...Object.values(attr.displayName ?? {})];
+      if (!names.some((name) => name?.toLowerCase().includes(phrase))) return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Lists attribute definitions. With values, uses the search endpoint (the only
+ * source of enum values); if safety or scope blocks it, falls back to the
+ * listing and records why values are missing.
+ */
+async function listWithValues(
+  client: ObjectTypesClient,
+  objectType: string,
+  includeValues: boolean,
+  notes: string[],
+): Promise<ObjectAttributeDefinition[]> {
+  if (!includeValues) return client.listAttributeDefinitions(objectType);
+  try {
+    return await client.listAttributeDefinitions(objectType, {includeValues: true});
+  } catch (error) {
+    const blocked = error instanceof SafetyBlockedError;
+    const status = (error as {status?: number}).status;
+    if (!blocked && status !== 401 && status !== 403) throw error;
+    notes.push(
+      blocked
+        ? 'Enum values unavailable: the safety level blocks the attribute search (POST) that returns them.'
+        : 'Enum values unavailable: the attribute search that returns them needs the sfcc.object-definitions.rw scope.',
+    );
+    return client.listAttributeDefinitions(objectType);
+  }
+}
+
 /**
  * Creates the object_types_describe tool.
  */
@@ -111,7 +162,7 @@ export function createObjectTypesDescribeTool(loadServices: () => Promise<Servic
       description:
         "List system object types, or one type's attribute definitions (effective IDs like c_color, value types, " +
         'enum values, groups). Use before writing product.custom.* or c_ field code. Custom object types are not covered. ' +
-        'Scope sfcc.object-definitions; filters and values need .rw.',
+        'Scope sfcc.object-definitions; enum values need .rw.',
       toolsets: ['CARTRIDGES', 'SCAPI'],
       requiresInstance: false,
       usesConfigurationContext: true,
@@ -143,36 +194,19 @@ export function createObjectTypesDescribeTool(loadServices: () => Promise<Servic
         }
 
         const {objectType} = args;
-        const ids = args.ids?.map((id) => (id.startsWith('c_') ? id.slice(2) : id));
-        const kind = args.kind && args.kind !== 'all' ? args.kind : undefined;
-        const query: ObjectDefinitionsQuery | undefined = ids?.length
-          ? ({
-              boolQuery: {
-                must: [
-                  {termQuery: {fields: ['id'], operator: 'one_of' as const, values: ids}},
-                  ...(kind
-                    ? [{termQuery: {fields: ['system'], operator: 'is' as const, values: [kind === 'system']}}]
-                    : []),
-                  ...(args.search ? [{textQuery: {fields: ['id', 'display_name'], searchPhrase: args.search}}] : []),
-                ],
-              },
-            } as ObjectDefinitionsQuery)
-          : undefined;
-        const [attributes, groups] = await Promise.all([
-          client.listAttributeDefinitions(objectType, {
-            kind,
-            text: args.search,
-            query,
-            includeValues: args.includeValues,
-          }),
+        const notes: string[] = [];
+        // Filter the GET listing locally: it works with the read-only scope and
+        // under READ_ONLY safety. Only enum values need the (POST) search endpoint.
+        const [listed, groups] = await Promise.all([
+          listWithValues(client, objectType, Boolean(args.includeValues), notes),
           args.includeGroups ? client.listAttributeGroups(objectType, {expandDefinitions: true}) : undefined,
         ]);
+        const attributes = filterAttributes(listed, args);
         const offset = args.offset ?? 0;
         const limit = args.limit ?? 100;
         const page = attributes.slice(offset, offset + limit);
         const nextOffset = offset + page.length < attributes.length ? offset + page.length : undefined;
-        const notes: string[] = [];
-        if (attributes.some((attr) => attr.valueType?.startsWith('enum_')) && !args.includeValues) {
+        if (!args.includeValues && attributes.some((attr) => attr.valueType?.startsWith('enum_'))) {
           notes.push('Enum values omitted; pass includeValues: true.');
         }
         return {

@@ -7,6 +7,7 @@
 import {expect} from 'chai';
 import {stub, restore, type SinonStub} from 'sinon';
 import type {ObjectTypesClient} from '@salesforce/b2c-tooling-sdk/operations/object-types';
+import {SafetyBlockedError} from '@salesforce/b2c-tooling-sdk/safety';
 import {compactAttribute, createObjectTypesDescribeTool} from '../../src/tools/object-types/index.js';
 import {Services} from '../../src/services.js';
 import {createMockResolvedConfig} from '../test-helpers.js';
@@ -80,17 +81,38 @@ describe('tools/object-types', () => {
     expect(out.notes[0]).to.include('includeValues');
   });
 
-  it('builds an exact-ID search with kind and text filters', async () => {
+  it('filters by ids, kind, and search locally without the search endpoint', async () => {
     const tool = createObjectTypesDescribeTool(() => services);
-    await tool.handler({objectType: 'Product', ids: ['c_color'], kind: 'custom', search: 'col', includeValues: true});
-    const [type, options] = client.listAttributeDefinitions.firstCall.args;
-    expect(type).to.equal('Product');
-    expect(options.includeValues).to.equal(true);
-    expect(options.query.boolQuery.must).to.deep.equal([
-      {termQuery: {fields: ['id'], operator: 'one_of', values: ['color']}},
-      {termQuery: {fields: ['system'], operator: 'is', values: [false]}},
-      {textQuery: {fields: ['id', 'display_name'], searchPhrase: 'col'}},
+    const out = parse(
+      await tool.handler({objectType: 'Product', ids: ['c_color', 'name'], kind: 'custom', search: 'COL'}),
+    );
+    expect(client.listAttributeDefinitions.firstCall.args).to.deep.equal(['Product']);
+    expect(out.attributes).to.deep.equal([{id: 'c_color', type: 'enum_of_string', name: 'Color'}]);
+  });
+
+  it('requests enum values through search when includeValues is set', async () => {
+    const tool = createObjectTypesDescribeTool(() => services);
+    const out = parse(await tool.handler({objectType: 'Product', ids: ['color'], includeValues: true}));
+    expect(client.listAttributeDefinitions.firstCall.args).to.deep.equal(['Product', {includeValues: true}]);
+    expect(out.attributes).to.deep.equal([
+      {id: 'c_color', type: 'enum_of_string', name: 'Color', values: [{value: 'red', label: 'Red'}, {value: 'blue'}]},
     ]);
+  });
+
+  it('falls back to the listing with a note when safety blocks the search', async () => {
+    const listed = await client.listAttributeDefinitions();
+    client.listAttributeDefinitions = stub();
+    client.listAttributeDefinitions
+      .withArgs('Product', {includeValues: true})
+      .rejects(new SafetyBlockedError('blocked', 'POST', 'https://x', 'READ_ONLY'));
+    // The plain listing never returns enum values.
+    client.listAttributeDefinitions
+      .withArgs('Product')
+      .resolves(listed.map(({valueDefinitions: _values, ...attr}: {valueDefinitions?: unknown}) => attr));
+    const tool = createObjectTypesDescribeTool(() => services);
+    const out = parse(await tool.handler({objectType: 'Product', search: 'color', includeValues: true}));
+    expect(out.attributes).to.deep.equal([{id: 'c_color', type: 'enum_of_string', name: 'Color'}]);
+    expect(out.notes[0]).to.include('safety level blocks');
   });
 
   it('caps enum values per attribute', () => {
