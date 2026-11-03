@@ -12,7 +12,7 @@ import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {openJobLog} from '../job-log-viewer.js';
-import {saveContentXml, type ContentSaveResult} from './content-save.js';
+import {saveContentXml, type ContentPageContext, type ContentSaveResult} from './content-save.js';
 
 export const CONTENT_SCHEME = 'b2c-content';
 
@@ -113,6 +113,27 @@ export function generateContentXML(library: Library, contentId: string): string 
   return new xml2js.Builder().buildObject(xmlDoc);
 }
 
+/**
+ * For a component, the page it is placed on (walking up through layout
+ * components) and that page's XML. Undefined for pages, content assets,
+ * fragments (shared content blocks) and components under a fragment or not
+ * placed on a page.
+ */
+export function findComponentPage(library: Library, contentId: string): ContentPageContext | undefined {
+  let target: LibraryNode | undefined;
+  for (const node of library.nodes({traverseHidden: true, callbackHidden: true})) {
+    if (node.id === contentId) {
+      target = node as LibraryNode;
+      break;
+    }
+  }
+  if (target?.type !== 'COMPONENT') return undefined;
+  let node: LibraryNode | null = target.parent;
+  while (node?.type === 'COMPONENT') node = node.parent;
+  if (node?.type !== 'PAGE') return undefined;
+  return {pageId: node.id, pageXml: generateContentXML(library, node.id)};
+}
+
 export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   private _onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   readonly onDidChangeFile = this._onDidChangeFile.event;
@@ -124,6 +145,8 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   private mtimes = new Map<string, number>();
   // XML as last read or saved, per item, so a save can tell which fields the edit changed.
   private originals = new Map<string, string>();
+  // For components: their page as last read or saved, so a save can update that page.
+  private pages = new Map<string, ContentPageContext>();
 
   constructor(private configProvider: ContentConfigProvider) {}
 
@@ -164,7 +187,11 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     const library = await this.loadLibrary(libraryId, isSiteLibrary);
 
     const xmlString = generateContentXML(library, contentId);
-    this.originals.set(`${libraryId}:${contentId}`, xmlString);
+    const key = `${libraryId}:${contentId}`;
+    this.originals.set(key, xmlString);
+    const page = findComponentPage(library, contentId);
+    if (page) this.pages.set(key, page);
+    else this.pages.delete(key);
     return new TextEncoder().encode(xmlString);
   }
 
@@ -206,6 +233,7 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
             contentId: contentId ?? '',
             xml: xmlContent,
             originalXml: this.originals.get(key),
+            page: this.pages.get(key),
             siteId: this.configProvider.getSiteId(),
             useExperiencesApi: vscode.workspace
               .getConfiguration('b2c-dx')
@@ -234,11 +262,16 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     if (contentId) {
       this.mtimes.set(key, Date.now());
       this.originals.set(key, xmlContent);
+      const page = this.pages.get(key);
+      const {pageXml} = result;
+      if (page && pageXml) this.pages.set(key, {pageId: page.pageId, pageXml});
     }
     this._onDidChangeFile.fire([{type: vscode.FileChangeType.Changed, uri}]);
     vscode.window.showInformationMessage(
       result.method === 'experiences-api'
-        ? `Saved page ${contentId} to ${libraryId} (site ${result.siteId}).`
+        ? result.pageId === contentId
+          ? `Saved page ${contentId} to ${libraryId} (site ${result.siteId}).`
+          : `Saved ${contentId} on page ${result.pageId} to ${libraryId} (site ${result.siteId}).`
         : `Content imported to ${libraryId} successfully.`,
     );
   }

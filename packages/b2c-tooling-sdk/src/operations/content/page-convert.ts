@@ -311,6 +311,26 @@ function unpushableFields(content: XmlElement): Record<string, unknown> {
   return out;
 }
 
+/**
+ * Names a changed field for a fallback reason, with the locales that changed
+ * for localized fields, for example `data (fr)`.
+ */
+function describeField(field: string, before: unknown, after: unknown): string {
+  const byLang = (value: unknown): Map<string, string> => {
+    const out = new Map<string, string>();
+    if (!Array.isArray(value)) return out;
+    for (const v of value as XmlText[]) {
+      const lang = typeof v === 'string' ? undefined : v.$?.['xml:lang'];
+      if (lang) out.set(lang, JSON.stringify(v));
+    }
+    return out;
+  };
+  const b = byLang(before);
+  const a = byLang(after);
+  const langs = [...new Set([...b.keys(), ...a.keys()])].filter((l) => b.get(l) !== a.get(l));
+  return langs.length > 0 ? `${field} (${langs.sort().join(', ')})` : field;
+}
+
 /** What a newly created component looks like in an export (the API's defaults). */
 function isDefaultNewComponentField(key: string, value: unknown): boolean {
   if (key === 'online-flag') return (value as XmlText[]).every((v) => textOf(v) === 'true');
@@ -437,9 +457,10 @@ export async function planLibraryPagePush(
     if (before) {
       if (JSON.stringify(unpushableFields(before)) !== JSON.stringify(after)) {
         const fields = new Set([...Object.keys(after), ...Object.keys(unpushableFields(before))]);
-        const changed = [...fields].filter(
-          (f) => JSON.stringify(after[f]) !== JSON.stringify(unpushableFields(before)[f]),
-        );
+        const beforeFields = unpushableFields(before);
+        const changed = [...fields]
+          .filter((f) => JSON.stringify(after[f]) !== JSON.stringify(beforeFields[f]))
+          .map((f) => describeField(f, beforeFields[f], after[f]));
         return {pushable: false, reason: `${id}: ${changed.join(', ')} changed, which only an import can write`};
       }
     } else {

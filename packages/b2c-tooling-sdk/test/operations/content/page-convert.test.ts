@@ -197,7 +197,7 @@ describe('operations/content/page-convert', () => {
             '<type>page.aboutUsPage</type>',
             '<display-name xml:lang="fr">A propos</display-name>\n    <type>page.aboutUsPage</type>',
           ),
-        'display-name',
+        'display-name (fr) changed',
       ],
       ['a cleared attribute', (x: string) => x.replace(',"height":"md"', ''), 'height cleared'],
       ['the page type', (x: string) => x.replaceAll('page.aboutUsPage', 'page.homePage'), 'page type changed'],

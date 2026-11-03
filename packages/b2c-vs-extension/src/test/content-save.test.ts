@@ -7,7 +7,9 @@
 import * as assert from 'assert';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {ExperiencesUnavailableError} from '@salesforce/b2c-tooling-sdk/operations/content';
+import {Library} from '@salesforce/b2c-tooling-sdk/operations/content';
 import {saveContentXml, type SaveContentOptions} from '../content-tree/content-save.js';
+import {findComponentPage, generateContentXML} from '../content-tree/content-fs-provider.js';
 
 const PAGE = `<?xml version="1.0" encoding="UTF-8"?>
 <library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="SharedLibrary">
@@ -54,14 +56,19 @@ function run(overrides: Partial<SaveContentOptions>) {
 suite('saveContentXml', () => {
   test('saves a page edit through the Experiences API', async () => {
     const {calls, result} = run({});
-    assert.deepStrictEqual(await result, {method: 'experiences-api', siteId: 'RefArch'});
+    assert.deepStrictEqual(await result, {
+      method: 'experiences-api',
+      siteId: 'RefArch',
+      pageId: 'about',
+      pageXml: EDITED,
+    });
     assert.strictEqual(calls.imports, 0);
     assert.strictEqual(calls.pushes.length, 1);
   });
 
   test('imports when the setting is off', async () => {
     const {calls, result} = run({useExperiencesApi: false});
-    assert.deepStrictEqual(await result, {method: 'import', fallbackReason: undefined});
+    assert.deepStrictEqual(await result, {method: 'import', fallbackReason: undefined, pageXml: undefined});
     assert.strictEqual(calls.pushes.length, 0);
     assert.strictEqual(calls.imports, 1);
   });
@@ -83,7 +90,9 @@ suite('saveContentXml', () => {
 
   test('uses the site ID of a site-private library', async () => {
     const {result} = run({siteId: undefined, isSiteLibrary: true, libraryId: 'RefArch'});
-    assert.deepStrictEqual(await result, {method: 'experiences-api', siteId: 'RefArch'});
+    const saved = await result;
+    assert.strictEqual(saved.method, 'experiences-api');
+    assert.strictEqual(saved.method === 'experiences-api' ? saved.siteId : '', 'RefArch');
   });
 
   test('imports when the Experiences API is unavailable', async () => {
@@ -95,5 +104,43 @@ suite('saveContentXml', () => {
     const saved = await result;
     assert.strictEqual(saved.method, 'import');
     assert.strictEqual(calls.imports, 1);
+  });
+
+  suite('component saves', () => {
+    async function componentRun(edit: (xml: string) => string) {
+      const library = await Library.parse(PAGE);
+      const page = findComponentPage(library, 'banner-1');
+      assert.ok(page);
+      const original = generateContentXML(library, 'banner-1');
+      return run({contentId: 'banner-1', xml: edit(original), originalXml: original, page});
+    }
+
+    test('saves a component edit as an update of its page', async () => {
+      const {calls, result} = await componentRun((x) => x.replace('"message": "Hi"', '"message": "Hello"'));
+      const saved = await result;
+      assert.strictEqual(saved.method, 'experiences-api');
+      assert.strictEqual(saved.method === 'experiences-api' ? saved.pageId : '', 'about');
+      assert.strictEqual(calls.imports, 0);
+      const pushed = calls.pushes[0] as {id: string; regions: Array<{components: Array<{data: unknown}>}>};
+      assert.strictEqual(pushed.id, 'about');
+      assert.deepStrictEqual(pushed.regions[0].components[0].data, {message: 'Hello'});
+    });
+
+    test('imports a component edit that changes another locale, naming it', async () => {
+      const {calls, result} = await componentRun((x) =>
+        x.replace('<online-flag>', '<data xml:lang="fr">{"message":"Salut"}</data>\n    <online-flag>'),
+      );
+      const saved = await result;
+      assert.strictEqual(saved.method, 'import');
+      assert.match(saved.method === 'import' ? (saved.fallbackReason ?? '') : '', /data \(fr\) changed/);
+      assert.strictEqual(calls.pushes.length, 0);
+      assert.strictEqual(calls.imports, 1);
+    });
+
+    test('finds no page for a page or an unknown ID', async () => {
+      const library = await Library.parse(PAGE);
+      assert.strictEqual(findComponentPage(library, 'about'), undefined);
+      assert.strictEqual(findComponentPage(library, 'missing'), undefined);
+    });
   });
 });
