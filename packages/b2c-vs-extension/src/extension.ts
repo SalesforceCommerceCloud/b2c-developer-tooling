@@ -1100,7 +1100,7 @@ async function activateInner(
       registerApiBrowser(context, configProvider, log);
     });
   }
-  if (settings.get<boolean>('features.objectTypesExplorer', false)) {
+  if (settings.get<boolean>('features.objectTypesExplorer', true)) {
     runActivationStep(log, 'Object Types registration', () => {
       registerObjectTypes(context, configProvider, log);
     });

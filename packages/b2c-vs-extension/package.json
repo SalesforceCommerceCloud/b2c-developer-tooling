@@ -186,8 +186,8 @@
         },
         "b2c-dx.features.objectTypesExplorer": {
           "type": "boolean",
-          "default": false,
-          "description": "(Preview) Enable the Object Types view for browsing system object attribute definitions and groups. Needs an API client with the sfcc.object-definitions scope."
+          "default": true,
+          "description": "Enable the Object Types view for browsing system object attribute definitions and groups. Needs an API client with the sfcc.object-definitions scope."
         },
         "b2c-dx.features.exportExplorer": {
           "type": "boolean",

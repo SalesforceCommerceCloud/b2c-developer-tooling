@@ -88,11 +88,11 @@ Explore every SCAPI API your instance exposes and try requests against them in a
 
 </a>
 
-### Object Types (Preview)
+### Object Types
 
 Browse system object types (Product, Order, Customer, and others), their custom and system attributes, and attribute groups in the **B2C-DX: APIs** sidebar. Expand an enum attribute to see its values, copy an attribute's script ID (`c_myAttribute`), open its full definition, or export an object type as metadata XML. **Write Custom Attribute Types to Project** in the view toolbar adds the attributes to Script API IntelliSense.
 
-Turn it on with the `b2c-dx.features.objectTypesExplorer` setting. It needs an Account Manager API client with the `sfcc.object-definitions` scope (`sfcc.object-definitions.rw` to show enum values). Nothing is requested until you select **Load Object Types**, and access problems are shown in the view.
+It needs an Account Manager API client with the `sfcc.object-definitions` scope (`sfcc.object-definitions.rw` to show enum values). Nothing is requested until you select **Load Object Types**, and access problems are shown in the view. Hide it with the `b2c-dx.features.objectTypesExplorer` setting.
 
 ### WebDAV Browser
 
