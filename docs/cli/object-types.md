@@ -54,7 +54,7 @@ b2c object-types attributes create Product fabric --type string -n Fabric -n fr=
 
 ## Script API IntelliSense
 
-Attribute definitions also drive custom attribute IntelliSense (`product.custom.myAttribute`) in cartridge code. Generate the declarations with `b2c setup ide vscode-types --custom-attributes` (see [Setup](./setup.md#b2c-setup-ide-vscode-types)); the VS Code extension generates them automatically. See the [IDE Integration guide](/guide/ide-integration#custom-attributes).
+Attribute definitions also drive custom attribute IntelliSense (`product.custom.myAttribute`) in cartridge code. Generate the declarations with `b2c setup ide vscode-types --custom-attributes` (see [Setup](./setup.md#b2c-setup-ide-vscode-types)) or the VS Code command **B2C DX: Write Custom Attribute Types to Project**. See the [IDE Integration guide](/guide/ide-integration#custom-attributes).
 
 ---
 

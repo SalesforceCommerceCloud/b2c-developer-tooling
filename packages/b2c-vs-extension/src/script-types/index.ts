@@ -5,7 +5,6 @@
  */
 import * as vscode from 'vscode';
 
-import {existsSync} from 'node:fs';
 import path from 'node:path';
 
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
@@ -13,12 +12,10 @@ import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {
   PROJECT_TYPES_FILE,
-  canAuthenticateSilently,
   generateTo,
-  isStale,
   projectFile,
+  projectFilePath,
   resolveTarget,
-  storageFile,
   type GenerateOutcome,
 } from './custom-attributes.js';
 
@@ -54,10 +51,6 @@ function isFeatureEnabled(): boolean {
   return vscode.workspace.getConfiguration('b2c-dx').get<boolean>('features.scriptTypes', true);
 }
 
-function isCustomAttributesEnabled(): boolean {
-  return vscode.workspace.getConfiguration('b2c-dx').get<boolean>('scriptTypes.customAttributes', true);
-}
-
 function describeOutcome(outcome: GenerateOutcome): string {
   const values = outcome.valuesIncluded ? '' : ' Enum values were omitted.';
   return `${outcome.attributes} custom attribute(s) across ${outcome.objectTypes} object type(s).${values}`;
@@ -91,59 +84,27 @@ export function registerScriptTypes(
     );
   };
 
-  // Custom attribute declarations: a project copy (written by the command or
-  // `b2c setup ide vscode-types --custom-attributes`) wins; otherwise a copy
-  // generated in the background into extension storage, one per instance.
+  // Custom attribute declarations are opt-in: the plugin loads the project
+  // file only after the write command (or `b2c setup ide vscode-types
+  // --custom-attributes`) has created it.
   const customTypesFiles = (): string[] => {
-    if (!isCustomAttributesEnabled()) return [];
-    const inProject = projectFile(configProvider);
-    if (inProject) return [inProject];
-    const target = resolveTarget(configProvider);
-    if (typeof target === 'string') return [];
-    const file = storageFile(context, target);
-    return existsSync(file) ? [file] : [];
+    const file = projectFile(configProvider);
+    return file ? [file] : [];
   };
 
-  let generating: Promise<void> | undefined;
-  const refreshInBackground = async (): Promise<void> => {
-    if (generating || !isFeatureEnabled() || !isCustomAttributesEnabled()) return;
-    if (projectFile(configProvider)) return;
-    const target = resolveTarget(configProvider);
-    if (typeof target === 'string') return;
-    const file = storageFile(context, target);
-    if (!(await isStale(file))) return;
-    // Never open a browser for a background refresh; wait for the command instead.
-    if (!canAuthenticateSilently(configProvider)) {
-      log.appendLine('[ScriptTypes] Custom attribute types not refreshed: no API client secret or stored login.');
-      return;
-    }
-    generating = (async () => {
-      try {
-        const outcome = await generateTo(configProvider, target, file);
-        log.appendLine(`[ScriptTypes] Generated custom attribute types: ${describeOutcome(outcome)} ${file}`);
-        for (const warning of outcome.warnings) log.appendLine(`[ScriptTypes] ${warning}`);
-        await push();
-      } catch (err) {
-        log.appendLine(`[ScriptTypes] Custom attribute types not generated: ${String(err)}`);
-      } finally {
-        generating = undefined;
-      }
-    })();
-    await generating;
-  };
+  void push();
 
-  void push().then(() => refreshInBackground());
+  const resetSub = configProvider.onDidReset(() => void push());
 
-  const resetSub = configProvider.onDidReset(() => void push().then(() => refreshInBackground()));
+  const typesWatcher = vscode.workspace.createFileSystemWatcher(`**/${PROJECT_TYPES_FILE.split(path.sep).join('/')}`);
+  typesWatcher.onDidCreate(() => void push());
+  typesWatcher.onDidDelete(() => void push());
 
   const cartridgesSub = cartridgeService.onDidChange(() => void push());
 
   const configChange = vscode.workspace.onDidChangeConfiguration((e) => {
-    if (
-      e.affectsConfiguration('b2c-dx.features.scriptTypes') ||
-      e.affectsConfiguration('b2c-dx.scriptTypes.customAttributes')
-    ) {
-      void push().then(() => refreshInBackground());
+    if (e.affectsConfiguration('b2c-dx.features.scriptTypes')) {
+      void push();
     }
   });
 
@@ -155,15 +116,13 @@ export function registerScriptTypes(
     );
   });
 
-  const generate = async (toProject: boolean): Promise<void> => {
+  const writeCustomCmd = registerSafeCommand('b2c-dx.scriptTypes.writeCustomAttributes', async () => {
     const target = resolveTarget(configProvider);
     if (typeof target === 'string') {
       vscode.window.showErrorMessage(`B2C DX: Cannot generate custom attribute types. ${target}`);
       return;
     }
-    const file = toProject
-      ? path.join(configProvider.getWorkingDirectory(), PROJECT_TYPES_FILE)
-      : (projectFile(configProvider) ?? storageFile(context, target));
+    const file = projectFilePath(configProvider);
     try {
       const outcome = await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: 'B2C DX: Generating custom attribute types...'},
@@ -171,23 +130,15 @@ export function registerScriptTypes(
       );
       for (const warning of outcome.warnings) log.appendLine(`[ScriptTypes] ${warning}`);
       await push();
-      const where = toProject ? ` Wrote ${path.relative(configProvider.getWorkingDirectory(), file)}.` : '';
-      const action = toProject
-        ? await vscode.window.showInformationMessage(
-            `B2C DX: Custom attribute types updated: ${describeOutcome(outcome)}${where}`,
-            'Open File',
-          )
-        : await vscode.window.showInformationMessage(
-            `B2C DX: Custom attribute types updated: ${describeOutcome(outcome)}`,
-          );
+      const action = await vscode.window.showInformationMessage(
+        `B2C DX: Wrote ${path.relative(configProvider.getWorkingDirectory(), file)}: ${describeOutcome(outcome)}`,
+        'Open File',
+      );
       if (action === 'Open File') await vscode.window.showTextDocument(vscode.Uri.file(file));
     } catch (err) {
       vscode.window.showErrorMessage(`B2C DX: Custom attribute types not generated: ${String(err)}`);
     }
-  };
+  });
 
-  const refreshCustomCmd = registerSafeCommand('b2c-dx.scriptTypes.refreshCustomAttributes', () => generate(false));
-  const writeCustomCmd = registerSafeCommand('b2c-dx.scriptTypes.writeCustomAttributes', () => generate(true));
-
-  context.subscriptions.push(cartridgesSub, configChange, resetSub, refreshCmd, refreshCustomCmd, writeCustomCmd);
+  context.subscriptions.push(cartridgesSub, configChange, resetSub, typesWatcher, refreshCmd, writeCustomCmd);
 }

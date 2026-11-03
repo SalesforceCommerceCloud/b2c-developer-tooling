@@ -35,13 +35,9 @@ Cartridge resolution order matches your runtime cartridge path: the `cartridges`
 
 #### Custom attributes
 
-The extension also types the `custom` property of Script API objects with the instance's custom attributes, so `product.custom.myAttribute` gets completions, hover docs (display name, description, enum values), and type checking. Enum attributes narrow to their values, for example `product.custom.color.value` is `'red' | 'blue'`.
+To type the `custom` property of Script API objects with your instance's custom attributes, run **B2C DX: Write Custom Attribute Types to Project**. Then `product.custom.myAttribute` gets completions, hover docs (display name, description, enum values), and type checking. Enum attributes narrow to their values, for example `product.custom.color.value` is `'red' | 'blue'`.
 
-The declarations are generated in the background from the configured instance through the Object Definitions API and refreshed once a day. This needs an Account Manager API client with the `sfcc.object-definitions` scope plus `short-code` and `tenant-id` (see [Object Types](../cli/object-types.md)); enum values need `sfcc.object-definitions.rw`. Background generation never opens a browser: it runs with a client secret or an unexpired stored login.
-
-- **B2C DX: Refresh Custom Attribute IntelliSense** regenerates the declarations now (signing in if needed).
-- **B2C DX: Write Custom Attribute Types to Project** writes them to `.b2c-script-types/custom-attributes.d.ts` so they can be committed and shared. When this file exists, the extension uses it instead of the background copy.
-- Turn the feature off with the `b2c-dx.scriptTypes.customAttributes` setting (default: `true`).
+The command reads attribute definitions from the configured instance through the Object Definitions API and writes `.b2c-script-types/custom-attributes.d.ts`, which the extension loads automatically. Commit the file to share it, and run the command again when attribute definitions change. It needs an Account Manager API client with the `sfcc.object-definitions` scope plus `short-code` and `tenant-id` (see [Object Types](../cli/object-types.md)); enum values need `sfcc.object-definitions.rw`. `b2c setup ide vscode-types --custom-attributes` writes the same file.
 
 #### Legacy `.ds` scripts
 
@@ -68,7 +64,7 @@ This creates two artifacts at the repo root:
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions.
 - `./jsconfig.json` — TypeScript Language Service configuration mapping `dw/*` to the vendored types.
 
-Add `--custom-attributes` to also generate `./.b2c-script-types/custom-attributes.d.ts` with the instance's custom attributes (same requirements as above):
+Add `--custom-attributes` to also generate `./.b2c-script-types/custom-attributes.d.ts` with the instance's custom attributes (same requirements as the VS Code command above):
 
 ```bash
 b2c setup ide vscode-types --custom-attributes --force

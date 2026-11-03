@@ -315,7 +315,7 @@ b2c setup ide vscode-types --custom-attributes --object-type Product --object-ty
 The command produces:
 
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions, version-pinned to the CLI release. Safe to commit.
-- `./.b2c-script-types/custom-attributes.d.ts` (with `--custom-attributes`) — custom attribute declarations for the configured instance, so `product.custom.myAttribute` gets completions, hover docs, and types. Regenerate it when attribute definitions change. The VS Code extension uses this file instead of its own background copy when it exists.
+- `./.b2c-script-types/custom-attributes.d.ts` (with `--custom-attributes`) — custom attribute declarations for the configured instance, so `product.custom.myAttribute` gets completions, hover docs, and types. Regenerate it when attribute definitions change. The VS Code extension loads this file when it exists.
 - `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) can't be expressed in standalone TypeScript `paths` mappings and will appear unresolved without the Salesforce B2C Commerce VS Code extension.
 
 See the [IDE Integration guide](/guide/ide-integration#script-api-intellisense) for editor-specific setup notes (Neovim, Helix, Zed, etc.).
