@@ -143,6 +143,7 @@ export interface ToolAdapterOptions<TInput, TOutput> extends ToolEffects {
   /** Registration metadata is preserved independently of result enrichment. */
   title?: McpTool['title'];
   outputSchema?: McpTool['outputSchema'];
+  alwaysLoad?: McpTool['alwaysLoad'];
   /** Tool name (used in MCP protocol) */
   name: string;
 
@@ -369,6 +370,7 @@ export function createToolAdapter<TInput, TOutput>(
     idempotent: options.idempotent,
     openWorld: options.openWorld,
     outputSchema: options.outputSchema,
+    alwaysLoad: options.alwaysLoad,
     toolsets,
 
     async handler(rawArgs: Record<string, unknown>, toolContext?: ToolContext): Promise<ToolResult> {

@@ -171,7 +171,10 @@ export class B2CDxMcpServer extends McpServer {
     description: string,
     inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>, context?: ToolContext) => Promise<CallToolResult>,
-    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
+    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {
+      annotations?: ToolAnnotations;
+      _meta?: Record<string, unknown>;
+    } = {},
   ): void {
     const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
       this.recordRequestClient(context);

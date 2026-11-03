@@ -17,3 +17,11 @@ export function toToolAnnotations({effect, idempotent, openWorld}: ToolEffects):
     openWorldHint: openWorld,
   };
 }
+
+/** Claude Code reads this tools/list `_meta` key to load a tool upfront when it defers MCP tools. */
+export const ALWAYS_LOAD_META_KEY = 'anthropic/alwaysLoad';
+
+/** Client loading hints advertised in a tool's `_meta`. */
+export function toToolMeta({alwaysLoad}: {alwaysLoad?: boolean}): Record<string, unknown> | undefined {
+  return alwaysLoad ? {[ALWAYS_LOAD_META_KEY]: true} : undefined;
+}

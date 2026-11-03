@@ -65,6 +65,11 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> extends Tool
   inputSchema: T;
   /** Toolsets this tool belongs to */
   toolsets: Toolset[];
+  /**
+   * Load this tool's schema at session start instead of behind client tool search.
+   * Reserve for the few entry points nearly every session uses; each costs context upfront.
+   */
+  alwaysLoad?: boolean;
 }
 
 /**
