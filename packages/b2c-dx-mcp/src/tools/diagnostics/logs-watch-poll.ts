@@ -40,10 +40,12 @@ export function createLogsWatchPollTool(
   return createToolAdapter<PollInput, PollOutput>(
     {
       name: 'logs_watch_poll',
+      searchHint: 'read new lines output from log watch tail stream',
       effect: 'read',
       idempotent: true,
       openWorld: false,
-      description: 'Drain buffered B2C logs; wait when empty. Repeat if truncated. Includes rotation and error events.',
+      description:
+        'Read new lines buffered by a B2C log watch; wait when empty. Repeat if truncated. Includes rotation and error events.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         watch_id: z.string(),

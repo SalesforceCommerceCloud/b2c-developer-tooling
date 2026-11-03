@@ -9,8 +9,6 @@
  * that tool names, descriptions and search hints contain the words users and models search with.
  */
 
-import snowball from 'snowball-stemmers';
-
 export interface ListedTool {
   _meta?: Record<string, unknown>;
   description?: string;
@@ -34,14 +32,21 @@ const STOP_WORDS = new Set(
   ).split(' '),
 );
 
-const stemmer = snowball.newStemmer('english');
+/**
+ * Codex Snowball-stems tokens; folding plurals is enough to match its rankings for our queries
+ * (no stemming at all drops "breakpoints", "orders" and "customers" matches).
+ */
+function stem(word: string): string {
+  return word.length > 3 && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
+}
+
 const segmenter = new Intl.Segmenter('en', {granularity: 'word'});
 
-/** The `bm25` crate's default English tokenizer: lowercase, Unicode word boundaries, stop words, Snowball stems. */
+/** Approximates the `bm25` crate's default English tokenizer: lowercase, Unicode word boundaries, stop words, stems. */
 function codexTokens(text: string): string[] {
   const tokens: string[] = [];
   for (const {isWordLike, segment} of segmenter.segment(text.toLowerCase())) {
-    if (isWordLike && !STOP_WORDS.has(segment)) tokens.push(stemmer.stem(segment));
+    if (isWordLike && !STOP_WORDS.has(segment)) tokens.push(stem(segment));
   }
   return tokens;
 }

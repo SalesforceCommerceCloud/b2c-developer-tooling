@@ -39,10 +39,12 @@ export function createDebugControlTool(
   return createToolAdapter<ControlInput, ControlOutput>(
     {
       name: 'debug_control',
+      searchHint: 'debugger step over into out next line resume continue',
       effect: 'write',
       idempotent: false,
       openWorld: true,
-      description: 'Resume or step a halted thread. Follow with debug_wait_for_stop.',
+      description:
+        'Resume a halted thread, or step over, into, or out of the current line. Follow with debug_wait_for_stop.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         action: z.enum(['continue', 'into', 'over', 'out']),

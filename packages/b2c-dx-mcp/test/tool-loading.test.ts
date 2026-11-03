@@ -53,6 +53,21 @@ const SEARCH_CASES: Array<[query: string, tool: string]> = [
   ['is my custom api registered', 'scapi_custom_apis_get_status'],
   ['list available scapi apis', 'scapi_schemas_list'],
   ['script api class reference', 'docs_read'],
+  ['api error rate over the last day', 'metrics_get'],
+  ['xsd for site import', 'docs_schema_search'],
+  ['what is the xml format for promotions import', 'docs_schema_read'],
+  ['list available xsd schemas', 'docs_schema_list'],
+  ['list all documentation topics', 'docs_list'],
+  ['list active debugger sessions', 'debug_list_sessions'],
+  ['stop debugging and disconnect', 'debug_end_session'],
+  ['wait until the debugger hits the breakpoint', 'debug_wait_for_stop'],
+  ['evaluate an expression in the debugger', 'debug_evaluate'],
+  ['step over to the next line', 'debug_control'],
+  ['debug why the cart total is wrong', 'debug_capture_at_breakpoint'],
+  ['read new lines from my log watch', 'logs_watch_poll'],
+  ['read new lines from the mrt log watch', 'mrt_logs_watch_poll'],
+  ['save this api call as a snippet', 'scapi_snippet_save'],
+  ['which analytics reports are available', 'cip_discover'],
 ];
 
 async function listTools() {
@@ -102,6 +117,15 @@ describe('tool loading hints', () => {
       return failures;
     });
     expect(misses).to.deep.equal([]);
+  });
+
+  it('has a search case for every tool that is not loaded upfront', async () => {
+    const {tools} = await listTools();
+    const covered = new Set(SEARCH_CASES.map(([, tool]) => tool));
+    const uncovered = tools
+      .map((tool) => tool.name)
+      .filter((name) => !ALWAYS_LOADED.includes(name) && !covered.has(name));
+    expect(uncovered).to.deep.equal([]);
   });
 
   it('stays within the Codex plugin tool budget', async () => {

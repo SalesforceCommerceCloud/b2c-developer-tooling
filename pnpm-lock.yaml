@@ -406,9 +406,6 @@ importers:
       '@types/sinon':
         specifier: 'catalog:'
         version: 21.0.0
-      '@types/snowball-stemmers':
-        specifier: 0.6.2
-        version: 0.6.2
       c8:
         specifier: 'catalog:'
         version: 11.0.0
@@ -445,9 +442,6 @@ importers:
       sinon:
         specifier: 'catalog:'
         version: 21.0.1
-      snowball-stemmers:
-        specifier: 0.6.0
-        version: 0.6.0
       tsx:
         specifier: 'catalog:'
         version: 4.20.6
@@ -3805,9 +3799,6 @@ packages:
 
   '@types/sinonjs__fake-timers@15.0.1':
     resolution: {integrity: sha512-Ko2tjWJq8oozHzHV+reuvS5KYIRAokHnGbDwGh/J64LntgpbuylF74ipEL24HCyRjf9FOlBiBHWBR1RlVKsI1w==}
-
-  '@types/snowball-stemmers@0.6.2':
-    resolution: {integrity: sha512-ihEXPKPKfIP/Ht8FN+UPqqg1kPNrV+Uo+eQtqB+K4sLmTBll3OM1bKj7OlsN4v12qk4O7D0MjczJG7NPAxgpyQ==}
 
   '@types/statuses@2.0.6':
     resolution: {integrity: sha512-xMAgYwceFhRA2zY+XbEA7mxYbA093wdiW8Vu6gZPGWy9cmOyU9XesH1tNcEWsKFd5Vzrqx5T3D38PWx1FIIXkA==}
@@ -7702,9 +7693,6 @@ packages:
 
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
-
-  snowball-stemmers@0.6.0:
-    resolution: {integrity: sha512-47VTJvsZzEme3VxhbUFc9wR0CX8fYKNMgL7AiBdJcHUrwbmN7htFroeX+8ESIAaoNgwEgwI2wnv1HIcqQqAdcA==}
 
   sonic-boom@4.2.0:
     resolution: {integrity: sha512-INb7TM37/mAcsGmc9hyyI6+QR3rR1zVRu36B0NeGXKnOOLiZOfER5SA+N7X7k3yUYRzLWafduTDvJAfDswwEww==}
@@ -12420,8 +12408,6 @@ snapshots:
 
   '@types/sinonjs__fake-timers@15.0.1': {}
 
-  '@types/snowball-stemmers@0.6.2': {}
-
   '@types/statuses@2.0.6': {}
 
   '@types/superagent@8.1.10':
@@ -16785,8 +16771,6 @@ snapshots:
     dependencies:
       dot-case: 3.0.4
       tslib: 2.8.1
-
-  snowball-stemmers@0.6.0: {}
 
   sonic-boom@4.2.0:
     dependencies:
