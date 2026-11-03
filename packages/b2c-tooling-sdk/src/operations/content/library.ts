@@ -28,6 +28,12 @@ export class LibraryNode {
   typeId: string | null;
   /** Localized display name (x-default), when present. Content blocks (fragments) always have one. */
   displayName: string | null;
+  /**
+   * Region of the parent page/component this node is linked into, derived
+   * from the content-link `type` attribute (`<parentTypeId>.<regionId>`).
+   * Null for root nodes, static assets, and links without a type.
+   */
+  regionId: string | null;
   data: Record<string, unknown> | null;
   parent: LibraryNode | null;
   children: LibraryNode[];
@@ -40,6 +46,7 @@ export class LibraryNode {
     type: LibraryNodeType;
     typeId: string | null;
     displayName?: string | null;
+    regionId?: string | null;
     data: Record<string, unknown> | null;
     parent: LibraryNode | null;
     children: LibraryNode[];
@@ -50,6 +57,7 @@ export class LibraryNode {
     this.type = values.type;
     this.typeId = values.typeId;
     this.displayName = values.displayName ?? null;
+    this.regionId = values.regionId ?? null;
     this.data = values.data;
     this.parent = values.parent;
     this.children = values.children;
@@ -63,6 +71,7 @@ export class LibraryNode {
       type: this.type,
       typeId: this.typeId,
       displayName: this.displayName,
+      ...(this.regionId ? {regionId: this.regionId} : {}),
       data: this.data,
       children: this.children,
       hidden: this.hidden,
@@ -97,6 +106,21 @@ function classifyContentType(contentType: string | null): LibraryNodeType {
 function extractDisplayName(content: Record<string, unknown>): string | null {
   const displayNames = content['display-name'] as Array<Record<string, string>> | undefined;
   return displayNames?.[0]?.['_'] ?? null;
+}
+
+/**
+ * Derive the region ID from a content-link `type` attribute.
+ *
+ * Library XML records region membership as `<parentTypeId>.<regionId>`, for
+ * example `page.homePage.main` or `component.Layout.grid.column_1`.
+ */
+function regionIdFromLinkType(linkType: string | undefined, parentType: string | null): string | null {
+  if (!linkType) return null;
+  if (parentType && linkType.startsWith(`${parentType}.`)) {
+    return linkType.slice(parentType.length + 1);
+  }
+  const lastDot = linkType.lastIndexOf('.');
+  return lastDot === -1 ? linkType : linkType.slice(lastDot + 1);
 }
 
 /**
@@ -172,6 +196,7 @@ function processContent(
 
       const componentNode = processContent(allContent[linkId], allContent, assetQuery);
       componentNode.parent = node;
+      componentNode.regionId = regionIdFromLinkType(linkAttrs['type'], contentType);
       node.children.push(componentNode);
     }
   }

@@ -133,7 +133,10 @@
         "description": "Deploy and manage code versions on instances\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html"
       },
       "content": {
-        "description": "Export, list, and validate Page Designer content"
+        "description": "Export, list, validate, and push Page Designer content"
+      },
+      "content:types": {
+        "description": "Inspect Page Designer page and component types deployed to an instance"
       },
       "cip": {
         "description": "Run CIP analytics SQL and curated reports\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.html"

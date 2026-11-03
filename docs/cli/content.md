@@ -1,5 +1,5 @@
 ---
-description: Commands for exporting, listing, and validating Page Designer content from B2C Commerce content libraries.
+description: Commands for exporting, listing, validating, and pushing Page Designer content in B2C Commerce content libraries.
 ---
 
 # Content Commands
@@ -19,6 +19,8 @@ The `content export` and `content list` commands require OAuth authentication:
 | `content export` | OAuth for the export job and WebDAV access for the archive and assets |
 | `content list` | OAuth for the export job and WebDAV access for the archive |
 | `content validate` | None (local file validation) |
+| `content types list`, `content types get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
+| `content push` | SCAPI: `sfcc.experiences.rw` |
 
 Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` and the tenant scope. `--api-backend ocapi` selects OCAPI explicitly; the default `auto` mode supports OCAPI fallback. See [Job Authentication](./jobs.md#authentication) for setup.
 
@@ -26,6 +28,8 @@ Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` 
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 ```
+
+`content types` and `content push` use the SCAPI Admin Experiences API (`experience/experiences/v1`). They need an API client using client credentials or JWT, with the `sfcc.experiences.rw` scope (or read-only `sfcc.experiences` for `content types`), the tenant scope, and a configured short code and tenant ID. Browser sign-in is not supported for these commands. Without these scopes, the other content commands keep working as before.
 
 The `content export` and `content list` commands also support a `--library-file` flag for offline use with a local XML file, which skips authentication entirely.
 
@@ -270,6 +274,7 @@ The command auto-detects the schema type using file path conventions (`experienc
 
 ```bash
 b2c content validate <files...>
+b2c content validate --page <files...> [--types-dir <dir>...]
 ```
 
 ### Arguments
@@ -287,6 +292,8 @@ In addition to [global flags](./index#global-flags):
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--type`, `-t` | Schema type to validate against (skips auto-detection) | Auto-detected |
+| `--page` | Validate page bodies (page JSON or exported library XML) against page and component types instead of metadefinitions | `false` |
+| `--types-dir` | Directory searched for cartridge `experience/` type definitions in `--page` mode (repeatable) | Current directory |
 
 Available schema types: `pagetype`, `componenttype`, `aspecttype`, `cmsrecord`, `customeditortype`, `contentassetpageconfig`, `contentassetcomponentconfig`, `contentassetstructuredcontentdata`, `image`.
 
@@ -310,7 +317,12 @@ b2c content validate pages/home.json pages/about.json components/hero.json
 
 # JSON output for CI/scripting
 b2c content validate cartridge/experience/ --json
+
+# Validate a page body against the types in your cartridges (offline)
+b2c content validate --page pages/campaign.json --types-dir ./cartridges
 ```
+
+With `--page`, each page is checked for unknown page types, regions, and component types; region exclusions and inclusions; required attributes; attribute value types (enum, boolean, integer, image); and duplicate component IDs. Attribute keys that the type doesn't define, and regions with more components than `max_components`, are reported as warnings. To validate against the types deployed to an instance, use `b2c content push --dry-run`.
 
 ### Output
 
@@ -350,3 +362,139 @@ With `--json`, returns a structured result:
 - Auto-detection uses file path conventions first: files under `experience/pages/` are validated as `pagetype`, files under `experience/components/` as `componenttype`. For other schema types, use `--type`.
 - Schemas are bundled with the SDK and follow the [Page Designer metadefinition specification](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-page-designer.html).
 - Use `b2c content validate` in CI pipelines to catch metadefinition errors before deployment.
+
+---
+
+## b2c content types list
+
+List the Page Designer page and component types deployed for a site, as reported live by the instance. The types come from the site's cartridge path.
+
+### Usage
+
+```bash
+b2c content types list [--site-id <site>] [--kind page|component]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--site-id` | Site whose cartridge path defines the types | `siteId` from configuration |
+| `--kind` | Only list `page` or `component` types | Both |
+| `--columns`, `--extended` | Select table columns (`id`, `kind`, `name`, `group`, `regions`, `attributes`, `archType`) | |
+
+### Examples
+
+```bash
+b2c content types list --site-id RefArch
+b2c content types list --kind component --json
+```
+
+Type IDs are shown without the `page.` and `component.` prefixes used in library XML (for example `Content.hero`, stored in library XML as `component.Content.hero`).
+
+## b2c content types get
+
+Show one page or component type with its regions (including `maxComponents` and excluded component types) and attributes (type, required, enum values, defaults).
+
+### Usage
+
+```bash
+b2c content types get <typeId> [--site-id <site>]
+```
+
+### Examples
+
+```bash
+b2c content types get Content.hero
+b2c content types get homePage --site-id RefArch --json
+```
+
+---
+
+## b2c content push
+
+Create or update Page Designer pages, with their regions and components, through the Experiences API without a site archive import. Pages are always saved as **drafts**: activate them in Business Manager to publish.
+
+Before pushing, each page is validated against the page and component types deployed for the site (the same checks as `content validate --page`). The platform accepts a page that is missing required attributes and silently drops unknown attribute keys, so this check catches problems the API would let through. Pages with validation errors are not pushed unless you pass `--force`.
+
+### Usage
+
+```bash
+b2c content push <files...> [--site-id <site>] [--page <id>...] [--dry-run]
+```
+
+### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `files` | Page JSON files (one page body or an array of pages) or exported library XML files | Yes |
+
+A page JSON file uses the Experiences API page body:
+
+```json
+{
+  "id": "summer-campaign",
+  "name": "Summer Campaign",
+  "typeId": "homePage",
+  "regions": [
+    {
+      "id": "main",
+      "components": [
+        {"id": "summer-hero", "typeId": "Content.hero", "data": {"title": "Summer is here", "height": "md"}}
+      ]
+    }
+  ]
+}
+```
+
+Layout components nest their own `regions` in the same shape. Library XML from `b2c content export` is converted automatically, so you can export a page, edit it, and push it back. Pages that link shared content blocks (fragments) can't be pushed.
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--site-id` | Site the pages belong to | `siteId` from configuration |
+| `--page` | Only push these page IDs from the input files (repeatable) | All pages |
+| `--dry-run` | Validate against the instance types without pushing | `false` |
+| `--[no-]validate` | Validate before pushing | `true` |
+| `--local-types` | Directory with cartridge `experience/` definitions that override instance types, for types not yet deployed (repeatable) | |
+| `--force` | Push pages even when validation reports errors | `false` |
+
+### Examples
+
+```bash
+# Validate only
+b2c content push pages/summer.json --site-id RefArch --dry-run
+
+# Push a page as a draft
+b2c content push pages/summer.json --site-id RefArch
+
+# Round-trip an exported page
+b2c content export homepage -o ./export
+b2c content push ./export/libraries/SharedLibrary/library.xml --page homepage
+
+# Validate against component types you haven't deployed yet
+b2c content push pages/summer.json --local-types ./cartridges --dry-run
+```
+
+### Output
+
+```
+summer-campaign (pages/summer.json): created
+
+1 page(s) saved as drafts. Activate them in Business Manager to publish.
+```
+
+With `--json`, the command returns `{siteId, dryRun, pages: [{pageId, source, status, errors?, warnings?, message?}]}`, where `status` is `created`, `updated`, `validated` (dry run), `invalid`, or `failed`. The command exits with a non-zero status when any page is invalid or rejected.
+
+### Notes
+
+- **Updates merge by region.** A region included in the body replaces that region's components. Regions you leave out are kept as they are.
+- Components removed from a region stay in the library as unassigned components.
+- The type of an existing page can't be changed. Push a new page ID instead.
+- The Experiences API can't read, delete, or publish pages. Use `b2c content export` to read pages back, and Business Manager to activate or delete them.
+
