@@ -93,6 +93,17 @@ describe('safety/safety-middleware', () => {
         expect(result).to.include('Destructive operation blocked');
       });
 
+      it('blocks SLAS batch logout', () => {
+        const config: SafetyConfig = {level: 'NO_UPDATE'};
+
+        const result = checkSafetyViolation(
+          'POST',
+          'https://kv7kzm78.api.commercecloud.salesforce.com/shopper/auth-admin/v1/tenants/abcd_123/batch-logout?channelId=RefArch',
+          config,
+        );
+        expect(result).to.include('Destructive operation blocked');
+      });
+
       it('allows normal POST operations', () => {
         const config: SafetyConfig = {level: 'NO_UPDATE'};
 

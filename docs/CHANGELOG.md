@@ -1,5 +1,17 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.12
+
+### Patch Changes
+
+- [`3fcff81`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3fcff8107f5eded39aa27e165cf61aecd0eb892f) - Recommend turning on auto-update for the Claude Code plugin marketplace, which Claude Code leaves off by default for third-party marketplaces, so installed plugins pick up new releases. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - Job and replication skills now warn that a scheduled job trigger without weekdays never runs, and show how to end a job early when there's no input file. Realm setup guidance now covers what replication leaves for each target (job definitions, inventory, SLAS clients, site status), cartridge paths, and per-environment import sets. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - New Realm Setup guide covers sandbox and realm setup with the storefront datasets, Storefront Next storefronts, replication (including what to set up on production afterwards), and Safety Mode policies for shared instances. The Storefront Next guide now shows how to create a storefront and its API client from the CLI, generate the project code, get the `.env` file, and add production to an existing Managed Runtime project. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - Setup and code skills, and the Realm Setup guide, now explain that staging code upload normally requires a client certificate (a Salesforce Support CA bundle on legacy realms, or a self-registered eCDN CA on Hyperforce). They also cover the feature switch that Commerce API hooks need and how to reload when an instance has only one code version. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.11
 
 ### Patch Changes

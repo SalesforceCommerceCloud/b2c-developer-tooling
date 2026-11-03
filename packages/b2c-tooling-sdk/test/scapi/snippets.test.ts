@@ -256,6 +256,110 @@ describe('SCAPI snippets', () => {
     }
   });
 
+  it("merges one client's CORS origins, keeps other clients, and verifies the saved state", async () => {
+    const calls: {method: string; body?: unknown}[] = [];
+    let saved = {
+      corsClientPreferences: [
+        {clientId: 'shop', origins: ['https://a.example.com']},
+        {clientId: 'other', origins: ['https://b.example.com']},
+      ],
+    };
+    const result = (await runScapiCode({
+      input: {siteId: 'SiteA', clientId: 'shop', add: ['https://c.example.com', 'https://a.example.com']},
+      code: `async (input) => codemode.run('builtin/cors-preferences-update', input)`,
+      request: async (options) => {
+        const {method, body} = options as {method: string; body?: typeof saved};
+        calls.push({method, body});
+        if (method === 'PUT' && body) saved = body;
+        return {ok: true, status: method === 'PUT' ? 201 : 200, data: saved};
+      },
+    })) as Record<string, unknown>;
+    expect(calls.map((c) => c.method)).to.deep.equal(['GET', 'PUT', 'GET']);
+    expect(calls[1].body).to.deep.equal({
+      corsClientPreferences: [
+        {clientId: 'shop', origins: ['https://a.example.com', 'https://c.example.com']},
+        {clientId: 'other', origins: ['https://b.example.com']},
+      ],
+    });
+    expect(result).to.deep.include({
+      state: 'verified',
+      added: ['https://c.example.com'],
+      otherClients: 1,
+      writeStatus: 201,
+    });
+  });
+
+  it('skips unchanged CORS writes and clears the site when the last origin is removed', async () => {
+    const methods: string[] = [];
+    const only = {corsClientPreferences: [{clientId: 'shop', origins: ['https://a.example.com']}]};
+    const unchanged = await runScapiCode({
+      input: {siteId: 'SiteA', clientId: 'shop', add: ['https://a.example.com']},
+      code: `async (input) => codemode.run('builtin/cors-preferences-update', input)`,
+      request: async () => ({ok: true, status: 200, data: only}),
+    });
+    expect(unchanged).to.include({state: 'unchanged'});
+    const removed = await runScapiCode({
+      input: {siteId: 'SiteA', clientId: 'shop', remove: ['https://a.example.com']},
+      code: `async (input) => codemode.run('builtin/cors-preferences-update', input)`,
+      request: async (options) => {
+        const {method} = options as {method: string};
+        methods.push(method);
+        return {ok: true, status: method === 'DELETE' ? 204 : 200, data: methods.length > 1 ? {} : only};
+      },
+    });
+    expect(methods).to.deep.equal(['GET', 'DELETE', 'GET']);
+    expect(removed).to.deep.include({state: 'verified', origins: [], otherClients: 0});
+  });
+
+  it('starts a rules evaluation, polls in_progress status, and pages matched products', async () => {
+    const calls: {method: string; body?: unknown}[] = [];
+    const statuses = ['success', 'in_progress', 'success'];
+    const result = (await runScapiCode({
+      input: {catalogId: 'cat', categoryId: 'sale', limit: 2},
+      code: `async (input) => codemode.run('builtin/category-rules-run', input)`,
+      request: async (options) => {
+        const {method, body} = options as {method: string; body?: unknown};
+        calls.push({method, body});
+        if (method === 'POST') return {ok: true, status: 202};
+        const jobStatus = statuses.shift();
+        return {
+          ok: true,
+          status: 200,
+          data: {type: 'evaluation', jobStatus, matchedCount: 3, productIds: ['p1', 'p2']},
+        };
+      },
+    })) as Record<string, unknown>;
+    expect(calls.map((c) => c.method)).to.deep.equal(['GET', 'POST', 'GET', 'GET']);
+    expect(calls[1].body).to.deep.equal({evaluation: true});
+    expect(result).to.deep.include({state: 'success', started: true, matchedCount: 3, nextOffset: 2});
+    expect(result).to.not.have.property('continuation');
+  });
+
+  it('refuses to start rules while a run is in progress and returns a continuation when polls run out', async () => {
+    const running = {ok: true, status: 200, data: {type: 'execution', jobStatus: 'inProgress'}};
+    const refused = await runScapiCode({
+      input: {catalogId: 'cat', categoryId: 'sale', execute: true},
+      code: `async (input) => codemode.run('builtin/category-rules-run', input)`,
+      request: async () => running,
+    });
+    expect(refused).to.include({state: 'already_running'});
+    let polls = 0;
+    const pending = await runScapiCode({
+      input: {catalogId: 'cat', categoryId: 'sale', statusOnly: true, polls: 2},
+      code: `async (input) => codemode.run('builtin/category-rules-run', input)`,
+      request: async () => {
+        polls++;
+        return running;
+      },
+    });
+    expect(polls).to.equal(2);
+    expect(pending).to.deep.include({
+      state: 'running',
+      started: false,
+      continuation: {catalogId: 'cat', categoryId: 'sale', statusOnly: true, polls: 2},
+    });
+  });
+
   let directory: string;
   beforeEach(() => {
     directory = mkdtempSync(join(tmpdir(), 'b2c-snippets-'));
@@ -451,7 +555,7 @@ describe('SCAPI snippets', () => {
   });
 
   it('loads all built-in sources from the installed SDK data directory', () => {
-    expect(loadBuiltinScapiSnippets()).to.have.length(10);
+    expect(loadBuiltinScapiSnippets()).to.have.length(12);
     for (const item of loadBuiltinScapiSnippets()) expect(item.code).to.include('async (input)');
   });
 

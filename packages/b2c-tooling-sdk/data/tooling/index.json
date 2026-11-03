@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-03T05:04:07.262Z",
+  "generatedAt": "2026-11-03T21:34:48.625Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -251,8 +251,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md",
-      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
-      "preview": "Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients."
+      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes • b2c slas client template list • Usage • Flags • Examples • b2c slas client template get • Usage • Examples • b2c slas client template set • Usage • Flags • Examples • b2c slas client template delete • Usage • Examples • b2c slas tenant get • Usage • Examples • b2c slas tenant set • Usage • Flags • Examples • Notes • b2c slas idp list • Usage • Flags • b2c slas idp get • Usage • b2c slas idp set • Usage • Flags • Examples • Notes • b2c slas idp delete • Usage • b2c slas shopper logout • Usage • Flags • Examples • Notes • b2c slas shopper delete • Usage • Examples",
+      "preview": "Commands for managing Shopper Login and API Access Service (SLAS) tenants, clients, password action templates, identity providers, and shopper sessions."
     },
     {
       "id": "cli-validate",
@@ -386,7 +386,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/import-sets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/import-sets.md",
-      "headings": "Before You Start • Import Sources and Order • Cartridge Metadata • One Archive • An Ordered Collection • Project Migrations • Naming Archives • Preview and Apply • Post-Import Notes • Excluding Source Directories • How Repeat Runs Behave • Teams and CI/CD • Resetting Import History • Start a Fresh History • Clear the Current History • Recovering an Interrupted Run",
+      "headings": "Before You Start • Import Sources and Order • Cartridge Metadata • One Archive • An Ordered Collection • Project Migrations • Naming Archives • Preview and Apply • Post-Import Notes • Excluding Source Directories • How Repeat Runs Behave • Teams and CI/CD • Per-Environment Sets • Resetting Import History • Start a Fresh History • Clear the Current History • Recovering an Interrupted Run",
       "preview": "Deploy B2C Commerce metadata as an ordered, repeatable import history from cartridges and project migrations."
     },
     {
@@ -444,6 +444,15 @@
       "preview": "Optional project recommendations for working with the Agentic B2C Developer Toolkit and your AI assistant."
     },
     {
+      "id": "guide-realm-setup",
+      "title": "Realm Setup",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/realm-setup.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/realm-setup.md",
+      "headings": "Before You Start • Protect Shared Instances • Storefront Datasets • Set Up a Sandbox • Set Up a Realm • 1. Prepare Staging • 2. Replicate to Production • 3. Connect the Storefront • Troubleshooting • Related",
+      "preview": "Set up a new sandbox or realm with sample storefront data, search indexes, Storefront Next storefronts, and replication from staging to production."
+    },
+    {
       "id": "guide-safety",
       "title": "Safety Mode",
       "category": "tooling",
@@ -498,13 +507,22 @@
       "preview": "Migrate from sfcc-ci to @salesforce/b2c-cli with command mappings, environment variable compatibility, and CI/CD pipeline updates."
     },
     {
+      "id": "guide-slas",
+      "title": "SLAS Guide",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/slas.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/slas.md",
+      "headings": "Before You Start • Get a Shopper Token • Create a SLAS Client • Review and Change Clients • Tighten Client Security • Set Up Passwordless Login and Password Reset • Add Social and Third-Party Login • Log Shoppers Out and Delete Their Data • Log Shoppers Out Everywhere • Delete a Shopper's SLAS Records • Manage the Tenant Registration • Keep SLAS Safe • Troubleshooting • Next Steps",
+      "preview": "A walkthrough of common SLAS tasks with the B2C CLI and your AI assistant, including shopper tokens, SLAS clients, passwordless login templates, social login providers, and shopper logout."
+    },
+    {
       "id": "guide-storefront-next",
       "title": "Storefront Next",
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/storefront-next.md",
-      "headings": "Start with Storefront Setup • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
-      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Manage environment variables, tail logs, and work with deployments."
+      "headings": "Start with Storefront Setup • Set Up Storefronts from the CLI • Create a Storefront • API Client • Generate the Project Code • Get the Environment File • Add Another Instance • Prerequisites • Manage Environment Variables • Update Several Values Together • Apply an Environment File • Tail Application Logs • Work with Deployments • Work with Your AI Assistant • Next Steps",
+      "preview": "Support Storefront Next development and operations with the B2C CLI, MCP, and agent skills. Create storefronts and their API client, generate project code, get the environment file, add instances to an MRT project, manage environment variables, tail logs, and work with deployments."
     },
     {
       "id": "guide-third-party-plugins",
@@ -530,7 +548,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/configuration.md",
-      "headings": "Startup configuration {#advanced-manual-configuration} • Project defaults {#project-directory} • Tools and toolsets {#toolset-selection} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Local SCAPI contracts {#local-scapi-schemas} • Logging",
+      "headings": "Startup configuration {#advanced-manual-configuration} • Project defaults {#project-directory} • Tools and toolsets {#toolset-selection} • Documentation topics {#documentation-tools-restriction} • Saved workflows {#saved-workflows} • Local SCAPI contracts {#local-scapi-schemas} • Update check • Logging",
       "preview": "Customize B2C MCP tools, documentation topics, startup defaults, and saved workflows."
     },
     {

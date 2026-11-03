@@ -11,6 +11,8 @@ Use the `b2c` CLI plugin to manage Salesforce B2C Commerce On-demand sandboxes (
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli sandbox list`).
 
+> **Setup:** To load sample data and a storefront on a new sandbox, use `b2c-cli:b2c-setup`.
+
 > **Alias:** The `ods` prefix is still supported as a backward-compatible alias (e.g., `b2c ods list` works the same as `b2c sandbox list`).
 
 ## Configuration & Authentication

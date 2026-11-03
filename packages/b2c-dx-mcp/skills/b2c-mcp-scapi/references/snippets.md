@@ -123,3 +123,27 @@ Input JSON Schema:
 ```json
 {"type":"object","properties":{"siteId":{"type":"string","minLength":1,"description":"Site whose cartridge path and slots are used."},"slotId":{"type":"string","minLength":1},"context":{"type":"string","enum":["global","category","folder"]},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":50}},"required":["siteId"],"additionalProperties":false}
 ```
+
+## builtin/cors-preferences-update
+
+Add or remove one client's CORS origins for a site without replacing other clients, and verify the saved origins.
+
+Effect: write.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"siteId":{"type":"string","minLength":1},"clientId":{"type":"string","minLength":1,"description":"Shopper (SLAS) client ID."},"add":{"type":"array","maxItems":50,"items":{"type":"string","minLength":1,"description":"Origin such as https://www.example.com"}},"remove":{"type":"array","maxItems":50,"items":{"type":"string","minLength":1}}},"required":["siteId","clientId"],"additionalProperties":false}
+```
+
+## builtin/category-rules-run
+
+Evaluate (dry run) or execute a category's dynamic categorization rules, poll status, and return counts with continuation.
+
+Effect: write.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"catalogId":{"type":"string","minLength":1},"categoryId":{"type":"string","minLength":1},"execute":{"type":"boolean","default":false,"description":"false evaluates matches only; true assigns and unassigns products."},"statusOnly":{"type":"boolean","default":false,"description":"Poll the latest run without starting one."},"polls":{"type":"integer","minimum":1,"maximum":15,"default":6},"limit":{"type":"integer","minimum":1,"maximum":50,"description":"Evaluation productIds page size."},"offset":{"type":"integer","minimum":0}},"required":["catalogId","categoryId"],"additionalProperties":false}
+```

@@ -238,7 +238,7 @@ This project uses [Changesets](https://github.com/changesets/changesets) for ver
 |-------------|---------|---------|
 | **Stable** | `@latest` | Merge version PR on `main` |
 | **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
-| **Nightly** | `@nightly` | Scheduled (weekdays) or manual |
+| **Nightly** | `@nightly` | Manual |
 
 For detailed information about the release process, including release branches, see [PUBLISHING.md](./PUBLISHING.md).
 

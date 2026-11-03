@@ -50,11 +50,12 @@ function createLogsWatchStartTool(
   return createToolAdapter<StartInput, StartOutput>(
     {
       name: 'logs_watch',
+      searchHint: 'tail follow stream live server errors exceptions',
       effect: 'read',
       idempotent: true,
       openWorld: true,
       description:
-        'Start, list, or stop B2C log watches. Start before the target action; read with logs_watch_poll. Stop discards unread entries; safe to repeat.',
+        'Start, list, or stop B2C log watches that tail server logs. Start before the target action; read with logs_watch_poll. Stop discards unread entries; safe to repeat.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {

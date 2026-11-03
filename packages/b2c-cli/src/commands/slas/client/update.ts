@@ -4,8 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Args, Flags} from '@oclif/core';
+import {randomUUID} from 'node:crypto';
+import {ERROR_CODE} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ExistingSlasClientCommand,
+  clientSettingFlags,
+  clientSettingsFromFlags,
+  type ClientSettings,
   type Client,
   type ClientRequest,
   type ClientOutput,
@@ -38,6 +43,8 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --scopes sfcc.shopper-baskets --replace',
     '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --channels RefArch,SiteGenesis --replace',
+    '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --login-restricted --six-digit-otp',
+    '<%= config.bin %> <%= command.id %> my-client-id --tenant-id abcd_123 --public',
   ];
 
   static flags = {
@@ -76,6 +83,15 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
       description: 'Replace list values instead of appending (affects channels, scopes, redirect-uri, callback-uri)',
       default: false,
     }),
+    private: Flags.boolean({
+      description: 'Make the client private (generates a secret unless --secret is given)',
+      exclusive: ['public'],
+    }),
+    public: Flags.boolean({
+      description: 'Make the client public (removes its secret)',
+      exclusive: ['private', 'secret', 'strict-client-auth'],
+    }),
+    ...clientSettingFlags,
   };
 
   async run(): Promise<ClientOutput> {
@@ -89,7 +105,10 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
       'redirect-uri': redirectUri,
       'callback-uri': callbackUri,
       replace,
+      private: makePrivate,
+      public: makePublic,
     } = this.flags;
+    const settings = clientSettingsFromFlags(this.flags);
     const clientId = this.requireSlasClientId(this.args.clientId);
     const tenantId = this.requireTenantId();
 
@@ -119,6 +138,31 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
     }
 
     const existing = existingData as Client;
+    const wasPrivate = existing.isPrivateClient ?? true;
+    const isPrivate = makePublic ? false : makePrivate ? true : wasPrivate;
+
+    if (secret && !isPrivate) {
+      this.error(
+        t(
+          'commands.slas.client.update.secretPublic',
+          'Client {{clientId}} is public, so it has no secret to rotate. Add --private to make it private with this secret.',
+          {clientId},
+        ),
+        {code: ERROR_CODE.VALIDATION},
+      );
+    }
+
+    if (!isPrivate && settings.strictClientAuth) {
+      this.warn(
+        t(
+          'commands.slas.client.strictClientAuthPublic',
+          '--strict-client-auth applies only to private clients; SLAS ignores it for public clients.',
+        ),
+      );
+    }
+
+    // A public client becoming private needs a secret; generate one unless provided.
+    const newSecret = secret ?? (isPrivate && !wasPrivate ? `sk_${randomUUID().replaceAll('-', '')}` : undefined);
 
     if (!this.jsonEnabled()) {
       this.log(t('commands.slas.client.update.updating', 'Updating SLAS client {{clientId}}...', {clientId}));
@@ -128,7 +172,9 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
     const body = this.buildUpdateRequest(existing, {
       clientId,
       name,
-      secret,
+      secret: newSecret,
+      isPrivateClient: isPrivate,
+      settings,
       channels: channels ?? [],
       scopes: scopes ?? [],
       redirectUri: redirectUri ?? [],
@@ -153,14 +199,15 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
     }
 
     const output = normalizeClientResponse(data as Client);
+    if (newSecret) output.secret = newSecret;
 
     if (this.jsonEnabled()) {
       return output;
     }
 
     this.log(t('commands.slas.client.update.success', 'SLAS client updated successfully.'));
-    // Show secret in output only if it was rotated
-    printClientDetails(output, Boolean(secret));
+    // Show secret in output only if it was rotated or generated
+    printClientDetails(output, Boolean(newSecret));
 
     return output;
   }
@@ -174,6 +221,8 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
       clientId: string;
       name?: string;
       secret?: string;
+      isPrivateClient: boolean;
+      settings: ClientSettings;
       channels: string[];
       scopes: string[];
       redirectUri: string[];
@@ -198,11 +247,21 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
       scopes: updates.scopes.length > 0 ? mergedScopes : existingScopes,
       redirectUri: updates.redirectUri.length > 0 ? mergedRedirectUri : existingRedirectUri,
       callbackUri: mergedCallbackUri,
-      isPrivateClient: existing.isPrivateClient ?? true,
+      isPrivateClient: updates.isPrivateClient,
+      // SLAS keeps settings that are omitted from the request, but send the current values explicitly so an
+      // update never depends on that server-side merge.
+      loginEpRestrict: existing.loginEpRestrict ?? undefined,
+      isSixDigitOtp: existing.isSixDigitOtp ?? undefined,
+      strictClientAuth: updates.isPrivateClient ? (existing.strictClientAuth ?? undefined) : undefined,
+      ...updates.settings,
     };
 
-    if (updates.secret) {
+    // SLAS rejects an empty secret, and a public client has none, so only send one when rotating.
+    if (updates.secret && updates.isPrivateClient) {
       body.secret = updates.secret;
+    }
+    for (const key of Object.keys(body) as (keyof ClientRequest)[]) {
+      if (body[key] === undefined) delete body[key];
     }
 
     return body;

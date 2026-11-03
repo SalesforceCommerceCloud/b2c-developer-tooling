@@ -152,6 +152,18 @@ The default import history is named `migrations` and is shared by runs against t
 
 Most projects should **omit `--set-id`**. Use it only to intentionally maintain an independent migration history on the same instance, or to preserve a legacy namespace whose archive names cannot follow the timestamp convention.
 
+### Per-environment sets
+
+On a realm, most data reaches production and development by replication from staging, so the shared `migrations` set is applied to staging only. Configuration that replication doesn't carry, or that must differ per instance, goes in a separate directory with its own set ID, applied only to its target:
+
+```bash
+b2c job import-set -i staging                                                      # ./migrations + cartridge metadata
+b2c job import-set production-only --set-id production-only -i production
+b2c job import-set staging-only --set-id staging-only --no-cartridge-metadata -i staging
+```
+
+Cartridge metadata (for example job definitions, which don't replicate) is applied with every set unless you pass `--no-cartridge-metadata`, so a production-only set also brings production's job definitions up to date. Do not use a per-environment set to import replicated data on production; the next replication overwrites it.
+
 ## Concurrent Runs and Recovery
 
 Only one runner applies a given history at a time. Other runners wait and then skip archives completed while they were waiting.

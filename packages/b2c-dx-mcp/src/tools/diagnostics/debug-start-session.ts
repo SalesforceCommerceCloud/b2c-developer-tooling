@@ -42,6 +42,7 @@ export function createDebugStartSessionTool(
   return createToolAdapter<StartSessionInput, StartSessionOutput>(
     {
       name: 'debug_start_session',
+      searchHint: 'debugger debug step through script controller code attach sandbox',
       effect: 'write',
       idempotent: false,
       openWorld: true,

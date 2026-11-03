@@ -90,32 +90,19 @@ export function createDocsSearchTool(
       idempotent: true,
       openWorld: false,
       description:
-        'Search B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
-        'Use for natural-language queries or unknown IDs; call docs_read with a result ID. ' +
-        'Cite by url; never show doc IDs.' +
+        'Search B2C Commerce (SFCC/Demandware) docs: Script API, job steps, developer guides, admin/merchant help, tooling. ' +
+        'For questions or unknown IDs; pass a result id to docs_read. Cite by url; never show doc IDs.' +
         enabledCategoriesNote(enabledCategories) +
         detectedWorkspaceNote(detectedWorkspaces),
       toolsets: [...TOOLSETS],
+      alwaysLoad: true,
       inputSchema: {
         ...workspaceInputSchema,
-        query: z.string().min(1).describe('Search query (class name, topic, or natural-language phrase).'),
-        category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Restrict results to one corpus.'),
-        limit: z
-          .number()
-          .int()
-          .positive()
-          .optional()
-          .describe(`Maximum number of results to return. Defaults to ${DEFAULT_LIMIT}.`),
-        offset: z
-          .number()
-          .int()
-          .nonnegative()
-          .optional()
-          .describe('Number of ranked results to skip (for pagination). Defaults to 0.'),
-        verbose: z
-          .boolean()
-          .optional()
-          .describe('Include keywords and the Markdown sourceUrl on each result (larger payload). Defaults to false.'),
+        query: z.string().min(1).describe('Class name, topic or question.'),
+        category: z.enum(categoryEnumValues(enabledCategories)).optional().describe('Limit to one corpus.'),
+        limit: z.number().int().positive().optional().describe(`Max results; default ${DEFAULT_LIMIT}.`),
+        offset: z.number().int().nonnegative().optional().describe('Results to skip for paging; default 0.'),
+        verbose: z.boolean().optional().describe('Add keywords and the Markdown sourceUrl to each result (larger).'),
       },
       async execute(args) {
         const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);

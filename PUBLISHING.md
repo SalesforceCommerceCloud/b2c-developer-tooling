@@ -16,11 +16,11 @@ When a dependency is bumped (e.g., the SDK), dependent packages automatically re
 
 ## Release Types
 
-| Type               | npm Tag                     | Trigger                                |
-| ------------------ | --------------------------- | -------------------------------------- |
-| **Stable**         | `@latest`                   | Merge version PR on `main`             |
-| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch            |
-| **Nightly**        | `@nightly`                  | Scheduled weekdays 2 AM UTC, or manual |
+| Type               | npm Tag                     | Trigger                     |
+| ------------------ | --------------------------- | --------------------------- |
+| **Stable**         | `@latest`                   | Merge version PR on `main`  |
+| **Release Branch** | `@latest` or `@release-X.Y` | Push to `release/**` branch |
+| **Nightly**        | `@nightly`                  | Manual                      |
 
 Publishing uses [npm OIDC trusted publishers](https://docs.npmjs.com/trusted-publishers) — no npm tokens are needed. Provenance attestations are generated automatically.
 
@@ -153,7 +153,7 @@ npm install @salesforce/b2c-cli@release-0.4
 
 ## Nightly Release
 
-Nightlies run automatically on weekdays at 2 AM UTC. To trigger one manually:
+Nightlies are not scheduled. To publish one:
 
 1. Go to **Actions** → **Publish to npm**
 2. Click **Run workflow** → select `nightly` → **Run workflow**

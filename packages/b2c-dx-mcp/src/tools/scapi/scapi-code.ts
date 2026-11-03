@@ -43,13 +43,11 @@ const SCAPI_SKILL_REQUIRED =
   'SCAPI_SKILL_REQUIRED: Read skill://mcp/b2c-mcp-scapi/SKILL.md through resources or skills_read, then retry with skillRead: true.';
 const skillRead = z
   .literal(true, {error: SCAPI_SKILL_REQUIRED})
-  .describe(
-    'Required. Set true only after reading skill://mcp/b2c-mcp-scapi/SKILL.md (MCP resource, or skills_read({uri})).',
-  );
+  .describe('Set true only after reading the SCAPI skill (MCP resource or skills_read({uri})).');
 function requireScapiSkill(read: boolean | undefined): void {
   if (read !== true) throw new Error(SCAPI_SKILL_REQUIRED);
 }
-const searchDescription = `Requires reading skill://mcp/b2c-mcp-scapi/SKILL.md first. Search SCAPI Admin/Shopper OpenAPI contracts by running JavaScript over \`spec\` (only spec.apis, spec.paths[fullPath][method], spec.resolve and spec.search exist), to find the operationId, path, inputs and scopes for a Commerce API task when no dedicated tool fits. Use cip_* for analytics and webdav_* for files. Searches the bundled contracts by default (offline, no credentials); schemas:"live" fetches the current contracts from the configured instance instead, including tenant c_* fields, custom APIs and APIs newer than the bundle (falls back to the bundled contracts with a warning when live access fails). Start with await spec.search("words for the task"): it ranks operations across summary, description, tags, operationId and path, tolerates typos, and returns {api, method, path, operationId, summary} that index spec.paths. Use regex filters over spec.paths to narrow further. Results are capped at 24 KB: operations are an outline by default (no nested descriptions or examples; detail:"full" restores them), and you should still return fields such as operationId, method, path and summary, not whole operations.`;
+const searchDescription = `Read skill://mcp/b2c-mcp-scapi/SKILL.md first. Find the SCAPI Admin/Shopper operation (operationId, path, inputs, scopes) for a Commerce API task when no dedicated tool fits; cip_* covers analytics, webdav_* files. \`code\` runs JavaScript over \`spec\`, which has only apis, paths[fullPath][method], resolve and search. Start with await spec.search("task words"): typo-tolerant ranking over summary, description, tags, operationId and path, returning {api, method, path, operationId, summary} keys into spec.paths; narrow with regex over spec.paths. Return those fields, not whole operations; results cap at 24 KB. Failed live access falls back to bundled with a warning.`;
 
 const executeDescription = `Requires reading skill://mcp/b2c-mcp-scapi/SKILL.md first. Run any SCAPI Admin or Shopper API operation (reads, writes, searches and actions) through scapi.request() in JavaScript. Covers most developer, merchant and administrator tasks: catalogs, products, pricing, promotions, orders, customers, inventory, sites, jobs, code versions, observability, and storefront flows such as baskets. Use it whenever no more specific tool fits. Find operations with scapi_search first. Auth is automatic; Shopper calls run as a per-site guest whose basket persists. Operations are governed by Safety Mode and may ask the user for confirmation.`;
 
@@ -65,7 +63,7 @@ function codeResult(
   },
   resolution?: ToolResolution,
 ): ToolResult {
-  const result = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
+  const result = resolution ? attachResolution(jsonResult(data), resolution) : jsonResult(data);
   // Code-mode payloads are arbitrary JSON: retain provenance without duplicating the result.
   delete result.structuredContent;
   return result;
@@ -119,22 +117,19 @@ export function createScapiCodeTools(
       .string()
       .regex(/^[a-z0-9-]+(?:\/[a-z0-9-]+){0,2}\/?$/i, 'api must be family, family/name or family/name/version.')
       .optional()
-      .describe(
-        'Limit schemas to an API family, family/name or family/name/version (cdn, cdn/zones, cdn/zones/v1). Omit for all APIs.',
-      ),
+      .describe('Limit to an API family, family/name or family/name/version (cdn, cdn/zones, cdn/zones/v1).'),
     schemas: z
       .enum(['bundled', 'live'])
       .optional()
-      .describe('bundled (default, offline) or live tenant contracts from the Schemas API.'),
-    refresh: z.boolean().optional().describe('With schemas:"live", refetch instead of using cached contracts.'),
+      .describe(
+        'bundled (default; offline, no credentials) or live: instance contracts with c_* fields, custom and newer APIs.',
+      ),
+    refresh: z.boolean().optional().describe('With live schemas, refetch instead of using the cache.'),
     detail: z
       .enum(['outline', 'full'])
       .optional()
-      .describe('outline (default) drops nested descriptions and examples to fit 24 KB; full keeps all prose.'),
-    authType: z
-      .enum(['admin', 'shopper'])
-      .optional()
-      .describe('Filter operations by authentication; mixed operations match either.'),
+      .describe('outline (default) omits nested descriptions and examples; full keeps them.'),
+    authType: z.enum(['admin', 'shopper']).optional().describe('Filter by auth; mixed operations match either.'),
   };
   const executeInput = {
     ...createProjectContextInputSchema('configuration'),
@@ -162,6 +157,7 @@ export function createScapiCodeTools(
     {
       name: 'scapi_search',
       title: 'SCAPI Spec Search',
+      alwaysLoad: true,
       description: searchDescription,
       inputSchema: searchInput,
       toolsets: ['SCAPI', 'PWAV3', 'STOREFRONTNEXT'],
@@ -275,6 +271,8 @@ export function createScapiCodeTools(
     },
     {
       name: 'scapi_execute',
+      searchHint:
+        'call commerce api shopper admin get product order customer basket inventory price promotion create update delete',
       title: 'SCAPI Code Executor',
       description: executeDescription,
       inputSchema: executeInput,
