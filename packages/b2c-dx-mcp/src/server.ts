@@ -34,6 +34,13 @@ import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 /** MCP skills extension identifier (SEP-2640). */
 export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
 
+/** SDK cacheHints cover only built-in methods; skills extension results are cacheable from 2026-07-28. */
+function skillsCacheHints(context: ServerContext): {cacheScope?: 'private'; ttlMs?: number} {
+  return (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY]
+    ? {ttlMs: 300_000, cacheScope: 'private'}
+    : {};
+}
+
 /**
  * Agent ids, matching environment agent detection, for MCP clients that name
  * themselves in `clientInfo`. Keys are lowercase. Clients spawned with no
@@ -140,10 +147,7 @@ export class B2CDxMcpServer extends McpServer {
         this.recordRequestClient(context);
         // One page: an issued cursor never exists, so any cursor is invalid.
         if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid cursor.');
-        const modern = Boolean(
-          (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY],
-        );
-        return {skills: skills.list(), ...(modern && {ttlMs: 300_000, cacheScope: 'private'})};
+        return {skills: skills.list(), ...skillsCacheHints(context)};
       },
     );
     this.server.setRequestHandler(
@@ -151,7 +155,7 @@ export class B2CDxMcpServer extends McpServer {
       {params: z.object({uri: z.string()}).loose()},
       async (params, context) => {
         this.recordRequestClient(context);
-        return {skill: skills.get(params.uri)};
+        return {skill: skills.get(params.uri), ...skillsCacheHints(context)};
       },
     );
   }

@@ -1,5 +1,20 @@
 # @salesforce/b2c-cli
 
+## 2.11.0
+
+### Minor Changes
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - `b2c am clients create` now shows the new client's details and asks for confirmation before creating it. Pass `--force` to skip the prompt; scripts and `--json` runs must add `--force`. New clients now default to `client_secret_basic`, so they work with their secret; previously Account Manager made them `private_key_jwt` and the secret was rejected. The `b2c-am` skill now walks your assistant through creating an API client when you don't have one, after you approve every detail. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#838](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/838) [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288) - Add `--default-client` (or `SFCC_DEFAULT_CLIENT=true`) to sign in with the CLI's built-in client when another client or access key is configured, so WebDAV, code upload, logs, sandbox and Account Manager commands work with your Account Manager account without changing your config (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#839](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/839) [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527) - `b2c sites cartridges` commands with `--bm` now read and update the Business Manager cartridge path through the SCAPI Sites API instead of failing or running a site archive import. Site archive import remains the fallback when SCAPI isn't configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527), [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288), [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3), [`e5ebe73`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e5ebe73c4cdd097485250c63b9373615470c27df)]:
+  - @salesforce/b2c-tooling-sdk@2.11.0
+
 ## 2.10.2
 
 ### Patch Changes

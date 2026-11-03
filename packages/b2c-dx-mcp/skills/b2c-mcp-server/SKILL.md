@@ -11,6 +11,7 @@ Read only the skill that matches the task; each links its own references.
 
 | Task | Skill |
 | --- | --- |
+| Set up a sandbox or realm: sample data, storefronts, replication | `skill://b2c-cli/b2c-setup/SKILL.md` |
 | Commerce API reads/writes (required before `scapi_search` / `scapi_execute`) | `skill://mcp/b2c-mcp-scapi/SKILL.md` |
 | Warehouse reports and SQL (required before `cip_query`) | `skill://mcp/b2c-mcp-cip/SKILL.md` |
 | Configuration, credentials, access grants, wrong target | `skill://mcp/b2c-mcp-config/SKILL.md` |
@@ -28,8 +29,8 @@ Read only the skill that matches the task; each links its own references.
 Every skill and reference file is readable as an MCP resource
 (`skill://<collection>/<skill>/<file>`) or with `skills_read({uri})`.
 Collections: `b2c` (platform/cartridges), `b2c-cli` (CLI), `b2c-ops`
-(operator/admin runbooks), `storefront-next` (storefronts), `mcp` (server/tool
-workflows). Search with `skills_read({query, collection})` or browse `skill://index`.
+(operator/admin runbooks), `storefront-next` (storefronts), `cap-dev` (authoring
+Commerce App Packages), `mcp` (server/tool workflows). Search with `skills_read({query, collection})` or browse `skill://index`.
 
 ## Server configuration and tool availability
 

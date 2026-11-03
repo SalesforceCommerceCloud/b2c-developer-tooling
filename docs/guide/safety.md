@@ -413,6 +413,8 @@ array. This abbreviated example omits credentials:
 }
 ```
 
+For a realm setup example, see [Realm Setup](./realm-setup#protect-shared-instances).
+
 Confirm the target before requesting a change. CLI `-i production`, your
 assistant's selected target, and the IDE's instance picker can each select a
 different instance. A stricter environment or global level still applies.

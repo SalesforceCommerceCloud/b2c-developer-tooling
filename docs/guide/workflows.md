@@ -26,6 +26,7 @@ See [Project Setup](./project-setup) for optional assistant instructions and tea
 
 ## Operations and administration
 
+- [Realm setup](./realm-setup) - Set up a sandbox or realm with sample data, storefronts, and replication.
 - [Operations](./operations) - Review job health, investigate incidents, and prepare team or Support handoffs.
 - [Account Manager](./account-manager) - Manage users, organizations, roles, and API clients.
 - [SLAS](./slas) - Get shopper tokens and manage SLAS clients, login templates, identity providers, and shopper sessions.

@@ -1,5 +1,25 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.14.0
+
+### Minor Changes
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - New `b2c-setup` skill guides your assistant through setting up a sandbox or realm: sample storefront datasets, search indexes, Storefront Next storefronts and project code, and replication to production, with confirmation before changes to shared instances. The MCP server features it in its skill listing. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - `b2c am clients create` now shows the new client's details and asks for confirmation before creating it. Pass `--force` to skip the prompt; scripts and `--json` runs must add `--force`. New clients now default to `client_secret_basic`, so they work with their secret; previously Account Manager made them `private_key_jwt` and the secret was rejected. The `b2c-am` skill now walks your assistant through creating an API client when you don't have one, after you approve every detail. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#840](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/840) [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3) - The `b2c-cap` skill now points MCP users to the bundled `cap-dev` authoring skills. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#839](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/839) [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527) - The b2c-sites skill now explains that Business Manager cartridge path updates use the SCAPI Sites API. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#838](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/838) [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288) - Add `--default-client` (or `SFCC_DEFAULT_CLIENT=true`) to sign in with the CLI's built-in client when another client or access key is configured, so WebDAV, code upload, logs, sandbox and Account Manager commands work with your Account Manager account without changing your config (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - Job and replication skills now warn that a scheduled job trigger without weekdays never runs, and show how to end a job early when there's no input file. Realm setup guidance now covers what replication leaves for each target (job definitions, inventory, SLAS clients, site status), cartridge paths, and per-environment import sets. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - Setup and code skills, and the Realm Setup guide, now explain that staging code upload normally requires a client certificate (a Salesforce Support CA bundle on legacy realms, or a self-registered eCDN CA on Hyperforce). They also cover the feature switch that Commerce API hooks need and how to reload when an instance has only one code version. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.13.0
 
 ### Minor Changes

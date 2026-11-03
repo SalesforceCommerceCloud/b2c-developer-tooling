@@ -1,5 +1,23 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.11.0
+
+### Minor Changes
+
+- [#835](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/835) [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf) - New `b2c-setup` skill guides your assistant through setting up a sandbox or realm: sample storefront datasets, search indexes, Storefront Next storefronts and project code, and replication to production, with confirmation before changes to shared instances. The MCP server features it in its skill listing. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#840](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/840) [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3) - The MCP now includes the `cap-dev` Commerce App Package authoring skills (scaffold, generate IMPEX, validate, package, and submit), so you don't need to install them separately. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#841](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/841) [`e5ebe73`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e5ebe73c4cdd097485250c63b9373615470c27df) - The MCP server now tells your agent when a newer release is available, so it can prompt you to update the plugin or MCP configuration and restart. `config_inspect` reports the running and latest versions. Set `SFCC_DISABLE_UPDATE_CHECK=true` to turn the check off. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#841](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/841) [`e5ebe73`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e5ebe73c4cdd097485250c63b9373615470c27df) - `skills/get` results now include `ttlMs` and `cacheScope` on protocol 2026-07-28 and later, as the MCP skills extension requires. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf), [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3), [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf), [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527), [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527), [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288), [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3), [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf), [`e5ebe73`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e5ebe73c4cdd097485250c63b9373615470c27df), [`46495bb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/46495bbdf48deab4321aa7f997d575743a910faf)]:
+  - @salesforce/b2c-agent-plugins@1.14.0
+  - @salesforce/b2c-tooling-sdk@2.11.0
+
 ## 3.10.0
 
 ### Minor Changes

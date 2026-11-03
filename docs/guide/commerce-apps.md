@@ -18,6 +18,8 @@ If you build CAPs with an AI coding agent, install the agent skills so it unders
 
 `b2c-cli` and `b2c` ship in the [B2C Developer Tooling marketplace](/guide/agent-skills); `cap-dev` ships separately from the [`SalesforceCommerceCloud/commerce-apps`](https://github.com/SalesforceCommerceCloud/commerce-apps) registry repository.
 
+If you use the [B2C MCP](/mcp/), you don't need to install these separately: it includes all three, including a copy of the `cap-dev` skills that is refreshed in each MCP release. Install the `cap-dev` plugin directly for changes made in the commerce-apps repository since the last MCP release.
+
 ### Claude Code
 
 ```bash
