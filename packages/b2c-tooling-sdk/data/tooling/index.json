@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-02T22:52:18.861Z",
+  "generatedAt": "2026-11-03T04:52:23.991Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -251,8 +251,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.md",
-      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes",
-      "preview": "Commands for creating, updating, and managing Shopper Login and API Access Service (SLAS) clients."
+      "headings": "Global SLAS Flags • Authentication • Required Roles • Configuration • b2c slas token • Usage • Flags • Flows • Examples • Output • Configuration • Existing Client Selection • b2c slas client list • Usage • Flags • Examples • Output • b2c slas client create • Usage • Arguments • Flags • Examples • Notes • b2c slas client get • Usage • Arguments • Examples • Output • b2c slas client update • Usage • Arguments • Flags • Examples • Notes • b2c slas client delete • Usage • Arguments • Examples • Notes • b2c slas client open • Usage • Arguments • Flags • Examples • Notes • b2c slas client template list • Usage • Flags • Examples • b2c slas client template get • Usage • Examples • b2c slas client template set • Usage • Flags • Examples • b2c slas client template delete • Usage • Examples • b2c slas tenant get • Usage • Examples • b2c slas tenant set • Usage • Flags • Examples • Notes • b2c slas idp list • Usage • Flags • b2c slas idp get • Usage • b2c slas idp set • Usage • Flags • Examples • Notes • b2c slas idp delete • Usage • b2c slas shopper logout • Usage • Flags • Examples • Notes • b2c slas shopper delete • Usage • Examples",
+      "preview": "Commands for managing Shopper Login and API Access Service (SLAS) tenants, clients, password action templates, identity providers, and shopper sessions."
     },
     {
       "id": "cli-validate",
@@ -505,6 +505,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/sfcc-ci-migration.md",
       "headings": "Authentication • Stateful Auth (sfcc-ci Compatible) • Stateless Auth (Recommended for CI/CD) • Command Mapping • Code Management • Instance / Data • Cartridge Path • Jobs • Sandbox • SLAS • User / Org / Role • Environment Variables • Configuration • CI/CD Migration • Before (sfcc-ci) • After (b2c-cli — stateless) • After (b2c-cli — stateful, sfcc-ci compatible) • GitHub Actions • Next Steps",
       "preview": "Migrate from sfcc-ci to @salesforce/b2c-cli with command mappings, environment variable compatibility, and CI/CD pipeline updates."
+    },
+    {
+      "id": "guide-slas",
+      "title": "SLAS Guide",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/slas.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/slas.md",
+      "headings": "Before You Start • Get a Shopper Token • Create a SLAS Client • Review and Change Clients • Tighten Client Security • Set Up Passwordless Login and Password Reset • Add Social and Third-Party Login • Log Shoppers Out and Delete Their Data • Log Shoppers Out Everywhere • Delete a Shopper's SLAS Records • Manage the Tenant Registration • Keep SLAS Safe • Troubleshooting • Next Steps",
+      "preview": "A walkthrough of common SLAS tasks with the B2C CLI and your AI assistant, including shopper tokens, SLAS clients, passwordless login templates, social login providers, and shopper logout."
     },
     {
       "id": "guide-storefront-next",

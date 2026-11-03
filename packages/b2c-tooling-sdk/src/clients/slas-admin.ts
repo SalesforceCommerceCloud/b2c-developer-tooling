@@ -32,10 +32,18 @@ export type {paths, components};
  *
  * | Method | Path | Description |
  * |--------|------|-------------|
- * | GET | `/tenants/{tenantId}` | Get tenant info |
+ * | GET/PUT | `/tenants/{tenantId}` | Get or register/update a tenant |
  * | GET | `/tenants/{tenantId}/clients` | List SLAS clients |
  * | PUT | `/tenants/{tenantId}/clients/{clientId}` | Create/update a client |
  * | DELETE | `/tenants/{tenantId}/clients/{clientId}` | Delete a client |
+ * | GET/PUT/DELETE | `/tenants/{tenantId}/clients/{clientId}/password-action-templates` | Manage password action templates |
+ * | GET | `/tenants/{tenantId}/idps` | List identity providers |
+ * | GET/PUT/DELETE | `/tenants/{tenantId}/idps/{name}` | Manage an identity provider |
+ * | POST | `/tenants/{tenantId}/batch-logout` | Log out shoppers from all sessions |
+ * | DELETE | `/tenants/{tenantId}/customers/{customerId}` | Delete a shopper |
+ *
+ * The bundled spec is corrected for live service behavior where it differs from the
+ * published contract (see `specs/README.md`).
  *
  * @example
  * ```typescript

@@ -16,7 +16,7 @@ import type {SafetyEvaluation} from './types.js';
  *
  * - NONE: No safety restrictions (default)
  * - NO_DELETE: Block DELETE operations only
- * - NO_UPDATE: Block DELETE and destructive operations (reset, stop, restart)
+ * - NO_UPDATE: Block DELETE and destructive operations (reset, stop, restart, batch logout)
  * - READ_ONLY: Block all write operations (only GET allowed)
  */
 export type SafetyLevel = 'NONE' | 'NO_DELETE' | 'NO_UPDATE' | 'READ_ONLY';
@@ -130,9 +130,9 @@ export function checkLevelViolation(method: string, path: string, level: SafetyL
       if (upperMethod === 'DELETE') {
         return `Delete operation blocked: DELETE ${path} (NO_UPDATE mode prevents deletions)`;
       }
-      const destructivePatterns = ['/reset', '/stop', '/restart', '/operations'];
+      const destructivePatterns = ['/reset', '/stop', '/restart', '/operations', '/batch-logout'];
       if (destructivePatterns.some((pattern) => path.includes(pattern)) && upperMethod === 'POST') {
-        return `Destructive operation blocked: POST ${path} (NO_UPDATE mode prevents reset/stop/restart)`;
+        return `Destructive operation blocked: POST ${path} (NO_UPDATE mode prevents reset/stop/restart/batch-logout)`;
       }
       return undefined;
     }
