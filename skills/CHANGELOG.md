@@ -1,5 +1,17 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.15.0
+
+### Minor Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added the `b2c-object-types` skill for inspecting and managing system object attributes and attribute groups with the CLI. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - The config and object types skills cover generating custom attribute IntelliSense. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - The b2c-slas skill now covers SLAS tenants, password action templates, identity providers, and shopper logout and deletion. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.14.0
 
 ### Minor Changes

@@ -1,5 +1,21 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.12.0
+
+### Minor Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added `generateCustomAttributeTypes` to build Script API declarations for an instance's custom attributes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added `b2c object-types` to inspect and manage system object type attribute definitions and attribute groups (for example, add a custom attribute to Product) without a site import, using the SCAPI Object Definitions API. `object-types export` and `object-types apply` move definitions to and from `system-objecttype-extensions.xml`, so you can snapshot an instance or apply an import set's metadata without an import job. Add `--import` to also set enum values and default values, which the API can't write, with a site import of just those attributes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - `READ_ONLY` Safety Mode now allows known search endpoints (such as product, job execution, and attribute definition searches) that use POST but don't change data, so read-only sessions and assistants can search without extra rules. Configured rules still take precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#842](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/842) [`a865d27`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a865d27b2e815385348f8f2234f8efb4c096ed5f) - SCAPI code mode now says up front which operations it can't run because they upload or download files (such as custom sitemap upload), and explains how to do those steps another way. Typed catalog clients now cover the full Catalogs API (categories, assignments, rules and exclusion lists), and two new built-in snippets are included. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - The SLAS Admin client types now include identity provider, password action template, batch logout, and shopper delete operations. The `NO_UPDATE` safety level now blocks SLAS batch logout. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Fixed SLAS Admin types that did not match the live service: the `*PwdlessTemplate` operations are now `*PwdActionTemplate` and GET returns the template list, `PWD_FORGOT_ACTION` is removed from the action types, and `IdentityProvider.preferenceValue` and `PasswordActionTemplate.clientId` are removed. Code that used these fields never received them from the service; use `isPreferred` for identity providers.
+
 ## 2.11.0
 
 ### Minor Changes
