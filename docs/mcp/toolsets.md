@@ -256,6 +256,27 @@ See [file access](./security#instance-files).
 
 </ExamplePrompt>
 
+## Object types {#object-types}
+
+**Toolsets:** `CARTRIDGES`, `SCAPI`
+
+| Tool                    | Capability                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `object_types_describe` | List system object types, or an object type's attribute definitions, enum values, and attribute groups. |
+
+Your assistant can check which custom attributes exist (for example `c_color` on
+Product), their value types, and their enum values before it writes code that uses
+them. Requires an API client with the `sfcc.object-definitions` scope, plus
+`short-code` and `tenant-id`. Filtering and enum values need
+`sfcc.object-definitions.rw`. Custom object types aren't covered. To change
+definitions, use [`b2c object-types`](../cli/object-types).
+
+<ExamplePrompt>
+
+> Which custom attributes does Product have for colors, and what values can they take?
+
+</ExamplePrompt>
+
 ## Analytics reports {#cip}
 
 **Toolsets:** `CIP`

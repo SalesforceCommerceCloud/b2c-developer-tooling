@@ -6,7 +6,8 @@ check value types and enum values before you write `product.custom.x` code or `c
 attributes without a site import. Custom object types are not available here (they appear only as unnamed
 `CustomObject` list entries, and `GET .../object-types/CustomObject` returns 404).
 
-Built-in snippets: `object-type-attributes-inspect` (read, compact rows with enum values) and
+For reads, prefer the dedicated `object_types_describe` tool (object types, compact attribute rows, enum values,
+groups); use code mode only when you need fields it omits or a write. Built-in snippets: `object-type-attributes-inspect` (read, compact rows with enum values) and
 `attribute-create-and-group` (write, create-if-missing plus group assignment plus verify).
 
 ## Scopes

@@ -50,6 +50,7 @@ import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {describeInstanceAuth, type AuthStrategy, type InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import {configSourceHint} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
+import {ObjectTypesClient} from '@salesforce/b2c-tooling-sdk/operations/object-types';
 import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
 import {openBrowserForTool} from './utils/browser-login.js';
 import {isPathWithin} from './utils/paths.js';
@@ -345,6 +346,29 @@ export class Services {
     const oauthStrategy = this.getOAuthStrategy();
 
     return createMetricsClient({shortCode, tenantId}, oauthStrategy);
+  }
+
+  /**
+   * Get an Object Definitions API client for system object type metadata.
+   * Requires shortCode, tenantId, and OAuth credentials to be configured.
+   *
+   * @throws Error if shortCode, tenantId, or OAuth credentials are missing
+   */
+  public getObjectTypesClient(): ObjectTypesClient {
+    const {shortCode, tenantId} = this.resolvedConfig.values;
+    if (!shortCode) {
+      throw new Error(
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
+      );
+    }
+    if (!tenantId) {
+      throw new Error(
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
+      );
+    }
+    return new ObjectTypesClient({shortCode, tenantId, auth: this.getOAuthStrategy()});
   }
 
   /**
