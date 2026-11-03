@@ -6,6 +6,7 @@
 
 /**
  * Mock OpenID Connect identity provider for trying SLAS external IDP login end to end.
+ * See scripts/slas-mock-idp.md for setup, storefront use, and cleanup.
  *
  *   pnpm slas:mock-idp [serve] [options]      Start the IDP (optionally behind a public tunnel)
  *   pnpm slas:mock-idp login [options]        Drive a full SLAS IDP login against a running mock
