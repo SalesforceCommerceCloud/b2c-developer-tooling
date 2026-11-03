@@ -233,10 +233,10 @@ export function errorResult(message: string): ToolResult {
 }
 
 /**
- * Creates a JSON result with formatted output.
+ * Creates a JSON result.
  *
  * @param data - The data to serialize as JSON
- * @param indent - Number of spaces for indentation (default: 2)
+ * @param indent - Spaces to indent by; default 0 (compact), since whitespace costs model tokens
  * @returns A ToolResult with JSON-formatted text content
  *
  * @example
@@ -244,14 +244,14 @@ export function errorResult(message: string): ToolResult {
  * return jsonResult({ status: 'success', items: ['a', 'b', 'c'] });
  * ```
  */
-export function jsonResult(data: unknown, indent = 2): ToolResult {
+export function jsonResult(data: unknown, indent = 0): ToolResult {
   return {
     content: [{type: 'text', text: JSON.stringify(data, null, indent)}],
   };
 }
 
 /** Attach compact resolution provenance while preserving existing tool output. */
-export function attachResolution(result: ToolResult, resolution: ToolResolution, indent = 2): ToolResult {
+export function attachResolution(result: ToolResult, resolution: ToolResolution, indent = 0): ToolResult {
   let content = result.content;
   const original = result.structuredContent;
   const structured =

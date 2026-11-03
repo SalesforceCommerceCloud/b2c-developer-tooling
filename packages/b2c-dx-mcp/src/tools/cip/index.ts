@@ -34,7 +34,7 @@ const connection = {
 };
 
 function result(data: object, resolution?: ToolResolution): ToolResult {
-  const value = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
+  const value = resolution ? attachResolution(jsonResult(data), resolution) : jsonResult(data);
   delete value.structuredContent;
   return value;
 }

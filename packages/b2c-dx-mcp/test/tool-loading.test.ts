@@ -46,6 +46,13 @@ describe('tool loading hints', () => {
     expect(result.nextCursor).to.equal(undefined);
   });
 
+  it('omits JSON Schema noise from listed schemas', async () => {
+    const {tools} = await listTools();
+    const listed = JSON.stringify(tools);
+    expect(listed).not.to.include('"$schema"');
+    expect(listed).not.to.include(String(Number.MAX_SAFE_INTEGER));
+  });
+
   it('stays within the Codex plugin tool budget', async () => {
     const {tools} = await listTools();
     let total = 0;

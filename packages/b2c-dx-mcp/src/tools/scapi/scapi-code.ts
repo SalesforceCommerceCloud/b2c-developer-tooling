@@ -63,7 +63,7 @@ function codeResult(
   },
   resolution?: ToolResolution,
 ): ToolResult {
-  const result = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
+  const result = resolution ? attachResolution(jsonResult(data), resolution) : jsonResult(data);
   // Code-mode payloads are arbitrary JSON: retain provenance without duplicating the result.
   delete result.structuredContent;
   return result;

@@ -279,7 +279,7 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
         };
       },
       // Compact JSON: indentation roughly doubles the size of per-minute series.
-      formatOutput: (output) => jsonResult(output, 0),
+      formatOutput: (output) => jsonResult(output),
     },
     loadServices,
   );
