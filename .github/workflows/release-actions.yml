@@ -22,13 +22,18 @@ jobs:
   release:
     name: Validate and tag
     runs-on: ubuntu-latest
+    # The "Release tags" ruleset blocks creating or moving v* tags except by deploy
+    # keys. The action-release environment (main only) holds that key, and the tags
+    # are pushed with it over SSH, so the GITHUB_TOKEN only needs read access.
+    environment: action-release
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout release tooling
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           path: release-tooling
+          persist-credentials: false
 
       - name: Checkout release ref
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -36,6 +41,27 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
           path: release-source
+          persist-credentials: false
+
+      # Runs before any code from the release ref. Later steps execute the ref's
+      # actions, which could otherwise tamper with the runner before the push step
+      # reads the deploy key, so only commits on protected branches may be released.
+      - name: Verify release ref is on a protected branch
+        working-directory: release-source
+        run: |
+          RELEASE_SHA=$(git rev-parse HEAD)
+          git fetch --no-tags origin \
+            '+refs/heads/main:refs/remotes/origin/main' \
+            '+refs/heads/release/*:refs/remotes/origin/release/*' \
+            '+refs/heads/actions/*:refs/remotes/origin/actions/*'
+          for branch in $(git for-each-ref --format='%(refname)' refs/remotes/origin/main refs/remotes/origin/release refs/remotes/origin/actions); do
+            if git merge-base --is-ancestor "$RELEASE_SHA" "$branch"; then
+              echo "$RELEASE_SHA is on ${branch#refs/remotes/origin/}"
+              exit 0
+            fi
+          done
+          echo "::error::$RELEASE_SHA is not on main, release/*, or actions/*"
+          exit 1
 
       - name: Validate Action release
         id: action-release
@@ -82,9 +108,15 @@ jobs:
         env:
           EXACT_TAG: ${{ steps.action-release.outputs.exact-tag }}
           MAJOR_TAG: ${{ steps.action-release.outputs.major-tag }}
+          ACTION_RELEASE_KEY: ${{ secrets.ACTION_RELEASE_KEY }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          KEY_DIR=$(mktemp -d)
+          trap 'rm -rf "$KEY_DIR"' EXIT
+          (umask 077 && printf '%s\n' "$ACTION_RELEASE_KEY" > "$KEY_DIR/key")
+          # GitHub's published ed25519 host key.
+          echo 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$KEY_DIR/known_hosts"
+          export GIT_SSH_COMMAND="ssh -i $KEY_DIR/key -o IdentitiesOnly=yes -o UserKnownHostsFile=$KEY_DIR/known_hosts -o StrictHostKeyChecking=yes"
+          git remote set-url --push origin "git@github.com:${GITHUB_REPOSITORY}.git"
 
           RELEASE_SHA=$(git rev-parse HEAD)
           REMOTE_EXACT=$(git ls-remote --tags origin "refs/tags/$EXACT_TAG" | cut -f1)

@@ -33,6 +33,7 @@ import {
   deleteEnvironmentWithBackend,
   setPrimaryEnvironmentWithBackend,
   invalidateCacheWithBackend,
+  normalizeLegacyEnv,
 } from '../../../src/operations/mrt/env.js';
 import {MrtScapiPreconditionError, type ScapiMrtConnection} from '../../../src/operations/mrt/mrt-backend.js';
 
@@ -1482,6 +1483,168 @@ describe('operations/mrt/env', () => {
 
       expect(result.backend).to.equal('legacy');
       expect(result.raw).to.deep.include({result: 'ok', slug: ENVIRONMENT_ID});
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Static outbound IPs (legacy backend only)
+  // -------------------------------------------------------------------------
+
+  describe('static IPs', () => {
+    const STATIC_IPS_ERROR = 'Static IPs are not enabled for this organization.';
+
+    it('normalizeLegacyEnv maps ssr_static_ips and ssr_static_outbound_ips', () => {
+      const ips = ['203.0.113.10', '203.0.113.11'];
+      const view = normalizeLegacyEnv(legacyTarget({ssr_static_ips: true, ssr_static_outbound_ips: ips}) as any);
+
+      expect(view.staticIps).to.equal(true);
+      expect(view.staticOutboundIps).to.deep.equal(ips);
+    });
+
+    it('normalizeLegacyEnv leaves the static IP fields undefined when the API omits or nulls them', () => {
+      const view = normalizeLegacyEnv(legacyTarget({ssr_static_outbound_ips: null}) as any);
+
+      expect(view.staticIps).to.equal(undefined);
+      expect(view.staticOutboundIps).to.equal(undefined);
+    });
+
+    for (const value of [true, false]) {
+      it(`createEnvironmentWithBackend (legacy) sends ssr_static_ips=${value}`, async () => {
+        let receivedBody: Record<string, unknown> | undefined;
+        server.use(
+          http.post(LEGACY_TARGETS, async ({request}) => {
+            receivedBody = (await request.json()) as Record<string, unknown>;
+            return HttpResponse.json(legacyTarget({state: 'creating', ssr_static_ips: value}), {status: 201});
+          }),
+        );
+
+        const result = await createEnvironmentWithBackend({
+          preference: 'legacy',
+          legacyAuth: new MockAuthStrategy(),
+          projectSlug: STOREFRONT_ID,
+          slug: ENVIRONMENT_ID,
+          name: 'Staging Environment',
+          ssrStaticIps: value,
+        });
+
+        expect(receivedBody?.ssr_static_ips).to.equal(value);
+        expect(result.environment.staticIps).to.equal(value);
+      });
+
+      it(`updateEnvironmentWithBackend (legacy) sends only ssr_static_ips=${value}`, async () => {
+        let receivedBody: Record<string, unknown> | undefined;
+        server.use(
+          http.patch(LEGACY_TARGET, async ({request}) => {
+            receivedBody = (await request.json()) as Record<string, unknown>;
+            return HttpResponse.json(legacyTarget({ssr_static_ips: value}));
+          }),
+        );
+
+        await updateEnvironmentWithBackend({
+          preference: 'legacy',
+          legacyAuth: new MockAuthStrategy(),
+          projectSlug: STOREFRONT_ID,
+          environment: ENVIRONMENT_ID,
+          ssrStaticIps: value,
+        });
+
+        expect(receivedBody).to.deep.equal({ssr_static_ips: value});
+      });
+    }
+
+    it('createEnvironmentWithBackend (legacy) omits ssr_static_ips when not provided', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.post(LEGACY_TARGETS, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(legacyTarget({state: 'creating'}), {status: 201});
+        }),
+      );
+
+      await createEnvironmentWithBackend({
+        preference: 'legacy',
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        slug: ENVIRONMENT_ID,
+        name: 'Staging Environment',
+      });
+
+      expect(receivedBody).to.not.have.property('ssr_static_ips');
+    });
+
+    it('createEnvironmentWithBackend (scapi) never sends ssr_static_ips', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.post(SCAPI_ENVIRONMENTS, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(scapiEnvironment({status: 'building'}), {status: 202});
+        }),
+      );
+
+      await createEnvironmentWithBackend({
+        preference: 'scapi',
+        scapiConnection: scapiConn(),
+        projectSlug: STOREFRONT_ID,
+        name: 'Staging Environment',
+        ssrStaticIps: true,
+      });
+
+      expect(receivedBody).to.deep.equal({displayName: 'Staging Environment'});
+    });
+
+    it('updateEnvironmentWithBackend (scapi) never sends ssr_static_ips', async () => {
+      let receivedBody: Record<string, unknown> | undefined;
+      server.use(
+        http.patch(SCAPI_ENVIRONMENT, async ({request}) => {
+          receivedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json(scapiEnvironment({displayName: 'Renamed'}));
+        }),
+      );
+
+      await updateEnvironmentWithBackend({
+        preference: 'scapi',
+        scapiConnection: scapiConn(),
+        projectSlug: STOREFRONT_ID,
+        environment: ENVIRONMENT_ID,
+        name: 'Renamed',
+        ssrStaticIps: true,
+      });
+
+      expect(receivedBody).to.deep.equal({displayName: 'Renamed'});
+    });
+
+    it('passes the server error message through unchanged on legacy create and update', async () => {
+      server.use(
+        http.post(LEGACY_TARGETS, () => HttpResponse.json({message: STATIC_IPS_ERROR}, {status: 403})),
+        http.patch(LEGACY_TARGET, () => HttpResponse.json({message: STATIC_IPS_ERROR}, {status: 403})),
+      );
+
+      for (const run of [
+        () =>
+          createEnvironmentWithBackend({
+            preference: 'legacy',
+            legacyAuth: new MockAuthStrategy(),
+            projectSlug: STOREFRONT_ID,
+            slug: ENVIRONMENT_ID,
+            name: 'Staging Environment',
+            ssrStaticIps: true,
+          }),
+        () =>
+          updateEnvironmentWithBackend({
+            preference: 'legacy',
+            legacyAuth: new MockAuthStrategy(),
+            projectSlug: STOREFRONT_ID,
+            environment: ENVIRONMENT_ID,
+            ssrStaticIps: true,
+          }),
+      ]) {
+        try {
+          await run();
+          expect.fail('Should have thrown');
+        } catch (error: any) {
+          expect(error.message).to.include(STATIC_IPS_ERROR);
+        }
+      }
     });
   });
 });

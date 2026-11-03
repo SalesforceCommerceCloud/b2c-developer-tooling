@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command, Flags} from '@oclif/core';
-import type {Zone} from '@salesforce/b2c-tooling-sdk/clients';
+import {listAllZones, type Zone} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from './base-command.js';
 import {t} from '../../i18n/index.js';
 
@@ -37,9 +37,7 @@ export abstract class EcdnZoneCommand<T extends typeof Command> extends EcdnComm
     const client = this.getCdnZonesClient();
     const organizationId = this.getOrganizationId();
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/zones/info', {
-      params: {path: {organizationId}},
-    });
+    const {zones, error} = await listAllZones(client, organizationId);
 
     if (error) {
       this.error(
@@ -49,7 +47,7 @@ export abstract class EcdnZoneCommand<T extends typeof Command> extends EcdnComm
       );
     }
 
-    this._zonesCache = data?.data ?? [];
+    this._zonesCache = zones;
     return this._zonesCache;
   }
 

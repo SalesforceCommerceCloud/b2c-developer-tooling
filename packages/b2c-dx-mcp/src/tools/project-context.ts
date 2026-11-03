@@ -6,6 +6,7 @@
 
 import path from 'node:path';
 import {z, type ZodRawShape} from 'zod';
+import type {InstanceAuthPath, InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 
 /** Input shared by MCP tools that resolve files or configuration from a project. */
 export interface ProjectContextInput {
@@ -46,11 +47,53 @@ export interface DirectoryResolutionInfo {
   source: 'argument' | 'projectDirectory';
 }
 
+/**
+ * How one kind of request to the instance authenticates. `browser-login` is an
+ * Account Manager sign-in in the user's browser; its session belongs to the
+ * client, not the instance, so it can also serve other instances.
+ */
+export interface AuthPathResolutionInfo {
+  method: 'basic' | 'browser-login' | 'client-credentials' | 'jwt' | 'none';
+  /** `built-in` for the toolkit's public client, otherwise the client ID. */
+  client?: string;
+  /** Browser-login session state; `none` means the next call opens a sign-in. */
+  session?: 'expired' | 'none' | 'renewable' | 'signed-in';
+  /** Account Manager user of the session, when signed in. */
+  user?: string;
+}
+
+/** How a tool call authenticated against the instance, per request type. */
+export interface AuthResolutionInfo {
+  ocapi: AuthPathResolutionInfo;
+  scapi: AuthPathResolutionInfo;
+  webdav: AuthPathResolutionInfo;
+}
+
 /** Compact, common provenance block returned by project/config-aware tools. */
 export interface ToolResolution {
+  auth?: AuthResolutionInfo;
   configuration?: ConfigurationResolutionInfo;
   directories?: Record<string, DirectoryResolutionInfo>;
   projectDirectory: ProjectDirectoryInfo;
+}
+
+/** Reduce an instance auth summary to the compact form attached to tool results. */
+export function toAuthResolution(summary: InstanceAuthSummary): AuthResolutionInfo {
+  const describe = (path: InstanceAuthPath): AuthPathResolutionInfo => {
+    const info: AuthPathResolutionInfo = {method: path.method === 'user' ? 'browser-login' : path.method};
+    if (path.clientId) info.client = path.builtInClient ? 'built-in' : path.clientId;
+    if (path.method === 'user') {
+      const session = summary.sessions.find((s) => s.clientId === path.clientId);
+      if (session) {
+        info.session = session.accessTokenValid ? 'signed-in' : session.canRefresh ? 'renewable' : 'expired';
+        if (session.user) info.user = session.user;
+      } else {
+        info.session = 'none';
+      }
+    }
+    return info;
+  };
+  return {ocapi: describe(summary.ocapi), scapi: describe(summary.scapi), webdav: describe(summary.webdav)};
 }
 
 /** Whether a tool needs only a project root or full configuration selection. */

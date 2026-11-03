@@ -9,7 +9,7 @@
  * Runs as part of the root `version` script after `changeset version`.
  */
 
-import {readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -131,3 +131,15 @@ codexMcpManifest.version = mcpVersion;
 writeJson(codexMcpManifestPath, codexMcpManifest);
 
 console.log(`Pinned b2c-dx-mcp plugin to @salesforce/b2c-dx-mcp@${mcpVersion}`);
+
+// Claude plugin manifests (`.claude-plugin/plugin.json`) carry the directory
+// listing icon. Claude prefers a manifest's `version` over the marketplace
+// entry's, so mirror each plugin's root manifest version after the stamping above.
+for (const plugin of marketplace.plugins) {
+  const pluginDir = join(repoRoot, plugin.source);
+  const claudeManifestPath = join(pluginDir, '.claude-plugin/plugin.json');
+  if (!existsSync(claudeManifestPath)) continue;
+  const claudeManifest = readJson(claudeManifestPath);
+  claudeManifest.version = readJson(join(pluginDir, 'plugin.json')).version;
+  writeJson(claudeManifestPath, claudeManifest);
+}

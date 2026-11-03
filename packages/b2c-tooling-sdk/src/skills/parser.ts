@@ -18,7 +18,7 @@ import {getLogger} from '../logging/logger.js';
  * @returns Parsed frontmatter or null if invalid
  */
 export function parseSkillFrontmatter(content: string): {name: string; description: string} | null {
-  const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
+  const match = content.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---/);
   if (!match) {
     return null;
   }

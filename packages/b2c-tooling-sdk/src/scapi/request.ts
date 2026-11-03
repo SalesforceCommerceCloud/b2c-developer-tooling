@@ -21,6 +21,7 @@ import type {ScapiShopperAuth} from './shopper.js';
 import {
   scapiAuthError,
   scapiAuthResponse,
+  shopperTokenLacksScopes,
   scapiShopperAuthError,
   selectScapiAuth,
   shopperTokenScopes,
@@ -114,7 +115,7 @@ export function createScapiRequest(
     const transferLimit = unsupportedScapiTransfer(matched.document, operation);
     if (transferLimit)
       throw new Error(
-        `SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}. ${transferLimit} Use a file-capable HTTP client.`,
+        `SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}. ${transferLimit} No request sent. Run the JSON steps (submit, status, delete) here; transfer the file with an external HTTP client, using a token from auth.accountManager(${JSON.stringify({scopes: selected.scopes, scapi: true})}) if needed.`,
       );
     const query = args.query === undefined ? {} : args.query;
     if (!query || typeof query !== 'object' || Array.isArray(query)) throw new Error('query must be an object.');
@@ -239,6 +240,7 @@ export function createScapiRequest(
         },
       };
     };
+    let shopperToken: string | undefined;
     const auth: AuthStrategy = shopper
       ? {
           fetch: (url, init) => getApiFetch(options.shopperAuth)(url, init as RequestInit),
@@ -246,6 +248,7 @@ export function createScapiRequest(
           getAuthorizationHeader: async () => {
             try {
               const token = await options.shopperAuth!.getAccessToken(shopperSiteId!, signal);
+              shopperToken = token;
               authContext.shopper!.tokenScopes = shopperTokenScopes(token);
               return `Bearer ${token}`;
             } catch (error) {
@@ -270,7 +273,7 @@ export function createScapiRequest(
           if (response.ok && mediaType && !isScapiTextMediaType(mediaType)) {
             void response.body?.cancel().catch(() => {});
             throw new Error(
-              'SCAPI_TRANSFER_UNSUPPORTED: API returned a non-text response. Use a file-capable HTTP client; check any write before retrying.',
+              `SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId} returned ${mediaType.split(';')[0].trim()}, not JSON or text. Use an external HTTP client for file content; check any write before retrying.`,
             );
           }
           const chunks: Uint8Array[] = [];
@@ -332,7 +335,12 @@ export function createScapiRequest(
       }
     }
     const diagnostic = scapiAuthResponse(result.response.status, authContext);
-    if (shopper && result.response.status === 401) options.shopperAuth?.invalidate(shopperSiteId!);
+    // A token missing the operation's scopes keeps failing; a new one reflects scopes granted since.
+    if (
+      shopper &&
+      (result.response.status === 401 || (result.response.status === 403 && shopperTokenLacksScopes(authContext)))
+    )
+      options.shopperAuth?.invalidate(shopperSiteId!, shopperToken);
     // Authenticated live schema responses extend this execution's catalog, replacing bundled contracts.
     if (
       result.response.ok &&

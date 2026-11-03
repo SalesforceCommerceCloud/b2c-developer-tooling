@@ -95,7 +95,7 @@ describe('tools/diagnostics/mrt-logs', () => {
     it('exposes correct metadata', () => {
       const tool = createMrtLogsWatchTool(loadServices, serverContext);
       expect(tool.name).to.equal('mrt_logs_watch');
-      expect(tool.toolsets).to.have.members(['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT']);
+      expect(tool.toolsets).to.have.members(['DIAGNOSTICS', 'MRT', 'PWAV3', 'STOREFRONTNEXT']);
     });
 
     it('returns watch id + project/environment and rejects duplicate', async () => {

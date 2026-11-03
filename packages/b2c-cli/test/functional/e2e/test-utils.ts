@@ -148,6 +148,8 @@ export async function runCLI(args: string[], options: CLIOptions = {}): Promise<
       ...process.env,
       ...env,
       SFCC_LOG_LEVEL: env.SFCC_LOG_LEVEL || process.env.SFCC_LOG_LEVEL || 'debug',
+      // Keep e2e runs out of production telemetry unless a caller opts back in.
+      SFCC_DISABLE_TELEMETRY: env.SFCC_DISABLE_TELEMETRY ?? process.env.SFCC_DISABLE_TELEMETRY ?? 'true',
     },
     // Preserve stderr for assertions while also showing diagnostics in CI logs.
     stderr: ['pipe', 'inherit'],

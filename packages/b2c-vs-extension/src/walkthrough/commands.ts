@@ -9,6 +9,7 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import {workspaceHasDwJson} from '../workspace-discovery.js';
+import {instanceNameForHostname, parseServerHostname} from './server-hostname.js';
 
 /**
  * Template for a basic dw.json configuration file.
@@ -91,8 +92,8 @@ export function registerWalkthroughCommands(context: vscode.ExtensionContext): v
   // the rest of the session). Secret pairs are placed independently per
   // pair, exactly like the all-at-once wizard.
   context.subscriptions.push(
-    vscode.commands.registerCommand('b2c-dx.setup.connection', async () => {
-      await runConnectionStep(context);
+    vscode.commands.registerCommand('b2c-dx.setup.connection', async (options?: ConnectionStepOptions) => {
+      await runConnectionStep(context, options);
     }),
     vscode.commands.registerCommand('b2c-dx.setup.oauth', async () => {
       await runOAuthStep(context);
@@ -1087,36 +1088,60 @@ function flushTerminal(inst: string, lines: string[]): void {
   for (const l of lines) term.sendText(l, false);
 }
 
+interface ConnectionStepOptions {
+  /**
+   * Ask only for the server: the config name comes from the hostname and the
+   * code version is chosen when code sync starts. Used when code sync finds no
+   * configuration, since uploads then need nothing else.
+   */
+  serverOnly?: boolean;
+}
+
+async function promptForHostname(title: string): Promise<string | undefined> {
+  const input = await vscode.window.showInputBox({
+    title,
+    prompt: 'Instance hostname, or any URL on the instance such as a Business Manager link',
+    placeHolder: 'abcd-123.dx.commercecloud.salesforce.com',
+    ignoreFocusOut: true,
+    validateInput: (v) => (parseServerHostname(v) ? null : 'Enter a hostname or URL'),
+  });
+  return input === undefined ? undefined : parseServerHostname(input);
+}
+
 // ─── Step 1 — Connection (instance name + hostname + code-version) ──────
-async function runConnectionStep(context: vscode.ExtensionContext): Promise<void> {
+async function runConnectionStep(context: vscode.ExtensionContext, options: ConnectionStepOptions = {}): Promise<void> {
   const wsFolder = vscode.workspace.workspaceFolders?.[0];
   if (!wsFolder) {
     vscode.window.showErrorMessage('B2C DX: Open a workspace folder first.');
     return;
   }
-  const inst = await ensureInstanceName(context);
-  if (!inst) return;
 
-  const hostname = await vscode.window.showInputBox({
-    title: `Connect · ${inst} · hostname`,
-    prompt: 'Instance hostname (no https://)',
-    placeHolder: 'abcd-123.dx.commercecloud.salesforce.com',
-    ignoreFocusOut: true,
-    validateInput: (v) => (v.trim().length > 0 ? null : 'Required'),
-  });
-  if (!hostname) return;
-  const codeVersion = await vscode.window.showInputBox({
-    title: `Connect · ${inst} · code-version (optional)`,
-    prompt: 'Default code version targeted by deploys',
-    placeHolder: 'version1',
-    ignoreFocusOut: true,
-  });
+  let inst: string | undefined;
+  let hostname: string | undefined;
+  let codeVersion: string | undefined;
+  if (options.serverOnly) {
+    hostname = await promptForHostname('Connect to Your B2C Instance');
+    if (!hostname) return;
+    inst = getSetupSession(context)?.instanceName ?? instanceNameForHostname(hostname);
+    await setSetupSession(context, inst);
+  } else {
+    inst = await ensureInstanceName(context);
+    if (!inst) return;
+    hostname = await promptForHostname(`Connect · ${inst} · hostname`);
+    if (!hostname) return;
+    codeVersion = await vscode.window.showInputBox({
+      title: `Connect · ${inst} · code-version (optional)`,
+      prompt: 'Default code version targeted by deploys. Leave empty to choose one when code sync starts.',
+      placeHolder: 'version1',
+      ignoreFocusOut: true,
+    });
+  }
 
   try {
     const {doc, entry} = await readOrCreateConfigEntry(wsFolder.uri.fsPath, inst);
     entry.hostname = hostname;
     if (codeVersion) entry['code-version'] = codeVersion;
-    else delete entry['code-version'];
+    else if (!options.serverOnly) delete entry['code-version'];
     // Derive and persist the realm from the hostname so the Sandbox Explorer
     // can bootstrap directly off dw.json. Only set it if not already present —
     // a user-set realm always wins.
@@ -1125,6 +1150,14 @@ async function runConnectionStep(context: vscode.ExtensionContext): Promise<void
       if (derived) entry.realm = derived;
     }
     await writeConfigDoc(wsFolder.uri.fsPath, doc);
+    if (options.serverOnly) {
+      const action = await vscode.window.showInformationMessage(
+        `B2C DX: Saved ${hostname} to dw.json. Code sync signs you in to Account Manager in a browser; your Business Manager role authorizes uploads.`,
+        'Start Code Sync',
+      );
+      if (action) await vscode.commands.executeCommand('b2c-dx.codeSync.start');
+      return;
+    }
     await openFile(path.join(wsFolder.uri.fsPath, 'dw.json'));
     await offerInspectFollowUp(`Connection saved to dw.json (${inst}).`);
   } catch (e) {

@@ -156,6 +156,18 @@ describe('reference-routes', () => {
       expect(fetchStub.firstCall.args[0]).to.equal('https://storefront.example.com/on/demandware.store');
     });
 
+    it('should keep absolute and protocol-relative paths on the external domain', async () => {
+      process.env.EXTERNAL_DOMAIN_NAME = 'storefront.example.com';
+      fetchStub.callsFake(async () => new Response('ok', {status: 200}));
+      app.get('/test', outboundLoopTest);
+      await request(app).get('/test').query({path: 'https://attacker.example.net/x'}).expect(200);
+      await request(app).get('/test').query({path: '//attacker.example.net/x'}).expect(200);
+      await request(app).get('/test').query({path: '\\\\attacker.example.net/x'}).expect(200);
+      for (const call of fetchStub.getCalls()) {
+        expect(new URL(call.args[0]).host).to.equal('storefront.example.com');
+      }
+    });
+
     it('should not double the scheme when EXTERNAL_DOMAIN_NAME already includes one', async () => {
       process.env.EXTERNAL_DOMAIN_NAME = 'https://storefront.example.com';
       fetchStub.resolves(new Response('ok', {status: 200}));

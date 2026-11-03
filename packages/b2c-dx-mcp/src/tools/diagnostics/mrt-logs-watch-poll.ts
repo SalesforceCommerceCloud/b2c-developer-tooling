@@ -44,7 +44,7 @@ export function createMrtLogsWatchPollTool(
       description:
         'Drain buffered MRT logs, blocking up to timeout_ms when empty. Repeat if truncated=true. ' +
         'stopped=true means the stream closed; inspect errors.',
-      toolsets: ['DIAGNOSTICS', 'PWAV3', 'STOREFRONTNEXT'],
+      toolsets: ['DIAGNOSTICS', 'MRT', 'PWAV3', 'STOREFRONTNEXT'],
       inputSchema: {
         watch_id: z.string(),
         timeout_ms: z

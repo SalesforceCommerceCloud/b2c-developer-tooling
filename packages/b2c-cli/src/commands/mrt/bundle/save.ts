@@ -76,10 +76,12 @@ export default class MrtBundleSave extends BaseCommand<typeof MrtBundleSave> {
   };
 
   async run(): Promise<SaveBundleResult> {
-    const project = this.flags.project;
+    const project = this.flagOrConfig(this.flags.project, 'mrtProject');
 
     if (!project) {
-      this.error('MRT project is required. Provide --project/--storefront (-p/-s) or set MRT_PROJECT.');
+      this.error(
+        'MRT project is required. Provide --project/--storefront (-p/-s), set MRT_PROJECT, or set mrtProject in your configuration.',
+      );
     }
 
     const saveDir = this.flags['save-dir'];

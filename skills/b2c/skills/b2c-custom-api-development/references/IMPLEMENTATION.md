@@ -59,20 +59,52 @@ response.setVaryBy('price_promotion');
 
 ## Remote Includes
 
-Include responses from other SCAPI endpoints:
+Include responses from other SCAPI endpoints, including another endpoint of the same Custom API. The platform resolves and caches each include separately, which makes includes a good fit for slow or third-party data that should be cached on its own TTL:
 
 ```javascript
-var include = dw.system.RESTResponseMgr.createScapiRemoteInclude(
-    'custom', 'other-api', 'v1', 'endpointPath',
-    dw.web.URLParameter('siteId', 'MySite')
-);
+var RESTResponseMgr = require('dw/system/RESTResponseMgr');
+var Site = require('dw/system/Site');
+var URLParameter = require('dw/web/URLParameter');
 
-var response = {
-    data: 'my data',
-    included: [include]
+exports.getProductDetails = function () {
+    var productId = request.getSCAPIPathParameters().get('productId');
+    var params = [URLParameter('siteId', Site.current.ID), URLParameter('c_productId', productId)];
+    // Forward the caller's locale as sent (e.g. en-US); request.locale (en_US) is rejected by SCAPI
+    var locale = request.httpParameterMap.get('locale').stringValue;
+    if (locale) {
+        params.push(URLParameter('locale', locale));
+    }
+    var include = RESTResponseMgr.createScapiRemoteInclude.apply(
+        null, ['custom', 'product-details', 'v1', 'enrichment'].concat(params)
+    );
+
+    response.setExpires(Date.now() + 5 * 60 * 1000);
+    RESTResponseMgr.createSuccess({id: productId, enrichment: include}).render();
 };
-RESTResponseMgr.createSuccess(response).render();
+
+exports.getProductEnrichment = function () {
+    // Path parameters are unavailable inside an include; read the declared c_ query parameter
+    var productId = request.httpParameterMap.get('c_productId').stringValue;
+    var enrichment = fetchEnrichment(productId);
+
+    // Soft-fail with 200: an error status from the include fails the parent request
+    response.setExpires(Date.now() + (enrichment.available ? 60 : 5) * 60 * 1000);
+    RESTResponseMgr.createSuccess(enrichment).render();
+};
 ```
+
+**Request context inside an include target** (observed on a sandbox; confirm with `commerce-api/custom-api-remote-includes`):
+
+- `request.isIncludeRequest()` is `true`.
+- `request.getSCAPIPathParameters()` returns `null` and `request.httpPath` is the **parent's** path. Give include targets a path without path parameters (`/enrichment`, not `/products/{productId}/enrichment`) and pass inputs as `c_` query parameters declared in `schema.yaml`.
+- `request.httpQueryString` and `request.httpParameterMap` are the include's **own** parameters.
+- Pass `locale` in SCAPI form (`en-US`). `request.locale` returns `en_US` (or `default`), which SCAPI rejects with 400 `invalid-locale`. Forward the caller's raw `locale` parameter only when present.
+
+**Failure and caching behavior:**
+
+- When an include returns an error status (a 400 from a bad `locale`, a 500 from a script error), the parent responds with 500. Keep include targets returning 200 with an `available: false`-style flag for soft failures such as provider timeouts.
+- The parent and each include are cached independently, so set `response.setExpires()` in both. A parent cache hit still resolves its includes from their own cache entries.
+- Include target failures show up in error logs under the parent's path, with `include` in the request type (e.g. `.../products/p1|GET|include|...`). Search logs for `WAInclude` to find include-level errors.
 
 ## External Service Calls
 

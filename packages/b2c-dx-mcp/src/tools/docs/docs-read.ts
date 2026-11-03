@@ -69,7 +69,7 @@ export function createDocsReadTool(
           .optional()
           .describe(`Maximum characters of content to return. Defaults to ${DEFAULT_MAX_LENGTH}.`),
       },
-      async execute(args) {
+      async execute(args, context) {
         // Favor the detected workspace when resolving a fuzzy query so a read
         // picks the same top hit docs_search ranks first. Exact id matches
         // short-circuit inside readDocByQuery before searching, so the boost
@@ -83,6 +83,12 @@ export function createDocsReadTool(
         const slice = found.content.slice(offset, offset + maxLength);
         const end = offset + slice.length;
         const truncated = end < totalLength;
+        context.recordContentRead?.({
+          contentType: 'doc',
+          contentId: found.entry.id,
+          ...(found.entry.category && {category: found.entry.category}),
+          offset,
+        });
         return {
           citation: DOCS_CITATION_NOTE,
           entry: found.entry,

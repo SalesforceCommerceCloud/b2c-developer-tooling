@@ -123,7 +123,8 @@ export const outboundLoopTest = async (req: Request, res: Response) => {
 
   const baseUrl = /^https?:\/\//.test(externalDomain) ? externalDomain : `https://${externalDomain}`;
   const requestPath = typeof req.query.path === 'string' ? req.query.path : '/';
-  const target = new URL(requestPath, baseUrl).toString();
+  // Append the path to the external domain's origin so the request can't be pointed at another host.
+  const target = `${new URL(baseUrl).origin}/${requestPath.replace(/^[/\\]+/, '')}`;
 
   const response = await fetch(target, {
     headers: {

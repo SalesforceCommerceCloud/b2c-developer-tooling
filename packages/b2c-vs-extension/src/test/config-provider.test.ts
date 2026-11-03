@@ -131,6 +131,29 @@ suite('B2CExtensionConfig workspace discovery', () => {
     }
   });
 
+  test('offers the built-in WebDAV client only on the code-sync instance', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-code-sync-instance-'));
+    const dwJson = path.join(dir, 'dw.json');
+    fs.writeFileSync(dwJson, JSON.stringify({hostname: 'server-only.invalid'}));
+
+    const provider = new B2CExtensionConfig(log, undefined, {...ambientEnvironment, SFCC_CONFIG: dwJson});
+
+    try {
+      await provider.ensureResolved();
+      const shared = provider.getInstance();
+      const codeSync = provider.getCodeSyncInstance();
+      assert.ok(shared && codeSync, 'expected both instances');
+      assert.notStrictEqual(shared, codeSync);
+      // Views that load on their own must not start a browser login.
+      assert.throws(() => shared.webdav, /OAuth credentials required/);
+      void codeSync.webdav;
+      assert.strictEqual(codeSync.webdavUsesUserAuth, true);
+    } finally {
+      provider.dispose();
+      fs.rmSync(dir, {recursive: true, force: true});
+    }
+  });
+
   test('applies the dw.json scapi-base-url override to SCAPI clients', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-scapi-base-url-'));
     const dwJson = path.join(dir, 'dw.json');

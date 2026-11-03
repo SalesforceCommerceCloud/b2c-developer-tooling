@@ -96,14 +96,18 @@ export default class EcdnFirewallList extends EcdnZoneCommand<typeof EcdnFirewal
     if (limit !== undefined) query.limit = limit;
     if (offset !== undefined) query.offset = offset;
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/zones/{zoneId}/firewall-custom/rules', {
-      params: {
-        path: {organizationId, zoneId},
-        query,
+    const {data, error, response} = await client.GET(
+      '/organizations/{organizationId}/zones/{zoneId}/firewall-custom/rules',
+      {
+        params: {
+          path: {organizationId, zoneId},
+          query,
+        },
       },
-    });
+    );
 
-    if (error) {
+    // The API returns 404 when the zone has no rules
+    if (error && response?.status !== 404) {
       this.error(
         t('commands.ecdn.firewall.list.error', 'Failed to fetch custom firewall rules: {{message}}', {
           message: formatApiError(error),

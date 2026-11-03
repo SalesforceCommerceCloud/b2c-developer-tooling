@@ -4,7 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {TableRenderer, columnFlagsFor, selectColumns, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
-import type {Zone} from '@salesforce/b2c-tooling-sdk/clients';
+import {listAllZones, type Zone} from '@salesforce/b2c-tooling-sdk/clients';
 import {EcdnCommand, formatApiError} from '../../../utils/ecdn/index.js';
 import {t, withDocs} from '../../../i18n/index.js';
 
@@ -69,11 +69,7 @@ export default class EcdnZonesList extends EcdnCommand<typeof EcdnZonesList> {
     const client = this.getCdnZonesClient();
     const organizationId = this.getOrganizationId();
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/zones/info', {
-      params: {
-        path: {organizationId},
-      },
-    });
+    const {zones, error} = await listAllZones(client, organizationId);
 
     if (error) {
       this.error(
@@ -83,7 +79,6 @@ export default class EcdnZonesList extends EcdnCommand<typeof EcdnZonesList> {
       );
     }
 
-    const zones = data?.data ?? [];
     const output: ListOutput = {
       zones,
       total: zones.length,

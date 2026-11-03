@@ -118,6 +118,26 @@ describe('tools/diagnostics/logs', () => {
       expect(json.entries[0].message).to.equal('OrderMgr failed');
     });
 
+    it('omits raw and truncates long messages', async () => {
+      const stub = sinon.stub().resolves([makeEntry({message: 'x'.repeat(30)}), makeEntry({message: 'short'})]);
+      const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: stub});
+      const result = await tool.handler({maxMessageLength: 10});
+      const json = getResultJson<{entries: Array<{message: string; raw?: string; truncatedChars?: number}>}>(result);
+      expect(json.entries[0]).to.not.have.property('raw');
+      expect(json.entries[0].message).to.equal('x'.repeat(10));
+      expect(json.entries[0].truncatedChars).to.equal(20);
+      expect(json.entries[1].message).to.equal('short');
+      expect(json.entries[1]).to.not.have.property('truncatedChars');
+    });
+
+    it('keeps full messages when maxMessageLength is 0', async () => {
+      const stub = sinon.stub().resolves([makeEntry({message: 'x'.repeat(5000)})]);
+      const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: stub});
+      const result = await tool.handler({maxMessageLength: 0});
+      const json = getResultJson<{entries: Array<{message: string}>}>(result);
+      expect(json.entries[0].message).to.have.length(5000);
+    });
+
     it('parses --since', async () => {
       const future = new Date(Date.now() + 60_000);
       const stub = sinon
@@ -128,6 +148,43 @@ describe('tools/diagnostics/logs', () => {
       const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: stub});
       const result = await tool.handler({since: '5m'});
       expect(result.isError).to.be.undefined;
+    });
+
+    it('lists custom logger files the prefixes skipped when nothing is found', async () => {
+      const listStub = sinon
+        .stub()
+        .resolves([
+          makeFile('error-1.log'),
+          makeFile('custom-PimTaxImport-blade1-20260101.log', 'custom-PimTaxImport'),
+          makeFile('custom-Payment-blade1-20260101.log', 'custom-Payment'),
+        ]);
+      const tool = createLogsGetRecentTool(loadServices, serverContext, {
+        getRecentLogs: sinon.stub().resolves([]),
+        listLogFiles: listStub,
+      });
+      const result = await tool.handler({prefixes: ['error', 'custom-Payment']});
+      const json = getResultJson<{count: number; unreadCustomLogs?: string[]; hint?: string}>(result);
+      expect(json.count).to.equal(0);
+      expect(json.unreadCustomLogs).to.deep.equal(['custom-PimTaxImport']);
+      expect(json.hint).to.include('custom-');
+    });
+
+    it('omits the custom log hint when entries are found or listing fails', async () => {
+      const found = createLogsGetRecentTool(loadServices, serverContext, {
+        getRecentLogs: sinon.stub().resolves([makeEntry()]),
+        listLogFiles: sinon.stub().rejects(new Error('should not be called')),
+      });
+      expect(getResultJson<object>(await found.handler({}))).to.not.have.property('unreadCustomLogs');
+
+      const failing = createLogsGetRecentTool(loadServices, serverContext, {
+        getRecentLogs: sinon.stub().resolves([]),
+        listLogFiles: sinon.stub().rejects(new Error('401')),
+      });
+      const result = await failing.handler({});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{count: number}>(result);
+      expect(json.count).to.equal(0);
+      expect(json).to.not.have.property('unreadCustomLogs');
     });
 
     it('errors on invalid --since', async () => {

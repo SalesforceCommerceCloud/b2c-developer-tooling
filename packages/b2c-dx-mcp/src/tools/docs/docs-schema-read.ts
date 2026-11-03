@@ -30,13 +30,15 @@ export function createDocsSchemaReadTool(loadServices: () => Promise<Services> |
       openWorld: false,
       description:
         'Read a bundled B2C Commerce (SFCC/Demandware) XSD schema as XML by ID or fuzzy query. ' +
-        'Use docs_schema_search to find IDs.',
+        'Use docs_schema_search to find IDs; validate_xml_schema checks XML against them.',
       toolsets: [...TOOLSETS],
       inputSchema: {
         query: z.string().min(1).describe('Schema name or partial match.'),
       },
-      async execute(args) {
-        return readSchemaByQuery(args.query);
+      async execute(args, context) {
+        const found = readSchemaByQuery(args.query);
+        if (found) context.recordContentRead?.({contentType: 'schema', contentId: found.entry.id});
+        return found;
       },
       formatOutput: (output) =>
         output ? jsonResult(output) : errorResult('No schema found. Try docs_schema_search to find candidates.'),

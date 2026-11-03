@@ -223,7 +223,13 @@
             urlStr = String(input);
           }
 
-          if (urlStr.indexOf('commercecloud.salesforce.com') === -1) {
+          var parsed;
+          try {
+            parsed = new URL(urlStr, window.location.href);
+          } catch (e) {
+            parsed = null;
+          }
+          if (!parsed || parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.commercecloud.salesforce.com')) {
             return nativeFetch(input, init);
           }
 

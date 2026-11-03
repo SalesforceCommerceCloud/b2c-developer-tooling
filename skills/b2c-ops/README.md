@@ -4,17 +4,35 @@ Agent skills for administrators, operators, and developers investigating B2C
 Commerce health and incidents. Available as the `b2c-ops` plugin and bundled in
 the B2C MCP. No demo workspace or application source is required.
 
-| Skill                      | Outcome                                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------------------- |
-| `b2c-production-triage`    | Scope an incident, correlate evidence, and prepare a handoff.                             |
-| `b2c-job-health`           | Review scheduled work and investigate failed or incomplete updates.                       |
-| `b2c-checkout-triage`      | Investigate broader checkout/payment symptoms and select relevant evidence.               |
-| `b2c-order-failure-triage` | Enumerate FAILED orders, quantify impact, and correlate failed inputs with logs and jobs. |
-| `b2c-edge-traffic-triage`  | Classify bot and abusive eCDN traffic, check edge protections, and propose rule changes.  |
+| Skill                      | Outcome                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `b2c-production-triage`    | Scope an incident, correlate evidence, and prepare a handoff.                                                      |
+| `b2c-job-health`           | Review scheduled work and investigate failed or incomplete updates.                                                |
+| `b2c-checkout-triage`      | Investigate broader checkout/payment symptoms and select relevant evidence.                                        |
+| `b2c-order-failure-triage` | Enumerate FAILED orders, quantify impact, and correlate failed inputs with logs and jobs.                          |
+| `b2c-integration-triage`   | Investigate failing, slow or silent calls to external services using third-party metrics, logs and service config. |
+| `b2c-performance-triage`   | Localize slow or erroring APIs/pages with Metrics API signals (family, controller, hook, host, cache).             |
+| `b2c-edge-traffic-triage`  | Classify eCDN traffic (bots, abuse, edge errors), check edge protections, propose rules.                           |
 
 See the [Operations guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/operations)
 for setup and example requests. Direct plugin installation adds guidance; it
 does not grant access or install the MCP/CLI. MCP users need no separate install.
+
+## Installation
+
+```bash
+# Claude Code
+claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+claude plugin install b2c-ops@b2c-developer-tooling
+
+# GitHub Copilot CLI
+copilot plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
+copilot plugin install b2c-ops@b2c-developer-tooling
+```
+
+**Codex:** open the repo as a workspace, restart Codex, then install from the **B2C Developer Tooling** marketplace in the plugin directory.
+
+For file-copy install to any supported IDE, use `b2c setup skills b2c-ops`. See the [install guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/agent-skills) for details.
 
 ## Adding a runbook
 

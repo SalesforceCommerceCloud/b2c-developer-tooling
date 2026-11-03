@@ -8,7 +8,6 @@ import {
   uploadCartridges,
   deleteCartridges,
   reloadCodeVersion,
-  createScriptsBackend,
   type DeployResult,
   type ScriptsBackend,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
@@ -57,6 +56,13 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       description: 'Delete existing cartridges before upload',
       default: false,
     }),
+    'cartridge-ignore-dirs': Flags.string({
+      description:
+        'Directory names to skip inside cartridges, replacing the default list (node_modules,.git,coverage,.cache,tmp,temp); pass an empty value to skip nothing (env: SFCC_CARTRIDGE_IGNORE_DIRS)',
+      multiple: true,
+      multipleNonGreedy: true,
+      delimiter: ',',
+    }),
   };
 
   static hiddenAliases = ['code:deploy'];
@@ -74,7 +80,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
   private _scriptsBackend?: ScriptsBackend;
   protected get scriptsBackend(): ScriptsBackend {
     if (!this._scriptsBackend) {
-      this._scriptsBackend = this.createBackend(createScriptsBackend);
+      this._scriptsBackend = this.createScriptsBackend();
     }
     return this._scriptsBackend;
   }
@@ -85,24 +91,18 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     const hostname = this.resolvedConfig.values.hostname!;
     let version = this.resolvedConfig.values.codeVersion;
 
-    // OAuth is required if:
-    // 1. No code version is specified (active-version API discovery)
-    // 2. --activate or --reload is set (code-version API mutation)
-    const needsOAuth = !version || this.flags.activate || this.flags.reload;
+    // Activating or reloading needs an API client. Without one, the active
+    // version is still found over WebDAV.
+    const needsOAuth = this.flags.activate || this.flags.reload;
     if (needsOAuth && !this.hasOAuthCredentials()) {
-      const reason = version
-        ? t(
-            'commands.code.deploy.oauthRequiredForActivate',
-            'The --activate/--reload flag requires OAuth credentials to manage the code version via SCAPI or the temporary OCAPI fallback.',
-          )
-        : t(
-            'commands.code.deploy.oauthRequiredForDiscovery',
-            'No code version specified. OAuth credentials are required to auto-discover the active code version.',
-          );
+      const reason = t(
+        'commands.code.deploy.oauthRequiredForActivate',
+        'Activating or reloading the code version (--activate/--reload) needs an API client: configure client-id and client-secret for a client with the sfcc.scripts.rw scope, plus short-code and tenant-id.',
+      );
       this.error(
         t(
           'commands.code.deploy.oauthRequired',
-          '{{reason}}\n\nProvide --code-version to use basic auth only, or configure OAuth credentials.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
+          '{{reason}}\n\nDeploy without --activate/--reload to use WebDAV only, or configure an API client.\nSee: https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html',
           {reason},
         ),
       );
@@ -194,6 +194,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         cleanup: t('commands.code.deploy.cleanup', 'Cleaning up'),
       };
       await this.operations.uploadCartridges(this.instance, cartridges, {
+        ignoreDirs: this.resolvedConfig.values.cartridgeIgnoreDirs,
         onProgress: (info) => {
           if (this.jsonEnabled()) return;
           const label = uploadPhaseLabels[info.phase];

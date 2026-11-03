@@ -152,6 +152,28 @@ describe('auth/oauth-pkce', () => {
       strategy.invalidateToken();
     });
 
+    it('lets the browser opener cancel the pending login and frees the port', async () => {
+      const localPort = await getAvailablePort();
+      const strategy = new PkceOAuthStrategy({
+        clientId: 'pkce-cancel-login',
+        localPort,
+        persistSession: false,
+        async openBrowser(_url, login) {
+          login?.cancel('Login declined');
+        },
+      });
+
+      const error = await strategy.getTokenResponse().catch((error_: Error) => error_);
+      expect((error as Error).message).to.equal('Login declined');
+
+      const probe = createServer();
+      await new Promise<void>((resolve, reject) => {
+        probe.once('error', reject);
+        probe.listen(localPort, resolve);
+      });
+      await new Promise<void>((resolve) => probe.close(() => resolve()));
+    });
+
     it('does not expose access or refresh tokens in trace output', async () => {
       let logs = '';
       configureLogger({
@@ -547,6 +569,34 @@ describe('auth/oauth-pkce', () => {
       const stored = findAuthSession(clientId);
       expect(stored!.accessToken).to.equal('at-refreshed');
       expect(stored!.refreshToken).to.equal('rt-rotated');
+
+      strategy.invalidateToken();
+    });
+
+    it('renews a still-valid access token with forceRefresh', async () => {
+      const clientId = 'pkce-force-refresh';
+      saveAuthSession({
+        clientId,
+        flow: 'pkce',
+        accessToken: 'still-valid',
+        refreshToken: 'rt-valid',
+        scopes: [],
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      });
+
+      const strategy = new PkceOAuthStrategy({clientId, forceRefresh: true});
+      const flowStub = stubRunFlow(strategy, async () => {
+        throw new Error('Browser flow should not run when a refresh token is available');
+      });
+      globalThis.fetch = async () =>
+        new Response(JSON.stringify({access_token: 'at-renewed', refresh_token: 'rt-rotated', expires_in: 1800}), {
+          status: 200,
+          headers: {'Content-Type': 'application/json'},
+        });
+
+      const tokenResponse = await strategy.getTokenResponse();
+      expect(tokenResponse.accessToken).to.equal('at-renewed');
+      expect(flowStub.calls).to.equal(0);
 
       strategy.invalidateToken();
     });

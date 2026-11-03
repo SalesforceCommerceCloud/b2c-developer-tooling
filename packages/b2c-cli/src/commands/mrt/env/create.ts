@@ -97,6 +97,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     '<%= config.bin %> <%= command.id %> feature-test -p my-storefront --region eu-west-1',
     '<%= config.bin %> <%= command.id %> staging -p my-storefront --proxy api=api.example.com --proxy ocapi=ocapi.example.com',
     '<%= config.bin %> <%= command.id %> staging -p my-storefront --wait',
+    '<%= config.bin %> <%= command.id %> staging -p my-storefront --static-ips',
     '<%= config.bin %> <%= command.id %> --project my-storefront --name "Staging" --mrt-backend scapi',
   ];
 
@@ -132,6 +133,11 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
     'enable-source-maps': Flags.boolean({
       description: 'Enable source map support in the environment (legacy backend only)',
       default: false,
+      allowNo: true,
+    }),
+    'static-ips': Flags.boolean({
+      description:
+        'Make outbound requests from static IPs (default: inherit the project setting) (legacy backend only)',
       allowNo: true,
     }),
     proxy: Flags.string({
@@ -172,6 +178,8 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
         {name: '--external-domain'},
         {name: '--allow-cookies'},
         {name: '--enable-source-maps'},
+        {name: '--static-ips'},
+        {name: '--no-static-ips'},
         {name: '--proxy'},
       ],
     };
@@ -195,6 +203,7 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       'external-domain': externalDomain,
       'allow-cookies': allowCookies,
       'enable-source-maps': enableSourceMaps,
+      'static-ips': staticIps,
       proxy: proxyStrings,
       wait,
       'poll-interval': pollInterval,
@@ -236,6 +245,8 @@ export default class MrtEnvCreate extends MrtCommand<typeof MrtEnvCreate> {
       externalDomain,
       allowCookies: allowCookies || undefined,
       enableSourceMaps: enableSourceMaps || undefined,
+      // No flag default: an omitted flag must not send ssr_static_ips, so the project default applies.
+      ssrStaticIps: staticIps,
       proxyConfigs,
       origin: this.resolvedConfig.values.mrtOrigin,
       onFallback: (reason) => this.warn(reason),

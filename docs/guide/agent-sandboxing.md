@@ -34,8 +34,10 @@ alpha software.
 
 ### Requirements
 
-- [OpenShell](https://github.com/NVIDIA/OpenShell#quickstart) with a running
-  gateway (`openshell status` should succeed)
+- [OpenShell](https://docs.nvidia.com/openshell/) 0.1.2 or later with a
+  running gateway (`openshell status` should succeed). To upgrade, run the
+  OpenShell install script again; if you installed with it, `brew upgrade`
+  may not pick up new releases.
 - Docker
 - An API client ID and secret. WebDAV credentials and an MRT API key are
   optional.
@@ -43,7 +45,8 @@ alpha software.
 ::: tip Docker Desktop on macOS
 If sandbox creation fails with `failed to connect to OpenShell server`, enable
 host networking in Docker Desktop, or add this to the gateway configuration
-(with Homebrew: `$(brew --prefix)/var/openshell/gateway.toml`) and run
+(`~/.config/openshell/gateway.toml`, or with Homebrew
+`$(brew --prefix)/var/openshell/gateway.toml`) and run
 `brew services restart openshell`:
 
 ```toml
@@ -129,23 +132,59 @@ job, work in the sandbox too.
 
 ### Allow more
 
-To reach another host, add `--allow-host`:
+To let the CLI and MCP server reach another host, add `--allow-host`:
 
 ```bash
-# Let the sandbox install packages from npm
-b2c setup openshell --allow-host registry.npmjs.org
+b2c setup openshell --allow-host api.example.com
 ```
+
+Hosts added this way follow the safety level (with `READ_ONLY`, only reads)
+and are reachable only by the CLI and MCP server. To allow other programs,
+such as an agent's model provider, see [Run a coding agent](#coding-agent).
 
 You can also edit `.openshell/<sandbox name>/policy.yaml`, for example to
 restrict a host further, and run `b2c setup openshell` again. Your edits are
 kept, but settings such as the safety level then no longer apply to it; use
-`--force` to start over from a newly generated policy.
+`--force` to start over from a newly generated policy. A policy you haven't
+edited is regenerated on each run.
 
 ### Update a sandbox
 
-Run `b2c setup openshell` again after changing the policy. After changing
-your secrets, configuration, or Safety Mode settings, add `--recreate` to
-rebuild the sandbox.
+Run `b2c setup openshell` again after changing the policy, the safety level,
+or your Safety Mode rules. The network policy and rules apply to the running
+sandbox.
+
+Some settings, such as the CLI's safety level (`SFCC_SAFETY_LEVEL`) and your
+instance configuration, apply only when the sandbox is created; the command
+warns when they changed. Add `--recreate` to rebuild the sandbox. Recreating
+removes everything you added to the sandbox, such as uploaded files and
+attached agent providers.
+
+### Work on a project {#project}
+
+The sandbox has its own file system. Copy your project in, and copy results
+back out:
+
+```bash
+openshell sandbox upload b2c-abcd-001 ./my-project /sandbox/my-project
+openshell sandbox download b2c-abcd-001 /sandbox/my-project/cartridges ./from-sandbox
+```
+
+Inside a Git repository, `upload` skips files that `.gitignore` excludes and
+the `.git` directory. The default image doesn't include Git; add it to your
+own image (see [Run a coding agent](#coding-agent)) if you need it.
+
+### Remove a sandbox {#remove}
+
+Deleting a sandbox keeps the providers that hold your secrets. Delete them
+too when you no longer need them:
+
+```bash
+openshell sandbox delete b2c-abcd-001
+openshell provider delete b2c-abcd-001-client-secret b2c-abcd-001-webdav
+```
+
+`openshell provider list` shows the remaining providers.
 
 ### Agents and the MCP server
 
@@ -155,9 +194,88 @@ Add `--mcp` to include the [B2C DX MCP server](../mcp/) in the sandbox:
 b2c setup openshell --mcp
 ```
 
-To run a coding agent in the sandbox, install it in your own image (pass it
-with `--image`) and allow its model provider in `policy.yaml`. See the
-OpenShell documentation for agent-specific setup.
+In the sandbox, configure your agent to start the server with
+`b2c-dx-mcp --project-directory <project path>`.
+
+### Run a coding agent {#coding-agent}
+
+To run a coding agent such as Claude Code in the sandbox:
+
+1. Build an image from the B2C image with the agent installed. Create the
+   sandbox once with `--mcp` so that the `b2c-openshell:<version>-mcp` image
+   exists, then build on it:
+
+   ```dockerfile
+   FROM b2c-openshell:1.2.3-mcp
+   USER root
+   RUN apt-get update && apt-get install -y --no-install-recommends git \
+       && rm -rf /var/lib/apt/lists/*
+   RUN npm install -g @anthropic-ai/claude-code && npm cache clean --force
+   USER sandbox
+   WORKDIR /sandbox
+   ```
+
+   ```bash
+   docker build -t my-agent-sandbox .
+   b2c setup openshell --mcp --image my-agent-sandbox --recreate
+   ```
+
+2. Give the agent its model credentials with an OpenShell provider. Like the
+   B2C secrets, the key stays on the gateway and is sent only to the model
+   API. Start from OpenShell's
+   [example agent profiles](https://github.com/NVIDIA/OpenShell/tree/main/providers),
+   and set `binaries` to the agent's path in your image. The npm package
+   installs Claude Code's binary at
+   `/usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe`.
+
+   ```yaml
+   # claude-code.yaml
+   id: claude-code
+   display_name: Claude Code
+   category: agent
+   inference_capable: true
+   credentials:
+     - name: api_key
+       env_vars: [ANTHROPIC_API_KEY]
+       required: true
+       auth_style: header
+       header_name: x-api-key
+   endpoints:
+     - host: api.anthropic.com
+       port: 443
+       protocol: rest
+       access: read-write
+       enforcement: enforce
+   binaries: [/usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe]
+   ```
+
+   ```bash
+   openshell profile import --file claude-code.yaml
+   openshell provider create --name claude --type claude-code --credential ANTHROPIC_API_KEY
+   openshell sandbox provider attach b2c-abcd-001 claude --wait
+   ```
+
+3. Upload your project (see [Work on a project](#project)) and run the agent:
+
+   ```bash
+   openshell sandbox connect b2c-abcd-001
+   cd /sandbox/my-project && claude
+   ```
+
+Because the agent's binary is not the CLI's, the agent itself can reach only
+its model API, and B2C Commerce only through the CLI and MCP server. Set
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` in the agent's settings to skip
+its telemetry hosts, which the policy blocks.
+
+::: tip Private networks and model gateways
+Endpoints that resolve to private addresses are blocked unless the endpoint
+lists them in `allowed_ips`. OpenShell inspects HTTPS traffic, so a host with
+a certificate from a private certificate authority fails verification; with
+Docker, set `tls: skip` on that endpoint (the agent then keeps its own token,
+because OpenShell can't inject one). Don't override the certificate variables
+OpenShell sets in the sandbox, such as `NODE_EXTRA_CA_CERTS`, or the CLI and
+MCP server can't connect.
+:::
 
 ### Audit log {#audit-log}
 
@@ -179,7 +297,7 @@ The log shows requests, not their contents.
 ::: warning Keep the log if you need it later
 The gateway keeps only recent entries and loses them on restart. For
 compliance or long-term review, turn on OpenShell's
-[OCSF JSON export](https://github.com/NVIDIA/OpenShell/blob/main/docs/observability/ocsf-json-export.mdx)
+[OCSF JSON export](https://docs.nvidia.com/openshell/observability/ocsf-json-export)
 and send the records to your log platform or SIEM:
 
 ```bash

@@ -191,6 +191,13 @@ export interface CreateProjectOptions {
   ssrRegion?: SsrRegion;
 
   /**
+   * Default static-IP setting for new environments in this project.
+   * When true, new environments are created with static outbound IPs enabled.
+   * Requires static IPs to be enabled for the organization.
+   */
+  staticIpsDefault?: boolean;
+
+  /**
    * MRT API origin URL.
    * @default "https://cloud.mobify.com"
    */
@@ -223,7 +230,7 @@ export interface CreateProjectOptions {
  */
 export async function createProject(options: CreateProjectOptions, auth: AuthStrategy): Promise<MrtProject> {
   const logger = getLogger();
-  const {name, slug, organization, url, ssrRegion, origin} = options;
+  const {name, slug, organization, url, ssrRegion, staticIpsDefault, origin} = options;
 
   logger.debug({name, organization}, '[MRT] Creating project');
 
@@ -244,6 +251,10 @@ export async function createProject(options: CreateProjectOptions, auth: AuthStr
 
   if (ssrRegion) {
     body.ssr_region = ssrRegion;
+  }
+
+  if (staticIpsDefault !== undefined) {
+    body.static_ips_default = staticIpsDefault;
   }
 
   const {data, error} = await client.POST('/api/projects/', {
@@ -350,6 +361,12 @@ export interface UpdateProjectOptions {
   ssrRegion?: SsrRegion;
 
   /**
+   * New default static-IP setting for new environments in this project.
+   * Requires static IPs to be enabled for the organization.
+   */
+  staticIpsDefault?: boolean;
+
+  /**
    * MRT API origin URL.
    * @default "https://cloud.mobify.com"
    */
@@ -379,7 +396,7 @@ export interface UpdateProjectOptions {
  */
 export async function updateProject(options: UpdateProjectOptions, auth: AuthStrategy): Promise<MrtProjectUpdate> {
   const logger = getLogger();
-  const {projectSlug, name, url, ssrRegion, origin} = options;
+  const {projectSlug, name, url, ssrRegion, staticIpsDefault, origin} = options;
 
   logger.debug({projectSlug}, '[MRT] Updating project');
 
@@ -397,6 +414,10 @@ export async function updateProject(options: UpdateProjectOptions, auth: AuthStr
 
   if (ssrRegion !== undefined) {
     body.ssr_region = ssrRegion;
+  }
+
+  if (staticIpsDefault !== undefined) {
+    body.static_ips_default = staticIpsDefault;
   }
 
   const {data, error} = await client.PATCH('/api/projects/{project_slug}/', {
@@ -528,6 +549,8 @@ export interface MrtProjectView {
   createdAt?: string;
   /** Last-modified timestamp (ISO 8601), when present. */
   updatedAt?: string;
+  /** Whether new environments get static outbound IPs by default (legacy only). */
+  staticIpsDefault?: boolean;
   /** Backend that produced this row. */
   backend: MrtBackend;
 }
@@ -546,6 +569,7 @@ export function normalizeLegacyProject(project: MrtProject | MrtProjectUpdate): 
     organization: p.organization || undefined,
     createdAt: p.created_at || undefined,
     updatedAt: p.updated_at || undefined,
+    staticIpsDefault: p.static_ips_default ?? undefined,
     backend: 'legacy',
   };
 }
@@ -867,6 +891,8 @@ export interface CreateProjectBackendOptions extends ProjectBackendOptions {
   url?: string;
   /** Default SSR region, hyphenated legacy form (legacy only). */
   ssrRegion?: SsrRegion;
+  /** Default static-IP setting for new environments (legacy only). */
+  staticIpsDefault?: boolean;
   /** Storefront type (SCAPI only; defaults to `storefront_next`). */
   type?: StorefrontCreateType;
   /** Site IDs to assign (SCAPI only; at least one required for SCAPI). */
@@ -889,6 +915,7 @@ export async function createProjectWithBackend(options: CreateProjectBackendOpti
     organization,
     url,
     ssrRegion,
+    staticIpsDefault,
     type,
     sites,
     origin,
@@ -924,7 +951,10 @@ export async function createProjectWithBackend(options: CreateProjectBackendOpti
         if (!organization) {
           throw new Error('The legacy MRT backend requires --organization to create a project.');
         }
-        const project = await createProject({name, organization, slug, url, ssrRegion, origin}, legacyAuth);
+        const project = await createProject(
+          {name, organization, slug, url, ssrRegion, staticIpsDefault, origin},
+          legacyAuth,
+        );
         return {project: normalizeLegacyProject(project), raw: project};
       },
     },
@@ -979,6 +1009,8 @@ export interface UpdateProjectBackendOptions extends ProjectBackendOptions {
   url?: string;
   /** New default SSR region, hyphenated legacy form (both backends). */
   ssrRegion?: SsrRegion;
+  /** New default static-IP setting for new environments (legacy only). */
+  staticIpsDefault?: boolean;
   /** Complete replacement set of assigned site IDs (SCAPI only). */
   sites?: string[];
   /** New default SSR architecture (SCAPI only); `null` clears the default. */
@@ -1004,6 +1036,7 @@ export async function updateProjectWithBackend(options: UpdateProjectBackendOpti
     name,
     url,
     ssrRegion,
+    staticIpsDefault,
     sites,
     ssrArchitecture,
     allowCookies,
@@ -1035,7 +1068,7 @@ export async function updateProjectWithBackend(options: UpdateProjectBackendOpti
         if (!legacyAuth) {
           throw new Error(LEGACY_AUTH_REQUIRED_MESSAGE);
         }
-        const project = await updateProject({projectSlug, name, url, ssrRegion, origin}, legacyAuth);
+        const project = await updateProject({projectSlug, name, url, ssrRegion, staticIpsDefault, origin}, legacyAuth);
         return {project: normalizeLegacyProject(project), raw: project};
       },
     },

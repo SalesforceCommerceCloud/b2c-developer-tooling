@@ -5,6 +5,7 @@
  */
 import {Command, Flags, ux} from '@oclif/core';
 import {
+  ERROR_CODE,
   OAuthCommand,
   TableRenderer,
   columnFlagsFor,
@@ -208,7 +209,8 @@ export default class ScapiCustomStatus extends ScapiCustomCommand<typeof ScapiCu
         t(
           'error.shortCodeRequired',
           'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

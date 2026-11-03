@@ -47,9 +47,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+import {describeInstanceAuth, type AuthStrategy, type InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
+import {configSourceHint} from '@salesforce/b2c-tooling-sdk/cli';
 import {getB2CConfigDirectory, type ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {SafetyGuard, resolveEffectiveSafetyConfig, loadGlobalSafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
+import {openBrowserForTool} from './utils/browser-login.js';
+import {isPathWithin} from './utils/paths.js';
 import type {ConfigurationResolutionSource, ProjectDirectoryInfo, ToolResolution} from './tools/project-context.js';
 import {
   createCustomApisClient,
@@ -204,8 +207,12 @@ export class Services {
       origin: config.values.mrtOrigin,
     };
 
-    // Build B2C instance using factory method
-    const b2cInstance = config.hasB2CInstanceConfig() ? config.createB2CInstance() : undefined;
+    // Build B2C instance using factory method. Without Basic auth or an API client,
+    // WebDAV tools fall back to a browser login with the built-in public client.
+    // Browser logins go through the calling tool so clients can open the URL themselves.
+    const b2cInstance = config.hasB2CInstanceConfig()
+      ? config.createB2CInstance({defaultWebDavClient: true, openBrowser: openBrowserForTool})
+      : undefined;
 
     return new Services({
       b2cInstance,
@@ -220,6 +227,14 @@ export class Services {
   // Internal OS Resource Access Methods
   // These are for internal use by tools, not exposed to AI assistants
   // ============================================
+
+  /**
+   * Suffix for "X required" configuration errors: points at the configuration guide when nothing
+   * loaded, otherwise names the source kinds that did; both suggest config_inspect.
+   */
+  public configHint(): string {
+    return configSourceHint(this.resolvedConfig.sources, 'config_inspect');
+  }
 
   /**
    * Check if a file or directory exists.
@@ -253,13 +268,15 @@ export class Services {
 
     if (!shortCode) {
       throw new Error(
-        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
       );
     }
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -292,6 +309,15 @@ export class Services {
   }
 
   /**
+   * Describe how the configured instance authenticates and which stored
+   * Account Manager sessions it uses. Reflects the session store at call
+   * time, so a sign-in during a tool call shows up afterwards.
+   */
+  public getInstanceAuth(): InstanceAuthSummary {
+    return describeInstanceAuth(this.resolvedConfig.values, {defaultWebDavClient: true});
+  }
+
+  /**
    * Get Metrics client for accessing SCAPI observability metrics.
    * Requires shortCode, tenantId, and OAuth credentials to be configured.
    *
@@ -303,13 +329,15 @@ export class Services {
 
     if (!shortCode) {
       throw new Error(
-        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
       );
     }
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -331,7 +359,8 @@ export class Services {
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -383,13 +412,15 @@ export class Services {
 
     if (!shortCode) {
       throw new Error(
-        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.' +
+          this.configHint(),
       );
     }
 
     if (!tenantId) {
       throw new Error(
-        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.',
+        'Tenant ID required. Provide --tenant-id, set SFCC_TENANT_ID, or configure tenant-id in dw.json.' +
+          this.configHint(),
       );
     }
 
@@ -435,7 +466,10 @@ export class Services {
    */
   public getWebDavClient(): WebDavClient {
     if (!this.b2cInstance) {
-      throw new Error('B2C instance required for WebDAV operations. Configure hostname and authentication in dw.json.');
+      throw new Error(
+        'B2C instance required for WebDAV operations. Configure hostname and authentication in dw.json.' +
+          this.configHint(),
+      );
     }
 
     return this.b2cInstance.webdav;
@@ -519,8 +553,10 @@ export class Services {
   /**
    * Resolve a path relative to the project directory.
    * If path is not supplied, returns the project directory.
-   * If path is absolute, returns it as-is.
-   * If path is relative, resolves it relative to the project directory.
+   * Relative and absolute paths must resolve inside the project directory;
+   * `..` segments or absolute paths that escape it are rejected. This check is
+   * lexical; callers that read or create files should also confirm the real
+   * path (see `resolveLocalPath` in the WebDAV tools) so symlinks cannot escape.
    *
    * An optional explicit project-directory override (typically a per-call
    * `projectDirectory` tool argument) takes precedence over the configured
@@ -529,16 +565,18 @@ export class Services {
    * @param pathArg - Optional path to resolve
    * @param projectDirectoryOverride - Optional explicit project directory to resolve against
    * @returns Resolved absolute path
+   * @throws Error if the path resolves outside the project directory
    */
   public resolveWithProjectDirectory(pathArg?: string, projectDirectoryOverride?: string): string {
     const projectDir = this.resolveProjectDirectory(projectDirectoryOverride).path;
     if (!pathArg) {
       return projectDir;
     }
-    if (path.isAbsolute(pathArg)) {
-      return pathArg;
+    const resolved = path.resolve(projectDir, pathArg);
+    if (!isPathWithin(path.resolve(projectDir), resolved)) {
+      throw new Error(`Path must be within the project directory (${projectDir}): ${pathArg}`);
     }
-    return path.resolve(projectDir, pathArg);
+    return resolved;
   }
 
   /** Run a tool with its resolved safety policy, without changing other calls. */
@@ -582,7 +620,10 @@ export class Services {
    */
   private getOAuthStrategy(): AuthStrategy {
     if (!this.resolvedConfig.hasOAuthConfig()) {
-      throw new Error('OAuth client ID required. Provide --client-id, set SFCC_CLIENT_ID, or configure in dw.json.');
+      throw new Error(
+        'OAuth client ID required. Provide --client-id, set SFCC_CLIENT_ID, or configure in dw.json.' +
+          this.configHint(),
+      );
     }
 
     // Use resolvedConfig factory to create OAuth strategy

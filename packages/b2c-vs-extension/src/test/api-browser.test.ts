@@ -7,7 +7,7 @@
 import * as assert from 'assert';
 import type {SchemaEntry} from '../api-browser/api-browser-tree-provider.js';
 import {prefillParameters, stripParameterExamples} from '../api-browser/prefill.js';
-import {detectApiType, injectCustomApiOrgPathPrefix} from '../api-browser/swagger-webview.js';
+import {detectApiType, injectCustomApiOrgPathPrefix, isCommerceCloudUrl} from '../api-browser/swagger-webview.js';
 import {
   API_BROWSER_EXPAND,
   OFFLINE_TOKEN_STATUS,
@@ -323,5 +323,22 @@ suite('API Browser offline fallback', () => {
   test('offline token status says Try it out is disabled', () => {
     assert.match(OFFLINE_TOKEN_STATUS, /Offline/);
     assert.match(OFFLINE_TOKEN_STATUS, /Try it out disabled/);
+  });
+});
+
+suite('isCommerceCloudUrl', () => {
+  test('allows HTTPS Commerce Cloud API hosts', () => {
+    assert.strictEqual(isCommerceCloudUrl('https://kv7kzm78.api.commercecloud.salesforce.com/product/v1/x'), true);
+  });
+
+  test('rejects other hosts that mention the Commerce Cloud domain', () => {
+    assert.strictEqual(isCommerceCloudUrl('https://example.com/?commercecloud.salesforce.com'), false);
+    assert.strictEqual(isCommerceCloudUrl('https://commercecloud.salesforce.com.example.com/'), false);
+    assert.strictEqual(isCommerceCloudUrl('https://example.com#.commercecloud.salesforce.com'), false);
+  });
+
+  test('rejects non-HTTPS and unparseable URLs', () => {
+    assert.strictEqual(isCommerceCloudUrl('http://kv7kzm78.api.commercecloud.salesforce.com/'), false);
+    assert.strictEqual(isCommerceCloudUrl('not a url'), false);
   });
 });

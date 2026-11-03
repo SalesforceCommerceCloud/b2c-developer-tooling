@@ -22,7 +22,8 @@ export function createDocsSchemaListTool(loadServices: () => Promise<Services> |
       effect: 'read',
       idempotent: true,
       openWorld: false,
-      description: 'List bundled B2C Commerce (SFCC/Demandware) XSD schema IDs for docs_schema_read.',
+      description:
+        'List bundled B2C Commerce (SFCC/Demandware) XSD schema IDs for docs_schema_read and validate_xml_schema.',
       toolsets: [...TOOLSETS],
       inputSchema: {},
       async execute() {

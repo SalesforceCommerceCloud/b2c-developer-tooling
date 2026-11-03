@@ -8,6 +8,7 @@ import {LogWatchRegistry} from './tools/diagnostics/log-watch-registry.js';
 import {MrtLogWatchRegistry} from './tools/diagnostics/mrt-log-watch-registry.js';
 import {DebugSessionRegistry} from './tools/diagnostics/session-registry.js';
 import {ScapiExecutionRegistry} from './tools/scapi/execution-registry.js';
+import type {UpdateCheck} from './update-check.js';
 
 /**
  * Server-scoped persistent state that lives for the lifetime of the MCP
@@ -36,8 +37,11 @@ export class ServerContext {
   readonly logWatches: LogWatchRegistry;
   readonly mrtLogWatches: MrtLogWatchRegistry;
   readonly scapiExecutions: ScapiExecutionRegistry;
+  /** Process-wide server update check, shared by every server instance. */
+  readonly updateCheck?: UpdateCheck;
 
-  constructor() {
+  constructor(options: {updateCheck?: UpdateCheck} = {}) {
+    this.updateCheck = options.updateCheck;
     this.debugSessions = new DebugSessionRegistry();
     this.logWatches = new LogWatchRegistry();
     this.mrtLogWatches = new MrtLogWatchRegistry();

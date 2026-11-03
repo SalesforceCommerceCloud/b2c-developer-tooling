@@ -66,6 +66,8 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --enable-source-maps',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --production',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --proxy api=api.example.com',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --static-ips',
+    '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --no-static-ips',
     '<%= config.bin %> <%= command.id %> -p my-storefront -e staging --name "New Name" --mrt-backend scapi',
   ];
 
@@ -101,6 +103,10 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       description: 'Enable source map support in the environment (legacy backend only)',
       allowNo: true,
     }),
+    'static-ips': Flags.boolean({
+      description: 'Make outbound requests from static IPs (legacy backend only)',
+      allowNo: true,
+    }),
     'log-level': Flags.string({
       description: 'Log level for the environment (legacy backend only)',
       options: LOG_LEVELS as unknown as string[],
@@ -130,6 +136,8 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
         {name: '--allow-cookies'},
         {name: '--preserve-proxy-user-agent'},
         {name: '--enable-source-maps'},
+        {name: '--static-ips'},
+        {name: '--no-static-ips'},
         {name: '--log-level'},
         {name: '--whitelisted-ips'},
         {name: '--proxy'},
@@ -160,6 +168,7 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       'allow-cookies': allowCookies,
       'preserve-proxy-user-agent': preserveProxyUserAgent,
       'enable-source-maps': enableSourceMaps,
+      'static-ips': staticIps,
       'log-level': logLevel,
       'whitelisted-ips': whitelistedIps,
       proxy: proxyStrings,
@@ -194,6 +203,7 @@ export default class MrtEnvUpdate extends MrtCommand<typeof MrtEnvUpdate> {
       allowCookies,
       preserveProxyUserAgent,
       enableSourceMaps,
+      ssrStaticIps: staticIps,
       logLevel: logLevel as LogLevel | undefined,
       whitelistedIps: whitelistedIps === '' ? null : whitelistedIps,
       proxyConfigs,

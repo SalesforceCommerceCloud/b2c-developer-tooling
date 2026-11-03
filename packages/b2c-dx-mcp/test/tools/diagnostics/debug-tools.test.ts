@@ -914,11 +914,46 @@ describe('tools/diagnostics', () => {
       expect(json.halted).to.be.true;
       expect(json.thread_id).to.equal(5);
       expect(json.stack).to.have.lengthOf(1);
-      expect(json.variables).to.have.lengthOf(3);
+      // Globals are omitted by default.
+      expect(json.variables).to.have.lengthOf(2);
       expect(json.evaluations).to.have.lengthOf(2);
       expect(json.auto_continued).to.be.true;
       expect(json).not.to.have.property('skillReferences');
       expect((manager.resume as sinon.SinonStub).calledOnce).to.be.true;
+    });
+
+    it('returns only the requested variable scopes', async () => {
+      const haltedThread = {
+        id: 5,
+        status: 'halted',
+        call_stack: [
+          {index: 0, location: {function_name: 'f', line_number: 1, script_path: '/app_test/cartridge/x.js'}},
+        ],
+      };
+      const manager = createMockManager({
+        getKnownThreads: sinon.stub().returns([haltedThread]),
+        setBreakpoints: sinon.stub().resolves([{id: 1, line_number: 1, script_path: '/app_test/cartridge/x.js'}]),
+      });
+      const entry = serverContext.debugSessions.registerSession({
+        hostname: 'host',
+        clientId: 'c',
+        manager,
+        sourceMapper: createMockSourceMapper(),
+        cartridges: [],
+      });
+      const tool = createDebugCaptureAtBreakpointTool(loadServices, serverContext);
+      const capture = async (scopes: string[]) => {
+        const result = await tool.handler({
+          session_id: entry.sessionId,
+          file: '/app_test/cartridge/x.js',
+          line: 1,
+          scopes,
+        });
+        return getResultJson<{variables: Array<{name: string}>}>(result).variables.map((variable) => variable.name);
+      };
+      expect(await capture(['global'])).to.deep.equal(['g']);
+      expect(await capture(['local', 'global'])).to.deep.equal(['x', 'obj', 'g']);
+      expect(await capture([])).to.deep.equal([]);
     });
 
     it('should handle evaluation errors gracefully', async () => {
@@ -1227,8 +1262,10 @@ describe('tools/diagnostics', () => {
     it('should use cartridgeDirectory only for cartridge discovery and source mapping', async () => {
       const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'debug-project-'));
       try {
+        const cartridgeDirectory = path.join(projectDirectory, 'cartridges');
+        fs.cpSync(tmpDir, cartridgeDirectory, {recursive: true});
         const tool = createDebugStartSessionTool(loadServices, serverContext);
-        const result = await tool.handler({projectDirectory, cartridgeDirectory: tmpDir});
+        const result = await tool.handler({projectDirectory, cartridgeDirectory: 'cartridges'});
         const json = getResultJson<{
           cartridges: string[];
           cartridgeDirectory: string;
@@ -1237,8 +1274,20 @@ describe('tools/diagnostics', () => {
 
         expect(json.resolution.projectDirectory).to.deep.equal({path: projectDirectory, source: 'argument'});
         expect(json).to.not.have.own.property('projectDirectory');
-        expect(json.cartridgeDirectory).to.equal(tmpDir);
+        expect(json.cartridgeDirectory).to.equal(cartridgeDirectory);
         expect(json.cartridges).to.deep.equal(['app_test']);
+      } finally {
+        fs.rmSync(projectDirectory, {recursive: true, force: true});
+      }
+    });
+
+    it('rejects a cartridgeDirectory outside the project directory', async () => {
+      const projectDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'debug-project-'));
+      try {
+        const tool = createDebugStartSessionTool(loadServices, serverContext);
+        const result = await tool.handler({projectDirectory, cartridgeDirectory: tmpDir});
+        expect(result.isError).to.be.true;
+        expect(connectStub.called).to.be.false;
       } finally {
         fs.rmSync(projectDirectory, {recursive: true, force: true});
       }
@@ -1246,7 +1295,8 @@ describe('tools/diagnostics', () => {
 
     it('keeps cwd provenance when only cartridgeDirectory is supplied', async () => {
       const tool = createDebugStartSessionTool(loadServices, serverContext);
-      const result = await tool.handler({cartridgeDirectory: tmpDir});
+      // Relative to the cwd fallback (the package directory under test).
+      const result = await tool.handler({cartridgeDirectory: 'test/e2e/fixtures/cartridge'});
       const json = getResultJson<{
         resolution: {projectDirectory: {path: string; source: string}};
       }>(result);

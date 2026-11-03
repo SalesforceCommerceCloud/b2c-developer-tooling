@@ -14,7 +14,7 @@ import {t, withDocs} from '../../../i18n/index.js';
  */
 function printProjectDetails(project: MrtProjectView): void {
   const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 16;
+  const labelWidth = 20;
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});

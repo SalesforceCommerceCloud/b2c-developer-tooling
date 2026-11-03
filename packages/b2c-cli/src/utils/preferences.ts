@@ -5,7 +5,7 @@
  */
 import fs from 'node:fs';
 import {Command, Flags} from '@oclif/core';
-import {OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   createPreferencesClient,
   type PreferenceInstanceType,
@@ -147,7 +147,8 @@ export abstract class PreferencesCommand<T extends typeof Command> extends OAuth
         t(
           'error.shortCodeRequired',
           'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

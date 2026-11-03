@@ -8,8 +8,8 @@
  *
  * This module provides functions for managing site cartridge paths
  * on B2C Commerce instances. Operations use SCAPI first, with temporary
- * OCAPI and site-archive fallbacks. Business Manager (Sites-Site) is
- * supported via the import/export mechanism.
+ * OCAPI and site-archive fallbacks. Business Manager (Sites-Site) uses SCAPI,
+ * then the import/export mechanism (OCAPI cannot update it).
  *
  * ## Cartridge Path Functions
  *

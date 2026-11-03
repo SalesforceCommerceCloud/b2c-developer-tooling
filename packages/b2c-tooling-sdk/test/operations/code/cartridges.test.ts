@@ -187,5 +187,32 @@ describe('operations/code/cartridges', () => {
         }
       });
     });
+    it('ignores a project-root .project when nested cartridges exist', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-sdk-cartridges-'));
+      try {
+        const nested = path.join(dir, 'cartridges', 'app_custom');
+        fs.mkdirSync(nested, {recursive: true});
+        fs.writeFileSync(path.join(dir, '.project'), '<xml/>');
+        fs.writeFileSync(path.join(nested, '.project'), '<xml/>');
+
+        const result = findCartridges(dir);
+        expect(result.map((c) => c.name)).to.deep.equal(['app_custom']);
+      } finally {
+        fs.rmSync(dir, {recursive: true, force: true});
+      }
+    });
+
+    it('keeps a project-root .project when it is the only cartridge', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-sdk-cartridges-'));
+      try {
+        fs.mkdirSync(path.join(dir, 'node_modules'));
+        fs.writeFileSync(path.join(dir, '.project'), '<xml/>');
+
+        const result = findCartridges(dir);
+        expect(result.map((c) => c.src)).to.deep.equal([dir]);
+      } finally {
+        fs.rmSync(dir, {recursive: true, force: true});
+      }
+    });
   });
 });

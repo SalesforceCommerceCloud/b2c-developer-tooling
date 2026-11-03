@@ -23,16 +23,20 @@ b2c mrt project list --json
 
 The positional argument is the project **name**.
 
-- **Legacy:** `--organization` / `-o` is required. Choose the new project's slug with `--project` / `--storefront` (`-p` / `-s`); when omitted, MRT auto-generates it from the name. `--url` and `--region` / `-r` are legacy-only.
+- **Legacy:** `--organization` / `-o` is required. Choose the new project's slug with `--project` / `--storefront` (`-p` / `-s`); when omitted, MRT auto-generates it from the name. `--url`, `--region` / `-r`, and `--static-ips-default` / `--no-static-ips-default` are legacy-only.
 - **SCAPI:** at least one `--site` (repeatable) is required; `--type` picks the storefront type (default `storefront_next`). `--organization`/`--url`/`--region`/slug do not apply (the storefront ID is server-generated). Returns `202` and provisions asynchronously — poll `project get` for `setupStatus`.
 
 ```bash
 # Legacy
 b2c mrt project create "My Storefront" --organization my-org
 b2c mrt project create "My Storefront" -o my-org -s my-storefront --region us-east-1
+# New environments in this project get static outbound IPs by default
+b2c mrt project create "My Storefront" -o my-org --static-ips-default
 # SCAPI
 b2c mrt project create "My Storefront" --site RefArch --mrt-backend scapi
 ```
+
+`--static-ips-default` / `--no-static-ips-default` sets whether new environments are created with static outbound IPs; omit it to keep the MRT default. Legacy backend only: `--mrt-backend scapi` rejects it, and `auto` warns and ignores it when SCAPI serves the run. Static IPs must be enabled for the organization; otherwise the MRT API error is shown unchanged.
 
 > **Slug as positional or flag:** `get`, `update`, and `delete` accept the project slug (= SCAPI storefront ID) **either** as a positional argument **or** via `-p` / `-s` / `--project` / `--storefront` (or `MRT_PROJECT` / `dw.json`). An explicit positional wins if both are given; at least one source must resolve.
 
@@ -48,12 +52,14 @@ b2c mrt project get -p my-storefront --mrt-backend scapi --json
 
 At least one updatable field must be supplied.
 
-- **Legacy:** `--name` / `-n`, `--url`, `--region` / `-r`.
+- **Legacy:** `--name` / `-n`, `--url`, `--region` / `-r`, `--static-ips-default` / `--no-static-ips-default`.
 - **SCAPI:** cannot rename (no `--name`/`--url`). Honors `--region` / `-r`, `--ssr-architecture` (`x86` | `arm64`), `--allow-cookies` / `--no-allow-cookies`, `--preserve-proxy-user-agent` / `--no-preserve-proxy-user-agent`, and `--site` (repeatable). **`--site` fully replaces the assigned-sites set** — pass the complete desired set, not a delta.
 
 ```bash
 # Legacy
 b2c mrt project update my-storefront --name "Updated Name"
+b2c mrt project update my-storefront --static-ips-default
+b2c mrt project update my-storefront --no-static-ips-default
 # SCAPI — replaces the full assigned-sites set with exactly these two
 b2c mrt project update --project my-storefront --site RefArch --site OtherSite --mrt-backend scapi
 ```

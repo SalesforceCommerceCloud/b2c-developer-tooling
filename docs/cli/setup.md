@@ -12,7 +12,7 @@ Display the resolved configuration from all sources, showing which values are se
 
 The Safety section summarizes the settings in use, including your instance,
 global safety file, and environment variables. Add `--verbose` to see all rules
-in the order they are checked. `--json` always includes the complete settings.
+in the order they are checked, and authentication details. `--json` always includes the complete settings.
 
 The source column shows where each setting came from. `SafetyFile` refers to the
 global file listed in Sources; `SafetyEnv` refers to environment variables.
@@ -30,13 +30,13 @@ b2c setup inspect [FLAGS]
 
 ### Flags
 
-| Flag                     | Description                                                   | Default                    |
-| ------------------------ | ------------------------------------------------------------- | -------------------------- |
-| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys) | `false`                    |
-| `--verbose`              | Show the full ordered safety ruleset                          | `false`                    |
-| `--account-manager-host` | Account Manager hostname for OAuth                            | `account.demandware.com`   |
-| `--cloud-origin`         | MRT cloud origin URL                                          | `https://cloud.mobify.com` |
-| `--json`                 | Output results as JSON                                        | `false`                    |
+| Flag                     | Description                                                     | Default                    |
+| ------------------------ | --------------------------------------------------------------- | -------------------------- |
+| `--unmask`               | Show sensitive values unmasked (passwords, secrets, API keys)   | `false`                    |
+| `--verbose`              | Show the full ordered safety ruleset and authentication details | `false`                    |
+| `--account-manager-host` | Account Manager hostname for OAuth                              | `account.demandware.com`   |
+| `--cloud-origin`         | MRT cloud origin URL                                            | `https://cloud.mobify.com` |
+| `--json`                 | Output results as JSON                                          | `false`                    |
 
 ### Examples
 
@@ -61,7 +61,7 @@ b2c setup inspect -i staging
 
 The command displays configuration organized by category:
 
-- **Instance**: hostname, webdavHostname, codeVersion
+- **Instance**: hostname, webdavHostname, codeVersion, and a one-line summary of how the instance authenticates (for example `WebDAV: signed in as dev@example.com`)
 - **Authentication (Basic)**: username, password
 - **Authentication (OAuth)**: clientId, clientSecret, and configured OAuth options
 - **Authentication (JWT Bearer)**: JWT certificate, key, and passphrase settings (when configured)
@@ -73,6 +73,7 @@ The command displays configuration organized by category:
 - **Project**: configured deployment, content, and documentation defaults
 - **Metadata**: siteId, instanceName, and projectDirectory (when configured)
 - **Safety**: safety configuration (when configured)
+- **Effective Authentication**: with `--verbose`, how file and API requests to the instance authenticate (see also [`b2c auth status`](./auth#b2c-auth-status))
 - **Sources**: List of configuration sources that contributed values
 
 Each value shows its source in brackets (e.g., `[dw.json]`, `[SFCC_CLIENT_ID]`, `[~/.mobify]`).
@@ -403,6 +404,19 @@ If a plugin credential store (such as a keychain plugin) declares both halves
 of a credential pair, for example the client ID and secret, that pair is stored
 there instead. `b2c setup instance remove` removes them again.
 
+The command prints the dw.json it wrote. That is `dw.json` in the current
+directory (or the file selected with `--config` or `--project-directory`), or
+the [global default](#global-default-configuration) when no local `dw.json`
+exists. The CLI reads a project `dw.json` only from the directory it runs in
+and doesn't search parent directories, so to use the instance from elsewhere,
+pass `--config` or `--project-directory`, or register the file with
+`b2c setup default-config set <path>`.
+
+To change an existing instance, use [`b2c setup set`](#b2c-setup-get-set-unset)
+(for example `b2c setup set password <access-key> --instance staging`), or
+remove it with `b2c setup instance remove` and create it again. Running
+`create` with an existing name fails.
+
 ### Usage
 
 ```bash
@@ -427,7 +441,7 @@ b2c setup instance create [NAME] [FLAGS]
 | `--short-code`     | SCAPI short code (optional; enables SCAPI-first code-version detection)                 |                                           |
 | `--tenant-id`      | SCAPI tenant/organization ID (optional; enables SCAPI-first detection)                  |                                           |
 | `--api-backend`    | Saved API preference: `auto`, `scapi`, or `ocapi`                                       | `auto`                                    |
-| `--code-version`   | Code version                                                                            | Auto-detected or prompted                 |
+| `--code-version`   | Code version used by `code deploy` and `code watch` (optional)                          | Auto-detected or prompted                 |
 | `--active`         | Set as active instance                                                                  | `false`                                   |
 | `--force`          | Non-interactive mode                                                                    | `false`                                   |
 | `--source`         | Config source to store the instance in, by name (`b2c setup instance list` shows names) | Highest-priority source that can store it |
@@ -446,7 +460,7 @@ b2c setup instance create staging --hostname staging.example.com
 b2c setup instance create staging --hostname staging.example.com --active
 
 # Non-interactive mode (CI/CD)
-b2c setup instance create staging --hostname staging.example.com --username admin --password secret --force
+b2c setup instance create staging --hostname staging.example.com --username admin --password <access-key> --force
 ```
 
 ### Interactive Mode
@@ -457,7 +471,7 @@ When run without `--force`, the command provides an interactive experience:
 2. Prompts for hostname (if not provided)
 3. Prompts for authentication type (Basic, OAuth, Both, or Skip)
 4. Prompts for credentials based on selection
-5. Tries SCAPI-first/OCAPI-compatible active code-version detection when OAuth is configured, then prompts for manual entry if detection is unavailable
+5. Finds the active code version, or prompts for it if it can't be found
 6. Asks whether to set as active instance
 7. Shows summary and confirms before creating
 
@@ -572,7 +586,7 @@ b2c setup openshell [FLAGS]
 | `--mcp`             | Also install the B2C DX MCP server in the sandbox image                   | `false`                           |
 | `--image`           | Use this container image instead of building one                          |                                   |
 | `--[no-]sandbox`    | Create the sandbox. Use `--no-sandbox` to only store the credentials      | `true`                            |
-| `--recreate`        | Delete and recreate an existing sandbox                                   | `false`                           |
+| `--recreate`        | Delete and recreate an existing sandbox, removing anything added to it    | `false`                           |
 | `--force`           | Replace an edited `policy.yaml` with a newly generated one                | `false`                           |
 | `--dry-run`         | Write the files and print the commands without running them               | `false`                           |
 | `--json`            | Output results as JSON (never includes secrets)                           | `false`                           |

@@ -50,7 +50,7 @@ type SsrArchitecture = (typeof SSR_ARCHITECTURES)[number];
  */
 function printProjectDetails(project: MrtProjectView): void {
   const ui = cliui({width: process.stdout.columns || 80});
-  const labelWidth = 16;
+  const labelWidth = 20;
 
   ui.div('');
   ui.div({text: 'Name:', width: labelWidth}, {text: project.name});
@@ -104,6 +104,8 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
   static examples = [
     '<%= config.bin %> <%= command.id %> my-storefront --name "New Name"',
     '<%= config.bin %> <%= command.id %> --project my-storefront --region eu-west-1',
+    '<%= config.bin %> <%= command.id %> my-storefront --static-ips-default',
+    '<%= config.bin %> <%= command.id %> my-storefront --no-static-ips-default',
     '<%= config.bin %> <%= command.id %> my-storefront --site RefArch --site OtherSite --mrt-backend scapi',
   ];
 
@@ -120,6 +122,10 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
       char: 'r',
       description: 'New default AWS region for new environments',
       options: SSR_REGIONS as unknown as string[],
+    }),
+    'static-ips-default': Flags.boolean({
+      description: 'Enable static outbound IPs by default for new environments in this project (legacy backend only)',
+      allowNo: true,
     }),
     site: Flags.string({
       description:
@@ -150,7 +156,12 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
   // update --name X` on SCAPI sent an empty PATCH and still reported success.
   protected override mrtBackendOnlyFlags() {
     return {
-      legacy: [{name: '--name', char: 'n'}, {name: '--url'}],
+      legacy: [
+        {name: '--name', char: 'n'},
+        {name: '--url'},
+        {name: '--static-ips-default'},
+        {name: '--no-static-ips-default'},
+      ],
       scapi: [
         {name: '--site'},
         {name: '--ssr-architecture'},
@@ -166,6 +177,7 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
       name,
       url,
       region,
+      'static-ips-default': staticIpsDefault,
       site,
       'ssr-architecture': ssrArchitecture,
       'allow-cookies': allowCookies,
@@ -176,14 +188,15 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
       !name &&
       !url &&
       !region &&
+      staticIpsDefault === undefined &&
       (!site || site.length === 0) &&
       ssrArchitecture === undefined &&
       allowCookies === undefined &&
       preserveProxyUserAgent === undefined;
     if (nothingToUpdate) {
       this.error(
-        'At least one updatable field must be provided (--name, --url, --region, --site, --ssr-architecture, ' +
-          '--allow-cookies, or --preserve-proxy-user-agent).',
+        'At least one updatable field must be provided (--name, --url, --region, --static-ips-default, --site, ' +
+          '--ssr-architecture, --allow-cookies, or --preserve-proxy-user-agent).',
       );
     }
 
@@ -199,6 +212,7 @@ export default class MrtProjectUpdate extends MrtCommand<typeof MrtProjectUpdate
       name,
       url,
       ssrRegion: region as SsrRegion | undefined,
+      staticIpsDefault,
       sites: site,
       ssrArchitecture: ssrArchitecture as SsrArchitecture | undefined,
       allowCookies,

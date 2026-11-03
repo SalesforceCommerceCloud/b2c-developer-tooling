@@ -61,7 +61,9 @@ function createLogsWatchStartTool(
         prefixes: z
           .array(z.string())
           .optional()
-          .describe('Log prefixes. Default: ["error", "customerror"]; paths may include subdirectories.'),
+          .describe(
+            'Log prefixes. Default: ["error", "customerror"]; use ["custom-"] for custom logger files; paths may be subdirs.',
+          ),
         last_entries: z
           .number()
           .int()

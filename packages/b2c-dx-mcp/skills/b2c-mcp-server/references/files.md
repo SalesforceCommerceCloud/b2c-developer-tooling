@@ -6,8 +6,8 @@ configuration only if the target or access is unclear.
 | Need | Preferred tool | Alternative |
 | --- | --- | --- |
 | Directory entries, file sizes | `webdav_list` with path/offset/limit | CLI `b2c webdav ls` |
-| Exact log/text, including unparsed job logs | `webdav_get` with path/offset/maxBytes | Recent/filter/watch needs: existing `logs_*` tools |
-| Whole file, including binary archives | `webdav_get` with a new `outputPath` | CLI `b2c webdav get` |
+| Exact log/text, including unparsed job logs | `webdav_get` with path/offset/maxBytes, or `tail: true` for the end | Recent/filter/watch needs: existing `logs_*` tools |
+| Whole file, including binary archives | `webdav_get_to_file` with a new `outputPath` | CLI `b2c webdav get` |
 | Upload text or an existing local file | `webdav_put` with `content` or `sourcePath` | CLI `b2c webdav put` |
 | Selected local cartridge files | `cartridge_deploy` with `files` and `codeVersion` | Whole cartridge: omit `files` |
 
@@ -15,17 +15,19 @@ Paths are WebDAV Sites-relative: `Logs/jobs/run.log`, `Impex/src/data.zip`,
 `Cartridges/version/app/cartridge/scripts/file.js`. Returned `/Sites/LOGS/...`
 job paths are accepted. List one directory; listing does not recurse.
 
-Text reads fetch at most `maxBytes` (default 4000, maximum 8000). `size` is total
+Text reads fetch at most `maxBytes` (default 4000, maximum 32000). `size` is total
 file bytes; reuse `nextOffset` to preserve UTF-8 boundaries. Null means end.
+`tail: true` reads the last `maxBytes`, which suits recent lines of a large log.
 Files can grow/rotate; compare returned size/ETag/lastModified when consistency
 matters. For recent errors or continuous activity, prefer the log tools.
-Binary reads require `outputPath`; transfers are limited to 64 MiB.
-Local paths refer to the MCP host and resolve from `projectDirectory`.
+Binary or whole-file reads use `webdav_get_to_file` (any size); uploads are limited to 64 MiB.
+Local paths refer to the MCP host and must stay within `projectDirectory`.
 Downloads never replace existing local files. Upload parents must exist;
 replacement requires `overwrite: true` and user intent. No automatic deletion.
 
 Cartridge `files` resolve from `projectDirectory`, within cartridges discovered
-under `cartridgeDirectory`. Include/exclude filters still apply. Maximum 100
+under `cartridgeDirectory`, which must be inside `projectDirectory` (for sibling
+checkouts, use their common parent). Include/exclude filters still apply. Maximum 100
 files / 64 MiB total; matching remote files are overwritten, other files remain.
 No reload unless requested. Reload can activate another version briefly, then
 the target. Preserve uploaded-file results and warnings; do not redeploy merely

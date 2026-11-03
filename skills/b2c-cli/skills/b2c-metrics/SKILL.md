@@ -182,7 +182,7 @@ b2c metrics overall --from 24h
 
 ## Series Tags
 
-By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API returns series identifiers that pack multiple dimensions into a single string (e.g., `bdpx.product`, `bdpx.product HIT`, `2xx bdpx.host`). The `tags` object unpacks these into discrete key-value pairs.
+By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API returns series identifiers that pack multiple dimensions into a single string (e.g., `bdpx_prd.product`, `bdpx_prd.product MISS`, `bdpx_prd 4xx`, and for eCDN `2xx bdpx.www.example.com`). Most categories prefix IDs with `<realm>_<environment>`; eCDN uses the bare realm. The `tags` object unpacks these into discrete key-value pairs.
 
 **Tag contents (three tiers):**
 
@@ -192,7 +192,9 @@ By default, the CLI enriches each data series with a structured `tags` object to
 
 **Example:**
 
-- `scapi cacheHitRate` series `bdpx.product HIT` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"HIT"}`
+- `scapi cacheHitRate` series `bdpx_prd.product MISS` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"MISS"}`
+- `scapi responseCount` series `bdpx_prd 4xx` → `{"realm":"bdpx","environment":"prd","statusClass":"4xx"}`
+- `controller totalCalls` series `bdpx_prd.Home-Show` → `{"realm":"bdpx","environment":"prd","controller":"Home-Show"}`
 
 **Disabling tags:**
 
@@ -206,13 +208,13 @@ Tag parsing is a **client-side, best-effort bridge** over the API's current pack
 
 Metrics responses contain an array of metrics. Each metric includes:
 
-- **metricId**: Unique identifier (e.g., `requests_total`)
+- **metricId**: Unique identifier (e.g., `responseCount`)
 - **title**: Human-readable title
 - **description**: What the metric measures
-- **unit**: Unit of measurement (e.g., `requests`, `ms`, `%`); may be empty
+- **unit**: Unit of measurement (e.g., `s`, `%`); empty for counts
 - **dataSeries**: Array of data series, each containing:
   - **id**: Series identifier
-  - **name**: Series name (e.g., `2xx`, `4xx`, `5xx` for HTTP status codes)
+  - **name**: Series name; currently the same packed string as `id`. A series whose `id` equals its `metricId` and has no data is a placeholder (no events in the window)
   - **tags**: Structured dimension tags (enabled by default)
   - **data**: Array of timestamped values:
     - **timestamp**: Epoch milliseconds (the CLI normalizes from the API's epoch-seconds wire format)
@@ -223,7 +225,7 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 ```json
 {
   "query": {
-    "category": "overall",
+    "category": "scapi",
     "from": "2026-01-25T10:00:00.000Z",
     "to": "2026-01-25T11:00:00.000Z",
     "fromEpochSeconds": 1737802800,
@@ -231,14 +233,14 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
   },
   "data": [
     {
-      "metricId": "requests_total",
-      "title": "Total Requests",
-      "description": "Total number of requests",
-      "unit": "requests",
+      "metricId": "responseCount",
+      "title": "Response Count",
+      "description": "Number of responses for SCAPI requests.",
+      "unit": "",
       "dataSeries": [
         {
-          "id": "2xx",
-          "name": "2xx",
+          "id": "bdpx_prd 2xx",
+          "name": "bdpx_prd 2xx",
           "tags": {
             "realm": "bdpx",
             "environment": "prd",

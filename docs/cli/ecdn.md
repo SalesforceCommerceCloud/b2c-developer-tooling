@@ -26,7 +26,7 @@ Commands that operate on a specific zone use the `--zone` / `-z` flag:
 |------|-------------|
 | `--zone`, `-z` | Zone ID (32-char hex) or zone name |
 
-Zone names are resolved to IDs automatically via case-insensitive lookup.
+Zone names are resolved to IDs automatically via case-insensitive lookup across all zones in the organization (the CLI pages through the zones API, so organizations with more than 25 or 50 zones are fully supported).
 
 ### Authentication
 
@@ -45,7 +45,7 @@ For complete setup instructions, see the [Authentication Guide](/guide/authentic
 
 ### b2c ecdn zones list
 
-List all CDN zones for a tenant.
+List all CDN zones for a tenant. The command pages through the zones API automatically, so every zone is returned regardless of how many exist.
 
 ```bash
 b2c ecdn zones list --tenant-id zzxy_prd
@@ -56,9 +56,12 @@ b2c ecdn zones list --tenant-id zzxy_prd
 | Column | Description |
 |--------|-------------|
 | Name | Zone name |
-| ID | Zone ID |
 | Status | Zone status |
-| Type | Zone type (storefront) |
+| Zone ID | Zone ID (shown with `--extended`) |
+
+::: tip SCAPI zone
+The list includes `<realm>.api.commercecloud.salesforce.com` (Business Manager shows it as `<shortCode>.api.commercecloud.salesforce.com`), which fronts SCAPI and SLAS traffic. It supports only the `firewall` and `rate-limit` commands; other zone commands fail with `Forbidden`. All instances in the realm share this zone, so scope rules to one instance with the organization ID in the path, for example `http.request.uri.path contains "/organizations/f_ecom_zzxy_prd/"`.
+:::
 
 ---
 

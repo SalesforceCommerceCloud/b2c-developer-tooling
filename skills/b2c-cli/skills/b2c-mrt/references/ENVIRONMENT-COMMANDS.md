@@ -31,6 +31,9 @@ b2c mrt env create prod -p my-storefront --name "Production" \
 b2c mrt env create dev -p my-storefront --name "Development" \
   --allow-cookies --enable-source-maps
 
+# With static outbound IPs (legacy backend only; omit to inherit the project's static IP default)
+b2c mrt env create staging -p my-storefront --name "Staging" --static-ips
+
 # The new environment's slug may be given as the positional OR via --environment / -e
 b2c mrt env create -p my-storefront -e staging --name "Staging Environment"
 ```
@@ -48,6 +51,7 @@ b2c mrt env create -p my-storefront -e staging --name "Staging Environment"
 | `--external-domain` | External domain for Universal PWA SSR |
 | `--allow-cookies` | Forward HTTP cookies to origin |
 | `--enable-source-maps` | Enable source map support |
+| `--static-ips` / `--no-static-ips` | Make outbound requests from static IPs; omitted = inherit the project's static IP default. Legacy backend only |
 
 ### Get Environment Details
 
@@ -62,7 +66,11 @@ b2c mrt env get -p my-storefront -e production --json
 b2c mrt env update -p my-storefront -e staging --name "Updated Staging"
 b2c mrt env update -p my-storefront -e production --allow-cookies
 b2c mrt env update -p my-storefront -e dev --no-enable-source-maps
+b2c mrt env update -p my-storefront -e production --static-ips
+b2c mrt env update -p my-storefront -e production --no-static-ips
 ```
+
+Static IPs are legacy-backend only: `--mrt-backend scapi` rejects `--static-ips` / `--no-static-ips`, and `--mrt-backend auto` warns and ignores them when SCAPI serves the run. Enabling static IPs requires the feature to be enabled for the organization; otherwise the MRT API error is shown unchanged. Updating SSR settings triggers a redeployment of the current bundle.
 
 ### Delete Environment
 

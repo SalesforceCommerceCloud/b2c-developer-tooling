@@ -6,7 +6,7 @@
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
 import type {LoadConfigOptions} from './config.js';
-import type {ResolvedB2CConfig} from '../config/index.js';
+import type {NormalizedConfig, ResolvedB2CConfig} from '../config/index.js';
 import {parseFriendlySandboxId} from '../operations/ods/sandbox-lookup.js';
 import type {
   ConfigSourcesHookOptions,
@@ -15,6 +15,8 @@ import type {
   HttpMiddlewareHookResult,
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
+  AuthSessionStoreHookOptions,
+  AuthSessionStoreHookResult,
 } from './hooks.js';
 import {byPluginName} from './hooks.js';
 import {setLanguage, t} from '../i18n/index.js';
@@ -41,10 +43,11 @@ import {
 } from '../config/project-environment.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
-import {initializeFileAuthSessionStore} from '../auth/session-store.js';
+import {flushAuthSessionStore, initializeFileAuthSessionStore, setAuthSessionBackend} from '../auth/session-store.js';
 import {initializeContentCache} from '../docs/content-cache.js';
 import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
+import {redactAccessTokens} from '../clients/error-utils.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
@@ -75,6 +78,57 @@ const DOCS_BASE_URL = 'https://salesforcecommercecloud.github.io/b2c-developer-t
 
 /** Configuration guide — how to point the CLI at an instance and authenticate. */
 const DOCS_CONFIGURATION_URL = `${DOCS_BASE_URL}/guide/configuration.html`;
+
+/** User-facing names for the built-in config sources (plugin sources keep their own name). */
+const CONFIG_SOURCE_LABELS: Record<string, string> = {
+  DotenvFile: '.env file',
+  DwJsonSource: 'dw.json',
+  EnvSource: 'environment variables',
+  MobifySource: '~/.mobify',
+  PackageJsonSource: 'package.json',
+  StorefrontNextEnvSource: 'Storefront Next environment variables',
+};
+
+/** Sources that only derive a value from another source's field; not worth naming to the user. */
+const DERIVED_CONFIG_SOURCES = new Set(['SandboxHostname', 'SandboxTenantId']);
+
+function describeConfigSource(name: string): string {
+  return CONFIG_SOURCE_LABELS[name] ?? name;
+}
+
+/**
+ * Build a suffix for "X is required" config errors.
+ *
+ * When NO config source contributed any values (no dw.json found, no env
+ * vars, no flags — the dominant cause of these errors in telemetry), the user
+ * is almost certainly unconfigured rather than missing one specific field, so
+ * we point them at the configuration guide. When a source DID load, we name
+ * the kinds of sources that loaded (never their paths or values, since error
+ * messages are reported to telemetry) so a user who expected a different
+ * file to apply can tell, and point at `inspect` for the details.
+ *
+ * @param sources - Sources from the resolved configuration
+ * @param inspect - Command or tool that shows the resolved configuration, e.g. `b2c setup inspect`
+ * @returns A "\n\n..." suffix, or '' when only derived sources loaded
+ */
+export function configSourceHint(sources: readonly {name: string}[], inspect: string): string {
+  if (sources.length === 0) {
+    return t(
+      'base.configDocsHint',
+      '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}\nRun "{{inspect}}" to see the resolved configuration and its sources.',
+      {url: DOCS_CONFIGURATION_URL, inspect},
+    );
+  }
+  const loaded = [
+    ...new Set(sources.filter((s) => !DERIVED_CONFIG_SOURCES.has(s.name)).map((s) => describeConfigSource(s.name))),
+  ];
+  if (loaded.length === 0) return '';
+  return t(
+    'base.configPartialHint',
+    '\n\nConfiguration was loaded from {{sources}}, but it does not set this value. Run "{{inspect}}" to see the resolved configuration.',
+    {sources: loaded.join(', '), inspect},
+  );
+}
 
 /**
  * Classify a thrown command error for telemetry so analytics can exclude
@@ -111,12 +165,16 @@ export function classifyError(err: unknown): ErrorCategory {
  */
 export function serializeErrorCause(cause: unknown): unknown {
   if (cause instanceof Error) {
-    return {name: cause.name, message: cause.message};
+    return {name: cause.name, message: redactAccessTokens(cause.message)};
   }
   if (cause !== null && typeof cause === 'object') {
-    return cause;
+    try {
+      return JSON.parse(redactAccessTokens(JSON.stringify(cause)));
+    } catch {
+      return redactAccessTokens(String(cause));
+    }
   }
-  return String(cause);
+  return redactAccessTokens(String(cause));
 }
 
 /**
@@ -330,6 +388,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Collect auth middleware from plugins before any authentication is performed
     await this.collectPluginAuthMiddleware();
 
+    // Let a plugin replace the default file-backed auth session store
+    await this.collectPluginAuthSessionStore();
+
     // Collect config sources from plugins before loading configuration
     await this.collectPluginConfigSources();
 
@@ -508,6 +569,18 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return this.flags.config ?? (process.env.SFCC_CONFIG === '' ? '' : undefined);
   }
 
+  /**
+   * Resolves a flag value against shared configuration: an explicit flag always wins,
+   * otherwise the configured value (dw.json, env, package.json, etc.) is used.
+   * Use this for any flag that duplicates a config identifier (siteId, realm, mrtProject, ...).
+   */
+  protected flagOrConfig<K extends keyof NormalizedConfig>(
+    flagValue: NormalizedConfig[K] | undefined,
+    key: K,
+  ): NormalizedConfig[K] | undefined {
+    return flagValue ?? this.resolvedConfig.values[key];
+  }
+
   protected async loadConfiguration(): Promise<ResolvedB2CConfig> {
     return loadConfig({scapiBaseUrl: this.flags['scapi-base-url']}, this.getBaseConfigOptions());
   }
@@ -596,27 +669,14 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
-   * Build a suffix appended to "X is required" config errors.
+   * Build a suffix appended to "X is required" config errors; see {@link configSourceHint}.
    *
-   * When NO config source contributed any values (no dw.json found, no env
-   * vars, no flags — the dominant cause of these errors in telemetry), the user
-   * is almost certainly unconfigured rather than missing one specific field, so
-   * we point them at the configuration guide. When a source DID load, we stay
-   * quiet: the existing message already lists the precise flag/env var to set.
-   *
-   * @returns A "\n\nSee: <url>" suffix, or '' when config is already partially present.
+   * @returns A "\n\n..." suffix, or '' when configuration has not been resolved yet.
    */
   protected configDocsHint(): string {
     // resolvedConfig may be unset if the error is thrown before loadConfiguration().
     const sources = this.resolvedConfig?.sources;
-    if (sources && sources.length === 0) {
-      return t(
-        'base.configDocsHint',
-        '\n\nNo configuration was found. See the configuration guide to connect an instance: {{url}}',
-        {url: DOCS_CONFIGURATION_URL},
-      );
-    }
-    return '';
+    return sources ? configSourceHint(sources, `${this.config?.bin ?? 'b2c'} setup inspect`) : '';
   }
 
   /**
@@ -754,6 +814,44 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
+   * Collects an auth session store from plugins via the `b2c:auth-session-store` hook.
+   *
+   * Called during command initialization, before any authentication is performed.
+   * The first plugin (by name) that returns a backend replaces the default
+   * file-backed store; backends from other plugins are ignored with a warning.
+   */
+  protected async collectPluginAuthSessionStore(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
+    const hookOptions: AuthSessionStoreHookOptions = {
+      flags: this.flags as Record<string, unknown>,
+    };
+
+    const hookResult = await this.config.runHook('b2c:auth-session-store', hookOptions);
+
+    let selected: string | undefined;
+    for (const success of byPluginName(hookResult.successes)) {
+      const result = success.result as AuthSessionStoreHookResult | undefined;
+      if (!result?.backend) continue;
+
+      if (selected) {
+        this.logger?.warn(
+          `Plugin ${success.plugin.name} also provides an auth session store; using the one from ${selected}`,
+        );
+        continue;
+      }
+      selected = success.plugin.name;
+      setAuthSessionBackend(result.backend);
+      this.logger?.debug(`Using auth session store from plugin ${selected}`);
+    }
+
+    // Log warnings for hook failures (don't break the CLI)
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:auth-session-store hook failed: ${failure.error.message}`);
+    }
+  }
+
+  /**
    * Handle errors thrown during command execution.
    *
    * Logs the error using the structured logger (including cause if available).
@@ -765,6 +863,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // user who passed, e.g., `-p x -s y` learns that `-s`/`--storefront` are the
     // same flag as `-p`/`--project`.
     err.message = augmentDuplicateFlagError(err.message, {...this.ctor.baseFlags, ...this.ctor.flags});
+    // API faults can echo the request's access token; keep it out of output, logs, and telemetry.
+    err.message = redactAccessTokens(err.message);
+    if (err.stack) err.stack = redactAccessTokens(err.stack);
 
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
@@ -780,7 +881,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         duration,
         errorCategory,
         errorMessage: err.message,
-        ...(err.cause ? {errorCause: String(err.cause)} : {}),
+        ...(err.cause ? {errorCause: redactAccessTokens(String(err.cause))} : {}),
       });
       await this.telemetry.flush();
       await this.telemetry.stop();
@@ -788,8 +889,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {
-      this.logger.error({cause: err?.cause}, err.message);
+      const cause = err.cause instanceof Error ? err.cause : err.cause && serializeErrorCause(err.cause);
+      this.logger.error({cause}, err.message);
     }
+
+    // JSON mode exits below without reaching finally()
+    await this.flushAuthSessions();
 
     // In JSON mode, output structured error to stderr and exit
     if (this.jsonEnabled()) {
@@ -819,7 +924,17 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       this.telemetry.sendEvent('COMMAND_SUCCESS', {command: this.id, duration});
       await this.telemetry.stop();
     }
+    await this.flushAuthSessions();
     await super.finally(err);
+  }
+
+  /** Waits for the auth session store's pending writes; a failure is logged, not thrown. */
+  private async flushAuthSessions(): Promise<void> {
+    try {
+      await flushAuthSessionStore();
+    } catch (error) {
+      this.logger?.warn(`Failed to save auth sessions: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   public baseCommandTest(): void {

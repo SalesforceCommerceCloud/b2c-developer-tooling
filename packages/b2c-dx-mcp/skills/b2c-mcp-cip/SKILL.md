@@ -76,12 +76,17 @@ Official [JDBC setup and limits](https://developer.salesforce.com/docs/commerce/
 - Safety Mode applies. CIP uses POST even for metadata and SELECT;
   READ_ONLY can block these calls. Explain the specific restriction and use only
   authorized, narrowly scoped exceptions. Skill acknowledgment is not authorization.
+- Claude artifacts and dashboards cannot call `cip_query`. Embed the results;
+  never allowlist this server's tools as artifact connectors, or shared copies
+  fail with **Connectors needed**.
 
 Read further only for an unresolved question:
 - Sales gaps, period comparisons, or latest activity:
   [sales interpretation](skill://b2c-cli/b2c-cip/references/SALES_ANALYSIS.md).
 - Adapting custom SQL beyond a report: read the matching section in
   [starter queries](skill://b2c-cli/b2c-cip/references/STARTER_QUERIES.md), not the whole file.
+- Showing results in a Claude artifact, Cowork dashboard, or published page:
+  [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md).
 Stop when the report and evidence answer the task; no follow-up skill read is required.
 For incidents, correlate trends with logs and the relevant `b2c-ops` runbook.
 

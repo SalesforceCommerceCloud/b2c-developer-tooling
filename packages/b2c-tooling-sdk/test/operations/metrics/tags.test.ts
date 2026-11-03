@@ -115,10 +115,10 @@ describe('parseSeriesTags', () => {
       const tags = parseSeriesTags({
         category: 'third-party',
         metricId: 'remoteExceptions',
-        seriesId: 'bdpx.xitgmcd3.api.commercecloud.salesforce.com.socketReadTimeout',
+        seriesId: 'bdpx.abcd1234.api.commercecloud.salesforce.com.socketReadTimeout',
         context: CTX,
       });
-      expect(tags.host).to.equal('xitgmcd3.api.commercecloud.salesforce.com');
+      expect(tags.host).to.equal('abcd1234.api.commercecloud.salesforce.com');
       expect(tags.exceptionType).to.equal('socketReadTimeout');
     });
   });
@@ -137,6 +137,71 @@ describe('parseSeriesTags', () => {
     it('extracts ocapiCategory for ocapi call metrics', () => {
       const tags = parseSeriesTags({category: 'ocapi', metricId: 'totalCalls', seriesId: 'bdpx.shop', context: CTX});
       expect(tags.ocapiCategory).to.equal('shop');
+    });
+  });
+
+  describe('realm_environment prefixed ids (observed on live tenants)', () => {
+    const cases: Array<[string, string, string, Record<string, string>]> = [
+      ['scapi', 'responseCount', 'bdpx_prd.shopper', {apiFamily: 'shopper'}],
+      ['scapi', 'responseCount', 'bdpx_prd 4xx', {statusClass: '4xx'}],
+      ['scapi', 'cacheHitRate', 'bdpx_prd.product MISS', {apiFamily: 'product', cacheStatus: 'MISS'}],
+      ['scapi', 'requestLatency', 'bdpx_prd Average overall latency', {aggregation: 'overall'}],
+      ['scapi', 'errors5xx', 'bdpx_prd.custom', {apiFamily: 'custom'}],
+      ['controller', 'totalErrors', 'bdpx_prd.Product-Show', {controller: 'Product-Show'}],
+      ['ocapi', 'errors4xx', 'bdpx_prd.shop', {ocapiCategory: 'shop'}],
+      ['third-party', 'callsCount', 'bdpx_prd.www.example.com', {host: 'www.example.com'}],
+      [
+        'third-party',
+        'remoteExceptions',
+        'bdpx_prd.svc.example.com.socketReadTimeout',
+        {host: 'svc.example.com', exceptionType: 'socketReadTimeout'},
+      ],
+      ['scapi-hooks', 'hookExecutionTimes', 'bdpx_prd Shop average', {series: 'Shop average'}],
+    ];
+    for (const [category, metricId, seriesId, expected] of cases) {
+      it(`${category}/${metricId}: ${seriesId}`, () => {
+        const tags = parseSeriesTags({
+          category: category as Parameters<typeof parseSeriesTags>[0]['category'],
+          metricId,
+          seriesId,
+          context: CTX,
+        });
+        expect(tags).to.deep.include(expected);
+        expect(tags.realm).to.equal('bdpx');
+      });
+    }
+
+    it('does not strip a realm_environment-looking prefix from an eCDN host', () => {
+      const tags = parseSeriesTags({
+        category: 'ecdn',
+        metricId: 'totalRequests',
+        seriesId: 'bdpx.bdpx_prd_my_commercecloud_salesforce_com',
+        context: CTX,
+      });
+      expect(tags.host).to.equal('bdpx_prd_my_commercecloud_salesforce_com');
+    });
+
+    it('parses the combined 4xx/5xx eCDN status class', () => {
+      const tags = parseSeriesTags({
+        category: 'ecdn',
+        metricId: 'successAndError',
+        seriesId: '4xx/5xx bdpx.bdpx_api_commercecloud_salesforce_com',
+        context: CTX,
+      });
+      expect(tags.statusClass).to.equal('4xx/5xx');
+      expect(tags.host).to.equal('bdpx_api_commercecloud_salesforce_com');
+    });
+
+    it('adds no dimensions to value-less fallback series that echo the metric id', () => {
+      for (const [category, metricId] of [
+        ['scapi', 'cacheHitRate'],
+        ['ocapi', 'totalCalls'],
+        ['controller', 'totalErrors'],
+        ['sales', 'orders'],
+      ] as const) {
+        const tags = parseSeriesTags({category, metricId, seriesId: metricId, context: CTX});
+        expect(Object.keys(tags), `${category}/${metricId}`).to.deep.equal(['realm', 'environment']);
+      }
     });
   });
 

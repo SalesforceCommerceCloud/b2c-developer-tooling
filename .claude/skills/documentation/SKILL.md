@@ -486,6 +486,30 @@ Developer Center guides corpus, only lightweight metadata is bundled
 and child relationships derived from the published TOCs; the page content
 itself is fetched live from developer.salesforce.com at read time.
 
+### Changesets for corpus refreshes
+
+A refresh of a bundled corpus (guides, Help, Script API, job steps) changes only
+files under `packages/b2c-tooling-sdk/data/`, but users see it through the CLI and
+MCP. List all three surfaces in the changeset rather than relying on the
+automatic dependency bump. A dependency-only bump appears in the CLI and MCP
+changelogs as "Updated dependencies", and the release notes page sorts SDK-only
+entries last:
+
+```md
+---
+'@salesforce/b2c-cli': patch
+'@salesforce/b2c-dx-mcp': patch
+'@salesforce/b2c-tooling-sdk': patch
+---
+
+Refresh Developer Center and Salesforce Help content in `b2c docs` search and the MCP docs tools. New guides cover …
+```
+
+The release notes page merges the identical entry into one item with CLI, MCP,
+and SDK badges. Skill content changes don't need this, because the
+`@salesforce/b2c-agent-plugins` changeset already appears under Agent Skills
+on the release notes page.
+
 ### Internal tooling corpus (`tooling`)
 
 The internal tooling corpus is generated from every Markdown page under
@@ -580,9 +604,12 @@ listed commits are the delta a regeneration will pick up. Always re-run
 `enrich:docs` (missing-only) after a guides refresh so new pages get
 summaries/keywords, then re-run `generate:guides-index` to merge them.
 
-The enrichment script defaults to `claude-haiku-4-5` (override with
+The enrichment script defaults to `claude-haiku-5-5` (override with
 `DOCS_ENRICH_MODEL`) and requires `ANTHROPIC_API_KEY`; without a key it skips
-enrichment. It only enriches Developer Center guides. Help summaries come from
+enrichment. When changing the prompts, iterate with `enrich:docs -- --sample 10`
+(a dry run that prints new vs. existing enrichment and writes nothing) before a
+`--full` run. Keep `DOCS_ENRICH_CONCURRENCY` low (default 3) on shared gateways
+to avoid 429s; rate-limited requests back off and honor `retry-after`. It only enriches Developer Center guides. Help summaries come from
 DITA `<shortdesc>` and are refreshed with the source content.
 
 Audit published guide entries without a `summary` after each refresh. The

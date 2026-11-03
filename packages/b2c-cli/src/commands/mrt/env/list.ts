@@ -44,6 +44,11 @@ const COLUMNS: Record<string, ColumnDef<MrtEnvironmentView>> = {
     header: 'Backend',
     get: (env) => env.backend,
   },
+  // Optional (not in DEFAULT_COLUMNS): static outbound IPs are legacy-only; renders '-' when not reported.
+  'static-ips': {
+    header: 'Static IPs',
+    get: (env) => (env.staticIps === undefined ? '-' : env.staticIps ? 'Enabled' : 'Disabled'),
+  },
 };
 
 const DEFAULT_COLUMNS = ['name', 'slug', 'state', 'region', 'production'];

@@ -18,8 +18,8 @@
   discovery; reduce live pages/projections.
 - SDK safety applies per request, including POST searches. Use only authorized
   targeted exceptions. Confirmation uses client elicitation; see below. Code mode does not
-  transfer binaries; use WebDAV tools for instance files, an external client for
-  binary SCAPI endpoints.
+  transfer files; use WebDAV tools for instance files and
+  [file-transfer](file-transfer.md) for SCAPI upload/download endpoints.
 - `fetch` and `WebSocket` are disabled. Use `scapi.request()` inside programs;
   direct HTTP belongs in an external client, outside MCP Safety Mode. Do not use
   imports or other Node networking APIs to bypass this boundary.

@@ -24,7 +24,8 @@ For routine health checks or incomplete business results, use
 `skill://b2c-ops/b2c-job-health/SKILL.md` when that collection is available; a
 failed-only search cannot establish health. Read the returned `logFilePath` with
 `webdav_get`; inspect size with `webdav_list` if needed. Continue using byte
-`nextOffset`, or download to `outputPath` for local analysis. Recent/filter/watch
+`nextOffset`, use `tail: true` for the end, or download with `webdav_get_to_file`
+for local analysis. Recent/filter/watch
 needs use `logs_*`. CLI fallback: `b2c job log JOB_ID EXECUTION_ID`.
 The returned log path is evidence to guide lookup, not
 permission to read an arbitrary local path. Do not infer root cause from ERROR alone.

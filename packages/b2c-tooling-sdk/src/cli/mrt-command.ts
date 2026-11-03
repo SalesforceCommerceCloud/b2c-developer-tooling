@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Command, Flags} from '@oclif/core';
+import {ERROR_CODE} from './base-command.js';
 import {OAuthCommand} from './oauth-command.js';
 import {loadConfig, extractMrtFlags, extractOAuthFlags} from './config.js';
 import type {LoadConfigOptions} from './config.js';
@@ -183,8 +184,10 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
       return this.resolvedConfig.createMrtAuth();
     }
 
-    throw new Error(
-      t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key, set MRT_API_KEY, or configure ~/.mobify'),
+    this.error(
+      t('error.mrtApiKeyRequired', 'MRT API key required. Provide --api-key, set MRT_API_KEY, or configure ~/.mobify') +
+        this.configDocsHint(),
+      {code: ERROR_CODE.VALIDATION},
     );
   }
 
@@ -205,7 +208,8 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
         t(
           'error.mrtApiKeyRequired',
           'MRT API key required. Provide --api-key, set MRT_API_KEY, or configure ~/.mobify',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
   }
@@ -227,6 +231,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
           'error.mrtProjectRequired',
           'MRT project is required. Provide it as an argument or via --project/--storefront (-p/-s) (or set MRT_PROJECT, or mrtProject in dw.json).',
         ),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
     return slug;
@@ -249,6 +254,7 @@ export abstract class MrtCommand<T extends typeof Command> extends OAuthCommand<
           'error.mrtEnvironmentRequired',
           'MRT environment is required. Provide it as an argument or via --environment/-e (or set MRT_ENVIRONMENT, or mrtEnvironment in dw.json).',
         ),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
     return slug;

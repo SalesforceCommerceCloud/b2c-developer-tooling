@@ -10,6 +10,10 @@ import type {IdeType, InstallSkillsOptions, InstallSkillsResult, SkillMetadata} 
 import {getSkillInstallPath} from './agents.js';
 import {getLogger} from '../logging/logger.js';
 
+function isDotOrSpace(char: string): boolean {
+  return char === '.' || /\s/.test(char);
+}
+
 /**
  * Sanitize a skill name to prevent path traversal attacks.
  *
@@ -21,7 +25,11 @@ function sanitizeName(name: string): string {
   let sanitized = name.replace(/[/\\:\0]/g, '');
 
   // Remove leading/trailing dots and spaces
-  sanitized = sanitized.replace(/^[.\s]+|[.\s]+$/g, '');
+  let start = 0;
+  let end = sanitized.length;
+  while (start < end && isDotOrSpace(sanitized[start])) start++;
+  while (end > start && isDotOrSpace(sanitized[end - 1])) end--;
+  sanitized = sanitized.slice(start, end);
 
   // Limit length
   if (sanitized.length > 255) {

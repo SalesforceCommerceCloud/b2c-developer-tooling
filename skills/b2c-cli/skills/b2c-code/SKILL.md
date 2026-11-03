@@ -25,6 +25,12 @@ Use the CLI for watches, recursive downloads, and extra deployment flags.
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
+With only a server configured, the first command opens a browser for the user to sign in with their Account Manager account and waits until they do; tell the user to finish signing in. Their Business Manager roles decide access, and a 403 names the missing permission (for example `WebDAV_Manage_Customization` for `Cartridges`). Code goes to the active code version; activating one (`code activate`, `--activate`, `--reload`) needs an API client.
+
+**Staging code upload needs a client certificate.** Staging instances normally require two-factor (mTLS) code upload, so a deploy without a certificate fails, usually with `403 Forbidden` on writes under `Cartridges`. Set `certificate` and `certificate-passphrase` (`SFCC_CERTIFICATE`, `SFCC_CERTIFICATE_PASSPHRASE`). Legacy realms use a certificate signed by a CA bundle from Salesforce Support and the `cert.staging.*` WebDAV hostname. Hyperforce realms use a CA the user registers through eCDN (`b2c-cli:b2c-ecdn`, `b2c ecdn mtls`). See [Two-Factor Authentication](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.md#two-factor-authentication-mtls).
+
+**Reload needs a second code version.** `--reload` toggles activation through another code version. If the instance has only one, create an empty one first (`b2c webdav mkdir --root cartridges version2`).
+
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Examples
@@ -52,6 +58,9 @@ b2c code deploy -c app_storefront_base -c plugin_applepay
 
 # exclude specific cartridges from deployment
 b2c code deploy -x test_cartridge
+
+# replace the directory names skipped inside cartridges (default: node_modules,.git,coverage,.cache,tmp,temp)
+b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
 ```
 
 ### Download Cartridges

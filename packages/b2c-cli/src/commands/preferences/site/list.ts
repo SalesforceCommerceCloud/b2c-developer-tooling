@@ -41,8 +41,7 @@ export default class PreferencesSiteList extends PreferencesCommand<typeof Prefe
   static flags = {
     'site-id': Flags.string({
       char: 's',
-      description: 'Site ID to list preferences for',
-      required: true,
+      description: 'Site ID to list preferences for (defaults to siteId from configuration)',
     }),
     limit: Flags.integer({
       char: 'l',
@@ -68,7 +67,13 @@ export default class PreferencesSiteList extends PreferencesCommand<typeof Prefe
   async run(): Promise<CustomPreferenceList> {
     this.requireOAuthCredentials();
 
-    const {'site-id': siteId, limit, offset, 'mask-password': maskPassword} = this.flags;
+    const {limit, offset, 'mask-password': maskPassword} = this.flags;
+    const siteId = this.flagOrConfig(this.flags['site-id'], 'siteId');
+    if (!siteId) {
+      this.error(
+        t('error.siteIdRequired', 'Site ID is required. Provide --site-id or set siteId in your configuration.'),
+      );
+    }
     const organizationId = this.getOrganizationId();
 
     const result = await this.preferencesClient.GET('/organizations/{organizationId}/site-custom-preferences', {

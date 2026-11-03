@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import path from 'node:path';
 import {Args, Flags, ux} from '@oclif/core';
 import {input, password, confirm, select} from '@inquirer/prompts';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
@@ -24,6 +25,8 @@ interface InstanceCreateResponse {
   active?: boolean;
   /** Config source that stores the instance */
   source?: string;
+  /** File (or other location) the instance was written to, when the source reports one */
+  location?: string;
   /** Credential fields stored in a credential store, and that store */
   credentials?: Array<{field: string; source: string}>;
 }
@@ -57,7 +60,11 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
   };
 
   static description = withDocs(
-    'Create a new B2C Commerce instance configuration',
+    'Create a new B2C Commerce instance configuration\n\n' +
+      'The instance is written to dw.json in the current directory (or the file selected with --config or ' +
+      '--project-directory), and the CLI only reads it from there. To use it from any directory, make that ' +
+      'file the global default with "<%= config.bin %> setup default-config set <path>". To change an existing ' +
+      'instance, use "<%= config.bin %> setup set <key> <value> --instance <name>".',
     '/cli/setup.html#b2c-setup-instance-create',
   );
 
@@ -77,10 +84,10 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       description: 'B2C instance hostname',
     }),
     username: Flags.string({
-      description: 'WebDAV username',
+      description: 'Business Manager username for WebDAV Basic auth',
     }),
     password: Flags.string({
-      description: 'WebDAV password',
+      description: 'WebDAV access key of the Business Manager user (not the Account Manager password)',
     }),
     'client-id': Flags.string({
       description: 'OAuth client ID',
@@ -153,8 +160,15 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
 
     // Check if instance already exists
     const existingInstances = await manager.listAllInstances(configOptions);
-    if (existingInstances.some((i) => i.name === name)) {
-      this.error(`Instance "${name}" already exists. Use a different name.`);
+    const existing = existingInstances.find((i) => i.name === name);
+    if (existing) {
+      const bin = this.config.bin;
+      this.error(
+        `Instance "${name}" already exists in ${existing.location ?? existing.source}. ` +
+          `To change it, run "${bin} setup set <key> <value> --instance ${name}" ` +
+          `(for example "${bin} setup set password <access-key> --instance ${name}"), ` +
+          `or remove it with "${bin} setup instance remove ${name}" and create it again.`,
+      );
     }
 
     // Get or prompt for hostname (accepts a URL or plain hostname)
@@ -213,7 +227,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
         config.username =
           this.flags.username ||
           (await input({
-            message: 'Enter WebDAV username:',
+            message: 'Enter Business Manager username:',
             validate: (v) => (v.trim() ? true : 'Username is required'),
           }));
 
@@ -221,8 +235,8 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
         config.password =
           this.flags.password ||
           (await password({
-            message: `Enter WebDAV password or access key (${accessKeyUrl}):`,
-            validate: (v) => (v.trim() ? true : 'Password or access key is required'),
+            message: `Enter WebDAV access key for this user, not your Account Manager password (create one at ${accessKeyUrl} or with "${this.config.bin} bm access-key create"):`,
+            validate: (v) => (v.trim() ? true : 'Access key is required'),
           }));
       }
 
@@ -274,7 +288,7 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       }
 
       const codeVersion = await input({
-        message: 'Enter code version:',
+        message: `Enter code version (optional; the cartridge code version used by code deploy and watch, "${this.config.bin} code list" shows the active one):`,
         default: detectedVersion,
       });
 
@@ -341,25 +355,51 @@ export default class SetupInstanceCreate extends BaseCommand<typeof SetupInstanc
       targetSource,
     );
 
+    const location = (await manager.findInstance(name, configOptions))?.location;
+
     const result: InstanceCreateResponse = {
       name,
       hostname,
       created: true,
       active: setActive,
       source: created.source,
+      location,
       credentials: created.credentials,
     };
 
     if (!this.jsonEnabled()) {
-      ux.stdout(`Instance "${name}" created successfully (${created.source}).`);
+      ux.stdout(
+        location
+          ? `Instance "${name}" created in ${location} (${created.source}).`
+          : `Instance "${name}" created successfully (${created.source}).`,
+      );
       for (const credential of created.credentials) {
         ux.stdout(`  ${credential.field} stored in ${credential.source}`);
       }
       if (setActive) {
         ux.stdout(`"${name}" is now the active instance.`);
       }
+      if (location && created.source === 'DwJsonSource') this.printLocationHint(location, configOptions);
     }
 
     return result;
+  }
+
+  /** Explain which directories will see a dw.json-stored instance and how to use it elsewhere. */
+  private printLocationHint(location: string, options: {configPath?: string; defaultConfigPath?: string}): void {
+    if (options.defaultConfigPath && path.resolve(options.defaultConfigPath) === path.resolve(location)) {
+      ux.stdout('This is the global default config, so the instance is available from any directory.');
+      return;
+    }
+    const bin = this.config.bin;
+    ux.stdout('');
+    if (options.configPath) {
+      ux.stdout(`Commands use this file when you pass --config ${location}. To use it without --config,`);
+      ux.stdout('make it the default everywhere with:');
+    } else {
+      ux.stdout(`The CLI reads this file when run from ${path.dirname(location)}. To use it from another directory,`);
+      ux.stdout('pass --config <path> or --project-directory <dir>, or make it the default everywhere with:');
+    }
+    ux.stdout(`  ${bin} setup default-config set ${location}`);
   }
 }

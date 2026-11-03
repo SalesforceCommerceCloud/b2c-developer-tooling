@@ -53,7 +53,7 @@ b2c sandbox list
 See [Authentication Setup](./authentication) for the full guide including Account Manager configuration, OCAPI permissions, and WebDAV access.
 
 ::: tip
-Use **stateless auth** (environment variables) for CI/CD pipelines and **stateful auth** (`b2c auth client` or `b2c auth login`) for local development.
+Use **stateless auth** (environment variables) for CI/CD pipelines and `b2c auth login` for local development. `b2c auth client` keeps scripts that call `sfcc-ci client:auth` working.
 :::
 
 ## Command Mapping

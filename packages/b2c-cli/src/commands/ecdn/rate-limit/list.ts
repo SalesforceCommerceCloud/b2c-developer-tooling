@@ -98,13 +98,17 @@ export default class EcdnRateLimitList extends EcdnZoneCommand<typeof EcdnRateLi
     const client = this.getCdnZonesClient();
     const organizationId = this.getOrganizationId();
 
-    const {data, error} = await client.GET('/organizations/{organizationId}/zones/{zoneId}/rate-limiting/rules', {
-      params: {
-        path: {organizationId, zoneId},
+    const {data, error, response} = await client.GET(
+      '/organizations/{organizationId}/zones/{zoneId}/rate-limiting/rules',
+      {
+        params: {
+          path: {organizationId, zoneId},
+        },
       },
-    });
+    );
 
-    if (error) {
+    // The API returns 404 when the zone has no rules
+    if (error && response?.status !== 404) {
       this.error(
         t('commands.ecdn.rate-limit.list.error', 'Failed to fetch rate limiting rules: {{message}}', {
           message: formatApiError(error),

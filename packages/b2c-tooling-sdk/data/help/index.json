@@ -1,9 +1,9 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-12T17:29:54.303Z",
+  "generatedAt": "2026-10-20T16:40:44.437Z",
   "source": {
-    "sha": "7692f5056c553e92c627ce98349616a7976378f8",
-    "committedAt": "2026-10-12T12:57:02-04:00",
+    "sha": "dc1b60684d3ac4d5518cfeff400e2012f5cc7060",
+    "committedAt": "2026-10-20T12:24:04-04:00",
     "ref": "current"
   },
   "entries": [
@@ -1138,12 +1138,12 @@
     },
     {
       "id": "help-admin/b2c_clear_ecdn_cache_task",
-      "title": "Clear the eCDN Cache",
+      "title": "Refresh a Static Asset in the eCDN Cache",
       "category": "help-admin",
       "filePath": "help-admin/b2c_clear_ecdn_cache_task.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_clear_ecdn_cache_task.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_clear_ecdn_cache_task.md",
-      "summary": "To refresh a static storefront asset in B2C Commerce eCDN cache before its cache interval expires, upload the updated asset so that B2C Commerce assigns it a new fingerprint and URL. You don't need to clear the cache or request a support ticket."
+      "summary": "To show an updated static storefront asset before its B2C Commerce eCDN cache interval expires, upload the new version. B2C Commerce assigns the asset a new fingerprint and URL, so eCDN retrieves it. You don't need to clear the eCDN cache or file a support ticket."
     },
     {
       "id": "help-admin/b2c_clear_sftp_known_good_hosts",
@@ -1851,15 +1851,6 @@
       "summary": "To keep your teams aligned during incidents, set up Slack notifications in B2C Commerce."
     },
     {
-      "id": "help-admin/b2c_create_an_ecdn_zone_and_certificate",
-      "title": "Create an eCDN Zone and Upload a Certificate",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_create_an_ecdn_zone_and_certificate.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_an_ecdn_zone_and_certificate.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_an_ecdn_zone_and_certificate.md",
-      "summary": "Use the CDN Zones API to create a B2C Commerce development, staging, or production zone, then certify each hostname — with an eCDN managed certificate or by uploading your own self-managed certificate in PEM format."
-    },
-    {
       "id": "help-admin/b2c_create_code_replication_process",
       "title": "Create a Code Replication Process in B2C Commerce",
       "category": "help-admin",
@@ -2496,7 +2487,7 @@
       "filePath": "help-admin/b2c_ecdn_cache_rules_and_purge_overview.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_cache_rules_and_purge_overview.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_cache_rules_and_purge_overview.md",
-      "headings": "Where Cache Rules and Cache Purge Are Available • How SCAPI Zones Differ • How eCDN Decides What to Cache • Best Practices • Troubleshooting",
+      "headings": "Purge Cache for SCAPI Zones • How B2C Commerce eCDN Decides What to Cache • Best Practices for B2C Commerce eCDN Caching • Troubleshooting B2C Commerce eCDN Caching",
       "summary": "Cache rules control which content is eligible for caching at the eCDN edge, and cache purge selectively invalidates cached content by tag or path. Both capabilities are available in Business Manager for your B2C Commerce storefront.",
       "relatedEntries": [
         "help-admin/b2c_create_ecdn_cache_rule",
@@ -2510,8 +2501,8 @@
       "filePath": "help-admin/b2c_ecdn_caching_and_fingerprinting.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_caching_and_fingerprinting.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_caching_and_fingerprinting.md",
-      "headings": "Static and Dynamic Caching • How Static Caching and Fingerprinting Work",
-      "summary": "B2C Commerce eCDN caches static storefront content at the edge and refreshes it automatically using a fingerprint value in each asset's URL. Understand how caching and fingerprinting work before you clear the cache or add cache rules for dynamic content.",
+      "headings": "How Static Caching and Fingerprinting Work for B2C Commerce eCDN",
+      "summary": "B2C Commerce eCDN caches static storefront content on edge servers, which are servers located close to your shoppers, and refreshes it automatically using a fingerprint value in each content asset's URL. Understand how caching and fingerprinting work before you clear the cache or add cache rules for dynamic content.",
       "relatedEntries": [
         "help-admin/b2c_clear_ecdn_cache_task",
         "help-admin/b2c_ecdn_cache_rules_and_purge_overview"
@@ -2552,8 +2543,8 @@
       "filePath": "help-admin/b2c_ecdn_security_rules.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_ecdn_security_rules.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_ecdn_security_rules.md",
-      "headings": "What the Security Rules Tab Covers in B2C Commerce • Behavior: What Traffic Is Bypassed • DDoS Layer 7 Override Details • Zone Type Eligibility • Feature Switch",
-      "summary": "The Security Rules tab in the Configure Zone screen is where you protect an embedded CDN (eCDN) zone for B2C Commerce. Using settings on that page, you can configure web application firewall (WAF) managed rulesets, realm and zone security rules, custom firewall rules, and rate limiting. Understand what each control does, which zone types are eligible, and how traffic from trusted sources bypasses security checks.",
+      "headings": "What the Security Rules Tab Covers in B2C Commerce • Example: Rate Limit Logins That Use Leaked Credentials • Behavior: What Traffic Is Bypassed • DDoS Layer 7 Override Details • Zone Type Eligibility • Feature Switch",
+      "summary": "Use the Security Rules tab on the Configure Zone screen to protect a B2C Commerce embedded CDN (eCDN) zone with web application firewall (WAF) managed rulesets, realm and zone security rules, custom firewall rules, and rate limiting. Learn what each control does, which zone types are eligible, and how traffic from trusted sources bypasses security checks.",
       "relatedEntries": [
         "help-admin/b2c_configure_zone_waf_settings",
         "help-admin/b2c_configure_zone_realm_security_rules",
@@ -2577,14 +2568,13 @@
       "filePath": "help-admin/b2c_embedded_cdn.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_embedded_cdn.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_embedded_cdn.md",
-      "summary": "Salesforce B2C Commerce comes with an embedded Content Delivery Network (CDN). To ensure quick response times for consumers, the embedded CDN serves content from a location close to the consumer. Embedded CDN also helps absorb high or sudden increases in traffic, so sites stay fast and responsive as demand grows.",
+      "summary": "Salesforce B2C Commerce includes an embedded content delivery network (eCDN) that serves content from locations close to your shoppers for fast response times. eCDN also absorbs high or sudden increases in traffic, so your sites stay fast and responsive as demand grows.",
       "relatedEntries": [
         "help-admin/b2c_embedded_cdn_overview",
         "help-admin/b2c_set_up_ecdn_zones_and_hostnames",
         "help-admin/b2c_manage_ssl_certificates_for_ecdn_zones",
         "help-admin/b2c_configuring_a_zone",
         "help-admin/b2c_migrating_proxy_zones",
-        "help-admin/b2c_use_cdn_zones_api_to_configure_ecdn",
         "help-admin/b2c_configuring_an_external_cdn",
         "help-admin/b2c_ecdn_caching_and_fingerprinting",
         "help-admin/b2c_waf_protection",
@@ -2837,15 +2827,6 @@
         "help-admin/b2c_prevent_ecommerce_fraud",
         "help-admin/b2c_incorporate_third-party_apps"
       ]
-    },
-    {
-      "id": "help-admin/b2c_generate_a_shortcode_and_api_client_id",
-      "title": "Short Code and API Client ID Requirements",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_generate_a_shortcode_and_api_client_id.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_generate_a_shortcode_and_api_client_id.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_generate_a_shortcode_and_api_client_id.md",
-      "summary": "Before you call the CDN Zones API to configure B2C Commerce eCDN, get a short code, an API client ID, and an authorization token whose tenant ID matches the instance you're configuring."
     },
     {
       "id": "help-admin/b2c_generate_private_key",
@@ -3719,7 +3700,8 @@
         "help-admin/b2c_add_managed_ssl_certificates",
         "help-admin/b2c_add_self_managed_ssl_certificates",
         "help-admin/b2c_update_a_zones_managed_certificate",
-        "help-admin/b2c_update_a_zones_self_managed_certificate"
+        "help-admin/b2c_update_a_zones_self_managed_certificate",
+        "help-admin/b2c_update_auth_dns"
       ]
     },
     {
@@ -3892,15 +3874,6 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_metrics_scapi_hooks.md",
       "headings": "Hook Execution Time • Hook Execution Errors",
       "summary": "SCAPI Hook metrics help website administrators and DevOps teams monitor and analyze the performance of SCAPI hooks. These metrics help identify issues with slow performance and failures of SCAPI hooks. SCAPI Hook metrics appear in the Metrics Dashboard with a delay of up to 10 minutes."
-    },
-    {
-      "id": "help-admin/b2c_migrate_site_traffic",
-      "title": "Migrate Site Traffic",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_migrate_site_traffic.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrate_site_traffic.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrate_site_traffic.md",
-      "summary": "After you create your B2C Commerce eCDN zones and certificates, validate each hostname and update DNS to cut site traffic over to eCDN — optionally stacking a third-party CDN such as Akamai in front."
     },
     {
       "id": "help-admin/b2c_migrate_trusted_ips_to_custom_rules",
@@ -4341,15 +4314,6 @@
       "summary": "Looking for information that helps you address a specific area or insight when planning your next project? Well, look no further! We offer B2C Commerce Playbooks, Platform Adoption Playbooks, and additional resources that provide best practices for implementing, administering, and developing your ecommerce sites."
     },
     {
-      "id": "help-admin/b2c_post_migration_process",
-      "title": "Complete Post-Migration Tasks",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_post_migration_process.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_post_migration_process.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_post_migration_process.md",
-      "summary": "After you migrate B2C Commerce site traffic to eCDN, coordinate with B2C Commerce Engineering to validate the traffic flow, revert the origin certificate, and create the staging Business Manager zone."
-    },
-    {
       "id": "help-admin/b2c_prevent_ecommerce_fraud",
       "title": "Prevent Ecommerce Fraud",
       "category": "help-admin",
@@ -4557,7 +4521,7 @@
       "filePath": "help-admin/b2c_purge_ecdn_cache.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_purge_ecdn_cache.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_purge_ecdn_cache.md",
-      "summary": "Selectively invalidate cached content by cache tag or path directly from Business Manager. Click **Purge Cache** for your B2C Commerce storefront."
+      "summary": "Selectively invalidate content in the B2C Commerce eCDN cache by cache tag or path directly from Business Manager."
     },
     {
       "id": "help-admin/b2c_reading_data_replication_logs",
@@ -4620,15 +4584,6 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_removing_outdated_objects.md",
       "headings": "Removing Catalog Objects • Removing Other Objects",
       "summary": "How you remove outdated objects depends on whether you enrich the data from your backend system with more attributes in Business Manager. It also depends on the type of business object you want to remove. B2C Commerce generally recommends creating feeds of objects to delete, imported using the DELETE mode, to safely remove all types of objects, regardless of whether they have enriched data or not."
-    },
-    {
-      "id": "help-admin/b2c_renew_a_certificate",
-      "title": "Renew a Certificate for B2C Commerce",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_renew_a_certificate.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_renew_a_certificate.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_renew_a_certificate.md",
-      "summary": "Development, staging, and production zone certificates require renewal when you use self-managed SSL certificates."
     },
     {
       "id": "help-admin/b2c_replicate_content_assets_with_granular_replication",
@@ -5475,6 +5430,7 @@
       "filePath": "help-admin/b2c_sorting_rule_import_export.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_sorting_rule_import_export.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_sorting_rule_import_export.md",
+      "headings": "Validation",
       "summary": "The sort.xsd schema defines sorting rules, dynamic attributes, and sorting options."
     },
     {
@@ -5805,6 +5761,15 @@
       "summary": "When your self-managed SSL certificate expires, or you update the hostnames assigned to a self-managed SSL certificate, upload a replacement certificate in Business Manager for B2C Commerce and remap DNS."
     },
     {
+      "id": "help-admin/b2c_update_auth_dns",
+      "title": "Update Authoritative DNS for an eCDN Zone",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_update_auth_dns.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_update_auth_dns.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_update_auth_dns.md",
+      "summary": "Point your B2C Commerce storefront's DNS records at your embedded CDN (eCDN) zone. Get the DNS CNAME record value from the `getZonesInfo` name property or from Business Manager, and then update the record with your authoritative DNS provider."
+    },
+    {
       "id": "help-admin/b2c_url_rules_object_import_export",
       "title": "URL Rules Object Import/Export in B2C Commerce",
       "category": "help-admin",
@@ -5831,23 +5796,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_use_a_positive_security_model.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_use_a_positive_security_model.md",
       "summary": "A positive security model, also known as a safelist approach, defines what is allowed and rejects everything else. Use this approach in B2C Commerce to make sure that you can allowlist only the known good input instead of trying to disallow all possible bad input."
-    },
-    {
-      "id": "help-admin/b2c_use_cdn_zones_api_to_configure_ecdn",
-      "title": "CDN Zones API Overview",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_use_cdn_zones_api_to_configure_ecdn.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_use_cdn_zones_api_to_configure_ecdn.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_use_cdn_zones_api_to_configure_ecdn.md",
-      "headings": "API Setup Sequence",
-      "summary": "Use the CDN Zones API to create and manage B2C Commerce eCDN zones for your development, staging, and production instances when you want a scripted or self-service alternative to Business Manager. With the API, you can upload custom certificates, configure vanity hostnames, and migrate site traffic.",
-      "relatedEntries": [
-        "help-admin/b2c_generate_a_shortcode_and_api_client_id",
-        "help-admin/b2c_create_an_ecdn_zone_and_certificate",
-        "help-admin/b2c_migrate_site_traffic",
-        "help-admin/b2c_post_migration_process",
-        "help-admin/b2c_renew_a_certificate"
-      ]
     },
     {
       "id": "help-admin/b2c_use_secure_defaults",
@@ -6056,8 +6004,8 @@
       "filePath": "help-admin/b2c_waf_managed_rulesets.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_waf_managed_rulesets.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_waf_managed_rulesets.md",
-      "headings": "eCDN WAFv2 Managed Ruleset • OWASP WAFv2 Managed Ruleset • eCDN WAFv2 Exposed Credentials Check",
-      "summary": "The embedded CDN (eCDN) web application firewall (WAF) protects your B2C Commerce storefront through three managed rulesets: the eCDN WAFv2 Managed Ruleset, the OWASP WAFv2 Managed Ruleset, and the eCDN WAFv2 Exposed Credentials Check. You enable and tune each ruleset per zone."
+      "headings": "eCDN WAFv2 Managed Ruleset • OWASP WAFv2 Managed Ruleset",
+      "summary": "The embedded CDN (eCDN) web application firewall (WAF) protects your B2C Commerce storefront through two managed rulesets: the eCDN WAFv2 Managed Ruleset and the OWASP WAFv2 Managed Ruleset. You enable and tune each ruleset per zone."
     },
     {
       "id": "help-admin/b2c_waf_net_traffic_logs",
@@ -6586,7 +6534,7 @@
       "filePath": "help-merchant/b2c_acs_prerequisites.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_acs_prerequisites.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_acs_prerequisites.md",
-      "headings": "Prerequisite Checklist • Catalog Data Requirements • Event Types Required • Record Shopper Activity Data • Storefront Compatibility • Inventory Data • Locale Support",
+      "headings": "Prerequisite Checklist • Catalog Data Requirements • Event Types Required • Record Shopper Activity Data • Storefront Compatibility • Inventory Data",
       "summary": "Confirm that your catalog data, event instrumentation, pricing, and inventory meet requirements for Agentic Commerce Search for B2C Commerce before provisioning. Incomplete or missing data reduces search relevance and keeps pricing sort options from working correctly."
     },
     {
@@ -6952,13 +6900,13 @@
     },
     {
       "id": "help-merchant/b2c_annotating_images",
-      "title": "Annotate Images",
+      "title": "Image Alt Text and Title Annotations in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_annotating_images.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_annotating_images.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_annotating_images.md",
-      "headings": "Attribute Markers • Annotation Processing",
-      "summary": "Explicitly annotate each image assignment with a combination of relative image path, view type or B2C Commerce variation product, and a localizable *alt *description and image title."
+      "headings": "Alt Text and Title Markers • Alt Text and Title Lookup Order • See Also",
+      "summary": "B2C Commerce lets you annotate each image assignment with a combination of relative image path, view type or B2C Commerce variation product, and a localizable alt description and image title. Set those values on one image, or set a catalog pattern that fills them in."
     },
     {
       "id": "help-merchant/b2c_api_support",
@@ -7819,12 +7767,12 @@
     },
     {
       "id": "help-merchant/b2c_configuring_variation_attributes_for_image_assignment",
-      "title": "Configure Variation Attributes for Image Assignment by Catalog",
+      "title": "Configure Catalog Image Settings in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_configuring_variation_attributes_for_image_assignment.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configuring_variation_attributes_for_image_assignment.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_configuring_variation_attributes_for_image_assignment.md",
-      "summary": "B2C Commerce's catalog image settings support multiple variation attributes. The settings enable you to specify images for combinations of variation attributes, for example color (red, green, blue) and fabric (leather, textile) for all new products."
+      "summary": "In B2C Commerce, configure catalog image settings only when the settings created with the catalog differ from what you want, or to add a catalog-level variation attribute. Default alt text and title fill in only when an image has none of its own, so you leave them unchanged before you assign images."
     },
     {
       "id": "help-merchant/b2c_connect_commerce_to_salesforce",
@@ -8168,7 +8116,7 @@
       "filePath": "help-merchant/b2c_create_boost_bury_merchant_agent.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_boost_bury_merchant_agent.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_create_boost_bury_merchant_agent.md",
-      "summary": "Use the Merchant Agent to create boost and bury rules with natural language prompts."
+      "summary": "Use the Merchant Agent to create boost and bury rules with natural language prompts. Agentic rule creation is available only for categories. Create search term boost and bury rules manually."
     },
     {
       "id": "help-merchant/b2c_create_customer_group_based_on_data_cloud_segment",
@@ -8761,6 +8709,7 @@
         "help-merchant/b2c_on_site_search_dashboard",
         "help-merchant/b2c_search_conversion_dashboard",
         "help-merchant/b2c_traffic_dashboard",
+        "help-merchant/b2c_traffic_sources_dashboard",
         "help-merchant/b2c_shopper_journey_dashboard",
         "help-merchant/b2c_einstein_dashboard",
         "help-merchant/b2c_inventory_dashboard",
@@ -8907,12 +8856,12 @@
     },
     {
       "id": "help-merchant/b2c_demandware_image_storage",
-      "title": "Salesforce B2C Commerce Image Storage",
+      "title": "Image Storage Locations in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_demandware_image_storage.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_demandware_image_storage.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_demandware_image_storage.md",
-      "summary": "B2C Commerce supports three static content locations where it stores images."
+      "summary": "B2C Commerce stores images in three static content locations, depending on image type."
     },
     {
       "id": "help-merchant/b2c_deploying_a_test_segment",
@@ -8977,7 +8926,7 @@
       "filePath": "help-merchant/b2c_dynamic_customer_group_attributes.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_dynamic_customer_group_attributes.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_dynamic_customer_group_attributes.md",
-      "headings": "Related Links",
+      "headings": "Profile Attributes • Address Attributes • Active Data Attributes • Request Attributes • Geolocation Attributes • Storefront Session Attributes • Related Links",
       "summary": "Use these attributes for dynamic customer groups."
     },
     {
@@ -9009,15 +8958,6 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_dynamic_group_attribute_types.md",
       "headings": "Related Links",
       "summary": "There are seven supported attribute types."
-    },
-    {
-      "id": "help-merchant/b2c_dynamic_imaging_service_overview",
-      "title": "Related Dynamic Imaging Service Topics",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_dynamic_imaging_service_overview.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_dynamic_imaging_service_overview.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_dynamic_imaging_service_overview.md",
-      "summary": "Find B2C Commerce Dynamic Imaging Service help on URL path structure, order of operations, responsive formats, an optional community project, and troubleshooting."
     },
     {
       "id": "help-merchant/b2c_dynamic_mapping_of_incoming_url_for_source_codes",
@@ -9446,71 +9386,30 @@
     },
     {
       "id": "help-merchant/b2c_image_management",
-      "title": "Image Management",
+      "title": "Image Management in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_image_management.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_management.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_management.md",
-      "summary": "Use B2C Commerce's Image Management System to create a matrix of images for each product.",
+      "headings": "B2C Commerce Image Terms • B2C Commerce Image Limitations • B2C Commerce Image Location and Path • Choose the topic for the job",
+      "summary": "Before you assign product images in B2C Commerce, learn the terms, limits, and catalog location. Then choose the topic for assigning images, catalog settings, view types, swatches, alt text, storage, or a size, crop, or format.",
       "relatedEntries": [
         "help-merchant/b2c_managing_images",
         "help-merchant/b2c_understanding_view_types",
-        "help-merchant/b2c_working_with_image_variants",
         "help-merchant/b2c_working_with_swatches",
         "help-merchant/b2c_annotating_images",
         "help-merchant/b2c_demandware_image_storage",
-        "help-merchant/b2c_image_transformation_service",
-        "help-merchant/b2c_image_transformation_url_structure",
-        "help-merchant/b2c_image_transformation_responsive_formats",
-        "help-merchant/b2c_image_transformation_community_wrapper",
-        "help-merchant/b2c_image_transformation_troubleshooting_and_migration",
-        "help-merchant/b2c_dynamic_imaging_service_overview"
+        "help-merchant/b2c_image_transformation_service"
       ]
     },
     {
-      "id": "help-merchant/b2c_image_transformation_community_wrapper",
-      "title": "Optional community DIS product image wrapper",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_community_wrapper.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_community_wrapper.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_community_wrapper.md",
-      "summary": "The optional open-source dis-product-image-wrapper project helps some Salesforce Reference Architecture (SFRA) and SiteGenesis projects centralize product image parameters and use JavaScript helpers. It isn't a required replacement for URLUtils and MediaFile from the B2C Commerce API."
-    },
-    {
-      "id": "help-merchant/b2c_image_transformation_responsive_formats",
-      "title": "Responsive Images and Modern Image Formats (AVIF and WebP)",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_responsive_formats.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_responsive_formats.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_responsive_formats.md",
-      "summary": "Load AVIF and WebP for smaller file sizes with modern browsers on your B2C Commerce storefront, and use JPEG (or PNG for lossless or transparency) as a fallback. Output formats, quality, and the URLUtils and MediaFile rules for DIS are in the Dynamic Imaging Service topic."
-    },
-    {
       "id": "help-merchant/b2c_image_transformation_service",
-      "title": "Dynamic Imaging Service",
+      "title": "B2C Commerce Dynamic Imaging Service",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_image_transformation_service.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_service.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_service.md",
-      "summary": "The B2C Commerce Dynamic Imaging Service eliminates the need to upload different-sized images to meet your storefront requirements. After you upload a high-resolution source image, Dynamic Imaging formats the correct size for each image application—your product page, catalog page, recommended products, search results, and so on. Apply parameters to control image size, crop, overlay, format, background color, and quality settings."
-    },
-    {
-      "id": "help-merchant/b2c_image_transformation_troubleshooting_and_migration",
-      "title": "Troubleshooting and migration",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_troubleshooting_and_migration.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_troubleshooting_and_migration.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_troubleshooting_and_migration.md",
-      "summary": "When a B2C Commerce Dynamic Imaging Service image URL fails, times out, or looks wrong, check the source file, the full URL, and the limits documented in the Dynamic Imaging Service topic. This topic also helps you migrate from other hostnames and from Adobe Scene7 (Dynamic Media) query strings."
-    },
-    {
-      "id": "help-merchant/b2c_image_transformation_url_structure",
-      "title": "Image Transformation URL Structure, Validation, and Order of Operations",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_image_transformation_url_structure.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_transformation_url_structure.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_transformation_url_structure.md",
-      "summary": "Image transformation requests use a /dw/image/v2/ path and query string. The B2C Commerce Dynamic Imaging Service applies those parameters in a fixed order."
+      "summary": "Use the B2C Commerce Dynamic Imaging Service when storefront code requests a specific image size, crop, or format, and assign the source image in Business Manager. Transformation details are in the B2C Commerce developer guide."
     },
     {
       "id": "help-merchant/b2c_implementing_choice_of_bonus_product_discount",
@@ -9828,15 +9727,14 @@
     },
     {
       "id": "help-merchant/b2c_managing_images",
-      "title": "Manage Images",
+      "title": "Assign Images to Products in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_managing_images.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_managing_images.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_managing_images.md",
-      "summary": "Use the Image Management System to create a matrix of internal or external images that 's associated with B2C Commerce products.",
+      "summary": "In B2C Commerce, attach an image to a product so the storefront can show it. Assign images on the base product, and a variation product uses those images.",
       "relatedEntries": [
-        "help-merchant/b2c_configuring_variation_attributes_for_image_assignment",
-        "help-merchant/b2c_upload_an_image_to_the_file_browser_window"
+        "help-merchant/b2c_configuring_variation_attributes_for_image_assignment"
       ]
     },
     {
@@ -10782,7 +10680,7 @@
       "filePath": "help-merchant/b2c_product_lists.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_product_lists.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_product_lists.md",
-      "summary": "A product list shows the products for your site. Create multiple product lists and customize them to find the information that’s the most relevant to you."
+      "summary": "A product list shows the products for your site. Create multiple product lists and customize them to find the information that’s the most relevant to you. Product lists are shared across all users in your site. When you delete a product list, you delete the list for all users."
     },
     {
       "id": "help-merchant/b2c_product_options",
@@ -11765,7 +11663,7 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_shopper_journey_dashboard.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_shopper_journey_dashboard.md",
       "headings": "Shopper Journey Funnel • Top 10 Checkout Steps • Shopper Journey Graphs",
-      "summary": "Use the B2C Commerce Reports & Dashboards Shopper Journey dashboard to evaluate how shoppers move from site visit to order conversion. The dashboard is available as a selection on the Traffic Report tab."
+      "summary": "Use the B2C Commerce Reports & Dashboards Shopper Journey dashboard to evaluate how shoppers move from site visit to order conversion. The dashboard is available as a selection on the Traffic tab."
     },
     {
       "id": "help-merchant/b2c_show_orderable_products_only_at_the_product_level",
@@ -12220,6 +12118,16 @@
       "summary": "Visits analyze data about the visitors to your B2C Commerce site. For example, review the number of site visits, the visits by device, and visit duration."
     },
     {
+      "id": "help-merchant/b2c_traffic_sources_dashboard",
+      "title": "Traffic Sources Dashboard",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_traffic_sources_dashboard.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_traffic_sources_dashboard.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_traffic_sources_dashboard.md",
+      "headings": "Traffic and Conversion Trends • Top Selling Products • Revenue by Medium • Traffic Sources",
+      "summary": "Use the B2C Commerce Reports & Dashboards Traffic Sources dashboard to compare revenue, orders, and conversion for shoppers who reach your storefront from an external source. The dashboard is available as a selection on the Traffic tab."
+    },
+    {
       "id": "help-merchant/b2c_translateandrefinewithai",
       "title": "Translate and Refine Product Information with AI",
       "category": "help-merchant",
@@ -12290,12 +12198,13 @@
     },
     {
       "id": "help-merchant/b2c_understanding_view_types",
-      "title": "View Types",
+      "title": "Image View Types and Variants in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_understanding_view_types.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_understanding_view_types.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_understanding_view_types.md",
-      "summary": "Use B2C Commerce *view types* to group images according to usage context, for example, by the image's size."
+      "headings": "Default View Types in B2C Commerce • View Type Rules in B2C Commerce • Image Variants in a View Type • See Also",
+      "summary": "Use B2C Commerce view types to group product images by usage context, such as large, medium, small, and swatch, and assign different images to each product variation."
     },
     {
       "id": "help-merchant/b2c_unit_level_rounding",
@@ -12332,15 +12241,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_updating_indexes.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_updating_indexes.md",
       "summary": "If you change your B2C Commerce search configuration, rebuild the appropriate index to see the changes in your storefront."
-    },
-    {
-      "id": "help-merchant/b2c_upload_an_image_to_the_file_browser_window",
-      "title": "Upload an Image to the File Browser Window",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_upload_an_image_to_the_file_browser_window.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_upload_an_image_to_the_file_browser_window.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_upload_an_image_to_the_file_browser_window.md",
-      "summary": "Use this window to upload internal image files so that you can assign them to B2C Commerce products, product variations, or product variation attributes."
     },
     {
       "id": "help-merchant/b2c_uploading_your_robots_txt_file",
@@ -12684,8 +12584,8 @@
       "filePath": "help-merchant/b2c_value_calculation_for_active_data.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_value_calculation_for_active_data.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_value_calculation_for_active_data.md",
-      "headings": "Value Calculation for Attributes with Null Values • Active Data Attributes • Sorting Attributes • Special Sorting Attributes • Product Attributes • Value Calculation Example",
-      "summary": "In B2C Commerce, base product calculations ignore variations that 's null or stale data when calculating the value of an attribute. Sliced variation calculations ignore sliced variations that 's null or stale data when calculating the value of an attribute."
+      "headings": "Value Calculation for Attributes with Null Values • Active Data Attribute Exceptions • Active Data Attribute Calculation Formulas • Sorting Attributes • Special Sorting Attributes • Product Attributes • Value Calculation Example",
+      "summary": "In B2C Commerce, base product calculations ignore variations that have null or stale data when calculating the value of an attribute. Sliced variation calculations ignore sliced variations that have null or stale data when calculating the value of an attribute."
     },
     {
       "id": "help-merchant/b2c_variation_attribute_values",
@@ -12906,15 +12806,6 @@
       ]
     },
     {
-      "id": "help-merchant/b2c_working_with_image_variants",
-      "title": "Image Variants",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_working_with_image_variants.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_working_with_image_variants.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_working_with_image_variants.md",
-      "summary": "There are four standard view types: large, medium, small, and swatch. You can represent each B2C Commerce product with multiple images per view type."
-    },
-    {
       "id": "help-merchant/b2c_working_with_slot_configurations",
       "title": "Slot Configurations in B2C Commerce",
       "category": "help-merchant",
@@ -12926,12 +12817,12 @@
     },
     {
       "id": "help-merchant/b2c_working_with_swatches",
-      "title": "Swatches",
+      "title": "Swatch Images for B2C Commerce Variation Products",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_working_with_swatches.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_working_with_swatches.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_working_with_swatches.md",
-      "summary": "A swatch image typically shows the key difference between B2C Commerce variation products in relation to a product variation attribute."
+      "summary": "A swatch image shows the key difference between B2C Commerce variation products, such as color or fabric. Keep the swatch view type on the catalog, and assign one swatch image on the base product."
     }
   ]
 }

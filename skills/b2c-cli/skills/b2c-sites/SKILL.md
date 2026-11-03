@@ -71,7 +71,13 @@ b2c sites cartridges set "app_storefront_base:plugin_applepay:plugin_wishlists" 
 b2c sites cartridges list --site-id RefArch --json
 ```
 
-When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartridge commands automatically fall back to site archive import/export. Business Manager (`--bm`) updates always use site archive import.
+**What the listed path contains.** `list` (and the `cartridges` field of `sites list --json`) shows the effective path: your custom cartridges, followed by the platform plugin cartridges the instance appends (for example payment plugins). Pass only your own cartridges to `set`; copying the full listed path adds the platform cartridges a second time. To check a path in a script, compare its leading entries.
+
+**Site archive imports reset the path.** A `sites/<site-id>/site.xml` imported without `<custom-cartridges>` clears the site's cartridge path. Include `<custom-cartridges>` in any `site.xml` you import (for example, one that only changes the storefront status), or set the path again afterwards.
+
+Site and Business Manager cartridge paths replicate from staging with the site (`b2c-cli:b2c-replication`), so on production and development set them on staging and replicate.
+
+When OCAPI direct permissions for `/sites/*/cartridges` are unavailable, cartridge commands automatically fall back to site archive import/export. Business Manager (`--bm`) updates use SCAPI (`sfcc.sites.rw`), then site archive import; OCAPI can't update the BM site.
 
 **Key flags (inherited from InstanceCommand):**
 

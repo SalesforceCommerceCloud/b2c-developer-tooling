@@ -8,7 +8,7 @@ The extension shares the [B2C CLI](../guide/configuration)'s configuration syste
 
 This page covers:
 
-- [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature.
+- [Connecting to a B2C Instance](#connecting-to-a-b2c-instance) — credentials per feature, and code sync with only a server.
 - [How the Extension Chooses a Project](#how-the-extension-chooses-a-project) — parent folders and multi-root workspaces.
 - [Selecting an Instance](#selecting-an-instance) — workspace-specific and shared defaults.
 - [Safety Mode](#safety-mode) — restrict changes and require confirmation for selected actions.
@@ -32,6 +32,14 @@ The global default is the same fallback used by the CLI and MCP server. The exte
 
 The extension's instance picker combines instances from the primary and global files. Same-name primary entries shadow global entries, and each instance remains a complete entry rather than having fields merged across files. Switching an instance updates the file that owns it and clears the previous active selection across the catalog.
 
+### Code sync with only a server
+
+Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any URL on the instance, such as a Business Manager link. The extension saves the hostname to `dw.json`.
+
+The first upload asks you to sign in with your Account Manager account, and your Business Manager roles decide what you can upload. Code sync uploads to the instance's active code version. To upload to a different version, run **B2C DX - Code Sync: Select Code Version for Uploads**.
+
+Activating and deleting code versions, and the other features in the table below, still need an API client.
+
 ### Per-feature requirements
 
 A summary by feature, regardless of which configuration source provides the values:
@@ -41,7 +49,7 @@ A summary by feature, regardless of which configuration source provides the valu
 | **Sandbox Realm Explorer** | OAuth (browser login by default; `client-id` + `client-secret` for headless). `Sandbox API User` role with a tenant filter.                                                                                              |
 | **WebDAV Browser**         | `hostname`, `username`, `password` (WebDAV access key). OAuth (`client-id` + `client-secret`) also accepted.                                                                                                             |
 | **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                                                                                                                           |
-| **Cartridge Code Sync**    | WebDAV for transfer **and** OCAPI (`client-id` + `client-secret`) for code-version operations.                                                                                                                           |
+| **Cartridge Code Sync**    | Only `hostname`; you sign in when asked (see [Code sync with only a server](#code-sync-with-only-a-server)). An API client (`client-id` + `client-secret`) to activate or delete code versions.                          |
 | **SCAPI API Browser**      | Account Manager access, `short-code`, and `tenant-id` to load schemas. Shopper requests also use `slas-client-id` and `site-id`; private clients need `slas-client-secret`. See [API Browser Setup](#api-browser-setup). |
 | **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                                                                                                             |
 | **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                                                                                                                     |
@@ -58,7 +66,7 @@ A summary by feature, regardless of which configuration source provides the valu
   "password": "your-webdav-access-key",
   "code-version": "version1",
 
-  // OCAPI / OAuth (Sandbox API, Code Versions, CAP)
+  // API client (Sandbox API, code versions, CAP)
   "client-id": "...",
   "client-secret": "...",
 
@@ -153,6 +161,12 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 | `b2c-dx.sandbox.pollingInterval` | `10`    | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
 | `b2c-dx.telemetry.enabled`       | `true`  | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting.                                                          |
 
+### Authentication
+
+| Setting                             | Default | Description                                                                                                                                                                                                                                                                                  |
+| ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c-dx.auth.usePluginSessionStore` | `false` | Store sign-in sessions in the [auth session store](../guide/extending#auth-session-store) of an installed B2C CLI plugin instead of VS Code secret storage, so the extension and the CLI share sessions. Has no effect when no plugin provides a store. Reload the window after changing it. |
+
 ### XML schema validation
 
 The extension contributes XSD-based validation for B2C metadata XML files via the [Red Hat XML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml), which is declared as an extension dependency and installed automatically. When a file path matches one of the contributed globs, diagnostics, autocomplete, and hover docs are driven by the corresponding B2C schema.
@@ -190,6 +204,7 @@ To opt out of the Red Hat XML dependency entirely, uninstall this extension or p
   "b2c-dx.logLevel": "info",
   "b2c-dx.sandbox.pollingInterval": 10,
   "b2c-dx.telemetry.enabled": true,
+  "b2c-dx.auth.usePluginSessionStore": false,
 }
 ```
 

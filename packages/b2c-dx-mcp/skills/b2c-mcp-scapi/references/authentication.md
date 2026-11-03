@@ -12,7 +12,9 @@
   (configured or `query.siteId`). The guest session is per site and persists across
   executions for the server session, so baskets carry over. SLAS scopes are fixed on
   the client, not requested per call; 401/403 diagnostics compare the token's scopes
-  with the operation's. `sfcc.shopper-standard` satisfies only operations that list it.
+  with the operation's. A 401, or a 403 whose token lacks every accepted scope, discards
+  the guest session, so the next execution gets a new token (and basket) reflecting
+  client scope changes. `sfcc.shopper-standard` satisfies only operations that list it.
   Public clients must allow redirect URI `http://localhost:3000/callback`.
 - Missing credentials: `config_inspect` with masking. `clientId` is Admin;
   `slasClientId` is Shopper. Configuration does not grant access.

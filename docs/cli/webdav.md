@@ -47,11 +47,17 @@ The same path format works with `rm`, `zip`, and `unzip`. This location is used 
 
 ## Authentication
 
-WebDAV commands require authentication to access instance files.
+WebDAV commands need only your instance hostname. The first time, your browser opens so you can sign in with your Account Manager account, and your Business Manager roles decide which folders you can use:
 
-### Basic Auth (Recommended)
+```bash
+b2c webdav ls --server my-sandbox.dx.commercecloud.salesforce.com
+```
 
-Basic Auth provides better performance for WebDAV operations using your Business Manager username and WebDAV access key:
+For scripts and automation, use an access key or an API client instead.
+
+### Access Key (Basic Auth)
+
+Use your Business Manager username and a WebDAV access key:
 
 ```bash
 export SFCC_USERNAME=my-user
@@ -77,7 +83,7 @@ b2c webdav ls
 
 ### Mixed Authentication
 
-For operations that require both WebDAV and OCAPI (like `code deploy`), you can provide both:
+For commands that also call APIs (like `code deploy --activate`), you can provide both:
 
 ```bash
 export SFCC_USERNAME=my-user
@@ -86,6 +92,12 @@ export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
 b2c code deploy
 ```
+
+### Which credentials are used
+
+An access key is used when configured, then an API client, then signing in with your account. To use the API client instead, pass `--auth-methods client-credentials`. With OAuth, the API client needs an entry for the folder in **Administration** > **Organization** > **WebDAV Client Permissions** (for example `/logs` for `b2c logs`, `/cartridges` for `b2c code deploy`).
+
+The `--password` value is a WebDAV access key of the Business Manager user, not the Account Manager password. Create one with `b2c bm access-key create`.
 
 For complete setup instructions, see the [Authentication Guide](/guide/authentication#webdav-access).
 

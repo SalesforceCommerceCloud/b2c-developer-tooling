@@ -10,9 +10,13 @@ import {
   filterBySearch,
   filterBySince,
   getRecentLogs,
+  listLogFiles,
   parseSinceTime,
+  unreadCustomPrefixes,
   type GetRecentLogsOptions,
+  type ListLogsOptions,
   type LogEntry,
+  type LogFile,
 } from '@salesforce/b2c-tooling-sdk/operations/logs';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool} from '../../utils/index.js';
@@ -22,22 +26,40 @@ import {createToolAdapter, jsonResult} from '../adapter.js';
 
 export interface LogsGetRecentInjections {
   getRecentLogs?: (instance: B2CInstance, options?: GetRecentLogsOptions) => Promise<LogEntry[]>;
+  listLogFiles?: (instance: B2CInstance, options?: ListLogsOptions) => Promise<LogFile[]>;
 }
 
 const DEFAULT_PREFIXES = ['error', 'customerror'];
 const DEFAULT_COUNT = 50;
+const DEFAULT_MAX_MESSAGE_LENGTH = 2000;
 
 interface GetRecentInput {
   count?: number;
   level?: string[];
+  maxMessageLength?: number;
   prefixes?: string[];
   search?: string;
   since?: string;
 }
 
+/** Entries omit `raw`; it repeats `message` with the timestamp and level already parsed out. */
+type RecentLogEntry = Omit<LogEntry, 'raw'> & {truncatedChars?: number};
+
 interface GetRecentOutput {
   count: number;
-  entries: LogEntry[];
+  entries: RecentLogEntry[];
+  /** On an empty result: custom logger categories that the prefixes did not read. */
+  unreadCustomLogs?: string[];
+  hint?: string;
+}
+
+function toRecentEntry({raw: _raw, ...entry}: LogEntry, maxMessageLength: number): RecentLogEntry {
+  if (maxMessageLength === 0 || entry.message.length <= maxMessageLength) return entry;
+  return {
+    ...entry,
+    message: entry.message.slice(0, maxMessageLength),
+    truncatedChars: entry.message.length - maxMessageLength,
+  };
 }
 
 export function createLogsGetRecentTool(
@@ -46,6 +68,7 @@ export function createLogsGetRecentTool(
   injections?: LogsGetRecentInjections,
 ): McpTool {
   const getRecentLogsFn = injections?.getRecentLogs ?? getRecentLogs;
+  const listLogFilesFn = injections?.listLogFiles ?? listLogFiles;
   return createToolAdapter<GetRecentInput, GetRecentOutput>(
     {
       name: 'logs_get_recent',
@@ -60,7 +83,9 @@ export function createLogsGetRecentTool(
         prefixes: z
           .array(z.string())
           .optional()
-          .describe('Log prefixes. Default: ["error", "customerror"]; paths may include subdirectories.'),
+          .describe(
+            'Log prefixes. Default: ["error", "customerror"]; use ["custom-"] for custom logger files; paths may be subdirs.',
+          ),
         count: z.number().int().positive().optional().describe('Maximum entries. Default: 50.'),
         since: z
           .string()
@@ -74,6 +99,14 @@ export function createLogsGetRecentTool(
           .string()
           .optional()
           .describe('Case-insensitive substring filter applied to entry message and raw text.'),
+        maxMessageLength: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe(
+            `Truncate each message to this many characters; truncatedChars reports the remainder. Default: ${DEFAULT_MAX_MESSAGE_LENGTH}; 0 disables.`,
+          ),
       },
       async execute(args, context) {
         const prefixes = args.prefixes ?? DEFAULT_PREFIXES;
@@ -102,9 +135,25 @@ export function createLogsGetRecentTool(
           entries = filterBySearch(entries, args.search);
         }
 
-        entries = entries.slice(0, count);
+        const maxMessageLength = args.maxMessageLength ?? DEFAULT_MAX_MESSAGE_LENGTH;
+        const recent = entries.slice(0, count).map((entry) => toRecentEntry(entry, maxMessageLength));
 
-        return {count: entries.length, entries};
+        if (recent.length > 0) return {count: recent.length, entries: recent};
+
+        // Like `b2c logs get`: point to custom logger files the prefixes skipped.
+        let unreadCustomLogs: string[] = [];
+        try {
+          unreadCustomLogs = unreadCustomPrefixes(await listLogFilesFn(context.b2cInstance!), prefixes);
+        } catch {
+          // Optional; the read itself already succeeded.
+        }
+        if (unreadCustomLogs.length === 0) return {count: 0, entries: []};
+        return {
+          count: 0,
+          entries: [],
+          unreadCustomLogs,
+          hint: 'These custom logger files were not read; pass prefixes ["custom-"] (all) or a specific one.',
+        };
       },
       formatOutput: (output) => jsonResult(output),
     },

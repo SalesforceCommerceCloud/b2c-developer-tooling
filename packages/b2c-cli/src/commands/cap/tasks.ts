@@ -39,8 +39,7 @@ export default class CapTasks extends JobCommand<typeof CapTasks> {
     ...JobCommand.baseFlags,
     'site-id': Flags.string({
       char: 's',
-      description: 'Site ID to query',
-      required: true,
+      description: 'Site ID to query (defaults to siteId from configuration)',
       aliases: ['site'],
     }),
     timeout: Flags.integer({
@@ -58,7 +57,13 @@ export default class CapTasks extends JobCommand<typeof CapTasks> {
     this.requireWebDavCredentials();
 
     const {appName: name} = this.args;
-    const {'site-id': siteId, timeout} = this.flags;
+    const {timeout} = this.flags;
+    const siteId = this.flagOrConfig(this.flags['site-id'], 'siteId');
+    if (!siteId) {
+      this.error(
+        t('error.siteIdRequired', 'Site ID is required. Provide --site-id or set siteId in your configuration.'),
+      );
+    }
     const hostname = this.resolvedConfig.values.hostname!;
 
     this.log(

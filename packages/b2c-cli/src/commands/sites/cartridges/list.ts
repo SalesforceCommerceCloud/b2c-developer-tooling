@@ -24,7 +24,7 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
 
   static flags = {
     'site-id': Flags.string({
-      description: t('flags.siteId.description', 'Site ID (e.g. RefArch)'),
+      description: t('flags.siteId.description', 'Site ID (e.g. RefArch); defaults to siteId from configuration'),
       exclusive: ['bm'],
     }),
     bm: Flags.boolean({
@@ -51,8 +51,12 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
     const backend = createSitesBackend({instance: this.instance});
     this.logger.debug(`Using ${backend.name} backend for cartridge path read`);
 
-    const site = await backend.getSite(siteId);
-    const cartridges = (site.cartridges ?? '').trim();
+    // SCAPI has no site resource for Business Manager (getSite 404s), but its custom-cartridges resource works.
+    const cartridges = (
+      siteId === BM_SITE_ID
+        ? await backend.getCartridgePath(siteId)
+        : ((await backend.getSite(siteId)).cartridges ?? '')
+    ).trim();
     const result: CartridgePathResult = {
       siteId,
       cartridges,
@@ -82,11 +86,16 @@ export default class SitesCartridgesList extends InstanceCommand<typeof SitesCar
   }
 
   private resolveSiteId(): string {
-    const siteId = this.flags['site-id'];
+    const siteId = this.flagOrConfig(this.flags['site-id'], 'siteId');
     const bm = this.flags.bm;
 
     if (!siteId && !bm) {
-      this.error(t('commands.sites.cartridges.siteIdRequired', 'Provide --site-id <id> or --bm to specify a site.'));
+      this.error(
+        t(
+          'commands.sites.cartridges.siteIdRequired',
+          'Provide --site-id <id>, set siteId in your configuration, or use --bm to specify a site.',
+        ),
+      );
     }
 
     return bm ? BM_SITE_ID : siteId!;

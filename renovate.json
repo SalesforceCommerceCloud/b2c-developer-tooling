@@ -1,54 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":semanticCommits",
-    "group:allNonMajor"
-  ],
+  "description": "Security-only: Renovate raises PRs only for dependencies with known vulnerabilities, using the lowest fixed version. Routine version bumps are intentionally disabled. Security PRs wait for the fixed version to be 2 days old, matching pnpm's minimumReleaseAge. Vulnerable transitive dependencies are fixed with capped overrides in pnpm-workspace.yaml (Renovate cannot remediate pnpm transitives).",
+  "extends": ["config:recommended", "security:only-security-updates", ":semanticCommits"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "update-lockfile",
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": ["security"],
-    "schedule": ["at any time"]
+    "labels": ["dependencies", "security"],
+    "vulnerabilityFixStrategy": "lowest",
+    "minimumReleaseAge": "2 days",
+    "prConcurrentLimit": 10
   },
-  "labels": ["dependencies"],
-  "rangeStrategy": "bump",
-  "major": {
-    "dependencyDashboardApproval": true
-  },
-  "packageRules": [
-    {
-      "description": "Group all non-major updates together",
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "all non-major dependencies"
-    },
-    {
-      "description": "Group TypeScript ecosystem",
-      "matchPackageNames": ["/^typescript/", "/^@types\\//"],
-      "groupName": "typescript"
-    },
-    {
-      "description": "Group ESLint ecosystem",
-      "matchPackageNames": ["/eslint/"],
-      "groupName": "eslint"
-    },
-    {
-      "description": "Group testing tools",
-      "matchPackageNames": ["/mocha/", "/chai/", "/sinon/", "/c8/", "/msw/"],
-      "groupName": "testing"
-    },
-    {
-      "description": "Pin production dependencies in standalone apps (CLI, MCP)",
-      "matchFileNames": ["packages/b2c-cli/package.json", "packages/b2c-dx-mcp/package.json"],
-      "matchDepTypes": ["dependencies"],
-      "rangeStrategy": "pin"
-    },
-    {
-      "description": "Pin production dependencies in SDK (library)",
-      "matchFileNames": ["packages/b2c-tooling-sdk/package.json"],
-      "matchDepTypes": ["dependencies"],
-      "rangeStrategy": "pin"
-    }
-  ],
-  "ignoreDeps": [],
-  "schedule": ["before 6am on monday"]
+  "osvVulnerabilityAlerts": true
 }

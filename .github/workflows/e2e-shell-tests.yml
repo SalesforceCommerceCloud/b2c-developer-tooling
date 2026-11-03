@@ -9,6 +9,9 @@ env:
   SFCC_DISABLE_TELEMETRY: ${{ vars.SFCC_DISABLE_TELEMETRY }}
   SFCC_LOG_LEVEL: debug
 
+permissions:
+  contents: read
+
 jobs:
   e2e-shell-tests:
     runs-on: ubuntu-latest

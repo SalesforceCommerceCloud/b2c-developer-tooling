@@ -33,7 +33,7 @@ export const SCAPI_CAPABILITY_BASELINE_RELEASE = '26.8';
  * `name` to know which backend served the last call.
  */
 export interface BackendBase {
-  readonly name: 'ocapi' | 'scapi';
+  readonly name: 'ocapi' | 'scapi' | 'webdav';
 }
 
 /** Error raised when browser-based Account Manager user auth is passed to a SCAPI Admin client. */

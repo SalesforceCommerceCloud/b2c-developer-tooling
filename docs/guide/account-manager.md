@@ -12,14 +12,14 @@ For the full command reference with all flags and options, see [Account Manager 
 
 ## Authentication
 
-Account Manager commands work out of the box&mdash;no configuration is required. The CLI uses a built&mdash;in public client that authenticates via browser login. For automation, you can provide your own API client credentials.
+Account Manager commands work without any configuration: you sign in with your Account Manager account in the browser. For automation, provide your own API client credentials.
 
 ### Zero-Config (Default)
 
-Just run the commands without configuring any settings. The CLI opens a browser for login using the built-in client.
+Run the commands; you're asked to sign in when needed.
 
 ```bash
-# Works immediately — opens browser for login
+# Asks you to sign in the first time
 b2c am users list
 b2c am orgs list
 ```
@@ -28,10 +28,10 @@ Your user account's roles determine what operations you can perform (see [Role R
 
 ### User Authentication (`--user-auth`)
 
-When you have client credentials configured but want browser-based login instead, use `--user-auth`:
+When you have client credentials configured but want to sign in with your account instead, use `--user-auth`:
 
 ```bash
-# Force browser login even with SFCC_CLIENT_SECRET set
+# Sign in with your account even with SFCC_CLIENT_SECRET set
 b2c am users list --user-auth
 
 # Manage organizations (requires user auth)
@@ -53,7 +53,7 @@ Requirements:
 
 ### Authentication Order
 
-By default, the CLI tries client credentials first (if `--client-secret` is provided), then falls back to browser-based user authentication by using either your configured `--client-id` or the built-in public client. To force browser-based login, pass `--user-auth`.
+With a client secret, the CLI uses client credentials; otherwise you sign in with your account (using your configured `--client-id`, if any). Pass `--user-auth` to sign in even when a secret is configured.
 
 ### Role Requirements
 
@@ -75,7 +75,7 @@ If authentication fails, the CLI provides contextual error messages recommending
 
 ### For Interactive Use
 
-No setup required. Account Manager commands use the CLI's built-in public client by default.
+No setup required. You're asked to sign in when needed.
 
 ```bash
 b2c am users list
@@ -157,20 +157,32 @@ b2c am users get developer@example.com --expand-all
 
 ### API Client Provisioning
 
-Create and configure API clients for your team or automation:
+Jobs, sites, Storefront Next storefronts, and other API commands need an API client. If you don't have one, create it with your own sign-in. You need the API Administrator or Account Administrator role in Account Manager.
 
 ```bash
-# Create an API client
-b2c am clients create \
+# Find your organization ID
+b2c am orgs list --user-auth
+
+# Create the client; the command shows its details and asks before creating it
+b2c am clients create --user-auth \
   --name "CI/CD Pipeline" \
   --orgs $ORG_ID \
-  --password "SecureP@ssword123" \
+  --password "$CLIENT_SECRET" \
   --roles SALESFORCE_COMMERCE_API \
-  --role-tenant-filter "SALESFORCE_COMMERCE_API:zzxy_prd"
+  --role-tenant-filter "SALESFORCE_COMMERCE_API:abcd_prd" \
+  --scopes "mail,roles,tenantFilter,openid,sfcc.jobs.rw,sfcc.sites" \
+  --default-scopes "mail,roles,tenantFilter,openid,sfcc.jobs.rw,sfcc.sites" \
+  --active
 
-# Activate the client
-b2c am clients update $CLIENT_ID --active
+# Save it for your instance
+b2c setup instance create staging --hostname staging-abcd-example.demandware.net \
+  --client-id $CLIENT_ID --client-secret "$CLIENT_SECRET" \
+  --short-code kv7kzm78 --tenant-id abcd_prd
 ```
+
+Grant only the tenants and scopes the client needs; [Scopes by Command](./authentication#scopes-by-command) lists them. Clients are inactive unless you pass `--active`; activate one later with `b2c am clients update $CLIENT_ID --active`. A client can be deleted only after it has been disabled for 7 days. For commands that use OCAPI, also add the client ID to [Open Commerce API Settings](./authentication#ocapi-configuration).
+
+When an AI assistant creates a client for you, the agent skills tell it to show you every detail and wait for your approval first.
 
 ### Bulk Operations with JSON Output
 

@@ -13,6 +13,7 @@ import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {findAuthSession, saveAuthSession, type AuthSession} from './session-store.js';
+import {describeSignIn} from './instance-auth.js';
 
 const DEFAULT_LOCAL_PORT = 8080;
 
@@ -194,6 +195,24 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     }
   }
 
+  private logSignIn(tokenResponse: AccessTokenResponse): void {
+    let user = this._sub;
+    try {
+      const {sub} = decodeJWT(tokenResponse.accessToken).payload;
+      if (typeof sub === 'string' && sub.length > 0) user = sub;
+    } catch {
+      // not a JWT
+    }
+    getLogger().info(
+      describeSignIn({
+        clientId: this.config.clientId,
+        accountManagerHost: this.accountManagerHost,
+        user,
+        expiresAt: tokenResponse.expires,
+      }),
+    );
+  }
+
   /**
    * Persist the current access token. Implicit flow has no refresh token.
    */
@@ -306,6 +325,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
     const tokenResponse = await this.implicitFlowLogin();
     ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
     this.persistTokens(tokenResponse);
+    this.logSignIn(tokenResponse);
     return tokenResponse;
   }
 
@@ -380,6 +400,7 @@ export class ImplicitOAuthStrategy implements AuthStrategy {
       const tokenResponse = await authPromise;
       ACCESS_TOKEN_CACHE.set(clientId, tokenResponse);
       this.persistTokens(tokenResponse);
+      this.logSignIn(tokenResponse);
       logger.debug(
         {expiresAt: tokenResponse.expires.toISOString(), scopes: tokenResponse.scopes},
         '[Auth] New token cached',

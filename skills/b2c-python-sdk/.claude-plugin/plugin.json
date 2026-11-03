@@ -1,0 +1,21 @@
+{
+  "name": "b2c-python-sdk",
+  "version": "0.1.0",
+  "description": "Consuming the salesforce-b2c-tooling-sdk Python SDK — authenticate to B2C Commerce, resolve dw.json config, and call OCAPI/SCAPI/WebDAV clients and operations from scripts or notebooks.",
+  "author": {
+    "name": "Salesforce"
+  },
+  "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/",
+  "repository": "https://github.com/SalesforceCommerceCloud/b2c-developer-tooling",
+  "license": "Apache-2.0",
+  "keywords": [
+    "salesforce",
+    "b2c-commerce",
+    "commerce-cloud",
+    "python",
+    "sdk",
+    "scapi",
+    "ocapi"
+  ],
+  "icon": "./assets/logo.png"
+}

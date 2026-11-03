@@ -201,13 +201,13 @@ b2c metrics ocapi --ocapi-category shop --ocapi-api baskets
 
 Metrics responses contain an array of metrics. Each metric includes:
 
-- **metricId**: Unique identifier (e.g., `requests_total`)
+- **metricId**: Unique identifier (e.g., `responseCount`)
 - **title**: Human-readable title
 - **description**: What the metric measures
-- **unit**: Unit of measurement (e.g., `requests`, `ms`, `%`); may be empty
+- **unit**: Unit of measurement (e.g., `s`, `%`); empty for counts
 - **dataSeries**: Array of data series, each containing:
   - **id**: Series identifier
-  - **name**: Series name (e.g., `2xx`, `4xx`, `5xx` for HTTP status codes)
+  - **name**: Series name; currently the same packed string as `id`. A series whose `id` equals its `metricId` and has no data is a placeholder (no events in the window)
   - **tags**: Structured dimension tags (enabled by default; see [Series Tags](#series-tags))
   - **data**: Array of timestamped values:
     - **timestamp**: Epoch milliseconds (normalized by the CLI/SDK from the API's epoch-seconds wire format, so `new Date(timestamp)` gives the correct instant)
@@ -218,7 +218,7 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
 ```json
 {
   "query": {
-    "category": "overall",
+    "category": "scapi",
     "from": "2026-01-25T10:00:00.000Z",
     "to": "2026-01-25T11:00:00.000Z",
     "fromEpochSeconds": 1737802800,
@@ -226,22 +226,22 @@ With `--json`, the response is wrapped as `{query, data}` where `query` echoes t
   },
   "data": [
     {
-      "metricId": "requests_total",
-      "title": "Total Requests",
-      "description": "Total number of requests",
-      "unit": "requests",
+      "metricId": "responseCount",
+      "title": "Response Count",
+      "description": "Number of responses for SCAPI requests.",
+      "unit": "",
       "dataSeries": [
         {
-          "id": "2xx",
-          "name": "2xx",
+          "id": "bdpx_prd 2xx",
+          "name": "bdpx_prd 2xx",
           "data": [
             {"timestamp": 1737802800000, "value": 1500},
             {"timestamp": 1737803400000, "value": 1620}
           ]
         },
         {
-          "id": "4xx",
-          "name": "4xx",
+          "id": "bdpx_prd 4xx",
+          "name": "bdpx_prd 4xx",
           "data": [
             {"timestamp": 1737802800000, "value": 45},
             {"timestamp": 1737803400000, "value": 38}
@@ -257,7 +257,7 @@ The `query` object always includes both `from`/`to` (and their `fromEpochSeconds
 
 ### Series Tags
 
-By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API currently returns series identifiers that pack multiple dimensions into a single string with inconsistent delimiters (e.g., `bdpx.product`, `bdpx.product HIT`, `2xx bdpx.host`). The `tags` object unpacks these into discrete key-value pairs.
+By default, the CLI enriches each data series with a structured `tags` object to make filtering and grouping easier. The Metrics API currently returns series identifiers that pack multiple dimensions into a single string with inconsistent delimiters (e.g., `bdpx_prd.product`, `bdpx_prd.product MISS`, `bdpx_prd 4xx`, and for eCDN `2xx bdpx.www.example.com`). Most categories prefix IDs with `<realm>_<environment>`; eCDN uses the bare realm. The `tags` object unpacks these into discrete key-value pairs.
 
 **Tag contents (three tiers):**
 
@@ -265,13 +265,16 @@ By default, the CLI enriches each data series with a structured `tags` object to
 
 2. **Per-series dimensions** — parsed from the packed series ID, varying by category/metric: `apiFamily`, `apiName`, `host`, `cacheStatus`, `statusClass`, `ocapiCategory`, `controller`, `exceptionType`, and `aggregation` (for rollup series). Unrecognized IDs keep the raw remainder under a `series` key (nothing is dropped).
 
-3. **Applied filters** — any category-specific filter you passed (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) is folded in **authoritatively**, overriding heuristic guesses. This matters for drill-down: `--api-family shopper` makes the API return finer IDs like `bdpx.shopper.auth.v1`, which the string heuristic alone would mis-tag as `apiFamily=shopper.auth.v1`; the applied filter restores the correct `apiFamily=shopper`.
+3. **Applied filters** — any category-specific filter you passed (`--api-family`, `--api-name`, `--ocapi-category`, `--ocapi-api`, `--third-party-service-id`) is folded in **authoritatively**, overriding heuristic guesses. This matters for drill-down: `--api-family shopper` makes the API return finer IDs like `bdpx_prd.shopper.auth.v1`, which the string heuristic alone would mis-tag as `apiFamily=shopper.auth.v1`; the applied filter restores the correct `apiFamily=shopper`.
 
 **Examples:**
 
-- `scapi cacheHitRate` series `bdpx.product HIT` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"HIT"}`
-- `third-party remoteExceptions` series `bdpx.xitgmcd3.api.commercecloud.salesforce.com.socketReadTimeout` → `{"realm":"bdpx","environment":"prd","host":"xitgmcd3.api.commercecloud.salesforce.com","exceptionType":"socketReadTimeout"}`
-- `scapi requestLatency` rollup series `bdpx Average overall latency` → `{"realm":"bdpx","environment":"prd","aggregation":"overall"}`
+- `scapi cacheHitRate` series `bdpx_prd.product MISS` → `{"realm":"bdpx","environment":"prd","apiFamily":"product","cacheStatus":"MISS"}`
+- `scapi responseCount` series `bdpx_prd 4xx` → `{"realm":"bdpx","environment":"prd","statusClass":"4xx"}`
+- `controller totalCalls` series `bdpx_prd.Home-Show` → `{"realm":"bdpx","environment":"prd","controller":"Home-Show"}`
+- `third-party remoteExceptions` series `bdpx_prd.api.example.com.socketReadTimeout` → `{"realm":"bdpx","environment":"prd","host":"api.example.com","exceptionType":"socketReadTimeout"}`
+- `ecdn successAndError` series `4xx/5xx bdpx.www.example.com` → `{"realm":"bdpx","environment":"prd","statusClass":"4xx/5xx","host":"www.example.com"}`
+- `scapi requestLatency` rollup series `bdpx_prd Average overall latency` → `{"realm":"bdpx","environment":"prd","aggregation":"overall"}`
 
 **Disabling tags:**
 

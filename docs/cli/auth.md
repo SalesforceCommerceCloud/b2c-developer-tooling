@@ -1,89 +1,85 @@
 ---
-description: Authentication commands for obtaining OAuth tokens and configuring Account Manager API clients, OCAPI, and WebDAV access.
+description: Sign in and out of Account Manager, check who you're signed in as, and get access tokens for scripts.
 ---
 
 # Auth Commands
 
-Commands for authentication and token management.
-
-## Stateful vs stateless auth
-
-The CLI supports **stateful auth** (session stored on disk) in addition to **stateless auth** (client credentials or one-off browser login):
-
-- **Stateful (browser)**: After you run `b2c auth login`, your access token _and_ a long-lived refresh token are stored on disk in the CLI data directory. Subsequent commands silently refresh the access token without re-prompting. If both tokens are missing/expired, the CLI falls back to stateless auth.
-- **Stateful (client credentials)**: Use `b2c auth client` to authenticate with client ID and secret (or user/password) for non-interactive/automation use. Only the access token is persisted — the client secret is never stored. When the access token expires, re-run `b2c auth client` with the same credentials. There is no automatic refresh.
-- **Stateless**: You provide `--client-id` (and optionally `--client-secret`) per run or via environment/config; no session is persisted.
-
-After `auth login` or `auth client`, you do not need to provide the client ID again. When a later command has no client configured, it automatically reuses the valid saved session.
-
-The CLI falls back to stateless auth when the stored token is expired/invalid, or when `--client-secret`, `--user-auth`, or `--auth-methods` are passed on the command line. In both cases a warning is shown explaining why stateful auth was skipped. Note that `--client-id` alone does not force stateless; the stored session is used if the configured client ID matches. To opt out of stateful auth entirely, run `b2c auth logout` to clear the stored session.
-
-Use **auth:logout** to clear the stored session and return to stateless-only behavior.
+Sign in and out of Account Manager, check who you're signed in as, and get access tokens for scripts.
 
 ## b2c auth login
 
-Log in via browser (Authorization Code + PKCE) and save the session for stateful auth. The access token is silently refreshed via the persisted refresh token; you only see a browser prompt when the refresh token also expires (typically after 24 hours of disuse).
+Sign in with your Account Manager account in the browser and stay signed in. Later commands reuse the sign-in until you run `b2c auth logout`. Running `auth login` again renews it.
 
 ### Usage
 
 ```bash
-b2c auth login [CLIENTID]
+b2c auth login [--client-id <id>]
 ```
 
-`CLIENTID` is an optional positional argument. When omitted, the `SFCC_CLIENT_ID` environment variable is used as a fallback.
+Pass the client ID with `--client-id` or as the `CLIENTID` argument. When omitted, the configured client ID (`SFCC_CLIENT_ID` or `dw.json`) is used. With no client configured, you sign in with the CLI's built-in client, the same sign-in that file, log, sandbox, and Account Manager commands use, so they won't ask again.
 
 ```bash
-# Using a positional argument
-b2c auth login your-client-id
-
-# Using environment variable
-export SFCC_CLIENT_ID=your-client-id
+# Sign in with your Account Manager account
 b2c auth login
+
+# With your own API client
+b2c auth login --client-id your-client-id
+
+# With the built-in client, even when a client is configured
+b2c auth login --default-client
+
+# Deprecated implicit flow, for clients not yet migrated
+b2c auth login --client-id your-client-id --auth-methods implicit
 ```
 
-After a successful login, subsequent commands reuse and refresh the stored token until the refresh token expires or you run `b2c auth logout`.
+Commands that have a client secret, JWT, or access key configured don't need a sign-in.
+
+::: info When the saved sign-in isn't used
+A command skips the saved sign-in, with a warning, when you pass `--client-secret`, `--user-auth`, or `--auth-methods`, or when the saved sign-in has expired. `--client-id` alone doesn't skip it when it matches the signed-in client.
+:::
+
+To sign in with your own API client, register it as described in [Redirect URLs](/guide/authentication#redirect-urls). If you see a deprecation warning about the implicit flow, see [Implicit Flow Deprecation](/guide/authentication#implicit-flow-deprecation).
 
 ### Flags
 
-| Flag                     | Environment Variable        | Description                                                                                        |
-| ------------------------ | --------------------------- | -------------------------------------------------------------------------------------------------- |
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname                                                                           |
-| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                          |
-| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Browser-based flow to use: `user` (default — Authorization Code + PKCE) or `implicit` (deprecated) |
-
-### Choosing a flow
-
-`auth login` defaults to **Authorization Code + PKCE**, which is the recommended browser flow for public clients. The legacy implicit flow is still selectable for clients that haven't been migrated:
-
-```bash
-# Default: Authorization Code + PKCE
-b2c auth login your-client-id
-
-# Legacy implicit flow (emits a deprecation warning)
-b2c auth login your-client-id --auth-methods implicit
-```
-
-OAuth 2.1 deprecates the implicit flow for public clients. Configure your Account Manager API client as a public client and use the default PKCE flow when possible.
-
-#### Account Manager prerequisites
-
-To use the browser-based `user` flow with your own client, create a **public client** in Account Manager (not a confidential client — public clients have no secret, and selecting that type configures the Authorization Code + PKCE grant automatically). A client's type can't be changed after creation, so an existing implicit-only client must be replaced by a newly-created public client, not converted. Add the CLI's redirect URI to the client's allowed redirect URIs — by default `http://localhost:8080` (override the port with `SFCC_OAUTH_LOCAL_PORT` or the whole URI with `SFCC_REDIRECT_URI`).
-
-If a client is still registered as implicit-only, the `user` flow automatically falls back to the implicit flow and logs a deprecation warning. After a successful fallback, later sign-ins use the compatible flow directly. Create a new public client and use it to silence the warning, or set `SFCC_DISABLE_PKCE_FALLBACK=1` to force PKCE and surface the failure directly.
+| Flag                     | Environment Variable        | Description                                                          |
+| ------------------------ | --------------------------- | -------------------------------------------------------------------- |
+| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID (default: the configured client, then the built-in client) |
+| `--default-client`       | `SFCC_DEFAULT_CLIENT`       | Use the built-in client, ignoring any configured client              |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname                                             |
+| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                            |
+| `--auth-methods`         | `SFCC_AUTH_METHODS`         | `user` (default) or `implicit` (deprecated)                          |
 
 ## b2c auth logout
 
-Clear the stored OAuth session (stateful auth). After logout, commands use stateless auth when configured.
+Sign out of Account Manager and clear all saved sign-ins. Commands that need Account Manager ask you to sign in again; commands with a configured client secret, JWT, or access key keep working.
 
 ```bash
 b2c auth logout
 ```
 
+## b2c auth status
+
+Show who you're signed in as and how the configured instance authenticates.
+
+```bash
+# Sessions, plus how the configured instance authenticates
+b2c auth status
+
+# For a specific instance
+b2c auth status --server my-sandbox.example.com
+
+# As JSON
+b2c auth status --json
+```
+
+When an instance is configured, the command shows how file and API requests to it authenticate and whether you're signed in, followed by your saved sign-ins. One sign-in can work for several instances. Sign out with [`b2c auth logout`](#b2c-auth-logout).
+
 ## b2c auth client
 
-Authenticate an API client using client credentials or resource owner password credentials and save the **access token** for stateful auth. The client secret is **never** persisted: when the access token expires, re-run this command with the same credentials. There is no automatic refresh for client_credentials sessions — for refresh-capable user authentication, use `b2c auth login` (PKCE) instead.
+Get a token with a client ID and secret (or a user's password) and save it for later commands. It's mainly for scripts migrated from `sfcc-ci client:auth`; see [Migrating from sfcc-ci](/guide/sfcc-ci-migration). You don't need it for CI/CD, because commands with a configured client secret get their own tokens.
 
-This is the non-interactive alternative to `auth login` — ideal for CI/CD pipelines and automation.
+The secret is not stored, and the saved token doesn't renew: when it expires, run the command again.
 
 ### Usage
 
@@ -120,7 +116,7 @@ If `--grant-type` is not specified:
 ### Examples
 
 ```bash
-# Authenticate for automation (CI/CD)
+# Authenticate with client credentials from the environment
 export SFCC_CLIENT_ID=my-client
 export SFCC_CLIENT_SECRET=my-secret
 b2c auth client
@@ -177,20 +173,21 @@ b2c auth token
 
 ### Flags
 
-| Flag                     | Environment Variable        | Description                                                                                                       |
-| ------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID for OAuth                                                                                               |
-| `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client Secret for OAuth                                                                                           |
-| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                                         |
+| Flag                     | Environment Variable        | Description                                                                                                                                                             |
+| ------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--client-id`            | `SFCC_CLIENT_ID`            | Client ID for OAuth                                                                                                                                                     |
+| `--client-secret`        | `SFCC_CLIENT_SECRET`        | Client Secret for OAuth                                                                                                                                                 |
+| `--auth-scope`           | `SFCC_OAUTH_SCOPES`         | OAuth scopes to request (can be repeated)                                                                                                                               |
 | `--client-auth-method`   | `SFCC_CLIENT_AUTH_METHOD`   | How client credentials are sent: `basic` (default), `basic-unencoded`, or `body`. See [client authentication method](/guide/configuration#client-authentication-method) |
-| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com)                                                        |
-| `--short-code`           | `SFCC_SHORTCODE`            | SCAPI short code                                                                                                  |
-| `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                            |
-| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key |
-| `--user-auth`            |                             | Use browser-based user authentication (Authorization Code + PKCE flow)                                            |
-| `--jwt-cert`             | `SFCC_JWT_CERT`             | Path to JWT certificate file (cert.pem) for JWT Bearer authentication                                             |
-| `--jwt-key`              | `SFCC_JWT_KEY`              | Path to JWT private key file (key.pem) for JWT Bearer authentication                                              |
-| `--jwt-passphrase`       | `SFCC_JWT_PASSPHRASE`       | Passphrase for encrypted JWT private key                                                                          |
+| `--account-manager-host` | `SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname (default: account.demandware.com)                                                                                                              |
+| `--short-code`           | `SFCC_SHORTCODE`            | SCAPI short code                                                                                                                                                        |
+| `--tenant-id`            | `SFCC_TENANT_ID`            | Organization/tenant ID                                                                                                                                                  |
+| `--auth-methods`         | `SFCC_AUTH_METHODS`         | Allowed auth methods in priority order (comma-separated): client-credentials, jwt, user, implicit, basic, api-key                                                       |
+| `--user-auth`            |                             | Sign in with your Account Manager account in the browser                                                                                                                |
+| `--default-client`       | `SFCC_DEFAULT_CLIENT`       | Sign in in the browser with the built-in client, ignoring any configured API client, secret, JWT, or access key                                                         |
+| `--jwt-cert`             | `SFCC_JWT_CERT`             | Path to JWT certificate file (cert.pem) for JWT Bearer authentication                                                                                                   |
+| `--jwt-key`              | `SFCC_JWT_KEY`              | Path to JWT private key file (key.pem) for JWT Bearer authentication                                                                                                    |
+| `--jwt-passphrase`       | `SFCC_JWT_PASSPHRASE`       | Passphrase for encrypted JWT private key                                                                                                                                |
 
 ### Examples
 
@@ -255,22 +252,4 @@ b2c auth token | pbcopy  # macOS: copy to clipboard
 
 ## Authentication Overview
 
-For complete authentication setup instructions, see the [Authentication Setup Guide](/guide/authentication).
-
-### Quick Reference
-
-| Operation                                                                                          | Auth Required                                                                                           |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [Code](/cli/code) deploy/watch                                                                     | WebDAV credentials                                                                                      |
-| [Code](/cli/code) list/activate/delete, [Jobs](/cli/jobs), [BM](/cli/bm) users/roles               | OAuth + SCAPI scopes (OCAPI fallback; OCAPI is [deprecated](/guide/authentication#ocapi-configuration)) |
-| [Sites](/cli/sites) list/cartridge reads                                                           | OAuth + SCAPI scopes (`sfcc.sites`; OCAPI fallback)                                                     |
-| [Sites](/cli/sites) cartridge-path writes                                                          | OAuth + `sfcc.sites.rw` (OCAPI / site-archive fallback)                                                 |
-| SCAPI commands ([eCDN](/cli/ecdn), [schemas](/cli/scapi-schemas), [custom-apis](/cli/custom-apis)) | System OAuth (client credentials/JWT) + SCAPI scopes; browser PKCE/implicit is rejected                 |
-| [Sandbox](/cli/sandbox), [SLAS](/cli/slas)                                                         | OAuth + appropriate roles                                                                               |
-| [MRT](/cli/mrt)                                                                                    | API Key                                                                                                 |
-
-See [Configuration](/guide/configuration) for setting up credentials via environment variables or config files.
-
-::: tip
-Each command page below documents its specific authentication requirements including required scopes.
-:::
+For which commands need which credentials, see [Authentication Setup](/guide/authentication#overview). Each command page documents its requirements, including scopes.

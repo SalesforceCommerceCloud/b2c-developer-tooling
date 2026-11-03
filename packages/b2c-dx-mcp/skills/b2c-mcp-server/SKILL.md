@@ -11,22 +11,26 @@ Read only the skill that matches the task; each links its own references.
 
 | Task | Skill |
 | --- | --- |
+| Set up a sandbox or realm: sample data, storefronts, replication | `skill://b2c-cli/b2c-setup/SKILL.md` |
 | Commerce API reads/writes (required before `scapi_search` / `scapi_execute`) | `skill://mcp/b2c-mcp-scapi/SKILL.md` |
 | Warehouse reports and SQL (required before `cip_query`) | `skill://mcp/b2c-mcp-cip/SKILL.md` |
 | Configuration, credentials, access grants, wrong target | `skill://mcp/b2c-mcp-config/SKILL.md` |
 | Server-side script debugging | `skill://mcp/b2c-mcp-debugger/SKILL.md` |
+| Dashboard, Claude artifact or Cowork page showing B2C data | `skill://mcp/b2c-mcp-claude-artifacts/SKILL.md` |
 | Instance files and selected cartridge uploads | [files](references/files.md) |
 | Production incident or unknown operational signal | `skill://b2c-ops/b2c-production-triage/SKILL.md` |
 | Failed or late jobs | `skill://b2c-ops/b2c-job-health/SKILL.md` |
 | Checkout or order failures | `skill://b2c-ops/b2c-checkout-triage/SKILL.md`, `skill://b2c-ops/b2c-order-failure-triage/SKILL.md` |
-| Bots, scrapers or abusive traffic at the eCDN (WAF, firewall, rate limits) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md` |
+| External service (payment, tax, OMS, shipping, search) calls failing, slow or stopped | `skill://b2c-ops/b2c-integration-triage/SKILL.md` |
+| Slow or erroring storefront/API; latency, error-rate, cache or integration metrics | `skill://b2c-ops/b2c-performance-triage/SKILL.md` |
+| eCDN edge traffic: bots, scrapers, API/SLAS abuse, edge 403/429 spikes, WAF/firewall/rate-limit rules (storefront or SCAPI zone) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md` |
 | Anything else | `skill://index` |
 
 Every skill and reference file is readable as an MCP resource
 (`skill://<collection>/<skill>/<file>`) or with `skills_read({uri})`.
 Collections: `b2c` (platform/cartridges), `b2c-cli` (CLI), `b2c-ops`
-(operator/admin runbooks), `storefront-next` (storefronts), `mcp` (server/tool
-workflows). Search with `skills_read({query, collection})` or browse `skill://index`.
+(operator/admin runbooks), `storefront-next` (storefronts), `cap-dev` (authoring
+Commerce App Packages), `mcp` (server/tool workflows). Search with `skills_read({query, collection})` or browse `skill://index`.
 
 ## Server configuration and tool availability
 
@@ -70,7 +74,8 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   selected local files, `codeVersion` for an explicit target; omit `files` for
   whole cartridges. Reload may activate the target.
 - Instance files: `webdav_list` gives directory entries/sizes; `webdav_get` reads
-  exact text by HTTP byte range or downloads to `outputPath`; `webdav_put` uploads
+  exact text by HTTP byte range (`tail` for the end); `webdav_get_to_file` downloads
+  to a new local `outputPath`; `webdav_put` uploads
   `content` or `sourcePath`. Prefer these over a terminal for supported transfers.
   [File choices and limits](references/files.md).
 - Debug: [MCP debugger](skill://mcp/b2c-mcp-debugger/SKILL.md). CLI/IDE only when requested.

@@ -5,7 +5,12 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {InstanceCommand} from '@salesforce/b2c-tooling-sdk/cli';
-import {getRecentLogs, type LogEntry} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {
+  getRecentLogs,
+  listLogFiles,
+  unreadCustomPrefixes,
+  type LogEntry,
+} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import {t} from '../../i18n/index.js';
 import {
   DEFAULT_PREFIXES,
@@ -36,6 +41,8 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --count 50',
     '<%= config.bin %> <%= command.id %> --filter error --filter customerror --filter debug',
+    '<%= config.bin %> <%= command.id %> --filter custom-',
+    '<%= config.bin %> <%= command.id %> --filter custom-MyIntegration-CustomApi',
     '<%= config.bin %> <%= command.id %> --since 5m',
     '<%= config.bin %> <%= command.id %> --since "2026-01-25T10:00:00"',
     '<%= config.bin %> <%= command.id %> --level ERROR --level FATAL',
@@ -49,7 +56,7 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
     filter: Flags.string({
       char: 'f',
       description:
-        'Log prefixes to filter (can specify multiple). Use a path like "internal/server" to fetch logs from a subdirectory.',
+        'Log prefixes to read (can specify multiple). Replaces the default (error, customerror) rather than adding to it, so custom-<name> logger files are read only when selected, e.g. --filter custom- for all of them. Matches the start of the file name or of its category (the part before the host name; custom-<name> stops at the second dash). Use a path like "internal/server" to fetch logs from a subdirectory.',
       multiple: true,
       default: DEFAULT_PREFIXES,
     }),
@@ -144,6 +151,7 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
 
     if (entries.length === 0) {
       ux.stdout(t('commands.logs.get.noEntries', 'No log entries found.'));
+      await this.suggestCustomLogs();
       return result;
     }
 
@@ -155,5 +163,32 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
     this.log(t('commands.logs.get.summary', '\nRetrieved {{count}} log entries.', {count: entries.length}));
 
     return result;
+  }
+
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
+
+  /**
+   * Points to custom-<name> logger files that the current filters skip, since
+   * integrations usually log there rather than to error/customerror.
+   */
+  private async suggestCustomLogs(): Promise<void> {
+    let prefixes: string[];
+    try {
+      prefixes = unreadCustomPrefixes(await listLogFiles(this.instance), this.flags.filter);
+    } catch (error) {
+      this.logger.debug({err: error}, 'Could not list log files for custom log suggestions');
+      return;
+    }
+    if (prefixes.length === 0) return;
+
+    this.log(
+      t(
+        'commands.logs.get.customLogsHint',
+        '\nThese custom logs were not read: {{prefixes}}.\nRead them with --filter custom- (all) or --filter {{example}} (one). --filter replaces the default (error, customerror).',
+        {prefixes: prefixes.join(', '), example: prefixes[0]},
+      ),
+    );
   }
 }

@@ -124,6 +124,7 @@ const toolkitSidebar = [
         ],
       },
       {text: 'Agent Skills', link: '/guide/agent-skills'},
+      {text: 'Desktop Assistants', link: '/guide/desktop-assistants'},
     ],
   },
   {
@@ -164,8 +165,10 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
     text: 'Operations & Administration',
     collapsed: false,
     items: [
+      {text: 'Realm Setup', link: '/guide/realm-setup'},
       {text: 'Operations', link: '/guide/operations'},
       {text: 'Account Manager', link: '/guide/account-manager'},
+      {text: 'SLAS', link: '/guide/slas'},
       {text: 'Analytics Reports', link: '/guide/analytics-reports-cip-ccac'},
       {text: 'Metrics', link: '/guide/metrics'},
     ],
@@ -216,6 +219,7 @@ const referenceSidebar = [
       {text: 'Sites', link: '/cli/sites'},
       {text: 'SLAS', link: '/cli/slas'},
       {text: 'Storefront Next', link: '/cli/sfnext'},
+      {text: 'Validate', link: '/cli/validate'},
       {text: 'WebDAV', link: '/cli/webdav'},
       {text: 'Logging', link: '/cli/logging'},
     ],

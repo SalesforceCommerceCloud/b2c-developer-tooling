@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {findCartridgesSafe} from '../workspace-discovery.js';
 import {getPostDeployActions} from './code-version-actions.js';
+import {showNoCodeVersionMessage, showNoInstanceError} from './code-sync-setup.js';
 import {createScriptsBackendFromExtension} from './scripts-backend.js';
 
 export function createDeployCommand(
@@ -15,9 +16,9 @@ export function createDeployCommand(
   outputChannel: vscode.OutputChannel,
 ): () => Promise<void> {
   return async () => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
 
@@ -39,8 +40,8 @@ export function createDeployCommand(
       // The configured version can still be deployed when discovery is unavailable.
     }
     if (!codeVersion) {
-      vscode.window.showErrorMessage(
-        'B2C DX: No code version configured. Set code-version in dw.json or activate a code version.',
+      showNoCodeVersionMessage(
+        'B2C DX: No code version configured. Select one, set code-version in dw.json, or activate a code version.',
       );
       return;
     }
@@ -88,7 +89,9 @@ export function createDeployCommand(
           // so we can only honor cancellation between top-level steps; an
           // in-flight upload will complete before we abort.
           progress.report({message: 'Uploading cartridges...'});
-          await uploadCartridges(instance, selectedCartridges);
+          await uploadCartridges(instance, selectedCartridges, {
+            ignoreDirs: configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+          });
 
           if (token.isCancellationRequested) {
             throw new vscode.CancellationError();
@@ -150,9 +153,9 @@ export function createDeployOneCommand(
   context: vscode.ExtensionContext,
 ): () => Promise<void> {
   return async () => {
-    const instance = configProvider.getInstance();
+    const instance = configProvider.getCodeSyncInstance();
     if (!instance) {
-      vscode.window.showErrorMessage('B2C DX: No B2C Commerce instance configured.');
+      await showNoInstanceError();
       return;
     }
 
@@ -169,7 +172,7 @@ export function createDeployOneCommand(
       }
     }
     if (!codeVersion) {
-      vscode.window.showErrorMessage('B2C DX: No code version configured.');
+      showNoCodeVersionMessage('B2C DX: No code version configured.');
       return;
     }
 
@@ -223,7 +226,9 @@ export function createDeployOneCommand(
       },
       async () => {
         try {
-          await uploadCartridges(instance, [toDeploy]);
+          await uploadCartridges(instance, [toDeploy], {
+            ignoreDirs: configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+          });
           outputChannel.appendLine(`Deployed "${toDeploy.name}" to "${codeVersion}"`);
           outputChannel.appendLine(`--- Deploy single complete ---`);
 

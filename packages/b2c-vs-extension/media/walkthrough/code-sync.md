@@ -12,6 +12,8 @@ Code Sync is a **file watcher** that:
 
 ## Starting Code Sync
 
+Only your instance hostname is needed. If none is configured yet, choose **Connect to Instance** and paste your hostname or a Business Manager URL. The first upload asks you to sign in with your Account Manager account.
+
 Click **Start Code Sync** above, or:
 1. Open Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
 2. Run **B2C DX - Code Sync: Start Code Sync**

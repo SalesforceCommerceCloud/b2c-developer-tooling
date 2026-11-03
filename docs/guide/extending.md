@@ -12,11 +12,12 @@ The B2C CLI can be extended with custom plugins using the [oclif plugin system](
 | ------------------------------------------------------- | -------------------------------- | ----------- |
 | [`b2c:config-sources`](#custom-configuration-sources)   | Custom configuration loading     | CLI only    |
 | [`b2c:http-middleware`](#http-middleware)               | HTTP request/response middleware | Yes         |
+| [`b2c:auth-session-store`](#auth-session-store)         | Where sign-in tokens are stored  | Yes         |
 | [`b2c:operation-lifecycle`](#operation-lifecycle-hooks) | Operation before/after callbacks | CLI only    |
 | [`b2c:cartridge-providers`](#cartridge-providers)       | Custom cartridge discovery       | CLI only    |
 | [`b2c:scaffold-providers`](#scaffold-providers)         | Custom scaffold providers        | Yes         |
 
-**SDK Support** indicates whether the hook can be used programmatically without the CLI. Only HTTP middleware supports direct SDK registration via `globalMiddlewareRegistry`.
+**SDK Support** indicates whether the hook can be used programmatically without the CLI. HTTP middleware can be registered directly via `globalMiddlewareRegistry`, and an auth session store via `setAuthSessionBackend()`.
 
 ## Plugin Architecture
 
@@ -565,6 +566,104 @@ globalMiddlewareRegistry.register({
   },
 });
 ```
+
+## Auth Session Store
+
+The CLI remembers sign-in sessions from `b2c auth login`, `b2c auth client`, and browser sign-in, including long-lived refresh tokens, so later commands don't have to sign in again. By default these sessions are saved to `auth-sessions.json` in the CLI data directory, readable only by your user. A plugin can store them somewhere else, such as an OS keychain or a secrets manager, with the `b2c:auth-session-store` hook.
+
+### Hook: `b2c:auth-session-store`
+
+This hook is called during command initialization, before any authentication is performed. Only one store is used: if several plugins return a backend, the first plugin by name wins and the CLI warns about the others. Return no `backend` to keep the default store, for example when your storage isn't available on the current platform.
+
+**Hook Options:**
+
+| Property | Type                      | Description                  |
+| -------- | ------------------------- | ---------------------------- |
+| `flags`  | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+
+**Hook Result:**
+
+| Property  | Type                              | Description                                    |
+| --------- | --------------------------------- | ---------------------------------------------- |
+| `backend` | `AuthSessionBackend \| undefined` | Store to use instead of the default file store |
+
+### AuthSessionBackend Interface
+
+```typescript
+import type {AuthSession, AuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
+
+interface AuthSessionBackend {
+  find(clientId: string): AuthSession | null;
+  save(session: AuthSession): void;
+  delete(clientId: string): void;
+  list(): AuthSession[];
+  clearAll(): void; // used by `b2c auth logout`
+  flush?(): Promise<void>; // optional: wait for pending writes before exit
+}
+```
+
+Sessions are keyed by `clientId`, and each `AuthSession` is a plain JSON-serializable object. The methods are synchronous because commands look up sessions while they initialize. If your storage is async-only, load the sessions inside the hook (the hook itself can be async), serve reads from memory, write in the background, and implement `flush()`. The CLI awaits `flush()` before it exits.
+
+### Example: Auth Session Store Plugin
+
+```typescript
+// src/hooks/auth-session-store.ts
+import type {AuthSessionStoreHook} from '@salesforce/b2c-tooling-sdk/cli';
+import type {AuthSession, AuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
+
+class VaultAuthSessionBackend implements AuthSessionBackend {
+  private sessions = new Map<string, AuthSession>();
+  private pending: Promise<void> = Promise.resolve();
+
+  async load(): Promise<void> {
+    for (const session of await readSessionsFromVault()) {
+      this.sessions.set(session.clientId, session);
+    }
+  }
+
+  find(clientId: string) {
+    return this.sessions.get(clientId) ?? null;
+  }
+  save(session: AuthSession) {
+    this.sessions.set(session.clientId, {...session, lastUsedAt: new Date().toISOString()});
+    this.persist();
+  }
+  delete(clientId: string) {
+    this.sessions.delete(clientId);
+    this.persist();
+  }
+  list() {
+    return [...this.sessions.values()];
+  }
+  clearAll() {
+    this.sessions.clear();
+    this.persist();
+  }
+  flush() {
+    return this.pending;
+  }
+
+  private persist() {
+    const snapshot = this.list();
+    this.pending = this.pending.then(() => writeSessionsToVault(snapshot));
+  }
+}
+
+const hook: AuthSessionStoreHook = async function () {
+  if (!process.env.MY_VAULT_ADDR) return {};
+  const backend = new VaultAuthSessionBackend();
+  await backend.load();
+  return {backend};
+};
+
+export default hook;
+```
+
+Switching stores doesn't copy existing sessions, so sign in again after you install a store plugin. Run `b2c auth logout` first to remove sessions saved in the default file. Tools that read `auth-sessions.json` directly, such as the [Python SDK](/python/cli-interop), don't see sessions kept in a plugin store.
+
+### SDK and VS Code Usage
+
+`B2CPluginManager` from `@salesforce/b2c-tooling-sdk/plugins` collects the plugin's store but doesn't install it, because the host may have its own secret storage. Call `manager.getAuthSessionBackend()` and pass the result to `setAuthSessionBackend()` from `@salesforce/b2c-tooling-sdk/auth` to use it. The VS Code extension keeps sessions in VS Code secret storage unless you turn on [`b2c-dx.auth.usePluginSessionStore`](/vscode-extension/configuration#authentication).
 
 ## B2C Operation Lifecycle Hooks
 

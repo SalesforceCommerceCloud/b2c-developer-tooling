@@ -45,6 +45,17 @@ describe('setup openshell', () => {
     return command;
   }
 
+  it('applies a changed safety level to a policy it generated earlier', async () => {
+    await createCommand(CONFIG, {'dry-run': true, 'safety-level': 'NONE'}).run();
+    const command = createCommand(CONFIG, {'dry-run': true, 'safety-level': 'READ_ONLY'});
+
+    await command.run();
+
+    expect(command.warn.calledWithMatch(/edited/)).to.equal(false);
+    const policy = await fs.readFile(path.join(dir, 'policy.yaml'), 'utf8');
+    expect(policy).to.not.include('method: DELETE');
+  });
+
   it('writes the files and applies nothing on a dry run', async () => {
     const command = createCommand(CONFIG, {'dry-run': true, 'safety-level': 'NO_DELETE'}, {level: 'READ_ONLY'});
 

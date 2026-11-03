@@ -56,3 +56,6 @@ __pycache__/
 /docs/.vitepress/releases/live.json*
 /docs/_partials/releases.generated.md
 /docs/public/releases/
+
+# Local design docs and notes
+/designs/

@@ -11,7 +11,9 @@
  *
  * @module config/mapping
  */
-import type {AuthConfig, AuthMethod} from '../auth/types.js';
+import type {AuthConfig, AuthMethod, AuthStrategy} from '../auth/types.js';
+import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
+import {getDefaultPublicClientId} from '../defaults.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
 import {parseSafetyLevelString} from '../safety/safety-middleware.js';
 import {isValidSafetyAction} from '../safety/types.js';
@@ -187,6 +189,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     autoUpload: json.autoUpload,
     cartridges: parseCartridges(json.cartridges),
     importSetExclude: json.importSetExclude,
+    cartridgeIgnoreDirs: json.cartridgeIgnoreDirs,
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
@@ -331,6 +334,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.importSetExclude !== undefined) {
     result.importSetExclude = config.importSetExclude;
+  }
+  if (config.cartridgeIgnoreDirs !== undefined) {
+    result.cartridgeIgnoreDirs = config.cartridgeIgnoreDirs;
   }
   if (config.catalogs !== undefined) {
     result.catalogs = config.catalogs;
@@ -614,6 +620,7 @@ export function mergeConfigsWithProtection(
       autoUpload: overrides.autoUpload ?? base.autoUpload,
       cartridges: overrides.cartridges ?? base.cartridges,
       importSetExclude: overrides.importSetExclude ?? base.importSetExclude,
+      cartridgeIgnoreDirs: overrides.cartridgeIgnoreDirs ?? base.cartridgeIgnoreDirs,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,
@@ -785,5 +792,17 @@ export function createInstanceFromConfig(config: NormalizedConfig, options?: Cre
     };
   }
 
-  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy});
+  let webdavFallbackStrategy: AuthStrategy | (() => AuthStrategy) | undefined = options?.webdavFallbackStrategy;
+  if (!webdavFallbackStrategy && options?.defaultWebDavClient) {
+    webdavFallbackStrategy = () =>
+      createUserAuthStrategy({
+        clientId: getDefaultPublicClientId(config.accountManagerHost),
+        accountManagerHost: config.accountManagerHost,
+        redirectUri: options.redirectUri,
+        openBrowser: options.openBrowser,
+        selfSignedApi: config.selfSignedApi,
+      });
+  }
+
+  return new B2CInstance(instanceConfig, authConfig, {oauthStrategy: options?.oauthStrategy, webdavFallbackStrategy});
 }

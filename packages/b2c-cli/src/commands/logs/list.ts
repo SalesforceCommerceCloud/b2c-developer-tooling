@@ -73,7 +73,7 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
     filter: Flags.string({
       char: 'f',
       description:
-        'Filter by log prefix (can specify multiple). Use a path like "internal/server" to list logs in a subdirectory.',
+        'Filter by log prefix (can specify multiple); matches the start of the file name or of its category. Use a path like "internal/server" to list logs in a subdirectory.',
       multiple: true,
     }),
     sort: Flags.string({
@@ -121,5 +121,9 @@ export default class LogsList extends InstanceCommand<typeof LogsList> {
     tableRenderer.render(files, selectColumns(this.flags, tableRenderer, DEFAULT_COLUMNS, this.warn.bind(this)));
 
     return result;
+  }
+
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
   }
 }

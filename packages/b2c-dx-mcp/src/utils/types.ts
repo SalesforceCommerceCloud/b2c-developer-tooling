@@ -22,6 +22,23 @@ export interface ToolContext {
   supportsElicitation?: boolean;
   /** Legacy elicitation keeps the originating request open between handler entries. */
   keepCancellation?: boolean;
+  /** Record content returned to the client; sent as CONTENT_READ telemetry when the call succeeds. */
+  recordContentRead?: (read: ContentRead) => void;
+}
+
+/** Identifies a skill file, doc, or schema returned to the client. Never includes queries. */
+export interface ContentRead {
+  contentType: 'doc' | 'schema' | 'skill';
+  /** Skill entry ID (`mcp/b2c-mcp-cip`), doc ID, or schema ID. */
+  contentId: string;
+  /** Skill file URI. */
+  contentUri?: string;
+  /** Doc category. */
+  category?: string;
+  /** Requested skill section. */
+  section?: string;
+  /** Paging offset; nonzero for continuation reads. */
+  offset?: number;
 }
 
 /** Effects of advertised operations; annotations are derived at registration. */

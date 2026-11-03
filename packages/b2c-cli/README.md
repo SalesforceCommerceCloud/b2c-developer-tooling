@@ -1,285 +1,53 @@
-# Salesforce Agentforce Commerce B2C CLI
+# Salesforce B2C Commerce CLI
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
+[![npm](https://img.shields.io/npm/v/@salesforce/b2c-cli.svg)](https://www.npmjs.com/package/@salesforce/b2c-cli)
+[![License](https://img.shields.io/npm/l/@salesforce/b2c-cli.svg)](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt)
 
-A command-line interface for Salesforce Agentforce Commerce (formerly Commerce Cloud) B2C instances and platform services.
+Develop, deploy, and administer Salesforce B2C Commerce from your terminal or CI/CD pipeline.
 
-## Installation
+**[Documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/overview)** ·
+**[Command reference](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/)** ·
+**[Configuration](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration)**
 
-### npm (Recommended)
+![B2C CLI listing code versions and checking the registration status of Custom APIs.](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli-workflow.png)
 
-```sh
+## Install
+
+Requires Node.js 22.16 or later.
+
+```bash
 npm install -g @salesforce/b2c-cli
+b2c --help
 ```
 
-### Homebrew (macOS/Linux)
+See [configuration](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration)
+to connect your B2C Commerce instances.
 
-```sh
-brew tap SalesforceCommerceCloud/tools
-brew install b2c-cli
+## What you can do
+
+```bash
+b2c code deploy                                # Deploy cartridges
+b2c job run my-job --wait                      # Run a job
+b2c sandbox create --realm abcd                # Create an on-demand sandbox
+b2c mrt bundle deploy --project my-storefront  # Deploy a Managed Runtime storefront
+b2c logs tail                                  # Stream instance logs
 ```
 
-### GitHub Release Tarball
-
-For pre-release versions not yet published to npm, download the tarball from [GitHub Releases](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases) and install:
-
-```sh
-npm install -g ./salesforce-b2c-cli-<version>.tgz
-```
-
-## Usage
-
-```sh
-b2c COMMAND
-b2c --help [COMMAND]
-```
-
-## Configuration
-
-The CLI can be configured via command-line flags or environment variables:
-
-See the documentation for full configuration options: [https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/configuration.html)
-
-
-| Environment Variable | Description |
-|---------------------|-------------|
-| `SFCC_SERVER` | B2C instance hostname |
-| `SFCC_CODE_VERSION` | Code version |
-| `SFCC_CLIENT_ID` | OAuth client ID |
-| `SFCC_CLIENT_SECRET` | OAuth client secret |
-| `SFCC_USERNAME` | Username for WebDAV |
-| `SFCC_PASSWORD` | Password/access key for WebDAV |
-
-## Commands
-
-### Code Management
-
-Deploy and manage code versions on B2C Commerce instances.
-
-```sh
-# List code versions
-b2c code list
-
-# Deploy cartridges
-b2c code deploy --server my-sandbox.demandware.net --code-version v1
-
-# Watch and sync changes during development
-b2c code watch
-
-# Activate a code version
-b2c code activate v1
-
-# Delete a code version
-b2c code delete old-version
-```
-
-### Jobs and Site Import/Export
-
-Execute jobs and manage site archives.
-
-```sh
-# Run a job
-b2c job run my-job --wait
-
-# Import a site archive
-b2c job import ./site-data.zip
-
-# Export site data
-b2c job export --global-data meta_data
-
-# Search job executions
-b2c job search --status RUNNING
-```
-
-### On-Demand Sandboxes (ODS)
-
-Create and manage on-demand sandboxes.
-
-```sh
-# List sandboxes
-b2c ods list
-
-# Create a new sandbox
-b2c ods create
-
-# Get sandbox details
-b2c ods get <sandbox-id>
-
-# Start/stop/restart a sandbox
-b2c ods start <sandbox-id>
-b2c ods stop <sandbox-id>
-b2c ods restart <sandbox-id>
-
-# Delete a sandbox
-b2c ods delete <sandbox-id>
-```
-
-### Managed Runtime (MRT)
-
-Manage MRT projects, environments, and deployments.
-
-```sh
-# Push a bundle
-b2c mrt push --project my-storefront --environment staging
-
-# Create an environment
-b2c mrt env create staging --project my-storefront --name "Staging"
-
-# Manage environment variables
-b2c mrt env var list -p my-project -e staging
-b2c mrt env var set API_KEY=secret -p my-project -e staging
-b2c mrt env var delete OLD_KEY -p my-project -e staging
-```
-
-### SLAS Client Management
-
-Manage Shopper Login and API Security (SLAS) clients.
-
-```sh
-# List SLAS clients
-b2c slas client list
-
-# Create a client
-b2c slas client create --name "My App"
-
-# Get client details
-b2c slas client get <client-id>
-
-# Update a client
-b2c slas client update <client-id>
-
-# Delete a client
-b2c slas client delete <client-id>
-```
-
-### WebDAV Operations
-
-File operations on instance WebDAV.
-
-```sh
-# List files
-b2c webdav ls /cartridges
-
-# Upload/download files
-b2c webdav put local-file.txt /remote/path/
-b2c webdav get /remote/path/file.txt
-
-# Create directory
-b2c webdav mkdir /remote/new-dir
-
-# Delete files
-b2c webdav rm /remote/path/file.txt
-
-# Archive operations
-b2c webdav zip /remote/dir archive.zip
-b2c webdav unzip /remote/archive.zip
-```
-
-### Sites
-
-List and inspect storefront sites.
-
-```sh
-b2c sites list
-```
-
-### User Management (Account Manager)
-
-Manage users in Account Manager.
-
-```sh
-# List users with pagination
-b2c am users list --page 0 --size 20
-
-# Get user details by email
-b2c am users get user@example.com
-
-# Create a new user
-b2c am users create --org org-id --mail user@example.com --first-name John --last-name Doe
-
-# Update a user
-b2c am users update user@example.com --first-name Jane
-
-# Reset a user to INITIAL state
-b2c am users reset user@example.com
-
-# Delete (disable) a user
-b2c am users delete user@example.com
-```
-
-### Role Management (Account Manager)
-
-Manage roles and role assignments in Account Manager.
-
-```sh
-# List roles with pagination
-b2c am roles list --page 0 --size 20 --target-type User
-
-# Get role details
-b2c am roles get bm-admin
-
-# Grant a role to a user
-b2c am roles grant user@example.com --role bm-admin
-
-# Grant a role with tenant scope
-b2c am roles grant user@example.com --role bm-admin --scope "tenant1,tenant2"
-
-# Revoke a role from a user
-b2c am roles revoke user@example.com --role bm-admin
-```
-
-### Organization Management (Account Manager)
-
-Manage organizations in Account Manager.
-
-```sh
-# List organizations with pagination
-b2c am orgs list --page 0 --size 25
-
-# List all organizations
-b2c am orgs list --all
-
-# Get organization details by ID
-b2c am orgs get org-123
-
-# Get organization details by name
-b2c am orgs get "My Organization"
-
-# Get audit logs for an organization
-b2c am orgs audit org-123
-
-# Get audit logs with extended columns
-b2c am orgs audit org-123 --extended
-```
-
-### Authentication
-
-Get OAuth tokens for scripting.
-
-```sh
-b2c auth token
-```
-
-## Logging
-
-Control log output with flags or environment variables:
-
-```sh
-# Debug logging
-b2c code deploy --log-level debug
-b2c code deploy -D  # shorthand
-
-# JSON output for scripting
-b2c code deploy --json
-```
-
-See the [documentation](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logging) for more logging options.
-
-## Documentation
-
-Full documentation is available at: https://salesforcecommercecloud.github.io/b2c-developer-tooling/
+| Task                         | Commands                                                                                                                                                                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Develop and debug cartridges | [Code](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code), [Scaffold](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scaffold), [Debug](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/debug)                       |
+| Deploy and automate          | [Jobs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/jobs), [MRT](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt), [CI/CD](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd)                               |
+| Manage environments and data | [Sandbox](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox), [Sites](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sites), [WebDAV](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/webdav)                     |
+| Investigate operations       | [Logs](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/logs), [CIP Analytics](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip)                                                                                                           |
+| Manage access                | [Account Manager](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/account-manager), [Business Manager](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/bm), [SLAS](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas) |
+
+## Other ways to work
+
+Use the [B2C MCP server](https://www.npmjs.com/package/@salesforce/b2c-dx-mcp) to bring B2C Commerce
+tools and skills to your AI assistant, or the
+[IDE extension](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/)
+for editor workflows.
 
 ## License
 
-This project is licensed under the Apache License 2.0. See [LICENSE.txt](../../LICENSE.txt) for full details.
-
+Apache License 2.0. See [license.txt](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/blob/main/license.txt).

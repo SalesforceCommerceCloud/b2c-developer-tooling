@@ -10,6 +10,12 @@ import type {ApiDocument, ScapiSchemaDocument} from './catalog.js';
 const SCHEMAS_API = 'dx/scapi-schemas/v1';
 const IDENTITY = /^[a-z0-9-]+$/i;
 
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end--;
+  return value.slice(0, end);
+}
+
 export interface ScapiLiveSchemaCacheOptions {
   /** Age after which discovery refetches a contract; cached contracts never expire. Defaults to 30 minutes. */
   ttlMs?: number;
@@ -38,7 +44,7 @@ export interface ScapiLiveSchemaLoadResult {
  */
 export function matchesScapiApi(id: string, api?: string): boolean {
   if (!api) return true;
-  const filter = api.replace(/\/+$/, '').toLowerCase();
+  const filter = trimTrailingSlashes(api).toLowerCase();
   const value = id.toLowerCase();
   return value === filter || value.startsWith(`${filter}/`);
 }

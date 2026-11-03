@@ -68,7 +68,10 @@ describe('slas/token', () => {
       it(`applies middleware throughout ${privateClient ? 'private' : 'public'} ${registered ? 'registered' : 'guest'} flow`, async () => {
         const requests: Request[] = [];
         const responses: number[] = [];
-        const middleware = createExtraParamsMiddleware({headers: {'x-mobify': 'true'}, query: {diagnostic: 'enabled'}});
+        const middleware = createExtraParamsMiddleware({
+          headers: {'x-test-header': 'true'},
+          query: {diagnostic: 'enabled'},
+        });
         globalMiddlewareRegistry.register({
           name: 'slas-test',
           getMiddleware(clientType) {
@@ -87,7 +90,7 @@ describe('slas/token', () => {
           http.all(`${BASE_URL}/oauth2/:endpoint`, async ({request, params}) => {
             requests.push(request);
             const url = new URL(request.url);
-            expect(request.headers.get('x-mobify')).to.equal('true');
+            expect(request.headers.get('x-test-header')).to.equal('true');
             expect(url.searchParams.get('diagnostic')).to.equal('enabled');
             const body = new URLSearchParams(await request.text());
             if (params.endpoint !== 'token') {

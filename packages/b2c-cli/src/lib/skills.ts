@@ -34,6 +34,7 @@ export const SKILL_TOPIC_OVERRIDES: Readonly<Record<string, null | string>> = {
   scapi: null,
   setup: 'b2c-cli/b2c-config',
   sfnext: null,
+  validate: 'b2c-cli/b2c-site-import-export',
 };
 
 let catalog: GuidanceCatalog | null | undefined;

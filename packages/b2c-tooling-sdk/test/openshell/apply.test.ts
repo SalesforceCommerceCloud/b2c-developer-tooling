@@ -93,6 +93,26 @@ describe('openshell/apply', () => {
       expect(await writeOpenShellFiles(setup, dir, OPTIONS)).to.include({policyWritten: false, policyDiffers: false});
       expect(await fs.readFile(forced.policy, 'utf8')).to.equal(setup.policy);
     });
+
+    it('replaces an unedited policy when the settings change', async () => {
+      await writeOpenShellFiles(buildOpenShellSetup(CONFIG), dir, OPTIONS);
+      const stricter = buildOpenShellSetup(CONFIG, {accessLevel: 'NO_DELETE'});
+
+      const files = await writeOpenShellFiles(stricter, dir, OPTIONS);
+
+      expect(files).to.include({policyWritten: true, policyDiffers: false});
+      expect(await fs.readFile(files.policy, 'utf8')).to.equal(stricter.policy);
+    });
+
+    it('keeps a policy edited after it was generated', async () => {
+      const files = await writeOpenShellFiles(buildOpenShellSetup(CONFIG), dir, OPTIONS);
+      await fs.appendFile(files.policy, '# my edit\n');
+
+      const kept = await writeOpenShellFiles(buildOpenShellSetup(CONFIG, {accessLevel: 'NO_DELETE'}), dir, OPTIONS);
+
+      expect(kept).to.include({policyWritten: false, policyDiffers: true});
+      expect(await fs.readFile(kept.policy, 'utf8')).to.include('# my edit');
+    });
   });
 
   describe('applyOpenShellSetup', () => {
@@ -178,6 +198,29 @@ describe('openshell/apply', () => {
       const plain = await writeOpenShellFiles(buildOpenShellSetup(CONFIG), dir, OPTIONS);
       expect(plain.safetyConfig).to.equal(undefined);
       expect(await fs.readdir(dir)).to.not.include('safety.json');
+    });
+
+    it('reports environment changes that need the sandbox recreated', async () => {
+      const files = await writeOpenShellFiles(buildOpenShellSetup(CONFIG), dir, OPTIONS);
+      await applyOpenShellSetup(buildOpenShellSetup(CONFIG), files, {
+        ...OPTIONS,
+        secrets: SECRETS,
+        run: mockRunner([]).run,
+      });
+
+      const reported: string[][] = [];
+      const update = async (setup: ReturnType<typeof buildOpenShellSetup>) =>
+        applyOpenShellSetup(setup, files, {
+          ...OPTIONS,
+          secrets: SECRETS,
+          run: mockRunner(['docker image inspect', 'openshell sandbox get']).run,
+          onEnvironmentChanged: (names) => reported.push(names),
+        });
+
+      await update(buildOpenShellSetup(CONFIG));
+      expect(reported).to.deep.equal([]);
+      await update(buildOpenShellSetup(CONFIG, {accessLevel: 'NO_DELETE'}));
+      expect(reported).to.deep.equal([['SFCC_SAFETY_LEVEL']]);
     });
 
     it('recreates an existing sandbox when asked', async () => {

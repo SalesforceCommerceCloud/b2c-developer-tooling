@@ -35,8 +35,7 @@ export default class PreferencesSiteGet extends PreferencesCommand<typeof Prefer
     'instance-type': instanceTypeFlag,
     'site-id': Flags.string({
       char: 's',
-      description: 'Site ID',
-      required: true,
+      description: 'Site ID (defaults to siteId from configuration)',
     }),
     'mask-passwords': maskPasswordsFlag,
   };
@@ -45,7 +44,13 @@ export default class PreferencesSiteGet extends PreferencesCommand<typeof Prefer
     this.requireOAuthCredentials();
 
     const {'group-id': groupId} = this.args;
-    const {'instance-type': instanceType, 'site-id': siteId, 'mask-passwords': maskPasswords} = this.flags;
+    const {'instance-type': instanceType, 'mask-passwords': maskPasswords} = this.flags;
+    const siteId = this.flagOrConfig(this.flags['site-id'], 'siteId');
+    if (!siteId) {
+      this.error(
+        t('error.siteIdRequired', 'Site ID is required. Provide --site-id or set siteId in your configuration.'),
+      );
+    }
     const organizationId = this.getOrganizationId();
 
     const result = await this.preferencesClient.GET(

@@ -98,8 +98,8 @@ describe('McpServerCommand', () => {
     it('should lowercase tools input', async () => {
       const parse = McpServerCommand.flags.tools.parse;
       if (parse) {
-        const result = await parse('CARTRIDGE_DEPLOY,MRT_BUNDLE_PUSH', {} as never, {} as never);
-        expect(result).to.equal('cartridge_deploy,mrt_bundle_push');
+        const result = await parse('CARTRIDGE_DEPLOY,MRT_LOGS_WATCH', {} as never, {} as never);
+        expect(result).to.equal('cartridge_deploy,mrt_logs_watch');
       }
     });
   });

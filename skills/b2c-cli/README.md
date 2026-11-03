@@ -26,12 +26,15 @@ For file-copy install to any supported IDE, use `b2c setup skills b2c-cli`. See 
 
 Skills covering the major B2C CLI surfaces:
 
+- **`b2c-setup`** — start here to set up a sandbox or realm: sample data, storefronts, and replication
 - **`b2c-code`** — cartridge deploy, code version management, watch mode
 - **`b2c-sandbox`** — On-Demand Sandbox lifecycle
 - **`b2c-job`** — job execution and monitoring
 - **`b2c-logs`** — log streaming and log file management
 - **`b2c-webdav`** — WebDAV file operations
 - **`b2c-site-import-export`** — site archive import/export
+- **`b2c-replication`** — automated code and data replication with a custom job
+- **`b2c-storefronts`** — Storefront Next setup across instances (create vs. import)
 - **`b2c-config`** — CLI configuration, auth, and troubleshooting
 - **`b2c-scapi-custom`** — SCAPI Custom API management
 

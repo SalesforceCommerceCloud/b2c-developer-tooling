@@ -14,6 +14,21 @@ export interface JsonMergeOptions {
   createPath?: boolean;
 }
 
+/** Keys that would reach or replace an object's prototype instead of setting a property. */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Split a dot-separated JSON path, rejecting segments that would modify a prototype.
+ */
+function splitJsonPath(path: string): string[] {
+  const parts = path.split('.');
+  const unsafe = parts.find((part) => UNSAFE_KEYS.has(part));
+  if (unsafe) {
+    throw new Error(`Unsafe JSON path segment "${unsafe}" in ${path}`);
+  }
+  return parts;
+}
+
 /**
  * Navigate to a nested JSON path and return parent + key
  * @param obj - The object to navigate
@@ -25,7 +40,7 @@ function navigateToPath(obj: unknown, path: string): [Record<string, unknown> | 
     return [null, '', false];
   }
 
-  const parts = path.split('.');
+  const parts = splitJsonPath(path);
   const finalKey = parts.pop()!;
   let current = obj as Record<string, unknown>;
 
@@ -33,7 +48,7 @@ function navigateToPath(obj: unknown, path: string): [Record<string, unknown> | 
     if (current === null || typeof current !== 'object') {
       return [null, finalKey, false];
     }
-    if (!(part in current)) {
+    if (!Object.hasOwn(current, part)) {
       return [null, finalKey, false];
     }
     current = current[part] as Record<string, unknown>;
@@ -53,12 +68,12 @@ function navigateToPath(obj: unknown, path: string): [Record<string, unknown> | 
  * @returns The parent object of the final key
  */
 export function createPath(obj: Record<string, unknown>, path: string): [Record<string, unknown>, string] {
-  const parts = path.split('.');
+  const parts = splitJsonPath(path);
   const finalKey = parts.pop()!;
   let current = obj;
 
   for (const part of parts) {
-    if (!(part in current) || typeof current[part] !== 'object' || current[part] === null) {
+    if (!Object.hasOwn(current, part) || typeof current[part] !== 'object' || current[part] === null) {
       current[part] = {};
     }
     current = current[part] as Record<string, unknown>;
@@ -91,6 +106,7 @@ function deepMerge(target: unknown, source: unknown): unknown {
     if (target !== null && typeof target === 'object' && !Array.isArray(target)) {
       const result = {...(target as Record<string, unknown>)};
       for (const key of Object.keys(source as Record<string, unknown>)) {
+        if (UNSAFE_KEYS.has(key)) continue;
         result[key] = deepMerge(result[key], (source as Record<string, unknown>)[key]);
       }
       return result;

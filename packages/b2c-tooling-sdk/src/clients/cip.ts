@@ -72,7 +72,7 @@ function normalizeCipHost(host?: string): string {
   }
 
   const withoutProtocol = host.replace(/^https?:\/\//u, '');
-  return withoutProtocol.replace(/\/.*$/u, '');
+  return withoutProtocol.split('/')[0];
 }
 
 function toNumber(value: unknown): number {

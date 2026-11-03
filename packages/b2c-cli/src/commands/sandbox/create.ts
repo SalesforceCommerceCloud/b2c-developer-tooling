@@ -50,8 +50,7 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
   static flags = {
     realm: Flags.string({
       char: 'r',
-      description: 'Realm ID (four-letter ID)',
-      required: true,
+      description: 'Realm ID (four-letter ID); defaults to realm from configuration',
     }),
     ttl: Flags.integer({
       description: 'Time to live in hours (0 for infinite)',
@@ -109,7 +108,15 @@ export default class SandboxCreate extends OdsCommand<typeof SandboxCreate> {
   };
 
   async run(): Promise<SandboxModel> {
-    const realm = this.flags.realm;
+    const realm = this.flagOrConfig(this.flags.realm, 'realm');
+    if (!realm) {
+      this.error(
+        t(
+          'commands.sandbox.create.realmRequired',
+          'Realm is required. Provide --realm or set realm in your configuration.',
+        ),
+      );
+    }
     const profile = this.flags.profile as SandboxResourceProfile;
     const ttl = this.flags.ttl;
     const autoScheduled = this.flags['auto-scheduled'];

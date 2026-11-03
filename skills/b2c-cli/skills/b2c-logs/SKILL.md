@@ -13,6 +13,8 @@ Use the `b2c` CLI to retrieve and monitor log files on Salesforce B2C Commerce i
 
 The CLI auto-discovers the target instance and credentials from `SFCC_*` environment variables (including project `.env`), the selected project-local or shared `dw.json`, and configuration plugins. `package.json` supplies only non-sensitive defaults. **Flags like `--server`, `--client-id`, `--client-secret`, `--username`, and `--password` are usually unnecessary** — only pass them to override what's auto-detected.
 
+With only a server configured, the first command opens a browser for the user to sign in with their Account Manager account and waits until they do; tell the user to finish signing in. Their Business Manager roles decide access, and a 403 names the missing permission (for example `WebDAV_Manage_Customization` for `Cartridges`).
+
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 ## Agent-Friendly Log Retrieval
@@ -193,7 +195,7 @@ The `<prefix>` segment is the **first argument** passed to `Logger.getLogger(pre
 
 (The second argument is the log _category_, used for configuration; it does not appear in the file name.) For the authoring side — how to create these loggers — see the `b2c:b2c-logging` skill.
 
-> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The category is extracted by taking everything up to the _second_ dash, so a custom logger name is treated as word characters only (no dashes): a file named `custom-payment-gateway-*.log` is seen as category `custom-payment`. To read one specific custom log, filter on its full extracted prefix (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`.
+> **Note:** `--filter` does a **prefix (starts-with) match** on a file's log category, not an exact match — so `--filter custom-` sweeps every `custom-*` file, and `--filter custom-Payment` also matches `custom-PaymentProcessor`. The filter also matches the start of the file name. The category stops at the _second_ dash, so a file named `custom-payment-gateway-*.log` has the category `custom-payment`, but `--filter custom-payment-gateway` still selects it by file name. To read one specific custom log, filter on its logger name (e.g. `--filter custom-PimTaxImport`); to sweep them all, use `--filter custom-`. `--filter` replaces the default `error`/`customerror` set rather than adding to it, and when `b2c logs get` finds no entries it lists the `custom-*` logs that exist.
 
 ## Discovering Custom Log Files
 

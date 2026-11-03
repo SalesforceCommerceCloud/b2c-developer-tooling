@@ -177,7 +177,7 @@ try {
   const guideTool = catalog.tools.find((tool) => tool.name === 'skills_read');
   assert.ok(guideTool?.outputSchema);
   assert.ok(catalog.tools.some((tool) => tool.name === 'cartridge_deploy'));
-  assert.ok(catalog.tools.some((tool) => tool.name === 'mrt_bundle_push'));
+  assert.ok(catalog.tools.some((tool) => tool.name === 'mrt_logs_watch'));
   assert.ok(
     !catalog.tools.some((tool) => ['pwakit_get_guidelines', 'scapi_custom_api_generate_scaffold'].includes(tool.name)),
   );

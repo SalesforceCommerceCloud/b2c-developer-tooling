@@ -1,0 +1,20 @@
+{
+  "tasks": {
+    "verify_service_profile": {
+      "name": "Verificar o perfil de serviço da Avalara",
+      "description": "Confirme que o perfil de serviço da Avalara está configurado corretamente em Operações > Serviços > Perfis."
+    },
+    "verify_service_credentials": {
+      "name": "Verificar as credenciais de serviço da Avalara",
+      "description": "Confirme que as credenciais de serviço da Avalara estão configuradas corretamente em Operações > Serviços > Credenciais."
+    },
+    "verify_service_definition": {
+      "name": "Verificar a definição de serviço da Avalara",
+      "description": "Confirme que a definição de serviço da Avalara está configurada corretamente em Operações > Serviços."
+    },
+    "verify_custom_site_preferences": {
+      "name": "Verificar as preferências personalizadas do site",
+      "description": "Confirme as preferências personalizadas do site Avalara (por exemplo, o grupo de preferências AvaTax) em Ferramentas do comerciante > Preferências do site."
+    }
+  }
+}

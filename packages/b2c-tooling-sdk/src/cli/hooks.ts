@@ -36,6 +36,7 @@ import type {Hook} from '@oclif/core';
 import type {ConfigSource, ResolveConfigOptions} from '../config/types.js';
 import type {HttpMiddlewareProvider} from '../clients/middleware-registry.js';
 import type {AuthMiddlewareProvider} from '../auth/middleware.js';
+import type {AuthSessionBackend} from '../auth/session-store.js';
 
 /**
  * Options passed to the `b2c:config-sources` hook.
@@ -329,6 +330,82 @@ export interface AuthMiddlewareHookResult {
  */
 export type AuthMiddlewareHook = Hook<'b2c:auth-middleware'>;
 
+// ============================================================================
+// Auth Session Store Hook
+// ============================================================================
+
+/**
+ * Options passed to the `b2c:auth-session-store` hook.
+ */
+export interface AuthSessionStoreHookOptions {
+  /**
+   * All parsed CLI flags from the current command.
+   *
+   * Plugins can inspect flags but cannot add new flags to commands.
+   * For plugin-specific configuration, use environment variables instead.
+   */
+  flags?: Record<string, unknown>;
+  /** Index signature for oclif hook compatibility */
+  [key: string]: unknown;
+}
+
+/**
+ * Result returned by the `b2c:auth-session-store` hook.
+ */
+export interface AuthSessionStoreHookResult {
+  /**
+   * Backend that stores auth sessions (access and refresh tokens from
+   * `auth login`, `auth client`, and browser sign-in) in place of the default
+   * `auth-sessions.json` file. Leave unset to keep the default store, for
+   * example when the plugin's storage is unavailable on this platform.
+   */
+  backend?: AuthSessionBackend;
+}
+
+/**
+ * Hook type for `b2c:auth-session-store`.
+ *
+ * Implement this hook in your oclif plugin to store auth sessions somewhere
+ * other than the default file in the CLI data directory, such as an OS
+ * keychain or a secrets manager.
+ *
+ * The hook is called during command initialization, before any
+ * authentication is performed. Only one store is used: if several plugins
+ * return a backend, the first plugin by name wins and the others are ignored
+ * with a warning.
+ *
+ * {@link AuthSessionBackend} is synchronous because session lookups happen
+ * while commands initialize. Backends over async storage should load their
+ * sessions inside the hook (which may be async), serve reads from memory,
+ * write in the background, and implement `flush()` so the CLI can wait for
+ * pending writes before exiting.
+ *
+ * ## Plugin Registration
+ *
+ * ```json
+ * {
+ *   "oclif": {
+ *     "hooks": {
+ *       "b2c:auth-session-store": "./dist/hooks/auth-session-store.js"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * import type { AuthSessionStoreHook } from '@salesforce/b2c-tooling-sdk/cli';
+ *
+ * const hook: AuthSessionStoreHook = async function() {
+ *   if (process.platform !== 'darwin') return {};
+ *   return { backend: new KeychainAuthSessionBackend() };
+ * };
+ *
+ * export default hook;
+ * ```
+ */
+export type AuthSessionStoreHook = Hook<'b2c:auth-session-store'>;
+
 // Re-export B2C lifecycle types for convenience
 export type {
   B2COperationType,
@@ -368,6 +445,10 @@ declare module '@oclif/core' {
     'b2c:auth-middleware': {
       options: AuthMiddlewareHookOptions;
       return: AuthMiddlewareHookResult;
+    };
+    'b2c:auth-session-store': {
+      options: AuthSessionStoreHookOptions;
+      return: AuthSessionStoreHookResult;
     };
     'b2c:operation-lifecycle': {
       options: import('./lifecycle.js').B2COperationLifecycleHookOptions;

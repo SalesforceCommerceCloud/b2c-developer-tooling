@@ -56,16 +56,16 @@
  * };
  *
  * const mrtTool = createToolAdapter({
- *   name: 'mrt_bundle_push',
- *   effect: 'write', idempotent: false, openWorld: true,
- *   description: 'Push bundle to MRT',
+ *   name: 'mrt_members_list',
+ *   effect: 'read', idempotent: true, openWorld: true,
+ *   description: 'List MRT project members',
  *   toolsets: ['MRT'],
  *   requiresMrtAuth: true,
  *   inputSchema: {
  *     projectSlug: z.string().describe('MRT project slug'),
  *   },
  *   execute: async (args, { mrtConfig }) => {
- *     const result = await pushBundle({ projectSlug: args.projectSlug }, mrtConfig.auth);
+ *     const result = await listMembers({ projectSlug: args.projectSlug }, mrtConfig.auth);
  *     return result;
  *   },
  *   formatOutput: (output) => jsonResult(output),
@@ -75,7 +75,8 @@
 
 import {z, type ZodRawShape} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
-import type {McpTool, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
+import {redactAccessTokens} from '@salesforce/b2c-tooling-sdk/clients';
+import type {McpTool, ToolContext, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
 import {
@@ -84,6 +85,7 @@ import {
   type ProjectContextInput,
   type ProjectContextKind,
   type ToolResolution,
+  toAuthResolution,
 } from './project-context.js';
 
 /** Services loader enriched with registration-time project fallback provenance. */
@@ -126,6 +128,9 @@ export interface ToolExecutionContext {
 
   /** Record a specialized directory resolved by the tool. */
   setResolvedDirectory: (name: string, value: DirectoryResolutionInfo) => void;
+
+  /** Record content returned to the client for telemetry. */
+  recordContentRead?: ToolContext['recordContentRead'];
 }
 
 /**
@@ -366,7 +371,7 @@ export function createToolAdapter<TInput, TOutput>(
     outputSchema: options.outputSchema,
     toolsets,
 
-    async handler(rawArgs: Record<string, unknown>): Promise<ToolResult> {
+    async handler(rawArgs: Record<string, unknown>, toolContext?: ToolContext): Promise<ToolResult> {
       // 1. Validate input with Zod
       const parseResult = zodSchema.safeParse(rawArgs);
       if (!parseResult.success) {
@@ -374,11 +379,22 @@ export function createToolAdapter<TInput, TOutput>(
       }
       const args = parseResult.data as TInput;
       let resolution: ToolResolution | undefined;
+      let services: Services | undefined;
+      // Instance tools report how they authenticated, after the call so a sign-in during it shows up.
+      const withAuth = (target: ToolResolution): ToolResolution => {
+        if (!requiresInstance || !services?.b2cInstance) return target;
+        try {
+          target.auth = toAuthResolution(services.getInstanceAuth());
+        } catch {
+          // Auth reporting is informational; never fail the call over it.
+        }
+        return target;
+      };
 
       try {
         // 2. Load Services to get fresh configuration (re-reads config files)
         const projectContext = projectContextKind ? (args as ProjectContextInput) : undefined;
-        const services = await loadServices(projectContext);
+        services = await loadServices(projectContext);
         const executionResolution = services.getResolution();
         if (projectContextKind === 'project') {
           delete executionResolution.configuration;
@@ -391,7 +407,8 @@ export function createToolAdapter<TInput, TOutput>(
           if (!services.b2cInstance) {
             return attachResolution(
               errorResult(
-                'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json',
+                'B2C instance error: Instance configuration required. Provide --server flag, set SFCC_SERVER environment variable, or configure dw.json' +
+                  services.configHint(),
               ),
               executionResolution,
             );
@@ -405,7 +422,8 @@ export function createToolAdapter<TInput, TOutput>(
           if (!services.mrtConfig.auth) {
             return attachResolution(
               errorResult(
-                'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify',
+                'MRT auth error: MRT API key required. Provide --api-key, set MRT_API_KEY environment variable, or configure ~/.mobify' +
+                  services.configHint(),
               ),
               executionResolution,
             );
@@ -429,17 +447,18 @@ export function createToolAdapter<TInput, TOutput>(
             executionResolution.directories ??= {};
             executionResolution.directories[name] = value;
           },
+          recordContentRead: toolContext?.recordContentRead,
         };
         const output = await services.runWithSafety(() => execute(args, context));
 
         // 6. Format output
         const result = formatOutput(output);
-        return resolution ? attachResolution(result, executionResolution) : result;
+        return resolution ? attachResolution(result, withAuth(executionResolution)) : result;
       } catch (error) {
         // Handle execution errors
-        const message = error instanceof Error ? error.message : String(error);
+        const message = redactAccessTokens(error instanceof Error ? error.message : String(error));
         const result = errorResult(`Execution error: ${message}`);
-        return resolution ? attachResolution(result, resolution) : result;
+        return resolution ? attachResolution(result, withAuth(resolution)) : result;
       }
     },
   };

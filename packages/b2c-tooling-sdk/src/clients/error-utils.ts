@@ -8,6 +8,9 @@
  *
  * @module clients/error-utils
  */
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {dirname, join} from 'node:path';
 
 /**
  * The OCAPI `fault.type` returned (with HTTP 403) when an instance has OCAPI
@@ -52,6 +55,86 @@ export function ocapiDeprecatedMessage(requiredScopes?: string[]): string {
   );
 }
 
+/** Doc anchor for granting a client ID OCAPI Data API permissions. */
+const OCAPI_SETTINGS_DOC_URL =
+  'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/authentication.html#configuring-ocapi-in-business-manager';
+
+/** OCAPI fault text returned when the client ID has no Data API permission for a resource. */
+const OCAPI_ACCESS_DENIED = /^Access to resource '([A-Z]+) ([^'\s]+)' isn't allowed for the current client/;
+
+let dataApiTemplates: string[][] | undefined;
+
+/** Path templates of the bundled Data API spec, split into segments; empty if the spec cannot be read. */
+function loadDataApiTemplates(): string[][] {
+  if (!dataApiTemplates) {
+    try {
+      const require = createRequire(import.meta.url);
+      const packageRoot = dirname(require.resolve('@salesforce/b2c-tooling-sdk/package.json'));
+      const spec = JSON.parse(readFileSync(join(packageRoot, 'specs/data-api.json'), 'utf8')) as {
+        paths: Record<string, unknown>;
+      };
+      dataApiTemplates = Object.keys(spec.paths).map((template) => template.split('/').filter(Boolean));
+    } catch {
+      dataApiTemplates = [];
+    }
+  }
+  return dataApiTemplates;
+}
+
+/**
+ * Converts a Data API request path to the `resource_id` pattern used in OCAPI
+ * settings: drops the `/data/vXX_X` prefix and query, matches the path against
+ * the Data API spec, and replaces each path parameter with `*`, e.g.
+ * `/data/v25_6/code_versions/v1` becomes `/code_versions/*` (one `*` per parameter).
+ * Returns undefined when no spec path matches.
+ */
+function toOcapiResourceId(path: string): string | undefined {
+  const segments = path
+    .split('?')[0]
+    .replace(/^(?:\/s\/-\/dw)?\/data\/v\d+_\d+/, '')
+    .split('/')
+    .filter(Boolean);
+  let best: {literals: number; template: string[]} | undefined;
+  for (const template of loadDataApiTemplates()) {
+    if (template.length !== segments.length) continue;
+    let literals = 0;
+    const matches = template.every((part, i) => {
+      if (part.startsWith('{')) return true;
+      literals++;
+      return part === segments[i];
+    });
+    // Prefer literal segments over parameters, e.g. `/users/this` over `/users/{login}`.
+    if (matches && (!best || literals > best.literals)) best = {literals, template};
+  }
+  return best && '/' + best.template.map((part) => (part.startsWith('{') ? '*' : part)).join('/');
+}
+
+/**
+ * Builds guidance for an OCAPI "Access to resource ... isn't allowed for the
+ * current client" fault: the exact Data API settings entry that grants the
+ * failed request. Returns undefined for any other message.
+ *
+ * The suggestion only contains the HTTP method and a wildcarded resource
+ * pattern from the Data API spec, never IDs from the request path.
+ */
+export function ocapiPermissionHint(faultMessage: string): string | undefined {
+  const match = OCAPI_ACCESS_DENIED.exec(faultMessage);
+  const resourceId = match && toOcapiResourceId(match[2]);
+  if (!resourceId) return undefined;
+  const entry = {
+    resource_id: resourceId,
+    methods: [match[1].toLowerCase()],
+    read_attributes: '(**)',
+    write_attributes: '(**)',
+  };
+  return (
+    'To allow it, add this resource for the client ID in Business Manager ' +
+    '(Administration > Site Development > Open Commerce API Settings, type Data API, context Global):\n' +
+    `  ${JSON.stringify(entry)}\n` +
+    `See: ${OCAPI_SETTINGS_DOC_URL}`
+  );
+}
+
 /**
  * Generic OCAPI deprecation message (no specific scope named). Convenience for
  * call sites that surface the guidance directly without an operation scope.
@@ -92,12 +175,29 @@ export class OcapiDeprecatedError extends Error {
   }
 }
 
+/** JWT-shaped credentials, such as Account Manager and SLAS access tokens. */
+const JWT_PATTERN = /\beyJ[\w-]+\.[\w-]+\.[\w-]*/g;
+
+/** Credentials after a `Bearer` scheme, for tokens that are not JWTs. */
+const BEARER_PATTERN = /\b(Bearer\s+)[\w.~+/-]+=*/gi;
+
+/**
+ * Replaces access tokens in text with `REDACTED`. Some API faults echo the
+ * request's token (OCAPI: "The access token '...' is invalid"), so messages
+ * built from response bodies pass through this before they reach users,
+ * logs, or telemetry.
+ */
+export function redactAccessTokens(text: string): string {
+  return text.replace(JWT_PATTERN, 'REDACTED').replace(BEARER_PATTERN, '$1REDACTED');
+}
+
 /**
  * Extract a clean error message from an API error response.
  *
  * Handles multiple API error patterns and falls back to HTTP status.
  * This ensures that HTML response bodies (like error pages) are never
- * included in user-facing error messages.
+ * included in user-facing error messages. Access tokens echoed in the
+ * response are redacted.
  *
  * Supported error patterns:
  * - ODS/SLAS: `{ error: { message: '...' } }`
@@ -119,6 +219,10 @@ export class OcapiDeprecatedError extends Error {
  * ```
  */
 export function getApiErrorMessage(error: unknown, response: Response | {status: number; statusText: string}): string {
+  return redactAccessTokens(extractApiErrorMessage(error, response));
+}
+
+function extractApiErrorMessage(error: unknown, response: Response | {status: number; statusText: string}): string {
   if (error && typeof error === 'object') {
     const err = error as Record<string, unknown>;
 
@@ -134,7 +238,8 @@ export function getApiErrorMessage(error: unknown, response: Response | {status:
     if (err.fault && typeof err.fault === 'object') {
       const fault = err.fault as Record<string, unknown>;
       if (typeof fault.message === 'string' && fault.message) {
-        return fault.message;
+        const hint = ocapiPermissionHint(fault.message);
+        return hint ? `${fault.message}\n${hint}` : fault.message;
       }
     }
 

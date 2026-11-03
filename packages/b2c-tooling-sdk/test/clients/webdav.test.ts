@@ -612,6 +612,72 @@ describe('clients/webdav', () => {
       });
     });
 
+    describe('connection reset retry', () => {
+      let methods: string[];
+
+      // Rejects the first `resets` requests the way undici reports a dropped socket.
+      function resetFirst(resets: number) {
+        const realFetch = mockAuth.fetch.bind(mockAuth);
+        let calls = 0;
+        mockAuth.fetch = async (url, init) => {
+          calls++;
+          if (calls <= resets) {
+            throw new TypeError('fetch failed', {
+              cause: Object.assign(new Error('socket hang up'), {code: 'ECONNRESET'}),
+            });
+          }
+          return realFetch(url, init);
+        };
+      }
+
+      beforeEach(() => {
+        methods = [];
+        server.use(
+          http.all(`${BASE_URL}/*`, ({request}) => {
+            methods.push(request.method);
+            return new HttpResponse(request.method === 'GET' ? 'content' : null, {status: 201});
+          }),
+        );
+      });
+
+      it('retries PUT once after a reset', async () => {
+        resetFirst(1);
+        await client.put('Impex/src/test.txt', Buffer.from('content'));
+        expect(methods).to.deep.equal(['PUT']);
+      });
+
+      it('retries mkcol once after a reset', async () => {
+        resetFirst(1);
+        await client.mkcol('Impex/src/dir');
+        expect(methods).to.deep.equal(['MKCOL']);
+      });
+
+      it('gives up after a second reset', async () => {
+        resetFirst(2);
+        try {
+          await client.get('Impex/src/test.txt');
+          expect.fail('Should have thrown');
+        } catch (error) {
+          expect(error).to.be.instanceOf(NetworkError);
+          expect((error as NetworkError).kind).to.equal('connection-reset');
+        }
+      });
+
+      it('does not retry raw MKCOL, DELETE or POST requests', async () => {
+        for (const method of ['MKCOL', 'DELETE', 'POST']) {
+          resetFirst(1);
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            await client.request('Impex/src/dir', {method});
+            expect.fail(`${method} should have thrown`);
+          } catch (error) {
+            expect(error).to.be.instanceOf(NetworkError);
+          }
+        }
+        expect(methods).to.deep.equal([]);
+      });
+    });
+
     describe('private helpers (branch coverage)', () => {
       it('headersToObject supports array and record headers', async () => {
         const impl = client as unknown as {

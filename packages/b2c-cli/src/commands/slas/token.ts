@@ -5,7 +5,7 @@
  */
 import {Flags, ux} from '@oclif/core';
 import {password as passwordPrompt} from '@inquirer/prompts';
-import {loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, loadConfig, extractOAuthFlags} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
 import {toOrganizationId, decodeJWT} from '@salesforce/b2c-tooling-sdk';
 import {isInteractive} from '@salesforce/b2c-tooling-sdk/ux';
@@ -114,7 +114,8 @@ export default class SlasToken extends SlasClientCommand<typeof SlasToken> {
         t(
           'commands.slas.token.siteIdRequired',
           'site-id is required. Provide via --site-id flag, SFCC_SITE_ID env var, or site-id in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 
@@ -124,7 +125,8 @@ export default class SlasToken extends SlasClientCommand<typeof SlasToken> {
         t(
           'error.shortCodeRequired',
           'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ),
+        ) + this.configDocsHint(),
+        {code: ERROR_CODE.VALIDATION},
       );
     }
 

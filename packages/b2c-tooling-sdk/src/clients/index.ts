@@ -119,6 +119,7 @@
  */
 export {WebDavClient} from './webdav.js';
 export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
+export {describeWebDavUserAccessFailure, getWebDavRootPermission} from './webdav-access-hint.js';
 
 export {
   createAuthMiddleware,
@@ -291,8 +292,9 @@ export type {
   ListOrgsOptions,
 } from './am-api.js';
 
-export {createCdnZonesClient, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
+export {createCdnZonesClient, listAllZones, CDN_ZONES_READ_SCOPES, CDN_ZONES_RW_SCOPES} from './cdn-zones.js';
 export type {
+  ListAllZonesResult,
   CdnZonesClient,
   CdnZonesClientConfig,
   CdnZonesClientOptions,
@@ -549,6 +551,7 @@ export {
   OcapiDeprecatedError,
   OCAPI_DEPRECATED_MESSAGE,
   ocapiDeprecatedMessage,
+  redactAccessTokens,
 } from './error-utils.js';
 
 export {createTlsDispatcher} from './tls-dispatcher.js';

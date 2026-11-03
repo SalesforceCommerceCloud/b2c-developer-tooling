@@ -67,6 +67,14 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
   }
 
   /**
+   * Code version discovery and activation need OAuth; plain uploads to a
+   * known code version only need WebDAV.
+   */
+  protected override supportsDefaultWebDavClient(): boolean {
+    return true;
+  }
+
+  /**
    * Collects cartridge providers from plugins via the `b2c:cartridge-providers` hook.
    */
   protected async collectCartridgeProviders(): Promise<void> {

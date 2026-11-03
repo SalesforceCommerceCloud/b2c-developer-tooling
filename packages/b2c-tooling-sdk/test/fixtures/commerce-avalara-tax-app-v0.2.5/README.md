@@ -4,7 +4,7 @@ This cartridge integrates Avalara AvaTax with Salesforce Commerce Cloud to provi
 
 ## Package manifest
 
-This package includes a root-level **`commerce-app.json`** manifest: app identity, domain, version, capabilities, cartridge and Storefront Next extension paths, and other extensible metadata. Post-install checklist tasks remain in **`app-configuration/tasksList.json`**. Tools and registries can read `commerce-app.json` for package-level metadata without relying on an external registry manifest alone.
+This package includes a root-level **`commerce-app.json`** manifest: app identity, domain, version, capabilities, cartridge and Storefront Next extension paths, and other extensible metadata. Post-install checklist tasks remain in **`app-configuration/tasksList.json`**, with matching strings in **`app-configuration/translations/`**. Tools and registries can read `commerce-app.json` for package-level metadata without relying on an external registry manifest alone.
 
 ## Overview
 

@@ -14,6 +14,7 @@ import {createDocsSchemaListTool} from './docs-schema-list.js';
 import {createDocsSchemaReadTool} from './docs-schema-read.js';
 import {createDocsSchemaSearchTool} from './docs-schema-search.js';
 import {createDocsSearchTool} from './docs-search.js';
+import {createValidateXmlSchemaTool} from './validate-xml-schema.js';
 
 /**
  * Server-startup context baked into the documentation tools.
@@ -48,5 +49,6 @@ export function createDocsTools(
     createDocsSchemaSearchTool(loadServices),
     createDocsSchemaReadTool(loadServices),
     createDocsSchemaListTool(loadServices),
+    createValidateXmlSchemaTool(loadServices),
   ];
 }

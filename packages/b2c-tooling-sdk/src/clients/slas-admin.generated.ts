@@ -28,6 +28,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tenants/{tenantId}/batch-logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log out multiple shoppers in a single request by revoking active refresh and access tokens for each shopper and all their sessions.
+         * @description For each valid shopper in the request, this operation revokes the shopper's active refresh tokens and inactivates their active access tokens issued before the call, across all sessions. As a result, the shopper must log in again with their existing password (this action doesn't force a password change). For more information, see [Log Out Multiple Shoppers](https://developer.salesforce.com/docs/commerce/sfra/guide/slas-batch-logout.html).
+         */
+        post: operations["batchLogout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tenants/{tenantId}/clients": {
         parameters: {
             query?: never;
@@ -87,18 +107,18 @@ export interface paths {
          * Retrieve/get a password action template.
          * @description Retrieve a password action template by client ID.
          */
-        get: operations["retrievePwdlessTemplate"];
+        get: operations["retrievePwdActionTemplate"];
         /**
          * Create or update a password action template.
          * @description Create or update a password action template by client ID.
          */
-        put: operations["registerPwdlessTemplate"];
+        put: operations["registerPwdActionTemplate"];
         post?: never;
         /**
          * Delete a password action template.
          * @description Delete a password action template.
          */
-        delete: operations["deletePwdlessTemplate"];
+        delete: operations["deletePwdActionTemplate"];
         options?: never;
         head?: never;
         patch?: never;
@@ -209,6 +229,11 @@ export interface components {
              * @example 8000
              */
             requestQuotaPerMinute: number;
+            /**
+             * @description Name of the merchant.
+             * @example SLAS Merchant Name
+             */
+            merchantName?: string;
         } & {
             [key: string]: unknown;
         };
@@ -273,6 +298,53 @@ export interface components {
              */
             phoneNo: string;
         };
+        BatchLogoutRequest: {
+            /**
+             * @description The list of login IDs to log out. Duplicate login IDs are deduplicated before processing and marked `not_processed` in the response. Exceeding the maximum returns a 400.
+             * @example [
+             *       "user1@example.com",
+             *       "user2@example.com"
+             *     ]
+             */
+            loginIds: string[];
+        };
+        LoginIdResult: {
+            /** @example user1@example.com */
+            loginId: string;
+            /**
+             * @description The outcome of the logout for this login ID:
+             *       - `success`: Logout succeeded.
+             *       - `failure`: Logout failed. See `errorMessage` for details.
+             *       - `not_processed`: Skipped as a duplicate of another login ID in the request.
+             * @example success
+             * @enum {string}
+             */
+            status: "success" | "failure" | "not_processed";
+            /**
+             * @description The reason the logout failed. Only present when `status` is `failure` or `not_processed`.
+             * @example User not found
+             */
+            errorMessage?: string;
+        };
+        BatchLogoutResponse: {
+            /** @description The per-loginId outcome of the batch logout, in the same order as the request. */
+            results: components["schemas"]["LoginIdResult"][];
+            /**
+             * @description The total number of login IDs processed.
+             * @example 2
+             */
+            totalProcessed: number;
+            /**
+             * @description The number of login IDs successfully logged out.
+             * @example 2
+             */
+            successCount: number;
+            /**
+             * @description The number of login IDs that failed to log out.
+             * @example 0
+             */
+            failureCount: number;
+        };
         Client: {
             /**
              * @description Client ID
@@ -330,6 +402,17 @@ export interface components {
              * @example false
              */
             loginEpRestrict?: boolean;
+            /**
+             * @description If this attribute is set to true in the request for the clientId, a 6-digit OTP is generated during PasswordlessLogin, PasswordReset, and WebAuthn Authorization. If set to false or unspecified, an 8-digit OTP is generated by default for the aforementioned calls.
+             * @example false
+             */
+            isSixDigitOtp?: boolean;
+            /**
+             * @description When enabled, requests from this client to `/oauth2/login` and `/oauth2/authorize` are rejected with a 401 if the `x-slas-client-auth` header is missing. The `strictClientAuth` attribute applies only to private clients.
+             *     The 'x-slas-client-auth' header is a Base64-encoded string of client credentials. The string is composed of a client ID and client secret, separated by a colon (`:`). For example, `clientId:clientSecret`. Don't add the string `"Basic"`.
+             * @example false
+             */
+            strictClientAuth?: boolean;
         };
         ClientListResponse: {
             /** @description An array of clients. */
@@ -397,17 +480,29 @@ export interface components {
              * @example false
              */
             loginEpRestrict?: boolean;
+            /**
+             * @description If this attribute is set to true in the request for the clientId, a 6-digit OTP is generated during PasswordlessLogin, PasswordReset, and WebAuthn Authorization. If set to false or unspecified, an 8-digit OTP is generated by default for the aforementioned calls.
+             * @example false
+             */
+            isSixDigitOtp?: boolean;
+            /**
+             * @description When enabled, requests from this client to `/oauth2/login` and `/oauth2/authorize` are rejected with a 401 if the `x-slas-client-auth` header is missing. The `strictClientAuth` attribute applies only to private clients.
+             *     The 'x-slas-client-auth' header is a Base64-encoded string of client credentials. The string is composed of a client ID and client secret, separated by a colon (`:`). For example, `clientId:clientSecret`. Don't add the string `"Basic"`.
+             * @example false
+             */
+            strictClientAuth?: boolean;
         };
         /**
          * @description Describes the type of action that the password action template will be used for.
          *     Here are the actions that each enumerated string refers to:
          *       - `PWDLESS_LOGIN`: Passwordless login
          *       - `PWD_RESET_ACTION`: Password reset
-         *       - `PWD_FORGOT_ACTION`: Forgot password
+         *       - `PWD_RESET_CROSS_DEVICE_ACTION`: Password reset for cross-device flow
+         *       - `WEBAUTHN_AUTHORIZE_USER`: WebAuthn authorize user
          * @example PWDLESS_LOGIN
          * @enum {string}
          */
-        PasswordTemplateActionType: "PWDLESS_LOGIN" | "PWD_RESET_ACTION" | "PWD_FORGOT_ACTION";
+        PasswordTemplateActionType: "PWDLESS_LOGIN" | "PWD_RESET_ACTION" | "PWD_RESET_CROSS_DEVICE_ACTION" | "WEBAUTHN_AUTHORIZE_USER";
         /**
          * @description Identifies the type of mode that the password action template will be used for.
          * @example EMAIL
@@ -538,6 +633,26 @@ export interface components {
              *     ]
              */
             oidcClaimMapper?: string[];
+            /** @description Internal identifier of the IDP configuration. */
+            id?: number;
+            /** @description The tenant that owns the IDP configuration. */
+            tenantId?: string;
+            /**
+             * @description The provider type derived from the IDP name prefix.
+             * @example google
+             */
+            idpOrigin?: string;
+            /**
+             * @description How SLAS authenticates to the IDP token endpoint.
+             * @example client_secret
+             */
+            clientAuthType?: string;
+            /** @description Signing algorithm used for private key JWT client authentication. */
+            privateJwtKeyAlgorithm?: string;
+            /** @description Key pair used for private key JWT client authentication. */
+            privateJwtKeyPair?: string;
+            /** @description Whether SLAS populates endpoints from `wellKnownUrl`. */
+            useWellKnown?: boolean | null;
         };
         IdpListResponse: {
             /** @description An array of identity providers. */
@@ -592,10 +707,15 @@ export interface components {
              */
             clientSecret: string;
             /**
-             * @description Set the IDP configuration as the Preferred SLAS IDP. Default value is `false`.
+             * @description Set the IDP configuration as the Preferred SLAS IDP. Required. (The published contract names this field `preferenceValue`, which the service rejects.)
              * @example true
              */
-            preferenceValue?: boolean;
+            isPreferred: boolean;
+            /**
+             * @description How SLAS authenticates to the IDP token endpoint (for example `client_secret`). Required when updating an existing IDP; returned by GET.
+             * @example client_secret
+             */
+            clientAuthType?: string;
             /**
              * @description Default is to place the client credentials in a basic authorization header for the call to the IDP. If true, the client credentials are placed in the POST body to the IDP.
              * @example false
@@ -651,16 +771,39 @@ export interface components {
              */
             oidcClaimMapper?: string[];
         };
+        /** @description Password action templates for one client, channel and action type, as returned by the service. */
+        PasswordActionTemplateGroup: {
+            client_id?: string;
+            tenant_id?: string;
+            channel_id?: string;
+            action_type?: components["schemas"]["PasswordTemplateActionType"];
+            link?: string;
+            templates?: {
+                name?: string;
+                subject?: string;
+                templateType?: components["schemas"]["PasswordTemplateType"];
+                locale?: string;
+                template?: string;
+            }[];
+        };
     };
     responses: never;
     parameters: {
+        /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
         tenantId: string;
-        clientId: string;
+        /** @description The identifier of the sales channel (site). */
         channelId: string;
-        actionType: "PWDLESS_LOGIN" | "PWD_RESET_ACTION" | "PWD_FORGOT_ACTION";
+        /** @description The SLAS client identifier. */
+        clientId: string;
+        /** @description The type of password action (reset or create). */
+        actionType: "PWDLESS_LOGIN" | "PWD_RESET_ACTION" | "PWD_RESET_CROSS_DEVICE_ACTION" | "WEBAUTHN_AUTHORIZE_USER";
+        /** @description The type of email template. */
         templateType: "EMAIL" | "SMS";
+        /** @description A descriptor for a geographical region by both a language and country code. */
         locale: string;
+        /** @description The name of the identity provider. */
         name: string;
+        /** @description The unique identifier of a customer. */
         customerId: string;
         /** @description The shoppers email address. */
         emailAddress: string;
@@ -676,7 +819,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -725,7 +869,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -791,12 +936,61 @@ export interface operations {
             };
         };
     };
+    batchLogout: {
+        parameters: {
+            query: {
+                /** @description The identifier of the sales channel (site). */
+                channelId: string;
+            };
+            header?: never;
+            path: {
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchLogoutRequest"];
+            };
+        };
+        responses: {
+            /** @description The batch logout request was processed successfully. The detailed message in response body will indicate which shoppers were actually logged out and which ones failed and why. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchLogoutResponse"];
+                };
+            };
+            /** @description The request is badly formatted or constructed. If syntactically the request was correct but the loginIds provided did not result in shoppers getting logged out, the result will still be a 200 with details in the response body. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Incorrect Authorization provided. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     retrieveClients: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -836,8 +1030,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                clientId: components["parameters"]["clientId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The SLAS client identifier. */
+                clientId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -886,8 +1082,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                clientId: components["parameters"]["clientId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The SLAS client identifier. */
+                clientId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -958,8 +1156,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                clientId: components["parameters"]["clientId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The SLAS client identifier. */
+                clientId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1001,17 +1201,22 @@ export interface operations {
             };
         };
     };
-    retrievePwdlessTemplate: {
+    retrievePwdActionTemplate: {
         parameters: {
             query: {
-                channelId: components["parameters"]["channelId"];
-                actionType: components["parameters"]["actionType"];
-                templateType: components["parameters"]["templateType"];
+                /** @description The identifier of the sales channel (site). */
+                channelId: string;
+                /** @description The type of password action (reset or create). */
+                actionType: "PWDLESS_LOGIN" | "PWD_RESET_ACTION" | "PWD_RESET_CROSS_DEVICE_ACTION" | "WEBAUTHN_AUTHORIZE_USER";
+                /** @description The type of email template. */
+                templateType: "EMAIL" | "SMS";
             };
             header?: never;
             path: {
-                clientId: components["parameters"]["clientId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The SLAS client identifier. */
+                clientId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1023,7 +1228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasswordActionTemplate"];
+                    "application/json": components["schemas"]["PasswordActionTemplateGroup"][];
                 };
             };
             /** @description Bad request */
@@ -1055,13 +1260,15 @@ export interface operations {
             };
         };
     };
-    registerPwdlessTemplate: {
+    registerPwdActionTemplate: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                clientId: components["parameters"]["clientId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The SLAS client identifier. */
+                clientId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1077,7 +1284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasswordActionTemplate"];
+                    "application/json": components["schemas"]["PasswordActionTemplateGroup"];
                 };
             };
             /** @description A password action template was created successfully. */
@@ -1086,7 +1293,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasswordActionTemplate"];
+                    "application/json": components["schemas"]["PasswordActionTemplateGroup"];
                 };
             };
             /** @description Bad request */
@@ -1118,18 +1325,24 @@ export interface operations {
             };
         };
     };
-    deletePwdlessTemplate: {
+    deletePwdActionTemplate: {
         parameters: {
             query: {
-                channelId: components["parameters"]["channelId"];
-                actionType: components["parameters"]["actionType"];
-                templateType: components["parameters"]["templateType"];
-                locale: components["parameters"]["locale"];
+                /** @description The identifier of the sales channel (site). */
+                channelId: string;
+                /** @description The type of password action (reset or create). */
+                actionType: "PWDLESS_LOGIN" | "PWD_RESET_ACTION" | "PWD_RESET_CROSS_DEVICE_ACTION" | "WEBAUTHN_AUTHORIZE_USER";
+                /** @description The type of email template. */
+                templateType: "EMAIL" | "SMS";
+                /** @description A descriptor for a geographical region by both a language and country code. */
+                locale: string;
             };
             header?: never;
             path: {
-                clientId: components["parameters"]["clientId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The SLAS client identifier. */
+                clientId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1176,7 +1389,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1225,8 +1439,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                name: components["parameters"]["name"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The name of the identity provider. */
+                name: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1275,8 +1491,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                name: components["parameters"]["name"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The name of the identity provider. */
+                name: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1347,8 +1565,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                name: components["parameters"]["name"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The name of the identity provider. */
+                name: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };
@@ -1394,12 +1614,14 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description The shoppers email address. */
-                emailAddress?: components["parameters"]["emailAddress"];
+                emailAddress?: string;
             };
             header?: never;
             path: {
-                customerId: components["parameters"]["customerId"];
-                tenantId: components["parameters"]["tenantId"];
+                /** @description The unique identifier of a customer. */
+                customerId: string;
+                /** @description The identifier of the SLAS tenant (format: realmId_instanceId). */
+                tenantId: string;
             };
             cookie?: never;
         };

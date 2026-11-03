@@ -102,7 +102,7 @@ auth = OAuthStrategy(OAuthConfig(
 
 **CLI interoperability:** the SDK shares the *same* on-disk `auth-sessions.json`
 and config files as the `@salesforce/b2c-cli`. Recommended interactive workflow:
-run `b2c auth login <clientId>` once, then run non-interactive Python — it reuses
+run `b2c auth login --client-id <clientId>` once, then run non-interactive Python — it reuses
 the session with no browser prompt. `find_auth_session`,
 `is_auth_session_token_valid`, and `list_auth_sessions` inspect the store.
 

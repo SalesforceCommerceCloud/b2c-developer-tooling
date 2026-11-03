@@ -33,7 +33,9 @@ breakpoint, and request before starting a session.
    external trigger must run while capture waits, not after awaiting its result.
    A halted capture can return `trigger_pending: true`; resume with
    `debug_control` with `action: continue` before expecting that request to finish. Do not retrigger it.
-4. Use captured stack, variables, and expressions. For further halted inspection,
+4. Use captured stack, variables, and expressions. Capture returns local and
+   closure variables; pass `scopes` to add globals or `[]` to omit variables
+   when expressions cover what you need. For further halted inspection,
    use `debug_inspect` or `debug_evaluate`. Inspection returns stack and top-frame
    variables (all scopes) by default; `include` selects stack, variables, or both.
    Use `frame_index`, `scope`, or `object_path` for targeted inspection. Expressions

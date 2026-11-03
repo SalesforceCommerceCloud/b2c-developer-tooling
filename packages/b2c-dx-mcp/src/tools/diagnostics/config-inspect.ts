@@ -5,12 +5,14 @@
  */
 
 import {z} from 'zod';
+import type {InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import {redactConfigValues, type ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {ProjectContextInput} from '../project-context.js';
 import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
+import type {UpdateCheck, UpdateStatus} from '../../update-check.js';
 
 interface ConfigInspectInput extends ProjectContextInput {
   unmask?: boolean;
@@ -21,9 +23,17 @@ interface ConfigInspectOutput {
   config: Record<string, unknown>;
   /** Configuration sources that contributed, in precedence order. */
   sources: ConfigSourceInfo[];
+  /**
+   * How the instance authenticates WebDAV, OCAPI, and SCAPI requests, and the
+   * stored Account Manager sessions those use. Sessions belong to a client,
+   * not an instance, so one sign-in can serve several instances.
+   */
+  auth?: InstanceAuthSummary;
   /** Resolution warnings, if any. */
   warnings?: string[];
   skillReferences?: SkillReference[];
+  /** Running server version and whether a newer release is available. */
+  version?: UpdateStatus;
 }
 
 /**
@@ -33,9 +43,13 @@ interface ConfigInspectOutput {
  * agents — the effective project directory and how it was resolved.
  *
  * @param loadServices - Function that loads configuration and returns Services instance
+ * @param updateCheck - Server update check; reported as `version` and refreshed in the background
  * @returns The config_inspect MCP tool
  */
-export function createConfigInspectTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createConfigInspectTool(
+  loadServices: () => Promise<Services> | Services,
+  updateCheck?: UpdateCheck,
+): McpTool {
   return createToolAdapter<ConfigInspectInput, ConfigInspectOutput>(
     {
       name: 'config_inspect',
@@ -43,7 +57,7 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       idempotent: true,
       openWorld: false,
       description:
-        'Inspect resolved B2C configuration, sources, warnings, and paths; usually no need to read dw.json. ' +
+        'Inspect resolved B2C configuration, sources, warnings, paths, how the instance authenticates, and whether this server is up to date; usually no need to read dw.json. ' +
         'Secrets are masked by default.',
       toolsets: ['DIAGNOSTICS', 'CIP'],
       requiresInstance: false,
@@ -56,12 +70,16 @@ export function createConfigInspectTool(loadServices: () => Promise<Services> | 
       },
       async execute(args, {services}) {
         const resolved = services.getResolvedConfig();
+        // Report what is known now; a stale result refreshes for the next call.
+        updateCheck?.refresh();
 
         return {
           config: redactConfigValues(resolved.values, {unmask: args.unmask ?? false}),
           sources: resolved.sources,
+          auth: resolved.values.hostname ? services.getInstanceAuth() : undefined,
           warnings: resolved.warnings.length > 0 ? resolved.warnings.map((w) => w.message) : undefined,
           skillReferences: resolved.warnings.length > 0 ? [MCP_SKILL_REFERENCES.configSources] : undefined,
+          version: updateCheck?.status(),
         };
       },
       formatOutput: (output) => jsonResult(output),

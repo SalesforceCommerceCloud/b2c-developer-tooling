@@ -30,7 +30,7 @@ export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesC
 
   static flags = {
     'site-id': Flags.string({
-      description: t('flags.siteId.description', 'Site ID (e.g. RefArch)'),
+      description: t('flags.siteId.description', 'Site ID (e.g. RefArch); defaults to siteId from configuration'),
       exclusive: ['bm'],
     }),
     bm: Flags.boolean({
@@ -86,11 +86,16 @@ export default class SitesCartridgesRemove extends InstanceCommand<typeof SitesC
   }
 
   private resolveSiteId(): string {
-    const siteId = this.flags['site-id'];
+    const siteId = this.flagOrConfig(this.flags['site-id'], 'siteId');
     const bm = this.flags.bm;
 
     if (!siteId && !bm) {
-      this.error(t('commands.sites.cartridges.siteIdRequired', 'Provide --site-id <id> or --bm to specify a site.'));
+      this.error(
+        t(
+          'commands.sites.cartridges.siteIdRequired',
+          'Provide --site-id <id>, set siteId in your configuration, or use --bm to specify a site.',
+        ),
+      );
     }
 
     return bm ? BM_SITE_ID : siteId!;

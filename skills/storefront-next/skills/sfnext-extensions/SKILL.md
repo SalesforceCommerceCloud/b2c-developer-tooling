@@ -1,7 +1,7 @@
 ---
 name: sfnext-extensions
 description: >-
-  Add or remove modular features in a Storefront Next project with the extension system: src/extensions/<name>/ folders, target-config.json (UITarget components, contextProviders, actionHooks), sfcc.-prefixed UITarget ids, extension routes, per-extension config.ts and locales, SFDC_EXT_ integration markers, the `sfnext extensions create|install|remove|list` commands, and the agent-driven instructions/*.mdc install flow. Use when inserting a component into a UITarget slot (for example sfcc.header.before.cart or sfcc.pdp.bnpl.message), adding a checkout action hook, installing or removing store locator, BOPIS, multiship or a demo extension, listing extension points with pnpm extensions:list, or deciding whether to extend, restyle, or edit the base at all. Do not use for styling or brand changes (use `storefront-next:sfnext-theming`), for new merchant-editable Page Designer blocks (use `storefront-next:sfnext-page-designer`), or for analytics/engagement adapters (use `storefront-next:sfnext-analytics-consent`).
+  Add, install, or remove Storefront Next extensions: UITarget slots, action hooks, target-config.json, extension routes, and the `sfnext extensions` commands. Use for store locator, BOPIS, or multiship, or when deciding whether to extend or edit the base. Not for theming (`storefront-next:sfnext-theming`) or Page Designer blocks (`storefront-next:sfnext-page-designer`).
 ---
 
 # Storefront Next Extensions

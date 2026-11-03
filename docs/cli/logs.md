@@ -8,7 +8,7 @@ Commands for retrieving and monitoring log files on B2C Commerce instances. Thes
 
 ## Authentication
 
-All logs commands require WebDAV credentials. See the [WebDAV Authentication](/cli/webdav#authentication) section for details on Basic Auth and OAuth options.
+Logs commands need only your instance hostname. The first time, your browser opens so you can sign in with your Account Manager account. You can also use an access key or API client; see [WebDAV Authentication](/cli/webdav#authentication).
 
 ---
 
@@ -26,7 +26,7 @@ b2c logs get
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--filter`, `-f` | Log prefixes to filter (can specify multiple). Use a path like `internal/server` to fetch logs from a subdirectory. | `error`, `customerror` |
+| `--filter`, `-f` | Log prefixes to read (can specify multiple). Replaces the default rather than adding to it. Matches the start of the file name or of its category. Use a path like `internal/server` to fetch logs from a subdirectory. See [Custom logger files](#custom-logger-files). | `error`, `customerror` |
 | `--count`, `-n` | Maximum number of entries to retrieve | `20` |
 | `--since` | Only show entries after this time (e.g., "5m", "1h", "2d", or ISO 8601) | - |
 | `--level` | Filter by log level (can specify multiple): ERROR, WARN, INFO, DEBUG, FATAL, TRACE | - |
@@ -47,6 +47,9 @@ b2c logs get --count 50
 
 # Get logs from specific types
 b2c logs get --filter error --filter debug --filter warn
+
+# Get entries from every custom logger file (custom-*.log)
+b2c logs get --filter custom-
 
 # Get logs from a subdirectory (e.g. internal/) using a path-like filter
 b2c logs get --filter internal/server
@@ -123,7 +126,7 @@ b2c logs list
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--filter`, `-f` | Filter by log prefix (can specify multiple). Use a path like `internal/server` to list logs in a subdirectory. | All logs |
+| `--filter`, `-f` | Filter by log prefix (can specify multiple). Matches the start of the file name or of its category. Use a path like `internal/server` to list logs in a subdirectory. | All logs |
 | `--sort` | Sort field: `name`, `date`, `size` | `date` |
 | `--order`, `-o` | Sort order: `asc`, `desc` | `desc` |
 | `--columns`, `-c` | Columns to display (comma-separated). Available: name, prefix, size, modified | - |
@@ -175,7 +178,7 @@ b2c logs tail
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--filter`, `-f` | Log prefixes to filter (can specify multiple). Use a path like `internal/server` to tail logs in a subdirectory. | `error`, `customerror` |
+| `--filter`, `-f` | Log prefixes to tail (can specify multiple). Replaces the default rather than adding to it. Matches the start of the file name or of its category. Use a path like `internal/server` to tail logs in a subdirectory. | `error`, `customerror` |
 | `--interval` | Polling interval in milliseconds | `3000` |
 | `--last`, `-l` | Show last N entries per file on startup (0 to skip) | `1` |
 | `--level` | Filter by log level (can specify multiple): ERROR, WARN, INFO, DEBUG, FATAL, TRACE | - |
@@ -241,6 +244,21 @@ B2C Commerce instances generate various log files:
 | `customwarn` | `Logger.warn()` | Always enabled |
 | `customerror` | `Logger.error()` | Always enabled |
 | `customfatal` | `log.fatal()` | Always enabled |
+
+### Custom Logger Files
+
+Scripts that log through a named logger, such as `Logger.getLogger('PaymentProcessor', 'payment')`, write to their own `custom-<name>-<host>-appserver-<date>.log` file. That file is separate from `customerror`, and `logs get` and `logs tail` don't read it by default. When `logs get` finds no entries, it lists the `custom-*` logs that exist on the instance.
+
+A file's category is the text before the host name. For custom logger files it ends at the second dash, so `custom-MyIntegration-CustomApi-<host>-…log` has the category `custom-MyIntegration`. `--filter` matches the start of either the category or the file name:
+
+```bash
+# Every custom logger file
+b2c logs get --filter custom-
+
+# One logger, including names that contain a dash
+b2c logs get --filter custom-PaymentProcessor
+b2c logs get --filter custom-MyIntegration-CustomApi
+```
 
 ### System Logs
 

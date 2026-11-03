@@ -160,7 +160,7 @@ exports.getMyData.public = true;  // Required
 - Use `RESTResponseMgr.createSuccess()` for responses
 - Use `RESTResponseMgr.createError()` for error responses (RFC 9457 format)
 
-See [Implementation Reference](references/IMPLEMENTATION.md) for caching, remote includes, and external service calls.
+See [Implementation Reference](references/IMPLEMENTATION.md) for caching, remote includes, and external service calls. Include targets run without path parameters and fail the parent on any error status; read the remote-include section before designing one.
 
 ## Component 3: Mapping (api.json)
 

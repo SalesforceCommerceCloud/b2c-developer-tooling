@@ -15,6 +15,8 @@ export interface ScapiAuthInfo {
   types: ScapiAuthType[];
   schemes: string[];
   executable: boolean;
+  /** Why code mode cannot run the operation despite supported auth, e.g. a file upload or download. */
+  unsupported?: string;
 }
 
 export function isScapiTextMediaType(mediaType: string): boolean {
@@ -25,13 +27,16 @@ export function isScapiTextMediaType(mediaType: string): boolean {
 /** Shared discovery/execution limit: code mode transports JSON requests and text responses. */
 export function unsupportedScapiTransfer(document: ScapiSchemaDocument, operation: ApiDocument): string | undefined {
   const body = operation.requestBody && resolveScapiReference(operation.requestBody, document.schema);
-  if (body?.required && !body.content?.['application/json'])
-    return 'This operation requires a non-JSON request body. File uploads are not supported.';
+  if (body?.required && !body.content?.['application/json']) {
+    const types = Object.keys(body.content ?? {});
+    const kind = types.some((type) => /multipart|octet-stream/i.test(type)) ? 'File upload' : 'Non-JSON body';
+    return `${kind}: requires a ${types.join(' or ') || 'non-JSON'} request body; code mode sends JSON only.`;
+  }
   const mediaTypes = Object.entries<ApiDocument>(operation.responses ?? {})
     .filter(([status]) => /^2(?:\d\d|XX)$/i.test(status))
     .flatMap(([, response]) => Object.keys(resolveScapiReference(response, document.schema).content ?? {}));
   if (mediaTypes.length && !mediaTypes.some(isScapiTextMediaType))
-    return 'This operation returns a binary file. File downloads are not supported.';
+    return `File download: returns ${[...new Set(mediaTypes)].join(' or ')}; code mode reads JSON and text only.`;
 }
 
 export type ScapiRequestAuth = {type: 'admin' | 'shopper'; scopes: string[]};
@@ -67,10 +72,12 @@ export function getScapiAuthInfo(document: ScapiSchemaDocument, operation: ApiDo
   }
   // OAuth endpoints can declare credentials in grant parameters instead of security schemes.
   if (!types.size) types.add(document.entry.id === 'shopper/auth/v1' ? 'shopper' : 'unknown');
+  const unsupported = unsupportedScapiTransfer(document, operation);
   return {
     types: [...types].sort(),
     schemes,
-    executable: Boolean(selectScapiAuth(document, operation)) && !unsupportedScapiTransfer(document, operation),
+    executable: Boolean(selectScapiAuth(document, operation)) && !unsupported,
+    ...(unsupported ? {unsupported} : {}),
   };
 }
 
@@ -145,6 +152,13 @@ export function scapiShopperAuthError(error: unknown, context: AuthContext): Err
   );
 }
 
+/** True when a guest token holds none of the operation's accepted scopes; only a new token can pick up client changes. */
+export function shopperTokenLacksScopes(context: AuthContext): boolean {
+  const granted = context.shopper?.tokenScopes;
+  const accepted = context.candidates[0] ?? [];
+  return Boolean(granted && accepted.length > 0 && !granted.some((scope) => accepted.includes(scope)));
+}
+
 function scopeAdvice(context: AuthContext): string {
   if (context.shopper) {
     const accepted = context.candidates[0] ?? [];
@@ -159,7 +173,9 @@ function scopeAdvice(context: AuthContext): string {
     const standard = granted.includes(SHOPPER_STANDARD_SCOPE)
       ? `${SHOPPER_STANDARD_SCOPE} does not cover this operation; add one of the accepted scopes to the client alongside it.`
       : `The shopper token grants: ${granted.join(' ')}; add one of the accepted scopes to the client.`;
-    return `${advice} ${standard} ${channel}`;
+    const renewal =
+      'This guest session is discarded, so the next request uses a new token (and a new basket) with the client scopes then in effect.';
+    return `${advice} ${standard} ${channel} ${renewal}`;
   }
   const choices = context.candidates.map((candidate) => candidate.join(' + ')).join(' OR ');
   return (

@@ -45,9 +45,9 @@ managed. Do not export tokens or use ambient fetch inside code mode.
    explain the denied read operation rather than weakening policy.
 3. Read the selected execution's `logFilePath` with `webdav_get`; it accepts
    `/Sites/LOGS/...` paths. Inspect size via `webdav_list`; read a bounded range
-   and continue via byte `nextOffset` only as needed. Download to `outputPath`
-   for local analysis. Use recent-log tools for filtering and watches, not an
-   exact raw-file read. [Job-log details](references/job-logs.md).
+   and continue via byte `nextOffset` only as needed, or use `tail: true` for the
+   end. Download with `webdav_get_to_file` for local analysis. Use recent-log
+   tools for filtering and watches, not an exact raw-file read. [Job-log details](references/job-logs.md).
 4. Identify the first relevant fault, processed/skipped records, and which steps
    actually ran. Job transitions can continue after errors; do not assume every
    later step was skipped. Green status can also hide skipped or incomplete work.

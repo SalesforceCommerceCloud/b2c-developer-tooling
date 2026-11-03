@@ -56,11 +56,11 @@ Tail sandbox logs into a VS Code output channel, install Commerce App Packages, 
 ## Get started
 
 1. Open a B2C Commerce project in VS Code.
-2. Add a `dw.json` file at the project root or use an existing B2C CLI configuration. The project can be nested inside an open workspace folder.
+2. Add a `dw.json` file with your instance hostname at the project root, or use an existing B2C CLI configuration. You can also start Code Sync and choose **Connect to Instance** to create one. The project can be nested inside an open workspace folder.
 3. Select an instance for the workspace from the cloud icon in the status bar.
 4. Open an extension view from the activity bar or run an extension command from the Command Palette.
 
-Different features require different credentials. WebDAV workflows can use a Business Manager username and access key, while sandbox and API workflows require OAuth configuration. See [Connecting to a B2C instance](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration#connecting-to-a-b2c-instance) for the per-feature requirements and an example `dw.json`.
+Deploying cartridges needs only your instance hostname: you sign in with your Account Manager account when asked. Other features need more setup. See [Connecting to a B2C instance](https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration#connecting-to-a-b2c-instance) for the per-feature requirements and an example `dw.json`.
 
 The [B2C CLI](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/installation) is optional. Install it when you want to run the same workflows from a terminal or CI environment.
 

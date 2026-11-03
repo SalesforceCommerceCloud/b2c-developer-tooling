@@ -28,6 +28,7 @@ describe('code watch', () => {
 
     sinon.stub(command, 'requireWebDavCredentials').returns(void 0);
     sinon.stub(command, 'requireOAuthCredentials').returns(void 0);
+    sinon.stub(command, 'hasOAuthCredentials').returns(true);
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
     sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'cartridgeOptions').get(() => ({}));

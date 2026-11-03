@@ -329,6 +329,24 @@ Stack trace line 2
       expect(entries[0].message).to.include('Stack trace line 1');
     });
 
+    it('rejects when the Logs directory cannot be listed', async () => {
+      server.use(http.all(`${BASE_URL}/*`, () => new HttpResponse(null, {status: 401})));
+      const instance = {...createMockInstance(), auth: {}, config: {hostname: TEST_HOST}};
+      const discoveredFiles: LogFile[] = [];
+
+      const error = await tailLogs(instance as never, {
+        prefixes: ['error'],
+        pollInterval: 10,
+        onFileDiscovered: (file) => discoveredFiles.push(file),
+      }).then(
+        () => expect.fail('expected tailLogs to reject'),
+        (error_: Error) => error_,
+      );
+
+      expect(error.message).to.include('Cannot list Logs: PROPFIND failed: 401');
+      expect(discoveredFiles).to.have.length(0);
+    });
+
     it('stop() terminates tailing', async () => {
       const now = new Date();
 

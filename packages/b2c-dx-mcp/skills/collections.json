@@ -1,6 +1,14 @@
 {
   "version": 1,
-  "featuredResources": ["mcp/b2c-mcp-server", "mcp/b2c-mcp-debugger", "mcp/b2c-mcp-config", "mcp/b2c-mcp-scapi", "mcp/b2c-mcp-cip"],
+  "featuredResources": [
+    "mcp/b2c-mcp-server",
+    "b2c-cli/b2c-setup",
+    "mcp/b2c-mcp-debugger",
+    "mcp/b2c-mcp-config",
+    "mcp/b2c-mcp-scapi",
+    "mcp/b2c-mcp-cip",
+    "mcp/b2c-mcp-claude-artifacts"
+  ],
   "collections": [
     {
       "id": "b2c-cli",
@@ -27,6 +35,12 @@
       "plugin": "storefront-next",
       "isGA": true,
       "workspaces": ["storefront-next"]
+    },
+    {
+      "id": "cap-dev",
+      "title": "Commerce App Package Development",
+      "directory": "vendor/cap-dev/skills",
+      "isGA": true
     },
     {
       "id": "mcp",

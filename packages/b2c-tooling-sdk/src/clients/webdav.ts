@@ -15,9 +15,17 @@ import {parseStringPromise} from 'xml2js';
 import type {Dispatcher} from 'undici';
 import type {AuthStrategy} from '../auth/types.js';
 import {HTTPError} from '../errors/http-error.js';
-import {wrapNetworkError} from '../errors/network-error.js';
+import {classifyNetworkError, NetworkError, wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry, type UnifiedMiddleware} from './middleware-registry.js';
+
+/**
+ * Methods retried once when the server resets the connection. These are safe to
+ * replay: a repeat gives the same result whether or not the first attempt
+ * reached the server. MKCOL is excluded because callers use it as a lock
+ * ({@link WebDavClient.mkcol} retries itself, since it accepts 405).
+ */
+const RESET_RETRY_METHODS = new Set(['GET', 'HEAD', 'PROPFIND', 'PUT']);
 
 /**
  * Result of a PROPFIND operation.
@@ -68,9 +76,15 @@ export interface WebDavClientOptions {
    * Use createTlsDispatcher() to create one with client certificates.
    */
   dispatcher?: Dispatcher;
+  /**
+   * Returns text appended to the error of a request refused with 401 or 403,
+   * e.g. the permission the authenticated user lacks for the path.
+   */
+  authFailureHint?: (path: string, status: 401 | 403) => Promise<string | undefined>;
 }
 
 export class WebDavClient {
+  private authFailureHint?: (path: string, status: 401 | 403) => Promise<string | undefined>;
   private baseUrl: string;
   private middlewareRegistry: MiddlewareRegistry;
   private dispatcher?: Dispatcher;
@@ -90,6 +104,7 @@ export class WebDavClient {
     this.baseUrl = `https://${hostname}/on/demandware.servlet/webdav/Sites`;
     this.middlewareRegistry = options?.middlewareRegistry ?? globalMiddlewareRegistry;
     this.dispatcher = options?.dispatcher;
+    this.authFailureHint = options?.authFailureHint;
   }
 
   /**
@@ -101,6 +116,18 @@ export class WebDavClient {
   buildUrl(path: string): string {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     return `${this.baseUrl}/${cleanPath}`;
+  }
+
+  /**
+   * Builds the error for a failed request, appending the auth failure hint to 401/403 responses.
+   */
+  private async failure(method: string, path: string, response: Response, hint?: string): Promise<HTTPError> {
+    let suffix = hint ? ` ${hint}` : '';
+    if ((response.status === 401 || response.status === 403) && this.authFailureHint) {
+      const authHint = await this.authFailureHint(path, response.status).catch(() => undefined);
+      if (authHint) suffix += `. ${authHint}`;
+    }
+    return new HTTPError(`${method} failed: ${response.status} ${response.statusText}${suffix}`, response, method);
   }
 
   /**
@@ -168,19 +195,29 @@ export class WebDavClient {
 
     // Use auth.fetch with the (potentially modified) request
     // Pass dispatcher for TLS/mTLS support
+    // Streams cannot be replayed, so only buffered bodies are retried.
+    const canRetry = RESET_RETRY_METHODS.has(request.method) && !(init?.body instanceof ReadableStream);
     let response: Response;
-    try {
-      response = await this.auth.fetch(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: init?.body, // Use original body since Request body may have been consumed
-        signal: request.signal,
-        redirect: request.redirect,
-        dispatcher: this.dispatcher,
-      });
-    } catch (err) {
-      const host = new URL(this.baseUrl).host;
-      throw wrapNetworkError(err, {operation: `WebDAV ${request.method}`, host});
+    for (let attempt = 1; ; attempt++) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        response = await this.auth.fetch(request.url, {
+          method: request.method,
+          headers: request.headers,
+          body: init?.body, // Use original body since Request body may have been consumed
+          signal: request.signal,
+          redirect: request.redirect,
+          dispatcher: this.dispatcher,
+        });
+        break;
+      } catch (err) {
+        if (canRetry && attempt === 1 && classifyNetworkError(err) === 'connection-reset') {
+          logger.debug({method: request.method, url: request.url}, `[WebDAV RETRY] ${request.method} ${request.url}`);
+          continue;
+        }
+        const host = new URL(this.baseUrl).host;
+        throw wrapNetworkError(err, {operation: `WebDAV ${request.method}`, host});
+      }
     }
 
     const duration = Date.now() - startTime;
@@ -273,11 +310,18 @@ export class WebDavClient {
    * await client.mkcol('Cartridges/v1');
    */
   async mkcol(path: string): Promise<void> {
-    const response = await this.request(path, {method: 'MKCOL'});
+    let response: Response;
+    try {
+      response = await this.request(path, {method: 'MKCOL'});
+    } catch (error) {
+      // Safe to retry here: if the reset request did create the collection, the retry gets 405.
+      if (!(error instanceof NetworkError && error.kind === 'connection-reset')) throw error;
+      response = await this.request(path, {method: 'MKCOL'});
+    }
 
     // 201 = created, 405 = already exists (acceptable)
     if (!response.ok && response.status !== 405) {
-      throw new HTTPError(`MKCOL failed: ${response.status} ${response.statusText}`, response, 'MKCOL');
+      throw await this.failure('MKCOL', path, response);
     }
   }
 
@@ -303,12 +347,7 @@ export class WebDavClient {
       const hints: Record<number, string> = {
         413: '(sandbox may be stopped or unavailable)',
       };
-      const hint = hints[response.status];
-      throw new HTTPError(
-        `PUT failed: ${response.status} ${response.statusText}${hint ? ` ${hint}` : ''}`,
-        response,
-        'PUT',
-      );
+      throw await this.failure('PUT', path, response, hints[response.status]);
     }
   }
 
@@ -325,7 +364,7 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'GET'});
 
     if (!response.ok) {
-      throw new HTTPError(`GET failed: ${response.status} ${response.statusText}`, response, 'GET');
+      throw await this.failure('GET', path, response);
     }
 
     return response.arrayBuffer();
@@ -344,7 +383,7 @@ export class WebDavClient {
     const response = await this.request(path, {method: 'DELETE'});
 
     if (!response.ok) {
-      throw new HTTPError(`DELETE failed: ${response.status} ${response.statusText}`, response, 'DELETE');
+      throw await this.failure('DELETE', path, response);
     }
   }
 
@@ -381,7 +420,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      throw new HTTPError(`PROPFIND failed: ${response.status} ${response.statusText}`, response, 'PROPFIND');
+      throw await this.failure('PROPFIND', path, response);
     }
 
     const xml = await response.text();
@@ -409,7 +448,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      throw new HTTPError(`COPY failed: ${response.status} ${response.statusText}`, response, 'COPY');
+      throw await this.failure('COPY', source, response);
     }
   }
 
@@ -434,7 +473,7 @@ export class WebDavClient {
     });
 
     if (!response.ok) {
-      throw new HTTPError(`MOVE failed: ${response.status} ${response.statusText}`, response, 'MOVE');
+      throw await this.failure('MOVE', source, response);
     }
   }
 

@@ -8,6 +8,7 @@ import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {
   createCdnZonesClient,
+  listAllZones,
   CDN_ZONES_READ_SCOPES,
   CDN_ZONES_RW_SCOPES,
   toOrganizationId,
@@ -300,6 +301,97 @@ describe('clients/cdn-zones', () => {
 
     it('returns already-prefixed IDs unchanged', () => {
       expect(toOrganizationId('f_ecom_zzxy_prd')).to.equal('f_ecom_zzxy_prd');
+    });
+  });
+
+  describe('listAllZones', () => {
+    const server = setupServer();
+    const requests: URL[] = [];
+
+    const makeZones = (start: number, count: number) =>
+      Array.from({length: count}, (_, i) => ({zoneId: `zone${start + i}`, name: `zone-${start + i}`}));
+
+    function mockPages(total: number, failAtOffset?: number) {
+      server.use(
+        http.get(`${BASE_URL}/organizations/:organizationId/zones/info`, ({request}) => {
+          const url = new URL(request.url);
+          requests.push(url);
+          const limit = Number(url.searchParams.get('limit') ?? 25);
+          const offset = Number(url.searchParams.get('offset') ?? 0);
+          if (offset === failAtOffset) {
+            return HttpResponse.json({title: 'Boom'}, {status: 500});
+          }
+          return HttpResponse.json({data: makeZones(offset, Math.max(0, Math.min(limit, total - offset)))});
+        }),
+      );
+    }
+
+    function createClient() {
+      return createCdnZonesClient({shortCode: SHORT_CODE, tenantId: TENANT_ID}, new MockAuthStrategy());
+    }
+
+    before(() => {
+      server.listen({onUnhandledRequest: 'error'});
+    });
+
+    beforeEach(() => {
+      requests.length = 0;
+    });
+
+    afterEach(() => {
+      server.resetHandlers();
+    });
+
+    after(() => {
+      server.close();
+    });
+
+    it('pages past the first 25 zones using limit=50', async () => {
+      mockPages(63);
+
+      const {zones, error} = await listAllZones(createClient(), ORG_ID);
+
+      expect(error).to.be.undefined;
+      expect(zones).to.have.length(63);
+      expect(zones[62].name).to.equal('zone-62');
+      expect(requests.map((u) => u.searchParams.get('offset'))).to.deep.equal(['0', '50']);
+      expect(requests.every((u) => u.searchParams.get('limit') === '50')).to.equal(true);
+    });
+
+    it('makes a single request when the first page is short', async () => {
+      mockPages(3);
+
+      const {zones} = await listAllZones(createClient(), ORG_ID);
+
+      expect(zones).to.have.length(3);
+      expect(requests).to.have.length(1);
+    });
+
+    it('terminates on an empty page after a full page', async () => {
+      mockPages(50);
+
+      const {zones} = await listAllZones(createClient(), ORG_ID);
+
+      expect(zones).to.have.length(50);
+      expect(requests).to.have.length(2);
+    });
+
+    it('returns an empty list when there are no zones', async () => {
+      mockPages(0);
+
+      const {zones, error} = await listAllZones(createClient(), ORG_ID);
+
+      expect(error).to.be.undefined;
+      expect(zones).to.deep.equal([]);
+    });
+
+    it('returns the error and partial zones when a later page fails', async () => {
+      mockPages(120, 50);
+
+      const {zones, error} = await listAllZones(createClient(), ORG_ID);
+
+      expect(error).to.exist;
+      expect(zones).to.have.length(50);
     });
   });
 });

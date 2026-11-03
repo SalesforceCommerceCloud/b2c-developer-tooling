@@ -15,7 +15,8 @@ B2C skills give your AI assistant guidance for B2C Commerce development,
 operations, CLI workflows, and Storefront Next projects.
 
 **The [B2C MCP](../mcp/) gives your assistant access to guidance from the `b2c`,
-`b2c-cli`, `b2c-ops`, and `storefront-next` collections** through its
+`b2c-cli`, `b2c-ops`, and `storefront-next` collections, plus the
+[`cap-dev`](./commerce-apps) Commerce App Package authoring skills,** through its
 [`skills_read` tool](../mcp/toolsets#documentation). Your assistant can find and read
 that guidance as needed, without a separate skills installation. You can also
 install these collections directly in your assistant, alongside the MCP or on their own.
@@ -61,8 +62,8 @@ codex plugin add b2c-cli@b2c-developer-tooling
 ```
 
 Alternatively, run `/plugins` and select the **B2C Developer Tooling** marketplace.
-Start a new session after installation. This setup also works with the Codex
-IDE extension and the ChatGPT Work desktop app.
+Start a new session after installation. Codex plugins also work in
+[ChatGPT Work](./desktop-assistants#chatgpt-work).
 For ChatGPT online, see the [B2C MCP connection setup](../mcp/#chatgpt).
 
 ::: details Update or remove
@@ -93,6 +94,8 @@ claude plugin install b2c-cli@b2c-developer-tooling
 
 Start a new session after installation. To install for the current project only, run it from your project directory with `--scope project`.
 
+<!--@include: ../_partials/claude-plugin-auto-update.md-->
+
 ::: details Update or remove
 
 ```bash
@@ -106,6 +109,11 @@ claude plugin marketplace remove b2c-developer-tooling
 ```
 
 :::
+
+#### Claude Desktop and Cowork {#claude-cowork}
+
+Local sessions in the Claude Desktop **Code** tab use the Claude Code plugins installed above.
+Tasks on **Home** (formerly Cowork) install plugins separately; see [Claude Desktop (Cowork)](./desktop-assistants#claude-cowork).
 
 </template>
 <template #copilot-title>
@@ -289,8 +297,6 @@ prepare a handoff. They work with the MCP or your existing CLI access.
 
 </ExamplePrompt>
 
-![Screenshot placeholder: an assistant applying B2C Commerce logging guidance to a checkout controller.](/placeholders/skills-checkout-logging.svg)
-
 The **B2C Commerce** collection covers cartridge development, including logging patterns.
 
 ### Build an editable component
@@ -300,8 +306,6 @@ The **B2C Commerce** collection covers cartridge development, including logging 
 > Create a Page Designer component for my Storefront Next project with an editable heading, image, and link.
 
 </ExamplePrompt>
-
-![Screenshot placeholder: a Storefront Next Page Designer component with editable content, alongside the assistant's completion summary.](/placeholders/skills-page-designer.svg)
 
 The **Storefront Next** collection covers components and Page Designer integration.
 

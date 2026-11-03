@@ -155,6 +155,9 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
     importSetExclude: toList(flags['import-set-exclude']),
+    // An explicitly empty --cartridge-ignore-dirs means "ignore nothing".
+    cartridgeIgnoreDirs:
+      flags['cartridge-ignore-dirs'] === undefined ? undefined : (toList(flags['cartridge-ignore-dirs']) ?? []),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,

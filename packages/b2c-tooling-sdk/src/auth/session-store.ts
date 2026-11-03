@@ -16,7 +16,8 @@
  *
  * Sessions are keyed by `clientId`, one record per client. Backends are
  * pluggable via {@link AuthSessionBackend}: the CLI uses
- * {@link FileAuthSessionBackend}; the VS Code extension registers a
+ * {@link FileAuthSessionBackend} unless a plugin provides one through the
+ * `b2c:auth-session-store` hook; the VS Code extension registers a
  * SecretStorage-backed backend. The interface is intentionally synchronous
  * because session lookups happen on the hot path of every authenticated
  * command. Backends with async-only native storage (VS Code SecretStorage,
@@ -85,6 +86,11 @@ export interface AuthSessionBackend {
   delete(clientId: string): void;
   list(): AuthSession[];
   clearAll(): void;
+  /**
+   * Waits for pending asynchronous writes to finish. Optional; the CLI calls it
+   * before the process exits so write-behind backends do not lose sessions.
+   */
+  flush?(): Promise<void>;
 }
 
 interface SessionFile {
@@ -247,6 +253,11 @@ export function getAuthSessionBackend(): AuthSessionBackend {
 /** Convenience: install a {@link FileAuthSessionBackend} pointed at `dataDir`. */
 export function initializeFileAuthSessionStore(dataDir: string): void {
   setAuthSessionBackend(new FileAuthSessionBackend(dataDir));
+}
+
+/** Wait for the active backend's pending writes, if it buffers any. */
+export async function flushAuthSessionStore(): Promise<void> {
+  await activeBackend?.flush?.();
 }
 
 /** Read the session for a clientId. Returns null when none is stored. */

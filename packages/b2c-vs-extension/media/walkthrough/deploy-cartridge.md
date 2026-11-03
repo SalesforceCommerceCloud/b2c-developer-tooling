@@ -61,12 +61,11 @@ Click the **Code Versions** icon in the Cartridges view to see all code versions
 ## Troubleshooting
 
 ### ❌ "Upload failed: Authentication required"
-- Check your `dw.json` credentials
-- Verify hostname, username, and password are correct
+- Check the hostname in `dw.json`
+- Finish signing in when your browser opens, or check your username and access key if you use them
 
 ### ❌ "Upload failed: Permission denied"
-- Ensure your user has WebDAV upload permissions
-- Check Business Manager user roles
+- The error names the Business Manager permission you need; ask an administrator to add it to one of your roles
 
 ### ❌ "Cartridge not found on instance"
 - After uploading, the cartridge appears in the cartridge path

@@ -47,6 +47,10 @@ process.env.B2C_SKIP_PLUGIN_HOOKS = '1';
 // Agent-specific behavior is tested with explicit environments.
 process.env.SFCC_AGENT = '0';
 
+// Never send test runs to production telemetry (the SFCC_ strip above also
+// removes any SFCC_DISABLE_TELEMETRY inherited from CI).
+process.env.SFCC_DISABLE_TELEMETRY = 'true';
+
 // Isolate the auth-session store (and other data-dir state) to a unique per-process
 // temp dir. BaseCommand.init() re-points the store at config.dataDir unless
 // B2C_TEST_DATA_DIR is set, which made command tests read/write the developer's
