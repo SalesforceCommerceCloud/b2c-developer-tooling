@@ -27,6 +27,7 @@ See [installation](../guide/installation) for package-manager options and
 | Develop and debug cartridges  | [Code](./code), [Scaffold](./scaffold), [Debug](./debug)                         |
 | Deploy and automate           | [Jobs](./jobs), [MRT](./mrt), [Granular Replications](./replications)            |
 | Manage environments and data  | [Sandbox](./sandbox), [Sites](./sites), [WebDAV](./webdav), [Content](./content) |
+| Extend the data model         | [Object Types](./object-types)                                                   |
 | Check Custom API registration | [Custom APIs](./custom-apis)                                                     |
 | Investigate operations        | [Logs](./logs), [Metrics](./metrics), [CIP Analytics](./cip)                     |
 | Manage access                 | [Account Manager](./account-manager), [Business Manager](./bm), [SLAS](./slas)   |

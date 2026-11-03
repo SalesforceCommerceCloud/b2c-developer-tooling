@@ -24,6 +24,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
+    "patch-types": "node scripts/patch-vendored-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc -p . --noEmit --pretty false",

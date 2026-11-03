@@ -22,6 +22,11 @@ interface PluginConfig {
    * to false — i.e. auto-discovery runs unless the host explicitly opts out.
    */
   autoDiscover?: boolean;
+  /**
+   * Extra declaration files (for example generated custom attribute types)
+   * added to every project that contains cartridge files.
+   */
+  extraTypeFiles?: string[];
 }
 
 interface NormalizedCartridge {
@@ -102,6 +107,10 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
   // Whether the most recent applyConfig() received an explicit cartridges list.
   // When true, we skip auto-discovery; when false, create() may auto-populate.
   let cartridgesFromHost = false;
+  let extraTypeFiles: string[] = [];
+  // Projects created by this plugin instance, so a configuration change can
+  // ask tsserver to rebuild their programs and refresh diagnostics.
+  const projects = new Set<tsserver.server.Project>();
 
   // tsserver internally canonicalizes file paths to forward slashes regardless of
   // platform (so containingFile is "C:/proj/..." on Windows). The cartridge roots
@@ -131,6 +140,13 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
     const c = (config ?? {}) as PluginConfig;
     enabled = c.enabled !== false;
     autoDiscoverEnabled = c.autoDiscover !== false;
+    if (c.extraTypeFiles !== undefined) {
+      extraTypeFiles = Array.isArray(c.extraTypeFiles)
+        ? c.extraTypeFiles
+            .filter((p): p is string => typeof p === 'string' && p.length > 0)
+            .map((p) => p.replace(/\\/g, '/'))
+        : [];
+    }
 
     // Only touch the cartridge list if the host explicitly provided one.
     // This lets onConfigurationChanged() update flags (enabled, autoDiscover)
@@ -471,6 +487,12 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       if (fileExists(GLOBAL_DTS) && !present.has(normalize(GLOBAL_DTS))) {
         additions.push(GLOBAL_DTS);
       }
+      for (const file of extraTypeFiles) {
+        if (fileExists(file) && !present.has(normalize(file))) {
+          additions.push(file);
+          present.add(normalize(file));
+        }
+      }
       const hasModules = cartridges.some((c) => c.name === 'modules');
       if (hasModules && fileExists(SFRA_SERVER_DTS) && !present.has(normalize(SFRA_SERVER_DTS))) {
         additions.push(SFRA_SERVER_DTS);
@@ -648,12 +670,29 @@ function init({typescript: ts}: {typescript: typeof tsserver}) {
       return result?.map(remapDefinition);
     };
 
-    log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);
+    projects.add(info.project);
+    log(
+      `plugin initialized (cartridges=${cartridges.length}, extraTypeFiles=${extraTypeFiles.length}, enabled=${enabled})`,
+    );
     return proxy;
   }
 
   function onConfigurationChanged(config: unknown) {
     applyConfig(config);
+    // The script file list is computed when a program is built; mark projects
+    // dirty so added or removed type files take effect without a restart.
+    for (const project of projects) {
+      try {
+        if (project.isClosed()) {
+          projects.delete(project);
+          continue;
+        }
+        (project as unknown as {markAsDirty?: () => void}).markAsDirty?.();
+        project.refreshDiagnostics();
+      } catch {
+        // best-effort
+      }
+    }
   }
 
   return {create, onConfigurationChanged};

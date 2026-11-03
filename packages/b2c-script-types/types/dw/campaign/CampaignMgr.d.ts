@@ -34,7 +34,7 @@ declare class CampaignMgr {
      * any bonus product line items, and otherwise false.
      * @deprecated Use dw.campaign.PromotionMgr instead.
      */
-    static applyBonusPromotions(lineItemCtnr: LineItemCtnr<any>, promotions: Collection<any>): boolean;
+    static applyBonusPromotions(lineItemCtnr: LineItemCtnr, promotions: Collection<any>): boolean;
     /**
      * Applies the applicable order promotions in the specified collection to the
      * specified line item container.
@@ -47,7 +47,7 @@ declare class CampaignMgr {
      * as order promotions (see also applyBonusPromotions).
      * @deprecated Use dw.campaign.PromotionMgr
      */
-    static applyOrderPromotions(lineItemCtnr: LineItemCtnr<any>, promotions: Collection<any>): boolean;
+    static applyOrderPromotions(lineItemCtnr: LineItemCtnr, promotions: Collection<any>): boolean;
     /**
      * Applies all applicable product promotions in the specified collection to the
      * specified line item container.
@@ -60,7 +60,7 @@ declare class CampaignMgr {
      * as product promotions (see also applyBonusPromotions).
      * @deprecated Use dw.campaign.PromotionMgr
      */
-    static applyProductPromotions(lineItemCtnr: LineItemCtnr<any>, promotions: Collection<any>): boolean;
+    static applyProductPromotions(lineItemCtnr: LineItemCtnr, promotions: Collection<any>): boolean;
     /**
      * Applies all applicable shipping promotions in the specified collection to
      * the specified line item container.
@@ -70,7 +70,7 @@ declare class CampaignMgr {
      * line item containers.
      * @deprecated Use dw.campaign.PromotionMgr
      */
-    static applyShippingPromotions(lineItemCtnr: LineItemCtnr<any>, promotions: Collection<any>): boolean;
+    static applyShippingPromotions(lineItemCtnr: LineItemCtnr, promotions: Collection<any>): boolean;
     /**
      * Returns the enabled promotions of active campaigns applicable for the
      * current customer and source code for which the specified product
@@ -87,7 +87,7 @@ declare class CampaignMgr {
      * @deprecated Use dw.campaign.PromotionMgr.getActiveCustomerPromotions and
      * dw.campaign.PromotionPlan.getProductPromotions
      */
-    static getApplicableConditionalPromotions(product: Product<any>): Collection<Promotion>;
+    static getApplicableConditionalPromotions(product: Product): Collection<Promotion>;
     /**
      * Returns the enabled promotions of active campaigns applicable for the
      * current customer and source code for which the specified product is
@@ -106,7 +106,7 @@ declare class CampaignMgr {
      * @deprecated Use dw.campaign.PromotionMgr.getActiveCustomerPromotions and
      * dw.campaign.PromotionPlan.getProductPromotions
      */
-    static getApplicablePromotions(product: Product<any>): Collection<Promotion>;
+    static getApplicablePromotions(product: Product): Collection<Promotion>;
     /**
      * Returns the enabled promotions of active campaigns applicable for the
      * current customer, source code and any coupon contained in the specified
@@ -116,7 +116,7 @@ declare class CampaignMgr {
      * method is provided.
      * @deprecated There is no replacement for this method.
      */
-    static getApplicablePromotions(lineItemCtnr: LineItemCtnr<any>): Collection<Promotion>;
+    static getApplicablePromotions(lineItemCtnr: LineItemCtnr): Collection<Promotion>;
     /**
      * Returns the enabled promotions of active campaigns applicable for the
      * current customer and source code.
@@ -148,7 +148,7 @@ declare class CampaignMgr {
      * @deprecated Use dw.campaign.PromotionMgr.getActivePromotions and
      * dw.campaign.PromotionPlan.getProductPromotions
      */
-    static getConditionalPromotions(product: Product<any>): Collection<Promotion>;
+    static getConditionalPromotions(product: Product): Collection<Promotion>;
     /**
      * Returns the promotion associated with the specified coupon code.
      * @deprecated Coupons are now related to multiple promotions. Method
@@ -186,7 +186,7 @@ declare class CampaignMgr {
      * @deprecated Use dw.campaign.PromotionMgr.getActivePromotions and
      * dw.campaign.PromotionPlan.getProductPromotions
      */
-    static getPromotions(product: Product<any>): Collection<Promotion>;
+    static getPromotions(product: Product): Collection<Promotion>;
 }
 
 export = CampaignMgr;

@@ -184,6 +184,11 @@
           "default": true,
           "description": "Enable the API Browser for exploring SCAPI schemas."
         },
+        "b2c-dx.features.objectTypesExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Object Types view for browsing system object attribute definitions and groups. Needs an API client with the sfcc.object-definitions scope."
+        },
         "b2c-dx.features.exportExplorer": {
           "type": "boolean",
           "default": false,
@@ -379,7 +384,7 @@
         },
         {
           "id": "b2c-dx-scapi",
-          "title": "B2C-DX: SCAPI",
+          "title": "B2C-DX: APIs",
           "icon": "$(symbol-interface)"
         },
         {
@@ -444,7 +449,14 @@
           "id": "b2cApiBrowser",
           "name": "API Browser",
           "icon": "$(symbol-interface)",
-          "contextualTitle": "B2C-DX: SCAPI"
+          "contextualTitle": "B2C-DX: APIs"
+        },
+        {
+          "id": "b2cObjectTypesExplorer",
+          "name": "Object Types",
+          "icon": "$(symbol-class)",
+          "contextualTitle": "B2C-DX: APIs",
+          "when": "config.b2c-dx.features.objectTypesExplorer"
         }
       ],
       "b2c-dx-sandboxes": [
@@ -468,6 +480,10 @@
       {
         "view": "b2cApiBrowser",
         "contents": "Browse and try B2C Commerce APIs using your configured connection.\n\nLoad schemas with Account Manager access. Shopper requests also use SLAS credentials. Without access, the bundled schemas are shown read-only.\n\n[Setup Help](command:b2c-dx.apiBrowser.help)\n\n[Load APIs](command:b2c-dx.apiBrowser.refresh)"
+      },
+      {
+        "view": "b2cObjectTypesExplorer",
+        "contents": "Browse system object types, their attributes, and attribute groups on the configured instance.\n\nNeeds an Account Manager API client with the sfcc.object-definitions scope (sfcc.object-definitions.rw to show enum values), plus short-code and tenant-id.\n\n[Load Object Types](command:b2c-dx.objectTypes.refresh)"
       },
       {
         "view": "b2cSandboxExplorer",
@@ -589,6 +605,57 @@
         "title": "Refresh",
         "icon": "$(refresh)",
         "category": "B2C DX - API Browser"
+      },
+      {
+        "command": "b2c-dx.objectTypes.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.openAttribute",
+        "title": "Open Attribute Definition",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.copyAttributeId",
+        "title": "Copy Attribute ID",
+        "icon": "$(copy)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.exportXml",
+        "title": "Export as Metadata XML",
+        "icon": "$(export)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.createAttribute",
+        "title": "New Custom Attribute...",
+        "icon": "$(add)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.addEnumValue",
+        "title": "Add Value...",
+        "icon": "$(add)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.editEnumValue",
+        "title": "Edit Display Value...",
+        "icon": "$(edit)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.setDefaultValue",
+        "title": "Set as Default Value",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.removeEnumValue",
+        "title": "Remove Value...",
+        "category": "B2C DX - Object Types"
       },
       {
         "command": "b2c-dx.apiBrowser.help",
@@ -1216,6 +1283,12 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.scriptTypes.writeCustomAttributes",
+        "title": "Write Custom Attribute Types to Project",
+        "icon": "$(symbol-file)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.isml.createTemplate",
         "title": "Create ISML Template",
         "category": "B2C DX - ISML"
@@ -1487,6 +1560,16 @@
           "group": "navigation@2"
         },
         {
+          "command": "b2c-dx.scriptTypes.writeCustomAttributes",
+          "when": "view == b2cObjectTypesExplorer && config.b2c-dx.features.scriptTypes",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.refresh",
+          "when": "view == b2cObjectTypesExplorer",
+          "group": "navigation@2"
+        },
+        {
           "command": "b2c-dx.sandbox.refresh",
           "when": "view == b2cSandboxExplorer",
           "group": "navigation"
@@ -1642,6 +1725,56 @@
           "command": "b2c-dx.cipAnalytics.deleteSavedQuery",
           "when": "view == b2cCipAnalytics && viewItem == cipSavedQuery",
           "group": "2_modify@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.copyAttributeId",
+          "when": "view == b2cObjectTypesExplorer && viewItem =~ /^objectAttribute-/",
+          "group": "inline"
+        },
+        {
+          "command": "b2c-dx.objectTypes.copyAttributeId",
+          "when": "view == b2cObjectTypesExplorer && viewItem =~ /^objectAttribute-/",
+          "group": "1_copy@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.openAttribute",
+          "when": "view == b2cObjectTypesExplorer && viewItem =~ /^objectAttribute-/",
+          "group": "2_open@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.exportXml",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectType",
+          "group": "1_export@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.createAttribute",
+          "when": "view == b2cObjectTypesExplorer && (viewItem == objectType || viewItem == objectTypeFolder-custom)",
+          "group": "0_create@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.createAttribute",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectTypeFolder-custom",
+          "group": "inline"
+        },
+        {
+          "command": "b2c-dx.objectTypes.addEnumValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttribute-custom-enum",
+          "group": "0_values@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.editEnumValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttributeValue-custom",
+          "group": "0_values@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.setDefaultValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttributeValue-custom",
+          "group": "0_values@2"
+        },
+        {
+          "command": "b2c-dx.objectTypes.removeEnumValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttributeValue-custom",
+          "group": "9_remove@1"
         },
         {
           "command": "b2c-dx.apiBrowser.scapiAdd",
@@ -2115,6 +2248,34 @@
         },
         {
           "command": "b2c-dx.apiBrowser.openSwagger",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.openAttribute",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.copyAttributeId",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.exportXml",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.addEnumValue",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.editEnumValue",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.setDefaultValue",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.removeEnumValue",
           "when": "false"
         },
         {

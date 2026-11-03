@@ -40,6 +40,7 @@ const groups = [
       'scapi_custom_apis_get_status',
       'scapi_search',
       'metrics_get',
+      'object_types_describe',
       'logs_watch',
       'mrt_logs_watch',
     ],

@@ -41,7 +41,7 @@ declare class DiscountPlan {
      * A discount plan is created from and associated with a line item container.
      * This method returns the line item container associated with this discount plan.
      */
-    readonly lineItemCtnr: LineItemCtnr<any>;
+    readonly lineItemCtnr: LineItemCtnr;
     /**
      * Returns the percentage and amount order discounts contained in the
      * discount plan.
@@ -121,7 +121,7 @@ declare class DiscountPlan {
      * A discount plan is created from and associated with a line item container.
      * This method returns the line item container associated with this discount plan.
      */
-    getLineItemCtnr(): LineItemCtnr<any>;
+    getLineItemCtnr(): LineItemCtnr;
     /**
      * Returns the percentage and amount order discounts contained in the
      * discount plan.

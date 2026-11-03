@@ -273,5 +273,6 @@ Fix the archive or target-instance problem and rerun. Archives already applied a
 - `b2c-cli:b2c-site-import-export` - Single archive import/export, site-archive folder structure, and metadata XML patterns
 - `b2c-cli:b2c-job` - Running and monitoring jobs, including individual archive imports and `job search`/`job wait`
 - `b2c:b2c-metadata` - System object extensions, custom object definitions, and site preferences
+- `b2c-cli:b2c-object-types` - Inspecting live attribute definitions, and quick changes without an import
 - `b2c-cli:b2c-webdav` - Clearing an import history when an in-place reset is required
 - `b2c-cli:b2c-config` - Resolving instance and credential configuration
