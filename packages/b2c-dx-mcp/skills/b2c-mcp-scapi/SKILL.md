@@ -104,4 +104,6 @@ async () => {
 | Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
 | Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
 | Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |
+| Categories/rules; CORS, timeouts, custom objects                                                                    | [catalogs](references/catalogs.md), [admin-config](references/admin-config.md) |
+| File upload/download ops (e.g. custom sitemap upload)                                                               | [file-transfer](references/file-transfer.md)                                   |
 | Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing               | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

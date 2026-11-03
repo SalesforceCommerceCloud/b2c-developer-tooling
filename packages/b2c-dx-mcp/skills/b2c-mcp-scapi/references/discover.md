@@ -62,6 +62,11 @@ Snippet names below have the `builtin/` prefix. Describe only the relevant snipp
 | Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                                                                        |
 | Basic product + optional category assignment  | `create-product` snippet; [products](products.md)                                                                                                           |
 | Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](promotions.md)                                                                                                  |
+| Categories, rules, exclusions                 | `product/catalogs/v1`; `category-rules-run` snippet; [catalogs](catalogs.md)                                                                                |
+| CORS origins for a site                       | `configuration/cors/v1`: replace-all PUT; `cors-preferences-update` snippet; [admin-config](admin-config.md)                                                |
+| SCAPI timeout overrides                       | `configuration/timeouts/v1`: replace-all PUT; [admin-config](admin-config.md)                                                                               |
+| Custom object records                         | `custom-object/custom-objects/v1`: global or `/sites/{siteId}`; [admin-config](admin-config.md)                                                             |
+| Custom sitemap upload, other file transfers   | Multipart/binary, not in code mode: [file-transfer](file-transfer.md)                                                                                       |
 
 File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
 Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions

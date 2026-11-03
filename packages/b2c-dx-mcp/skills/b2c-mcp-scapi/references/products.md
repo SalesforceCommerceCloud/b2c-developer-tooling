@@ -35,3 +35,4 @@ retains completed product creation if assignment or its verification fails. The
 workflow is not transactional: inspect the failed stage and resume only that work.
 Rerunning creation on an existing product returns `exists` without assigning it.
 Category assignment alone does not establish storefront visibility or search indexing.
+Other category work (search, rules, exclusions): [catalogs](catalogs.md).

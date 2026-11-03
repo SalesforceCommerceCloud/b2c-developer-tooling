@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Catalogs
-  version: 1.0.46
+  version: 1.0.47
   x-api-type: Admin
   x-api-family: Product
 servers:
@@ -12,22 +12,32 @@ servers:
 paths:
   /organizations/{organizationId}/catalogs:
     get:
+      summary: Retrieve a list of catalog IDs.
       operationId: getCatalogs
       parameters:
         - name: organizationId
           in: path
           required: true
+          style: simple
+          explode: false
           schema:
-            type: string
+            $ref: '#/components/schemas/OrganizationId'
         - name: limit
           in: query
+          required: false
+          style: form
+          explode: true
           schema:
             type: integer
             format: int32
             default: 25
             maximum: 50
+            minimum: 1
         - name: offset
           in: query
+          required: false
+          style: form
+          explode: true
           schema:
             type: integer
             format: int32
@@ -35,71 +45,3160 @@ paths:
             minimum: 0
       responses:
         '200':
-          description: Catalogs retrieved successfully.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Catalogs'
         '400':
-          description: Bad Request
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: Unauthorized
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       security:
-        - AmOAuth2: [sfcc.catalogs, sfcc.catalogs.rw]
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}:
+    get:
+      summary: Retrieve details of a specific catalog.
+      operationId: getCatalog
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalog'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    patch:
+      summary: Update details of a specific catalog.
+      operationId: updateCatalog
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Catalog'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalog'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories:
+    get:
+      summary: Retrieve all categories within a catalog.
+      operationId: getCategoriesFromCatalog
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+        - name: limit
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 25
+            maximum: 50
+            minimum: 1
+        - name: offset
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categories'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}:
+    get:
+      summary: Retrieve details of a specific category within a catalog.
+      operationId: getCategoryFromCatalog
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+        - name: levels
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    put:
+      summary: Create or update a category within a catalog.
+      operationId: createCategoryInCatalog
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    delete:
+      summary: Delete a specific category from a catalog.
+      operationId: deleteCategoryFromCatalog
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '204': {}
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    patch:
+      summary: Update a specific category within a catalog.
+      operationId: updateCategoryInCatalog
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/category-product-assignment-search:
+    post:
+      summary: Search for category product assignments.
+      operationId: searchProductsAssignedToCategory
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+        - name: siteId
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            $ref: '#/components/schemas/SiteId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryProductAssignmentSearchRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryProductAssignmentSearchResult'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/products/{productId}:
+    get:
+      summary: Retrieve a category product assignment.
+      operationId: getAssignedProductFromCategory
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ProductId'
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryProductAssignment'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    put:
+      summary: Create a category product assignment.
+      operationId: assignProductToCategory
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ProductId'
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryProductAssignment'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryProductAssignment'
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryProductAssignment'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    delete:
+      summary: Remove a category product assignment.
+      operationId: unassignProductFromCategory
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ProductId'
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '204': {}
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    patch:
+      summary: Update a category product assignment.
+      operationId: updateProductCategoryAssignment
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/ProductId'
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryProductAssignment'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryProductAssignment'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules-execution:
+    get:
+      summary: Get the status of the latest categorization job.
+      operationId: getCategorizationStatus
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+        - name: limit
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Limit'
+        - name: offset
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            $ref: '#/components/schemas/Offset'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionJobStatusResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    post:
+      summary: Submit a job to evaluate or execute the rules.
+      operationId: runCategoryRules
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionRequest'
+        required: true
+      responses:
+        '202': {}
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/excluded-products:
+    get:
+      summary: Get the list of excluded products.
+      operationId: getExclusionList
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExcludedProductsResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    post:
+      summary: Add products to the exclusion list.
+      operationId: addProductsToExclusionList
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExcludedProductRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExcludedProductsResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    delete:
+      summary: Remove products from the exclusion list.
+      operationId: removeProductsFromExclusionList
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExcludedProductRequest'
+        required: true
+      responses:
+        '204': {}
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules:
+    get:
+      summary: Retrieve all rules for a catalog and category.
+      operationId: getCategoryRules
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    post:
+      summary: Create rules and conditions for a catalog and category.
+      operationId: createCategoryRules
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RulesRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    delete:
+      summary: Delete all rules and conditions for a catalog and category.
+      operationId: deleteCategoryRules
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '204': {}
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules/{ruleId}:
+    get:
+      summary: Retrieve a rule by ID.
+      operationId: getRuleById
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    put:
+      summary: Create or update a rule.
+      operationId: createUpdateRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    delete:
+      summary: Delete a rule.
+      operationId: deleteRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '204': {}
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules/{ruleId}/conditions:
+    get:
+      summary: Retrieve conditions for a rule.
+      operationId: getCategoryRuleConditions
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConditionsResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    delete:
+      summary: Delete all conditions for a rule.
+      operationId: deleteCategoryRuleConditions
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '204': {}
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules/{ruleId}/conditions/{conditionId}:
+    get:
+      summary: Retrieve a condition by ID.
+      operationId: getCategoryRuleCondition
+      parameters:
+        - name: conditionId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Condition'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+    put:
+      summary: Create or update a condition.
+      operationId: createOrUpdateCategoryRuleCondition
+      parameters:
+        - name: conditionId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Condition'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Condition'
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Condition'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+    delete:
+      summary: Delete a condition.
+      operationId: deleteCategoryRuleCondition
+      parameters:
+        - name: conditionId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: ruleId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            maxLength: 256
+        - name: categoryId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CategoryId'
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      responses:
+        '204': {}
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalogs/{catalogId}/category-search:
+    post:
+      summary: Search for catalog categories.
+      operationId: searchCategoriesInCatalog
+      parameters:
+        - name: catalogId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/CatalogId'
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+        - name: levels
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogCategorySearchRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySearchResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/catalog-search:
+    post:
+      summary: Search for catalogs.
+      operationId: searchCatalogs
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogSearchRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogSearchResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
+  /organizations/{organizationId}/category-search:
+    post:
+      summary: Search for categories within an organization.
+      operationId: searchCategories
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            $ref: '#/components/schemas/OrganizationId'
+        - name: levels
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorySearchRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySearchResult'
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - AmOAuth2:
+            - sfcc.catalogs
+            - sfcc.catalogs.rw
 components:
   schemas:
-    Catalog:
+    OrganizationId:
+      type: string
+      pattern: ^f_ecom_[a-z]{4}_(prd|stg|dev|s[0-9]{2}|[0-9]{3})$
+    Total:
+      type: integer
+      format: int32
+      default: 0
+      minimum: 0
+    ResultBase:
       type: object
-      additionalProperties: true
-      required: [id]
       properties:
-        id:
+        limit:
+          type: integer
+          format: int32
+        total:
+          $ref: '#/components/schemas/Total'
+      required:
+        - limit
+        - total
+    Offset:
+      type: integer
+      format: int32
+      default: 0
+      minimum: 0
+    PaginatedResultBase:
+      allOf:
+        - $ref: '#/components/schemas/ResultBase'
+      properties:
+        offset:
+          $ref: '#/components/schemas/Offset'
+      required:
+        - limit
+        - offset
+        - total
+    SiteId:
+      type: string
+      maxLength: 32
+      minLength: 1
+    Site:
+      type: object
+      properties:
+        cartridges:
           type: string
-        name:
+        customerListLink:
+          type: object
+          properties:
+            customerListId:
+              type: string
+              maxLength: 256
+            title:
+              type: object
+              additionalProperties:
+                type: string
+          required:
+            - customerListId
+        description:
           type: object
           additionalProperties:
             type: string
+        displayName:
+          type: object
+          additionalProperties:
+            type: string
+        id:
+          $ref: '#/components/schemas/SiteId'
+        inDeletion:
+          type: boolean
+        storefrontStatus:
+          type: string
+          enum:
+            - online
+            - maintenance
+            - to_be_deleted
+            - protected
+      required:
+        - displayName
+        - id
+    CatalogId:
+      type: string
+      maxLength: 256
+      minLength: 1
+    Catalog:
+      type: object
+      additionalProperties:
+        title: Additional Property Support
+      properties:
+        assignedProductCount:
+          type: integer
+          format: int32
+        assignedSites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Site'
+        categoryCount:
+          type: integer
+          format: int32
+        creationDate:
+          type: string
+          format: date-time
+          maxLength: 30
         description:
+          type: object
+          additionalProperties:
+            type: string
+        id:
+          $ref: '#/components/schemas/CatalogId'
+        lastModified:
+          type: string
+          format: date-time
+          maxLength: 30
+        name:
           type: object
           additionalProperties:
             type: string
         online:
           type: boolean
+        ownedProductCount:
+          type: integer
+          format: int32
+        recommendationCount:
+          type: integer
+          format: int32
+        rootCategory:
+          type: string
+          maxLength: 256
+      required:
+        - id
     Catalogs:
-      type: object
-      required: [data, limit, offset, total]
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResultBase'
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/Catalog'
-        limit:
-          type: integer
-        offset:
-          type: integer
-        total:
-          type: integer
+      required:
+        - data
+        - limit
+        - offset
+        - total
     ErrorResponse:
       type: object
       additionalProperties: true
-      required: [detail, title, type]
       properties:
         title:
           type: string
+          maxLength: 256
         type:
           type: string
+          maxLength: 2048
         detail:
           type: string
         instance:
           type: string
+          maxLength: 2048
+      required:
+        - detail
+        - title
+        - type
+    Category:
+      type: object
+      additionalProperties:
+        title: Additional Property Support
+      properties:
+        catalogId:
+          allOf:
+            - $ref: '#/components/schemas/CatalogId'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        creationDate:
+          type: string
+          format: date-time
+          maxLength: 30
+        description:
+          type: object
+          additionalProperties:
+            type: string
+        id:
+          allOf:
+            - $ref: '#/components/schemas/CategoryId'
+        image:
+          type: string
+          maxLength: 256
+          minLength: 1
+        lastModified:
+          type: string
+          format: date-time
+          maxLength: 30
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        online:
+          type: boolean
+        pageDescription:
+          type: object
+          additionalProperties:
+            type: string
+        pageKeywords:
+          type: object
+          additionalProperties:
+            type: string
+        pageTitle:
+          type: object
+          additionalProperties:
+            type: string
+        parentCategoryId:
+          type: string
+          maxLength: 256
+          minLength: 1
+        paths:
+          type: array
+          items:
+            $ref: '#/components/schemas/PathRecord'
+        position:
+          type: number
+          format: double
+        sortingRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/SortingRule'
+        thumbnail:
+          type: string
+          maxLength: 256
+          minLength: 1
+      required:
+        - id
+    CategoryId:
+      type: string
+      maxLength: 256
+      minLength: 1
+    PathRecord:
+      type: object
+      additionalProperties:
+        title: Additional Property Support
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/CategoryId'
+        name:
+          type: object
+          additionalProperties:
+            type: string
+    SortingRuleStep:
+      type: object
+      additionalProperties:
+        title: Additional Property Support
+      properties:
+        attributeId:
+          type: string
+          maxLength: 256
+        direction:
+          type: string
+          enum:
+            - asc
+            - desc
+        isSystem:
+          type: boolean
+        position:
+          type: integer
+          format: int32
+        textRelevanceIncluded:
+          type: boolean
+        typeId:
+          type: string
+          maxLength: 256
+    SortingRule:
+      type: object
+      additionalProperties:
+        title: Additional Property Support
+      properties:
+        creationDate:
+          type: string
+          format: date-time
+          maxLength: 30
+        description:
+          type: string
+          maxLength: 4000
+        id:
+          type: string
+          maxLength: 256
+        productSortingRuleSteps:
+          type: array
+          items:
+            $ref: '#/components/schemas/SortingRuleStep'
+        ruleContext:
+          type: string
+          enum:
+            - site
+            - global
+        site:
+          $ref: '#/components/schemas/SiteId'
+    Categories:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResultBase'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+      required:
+        - data
+        - limit
+        - offset
+        - total
+    Query:
+      type: object
+      additionalProperties: false
+      maxProperties: 1
+      minProperties: 1
+      properties:
+        boolQuery:
+          $ref: '#/components/schemas/BoolQuery'
+        filteredQuery:
+          $ref: '#/components/schemas/FilteredQuery'
+        matchAllQuery:
+          $ref: '#/components/schemas/MatchAllQuery'
+        nestedQuery:
+          $ref: '#/components/schemas/NestedQuery'
+        termQuery:
+          $ref: '#/components/schemas/TermQuery'
+        textQuery:
+          $ref: '#/components/schemas/TextQuery'
+    BoolQuery:
+      type: object
+      additionalProperties: false
+      properties:
+        must:
+          type: array
+          items:
+            $ref: '#/components/schemas/Query'
+        mustNot:
+          type: array
+          items:
+            $ref: '#/components/schemas/Query'
+        should:
+          type: array
+          items:
+            $ref: '#/components/schemas/Query'
+    Filter:
+      type: object
+      additionalProperties: false
+      maxProperties: 1
+      minProperties: 1
+      properties:
+        boolFilter:
+          $ref: '#/components/schemas/BoolFilter'
+        queryFilter:
+          $ref: '#/components/schemas/QueryFilter'
+        range2Filter:
+          $ref: '#/components/schemas/Range2Filter'
+        rangeFilter:
+          $ref: '#/components/schemas/RangeFilter'
+        termFilter:
+          $ref: '#/components/schemas/TermFilter'
+    BoolFilter:
+      type: object
+      additionalProperties: false
+      properties:
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Filter'
+        operator:
+          type: string
+          enum:
+            - and
+            - or
+            - not
+      required:
+        - operator
+    QueryFilter:
+      type: object
+      properties:
+        query:
+          $ref: '#/components/schemas/Query'
+      required:
+        - query
+    Field:
+      type: string
+      maxLength: 260
+    Range2Filter:
+      type: object
+      additionalProperties: false
+      properties:
+        filterMode:
+          type: string
+          default: overlap
+          enum:
+            - overlap
+            - containing
+            - contained
+        fromField:
+          allOf:
+            - $ref: '#/components/schemas/Field'
+        fromInclusive:
+          type: boolean
+          default: true
+        fromValue: {}
+        toField:
+          allOf:
+            - $ref: '#/components/schemas/Field'
+        toInclusive:
+          type: boolean
+          default: true
+        toValue: {}
+      required:
+        - fromField
+        - toField
+    RangeFilter:
+      type: object
+      properties:
+        field:
+          allOf:
+            - $ref: '#/components/schemas/Field'
+        from:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: integer
+            - type: number
+        fromInclusive:
+          type: boolean
+          default: true
+        to:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: integer
+            - type: number
+        toInclusive:
+          type: boolean
+          default: true
+      required:
+        - field
+    TermFilter:
+      type: object
+      additionalProperties: false
+      properties:
+        field:
+          allOf:
+            - $ref: '#/components/schemas/Field'
+        operator:
+          type: string
+          enum:
+            - is
+            - one_of
+            - is_null
+            - is_not_null
+            - less
+            - greater
+            - not_in
+            - neq
+        values:
+          type: array
+          items:
+            type: string
+      required:
+        - field
+        - operator
+    FilteredQuery:
+      type: object
+      additionalProperties: false
+      properties:
+        filter:
+          $ref: '#/components/schemas/Filter'
+        query:
+          $ref: '#/components/schemas/Query'
+      required:
+        - filter
+        - query
+    MatchAllQuery:
+      type: object
+    NestedQuery:
+      type: object
+      additionalProperties: false
+      properties:
+        path:
+          type: string
+          maxLength: 2048
+        query:
+          $ref: '#/components/schemas/Query'
+        scoreMode:
+          type: string
+          enum:
+            - avg
+            - total
+            - max
+            - none
+      required:
+        - path
+        - query
+    TermQuery:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          minItems: 1
+        operator:
+          type: string
+          enum:
+            - is
+            - one_of
+            - is_null
+            - is_not_null
+            - less
+            - greater
+            - not_in
+            - neq
+        values:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+              - type: integer
+      required:
+        - fields
+        - operator
+    TextQuery:
+      type: object
+      additionalProperties: false
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          minItems: 1
+        searchPhrase:
+          type: string
+      required:
+        - fields
+        - searchPhrase
+    Sort:
+      type: object
+      additionalProperties: false
+      properties:
+        field:
+          type: string
+          maxLength: 256
+        sortOrder:
+          type: string
+          default: asc
+          enum:
+            - asc
+            - desc
+      required:
+        - field
+    SearchRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+          maximum: 200
+          minimum: 1
+        query:
+          $ref: '#/components/schemas/Query'
+        sorts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sort'
+        offset:
+          $ref: '#/components/schemas/Offset'
+      required:
+        - query
+    CategoryProductAssignmentSearchRequest:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/SearchRequest'
+      required:
+        - query
+    PaginatedSearchResult:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResultBase'
+      properties:
+        query:
+          $ref: '#/components/schemas/Query'
+        sorts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sort'
+        hits:
+          type: array
+          items:
+            type: object
+      required:
+        - query
+    CatalogCategoryId:
+      type: object
+      properties:
+        catalogId:
+          $ref: '#/components/schemas/CatalogId'
+        categoryId:
+          $ref: '#/components/schemas/CategoryId'
+      required:
+        - catalogId
+        - categoryId
+    Product:
+      type: object
+      properties:
+        assignedCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogCategoryId'
+        ats:
+          type: number
+          format: double
+        brand:
+          type: string
+        bundledProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        classificationCategory:
+          $ref: '#/components/schemas/CatalogCategoryId'
+        creationDate:
+          type: string
+          format: date-time
+        defaultVariantId:
+          type: string
+        ean:
+          type: string
+        id:
+          $ref: '#/components/schemas/ProductId'
+        image:
+          $ref: '#/components/schemas/MediaFile'
+        imageGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageGroup'
+        inStock:
+          type: boolean
+        lastModified:
+          type: string
+          format: date-time
+        localizedTaxClassId:
+          type: object
+          additionalProperties:
+            type: string
+        longDescription:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MarkupText'
+        manufacturerName:
+          type: string
+        manufacturerSku:
+          type: string
+        master:
+          $ref: '#/components/schemas/Master'
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        online:
+          type: boolean
+        onlineFlag:
+          type: object
+          additionalProperties:
+            type: boolean
+        owningCatalogId:
+          type: string
+        owningCatalogName:
+          type: object
+          additionalProperties:
+            type: string
+        pageDescription:
+          type: object
+          additionalProperties:
+            type: string
+        pageKeywords:
+          type: object
+          additionalProperties:
+            type: string
+        pageTitle:
+          type: object
+          additionalProperties:
+            type: string
+        price:
+          type: number
+          format: double
+        priceCurrency:
+          type: string
+        pricePerUnit:
+          type: number
+          format: double
+        primaryCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogCategoryId'
+        primaryCategoryId:
+          type: string
+        productBundles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        productOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductOption'
+        productSets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        searchable:
+          type: object
+          additionalProperties:
+            type: boolean
+        setProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        shortDescription:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MarkupText'
+        taxClassId:
+          type: string
+        type:
+          $ref: '#/components/schemas/ProductType'
+        unit:
+          type: string
+        unitMeasure:
+          type: string
+        unitQuantity:
+          type: number
+          format: double
+        upc:
+          type: string
+        validFrom:
+          type: object
+          additionalProperties:
+            type: string
+        validTo:
+          type: object
+          additionalProperties:
+            type: string
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+        variationAttributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariationAttribute'
+        variationGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariationGroup'
+        variationValues:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - id
+    ProductId:
+      type: string
+      maxLength: 100
+      minLength: 1
+    MediaFile:
+      type: object
+      properties:
+        absUrl:
+          type: string
+        alt:
+          type: object
+          additionalProperties:
+            type: string
+        disBaseUrl:
+          type: string
+        path:
+          type: string
+        title:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - path
+    VariationAttributeValue:
+      type: object
+      properties:
+        description:
+          type: object
+          additionalProperties:
+            type: string
+        image:
+          $ref: '#/components/schemas/MediaFile'
+        imageSwatch:
+          $ref: '#/components/schemas/MediaFile'
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        orderable:
+          type: boolean
+        position:
+          type: number
+          format: double
+        value:
+          type: string
+          minLength: 1
+      required:
+        - value
+    VariationAttribute:
+      type: object
+      properties:
+        attributeDefinitionId:
+          type: string
+        attributeDefinitionName:
+          type: object
+          additionalProperties:
+            type: string
+        defaultValue:
+          type: string
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: object
+          additionalProperties:
+            type: string
+        shared:
+          type: boolean
+        slicing:
+          type: boolean
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariationAttributeValue'
+        variationAttributeType:
+          type: string
+          enum:
+            - string
+            - int
+            - unknown
+      required:
+        - attributeDefinitionId
+    ImageGroup:
+      type: object
+      properties:
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaFile'
+        variationAttributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariationAttribute'
+        viewType:
+          type: string
+      required:
+        - images
+        - viewType
+    MarkupText:
+      type: object
+      properties:
+        markup:
+          type: string
+        source:
+          type: string
+      required:
+        - markup
+        - source
+    Master:
+      type: object
+      properties:
+        masterId:
+          $ref: '#/components/schemas/ProductId'
+        orderable:
+          type: boolean
+        price:
+          type: number
+          format: double
+        priceMax:
+          type: number
+          format: double
+        prices:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+      required:
+        - masterId
+    CurrencyCode:
+      type: string
+      pattern: ^([A-Z][A-Z][A-Z]|N/A)$
+    Money:
+      type: object
+      properties:
+        currencyMnemonic:
+          $ref: '#/components/schemas/CurrencyCode'
+        value:
+          type: number
+          format: double
+    ProductOptionValue:
+      type: object
+      properties:
+        defaultProductOptionValue:
+          type: boolean
+        id:
+          type: string
+          minLength: 1
+        optionPrices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+        skuExtension:
+          type: string
+        value:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - id
+        - value
+    ProductOption:
+      type: object
+      properties:
+        customName:
+          type: object
+          additionalProperties:
+            type: string
+        defaultProductOptionValue:
+          type: string
+        description:
+          type: object
+          additionalProperties:
+            type: string
+        id:
+          type: string
+          minLength: 1
+        image:
+          $ref: '#/components/schemas/MediaFile'
+        name:
+          type: string
+        selectedOptionValue:
+          type: string
+        shared:
+          type: boolean
+        sortingMode:
+          type: string
+          enum:
+            - byexplicitorder
+            - byoptionprice
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductOptionValue'
+      required:
+        - id
+    ProductType:
+      type: object
+      properties:
+        bundle:
+          type: boolean
+        bundled:
+          type: boolean
+        item:
+          type: boolean
+        master:
+          type: boolean
+        option:
+          type: boolean
+        partOfProductSet:
+          type: boolean
+        partOfRetailSet:
+          type: boolean
+        retailSet:
+          type: boolean
+        set:
+          type: boolean
+        variant:
+          type: boolean
+        variationGroup:
+          type: boolean
+      required:
+        - master
+    Variant:
+      type: object
+      properties:
+        ats:
+          type: number
+          format: double
+        defaultProductVariation:
+          type: boolean
+        image:
+          $ref: '#/components/schemas/MediaFile'
+        inStock:
+          type: boolean
+        online:
+          type: boolean
+        orderable:
+          type: boolean
+        price:
+          type: number
+          format: double
+        priceCurrency:
+          type: string
+        productId:
+          $ref: '#/components/schemas/ProductId'
+        searchable:
+          type: object
+          additionalProperties:
+            type: boolean
+        variationAttributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariationAttribute'
+        variationValues:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - productId
+    VariationGroup:
+      type: object
+      properties:
+        orderable:
+          type: boolean
+        price:
+          type: number
+          format: double
+        productId:
+          type: string
+          maxLength: 100
+          minLength: 1
+        variationValues:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - productId
+    CategoryProductAssignment:
+      type: object
+      properties:
+        catalogId:
+          allOf:
+            - $ref: '#/components/schemas/CatalogId'
+        categoryId:
+          allOf:
+            - $ref: '#/components/schemas/CategoryId'
+        creationDate:
+          type: string
+          format: date-time
+          maxLength: 30
+        lastModified:
+          type: string
+          format: date-time
+          maxLength: 30
+        owningCatalogName:
+          type: object
+          additionalProperties:
+            type: string
+        position:
+          type: number
+          format: double
+        product:
+          $ref: '#/components/schemas/Product'
+        productId:
+          $ref: '#/components/schemas/ProductId'
+        productName:
+          type: object
+          additionalProperties: false
+      required:
+        - catalogId
+        - categoryId
+        - productId
+    CategoryProductAssignmentSearchResult:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/PaginatedSearchResult'
+      properties:
+        hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryProductAssignment'
+      required:
+        - hits
+        - limit
+        - offset
+        - total
+    Limit:
+      type: integer
+      format: int32
+      default: 10
+      minimum: 1
+    ExecutionJobStatusResult:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - evaluation
+            - execution
+        assignedCount:
+          type: integer
+        unassignedCount:
+          type: integer
+        matchedCount:
+          type: integer
+        jobStatus:
+          type: string
+          enum:
+            - inProgress
+            - success
+            - error
+            - unavailable
+        message:
+          type: string
+        lastRunDate:
+          type: string
+          format: date-time
+          maxLength: 30
+        productIds:
+          type: array
+          items:
+            type: string
+            maxLength: 256
+        limit:
+          $ref: '#/components/schemas/Limit'
+        offset:
+          $ref: '#/components/schemas/Offset'
+      required:
+        - jobStatus
+    ExecutionRequest:
+      type: object
+      properties:
+        evaluation:
+          type: boolean
+          default: true
+      required:
+        - evaluation
+    ExcludedProduct:
+      type: object
+      properties:
+        productId:
+          $ref: '#/components/schemas/ProductId'
+      required:
+        - productId
+    ExcludedProductsResult:
+      type: object
+      properties:
+        limit:
+          $ref: '#/components/schemas/Limit'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExcludedProduct'
+        total:
+          $ref: '#/components/schemas/Total'
+      required:
+        - limit
+        - total
+    ExcludedProductRequest:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExcludedProduct'
+      required:
+        - data
+    Condition:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 256
+        attributeKey:
+          type: string
+          maxLength: 256
+        attributeName:
+          type: string
+          maxLength: 4000
+        attributeValue:
+          type: array
+          items:
+            type: string
+            maxLength: 4000
+        operator:
+          type: string
+          enum:
+            - starts_with
+            - contains
+            - equals
+            - not_equals
+            - greater_than
+            - less_than
+            - is_one_of
+            - not_one_of
+            - is_defined
+            - is_not_defined
+      required:
+        - attributeKey
+        - attributeValue
+        - id
+        - operator
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 256
+        enabled:
+          type: boolean
+          default: false
+        exclusion:
+          type: boolean
+          default: false
+        categorizationLocaleId:
+          type: string
+          maxLength: 10
+        categorizationClassificationFlag:
+          type: boolean
+          default: false
+        categorizationPrimaryFlag:
+          type: boolean
+          default: false
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+      required:
+        - enabled
+        - exclusion
+        - id
+    RulesResult:
+      allOf:
+        - $ref: '#/components/schemas/ResultBase'
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+      required:
+        - limit
+        - total
+    RulesRequest:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+    RuleRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 256
+        enabled:
+          type: boolean
+          default: false
+        exclusion:
+          type: boolean
+          default: false
+        categorizationLocaleId:
+          type: string
+          maxLength: 10
+        categorizationClassificationFlag:
+          type: boolean
+          default: false
+        categorizationPrimaryFlag:
+          type: boolean
+          default: false
+      required:
+        - enabled
+        - exclusion
+        - id
+    ConditionsResult:
+      type: object
+      properties:
+        limit:
+          $ref: '#/components/schemas/Limit'
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+        total:
+          $ref: '#/components/schemas/Total'
+      required:
+        - limit
+        - total
+    CatalogCategorySearchRequest:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/SearchRequest'
+      required:
+        - query
+    CategorySearchResult:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/PaginatedSearchResult'
+      properties:
+        hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+      required:
+        - hits
+        - limit
+        - offset
+        - total
+    CatalogSearchRequest:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/SearchRequest'
+      required:
+        - query
+    CatalogSearchResult:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/PaginatedSearchResult'
+      properties:
+        hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Catalog'
+      required:
+        - hits
+        - limit
+        - offset
+        - total
+    CategorySearchRequest:
+      additionalProperties: false
+      allOf:
+        - $ref: '#/components/schemas/SearchRequest'
+      required:
+        - query
+  parameters:
+    organizationId:
+      name: organizationId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        $ref: '#/components/schemas/OrganizationId'
+    catalogId:
+      name: catalogId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        $ref: '#/components/schemas/CatalogId'
+    categoryId:
+      name: categoryId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        $ref: '#/components/schemas/CategoryId'
+    levels:
+      name: levels
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    siteId:
+      name: siteId
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: '#/components/schemas/SiteId'
+    productId:
+      name: productId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        $ref: '#/components/schemas/ProductId'
+    limit:
+      name: limit
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: '#/components/schemas/Limit'
+    offset:
+      name: offset
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: '#/components/schemas/Offset'
+    ruleId:
+      name: ruleId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        maxLength: 256
+    conditionId:
+      name: conditionId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        maxLength: 256
   securitySchemes:
     AmOAuth2:
       type: oauth2
@@ -109,3 +3208,8 @@ components:
           scopes:
             sfcc.catalogs: catalogs scope READONLY
             sfcc.catalogs.rw: catalogs scope
+        authorizationCode:
+          authorizationUrl: https://account.demandware.com/dwsso/oauth2/authorize
+          tokenUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          refreshUrl: https://account.demandware.com/dwsso/oauth2/access_token
+          scopes: {}
