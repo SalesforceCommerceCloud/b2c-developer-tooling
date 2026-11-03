@@ -708,7 +708,7 @@ async function login(values: Options): Promise<void> {
       break;
     }
     // Sign in at the mock without the page by passing login_hint.
-    if (target.pathname.endsWith('/authorize') && !target.host.endsWith('commercecloud.salesforce.com')) {
+    if (target.pathname.endsWith('/authorize') && target.host !== new URL(slasBase).host) {
       target.searchParams.set('login_hint', user);
     }
     const response = await fetch(target, {redirect: 'manual'});

@@ -84,7 +84,7 @@ export default class SlasClientTemplateDelete extends SlasTemplateCommand<typeof
 
     if (error) {
       this.error(
-        isSlasNotFound(error, response)
+        isSlasNotFound(error, response, 'PasswordActionTemplateNotFoundException')
           ? t('commands.slas.client.template.delete.notFound', 'Password action template not found.')
           : t('commands.slas.client.template.delete.error', 'Failed to delete password action template: {{message}}', {
               message: formatApiError(error, response),

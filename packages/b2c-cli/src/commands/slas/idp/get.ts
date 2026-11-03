@@ -45,7 +45,7 @@ export default class SlasIdpGet extends SlasClientCommand<typeof SlasIdpGet> {
 
     if (error) {
       this.error(
-        isSlasNotFound(error, response)
+        isSlasNotFound(error, response, 'IdpNotFoundException')
           ? t('commands.slas.idp.get.notFound', 'Identity provider {{name}} not found.', {name})
           : t('commands.slas.idp.get.error', 'Failed to get identity provider: {{message}}', {
               message: formatApiError(error, response),

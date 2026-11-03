@@ -108,4 +108,38 @@ describe('slas shopper logout', () => {
     expect(result.failureCount).to.equal(1);
     expect(process.exitCode).to.equal(1);
   });
+
+  it('keeps earlier batch results and marks the rest when a batch request fails', async () => {
+    const loginIds = Array.from({length: 101}, (_, i) => `user${i}@example.com`);
+    const command = await createCommand({
+      'tenant-id': 'abcd_123',
+      'site-id': 'RefArch',
+      'login-id': loginIds,
+      force: true,
+    });
+    const postStub = sinon.stub();
+    postStub.onFirstCall().callsFake(async (_path: string, options: any) => ({
+      data: {
+        results: options.body.loginIds.map((loginId: string) => ({loginId, status: 'success'})),
+        totalProcessed: 50,
+        successCount: 50,
+        failureCount: 0,
+      },
+      error: undefined,
+    }));
+    postStub.onSecondCall().resolves({data: undefined, error: {message: 'boom'}, response: {status: 500}});
+    sinon.stub(command, 'getSlasClient').returns({POST: postStub});
+    const warnStub = sinon.stub(command, 'warn');
+
+    const result = await command.run();
+
+    expect(postStub.callCount).to.equal(2);
+    expect(warnStub.calledOnce).to.equal(true);
+    expect(result.successCount).to.equal(50);
+    expect(result.failureCount).to.equal(51);
+    expect(result.results).to.have.length(101);
+    expect(result.results[50].status).to.equal('failure');
+    expect(result.results[100].status).to.equal('not_processed');
+    expect(process.exitCode).to.equal(1);
+  });
 });

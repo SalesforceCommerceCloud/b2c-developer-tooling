@@ -66,7 +66,7 @@ export default class SlasIdpDelete extends SlasClientCommand<typeof SlasIdpDelet
 
     if (error) {
       this.error(
-        isSlasNotFound(error, response)
+        isSlasNotFound(error, response, 'IdpNotFoundException')
           ? t('commands.slas.idp.get.notFound', 'Identity provider {{name}} not found.', {name})
           : t('commands.slas.idp.delete.error', 'Failed to delete identity provider: {{message}}', {
               message: formatApiError(error, response),

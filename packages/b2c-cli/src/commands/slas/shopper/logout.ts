@@ -121,11 +121,20 @@ export default class SlasShopperLogout extends SlasChannelCommand<typeof SlasSho
       });
 
       if (error || !data) {
-        this.error(
-          t('commands.slas.shopper.logout.error', 'Failed to log out shoppers: {{message}}', {
-            message: formatApiError(error, response),
-          }),
+        // Stop at the first failed request, but still report the batches that already succeeded.
+        const message = formatApiError(error, response);
+        this.warn(t('commands.slas.shopper.logout.error', 'Failed to log out shoppers: {{message}}', {message}));
+        const skipped = loginIds.slice(i + BATCH_LOGOUT_LIMIT);
+        output.results.push(
+          ...batch.map((loginId) => ({loginId, status: 'failure' as const, errorMessage: message})),
+          ...skipped.map((loginId) => ({
+            loginId,
+            status: 'not_processed' as const,
+            errorMessage: 'Skipped after an earlier request failed',
+          })),
         );
+        output.failureCount += batch.length + skipped.length;
+        break;
       }
 
       output.results.push(...data.results);

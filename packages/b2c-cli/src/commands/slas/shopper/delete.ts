@@ -68,7 +68,7 @@ export default class SlasShopperDelete extends SlasClientCommand<typeof SlasShop
 
     if (error) {
       this.error(
-        isSlasNotFound(error, response)
+        isSlasNotFound(error, response, 'ShopperNotFoundException')
           ? t('commands.slas.shopper.delete.notFound', 'Shopper {{customerId}} not found.', {customerId})
           : t('commands.slas.shopper.delete.error', 'Failed to delete shopper: {{message}}', {
               message: formatApiError(error, response),

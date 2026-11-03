@@ -214,15 +214,17 @@ export default class SlasClientCreate extends SlasClientCommand<typeof SlasClien
         body: body as any,
       });
       if (followUp.error) {
-        this.error(
+        // Warn instead of failing: the client exists, and its generated secret is shown only in this output.
+        this.warn(
           t(
             'commands.slas.client.create.loginRestrictError',
-            'SLAS client {{clientId}} was saved, but setting login restriction failed: {{message}}',
+            'SLAS client {{clientId}} was saved, but setting login restriction failed: {{message}}. Retry with "b2c slas client update {{clientId}} --login-restricted".',
             {clientId, message: formatApiError(followUp.error, followUp.response)},
           ),
         );
+      } else {
+        client = {...client, ...(followUp.data as Client), secret: client.secret};
       }
-      client = {...client, ...(followUp.data as Client), secret: client.secret};
     }
 
     const output = normalizeClientResponse(client);
