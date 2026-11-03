@@ -116,7 +116,7 @@ For the full field reference, see the [Configuration guide](https://salesforceco
 
 Most commands that interact with a B2C Commerce instance require authentication. The CLI supports several methods:
 
-- **Client credentials (API client):** Configure `clientId` and `clientSecret` in dw.json or environment variables. This is the default for automated/CI use.
+- **Client credentials (API client):** Configure `clientId` and `clientSecret` in dw.json or environment variables. This is the default for automated/CI use. No API client yet? The user can create one with their own sign-in (`b2c-cli:b2c-am`, Create Client); confirm every detail with them first.
 - **Sign in with your account:** Use `--user-auth` on any OAuth-enabled command to sign in with your Account Manager account in the browser.
 - **Basic auth:** Configure `username` and `password` for WebDAV operations.
 - **Stateful sessions:** Use `b2c auth login` to stay signed in; later commands reuse the saved session when no other client is configured. Client credentials need no session (each command gets a token); `b2c auth client` exists for `sfcc-ci client:auth` compatibility.
@@ -139,6 +139,8 @@ b2c auth token --user-auth
 ```
 
 Coding agents can use `--user-auth` wherever a browser can be opened. Don't combine it with `--auth-methods`.
+
+To sign in with the CLI's built-in client even when a client or access key is configured (for example, the configured client doesn't allow browser sign-in), use `--default-client` or `SFCC_DEFAULT_CLIENT=true`. It works for `auth login`, WebDAV, code upload, logs, sandbox, and Account Manager commands; OCAPI and SCAPI commands reject it. Don't combine it with `--client-id`, `--client-secret`, or `--auth-methods`.
 
 **Running behind a proxy:** If `localhost:8080` isn't reachable by the browser (e.g., running in a container or behind a reverse proxy), set `SFCC_REDIRECT_URI` to the proxy URL. The local OAuth server still listens on the default port (or `SFCC_OAUTH_LOCAL_PORT`), but the redirect URI sent to Account Manager will use your proxy URL. Add the proxy URL to the API client's redirect URLs in Account Manager.
 

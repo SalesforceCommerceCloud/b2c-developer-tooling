@@ -348,7 +348,7 @@ Instead of a new menu item, point a menu action's `menupath` at a core BM menu i
 
 ## Best Practices
 
-1. **Validate against the XSD** with `b2c docs schema bmext` whenever unsure.
+1. **Validate against the XSD** with `b2c validate <cartridge>/bm_extensions.xml`; read the schema with `b2c docs schema bmext`.
 2. **Prefix all ids** to avoid colliding with (and accidentally hiding behind) core BM ids.
 3. **Register every node** a page uses in `sub-pipelines`, or it 403s.
 4. **Use `NoPermissionCheck`** only for endpoints that are safe for any authenticated BM user (keepalive, service workers, polling).

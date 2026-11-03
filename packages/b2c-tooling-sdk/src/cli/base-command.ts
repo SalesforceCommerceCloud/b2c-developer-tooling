@@ -15,6 +15,8 @@ import type {
   HttpMiddlewareHookResult,
   AuthMiddlewareHookOptions,
   AuthMiddlewareHookResult,
+  AuthSessionStoreHookOptions,
+  AuthSessionStoreHookResult,
 } from './hooks.js';
 import {byPluginName} from './hooks.js';
 import {setLanguage, t} from '../i18n/index.js';
@@ -41,10 +43,11 @@ import {
 } from '../config/project-environment.js';
 import {globalMiddlewareRegistry} from '../clients/middleware-registry.js';
 import {globalAuthMiddlewareRegistry} from '../auth/middleware.js';
-import {initializeFileAuthSessionStore} from '../auth/session-store.js';
+import {flushAuthSessionStore, initializeFileAuthSessionStore, setAuthSessionBackend} from '../auth/session-store.js';
 import {initializeContentCache} from '../docs/content-cache.js';
 import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
+import {redactAccessTokens} from '../clients/error-utils.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
@@ -162,12 +165,16 @@ export function classifyError(err: unknown): ErrorCategory {
  */
 export function serializeErrorCause(cause: unknown): unknown {
   if (cause instanceof Error) {
-    return {name: cause.name, message: cause.message};
+    return {name: cause.name, message: redactAccessTokens(cause.message)};
   }
   if (cause !== null && typeof cause === 'object') {
-    return cause;
+    try {
+      return JSON.parse(redactAccessTokens(JSON.stringify(cause)));
+    } catch {
+      return redactAccessTokens(String(cause));
+    }
   }
-  return String(cause);
+  return redactAccessTokens(String(cause));
 }
 
 /**
@@ -380,6 +387,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Collect auth middleware from plugins before any authentication is performed
     await this.collectPluginAuthMiddleware();
+
+    // Let a plugin replace the default file-backed auth session store
+    await this.collectPluginAuthSessionStore();
 
     // Collect config sources from plugins before loading configuration
     await this.collectPluginConfigSources();
@@ -804,6 +814,44 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   }
 
   /**
+   * Collects an auth session store from plugins via the `b2c:auth-session-store` hook.
+   *
+   * Called during command initialization, before any authentication is performed.
+   * The first plugin (by name) that returns a backend replaces the default
+   * file-backed store; backends from other plugins are ignored with a warning.
+   */
+  protected async collectPluginAuthSessionStore(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
+    const hookOptions: AuthSessionStoreHookOptions = {
+      flags: this.flags as Record<string, unknown>,
+    };
+
+    const hookResult = await this.config.runHook('b2c:auth-session-store', hookOptions);
+
+    let selected: string | undefined;
+    for (const success of byPluginName(hookResult.successes)) {
+      const result = success.result as AuthSessionStoreHookResult | undefined;
+      if (!result?.backend) continue;
+
+      if (selected) {
+        this.logger?.warn(
+          `Plugin ${success.plugin.name} also provides an auth session store; using the one from ${selected}`,
+        );
+        continue;
+      }
+      selected = success.plugin.name;
+      setAuthSessionBackend(result.backend);
+      this.logger?.debug(`Using auth session store from plugin ${selected}`);
+    }
+
+    // Log warnings for hook failures (don't break the CLI)
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:auth-session-store hook failed: ${failure.error.message}`);
+    }
+  }
+
+  /**
    * Handle errors thrown during command execution.
    *
    * Logs the error using the structured logger (including cause if available).
@@ -815,6 +863,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // user who passed, e.g., `-p x -s y` learns that `-s`/`--storefront` are the
     // same flag as `-p`/`--project`.
     err.message = augmentDuplicateFlagError(err.message, {...this.ctor.baseFlags, ...this.ctor.flags});
+    // API faults can echo the request's access token; keep it out of output, logs, and telemetry.
+    err.message = redactAccessTokens(err.message);
+    if (err.stack) err.stack = redactAccessTokens(err.stack);
 
     const exitCode = err.exitCode ?? 1;
     const duration = this.commandStartTime ? Date.now() - this.commandStartTime : undefined;
@@ -830,7 +881,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
         duration,
         errorCategory,
         errorMessage: err.message,
-        ...(err.cause ? {errorCause: String(err.cause)} : {}),
+        ...(err.cause ? {errorCause: redactAccessTokens(String(err.cause))} : {}),
       });
       await this.telemetry.flush();
       await this.telemetry.stop();
@@ -838,8 +889,12 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {
-      this.logger.error({cause: err?.cause}, err.message);
+      const cause = err.cause instanceof Error ? err.cause : err.cause && serializeErrorCause(err.cause);
+      this.logger.error({cause}, err.message);
     }
+
+    // JSON mode exits below without reaching finally()
+    await this.flushAuthSessions();
 
     // In JSON mode, output structured error to stderr and exit
     if (this.jsonEnabled()) {
@@ -869,7 +924,17 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       this.telemetry.sendEvent('COMMAND_SUCCESS', {command: this.id, duration});
       await this.telemetry.stop();
     }
+    await this.flushAuthSessions();
     await super.finally(err);
+  }
+
+  /** Waits for the auth session store's pending writes; a failure is logged, not thrown. */
+  private async flushAuthSessions(): Promise<void> {
+    try {
+      await flushAuthSessionStore();
+    } catch (error) {
+      this.logger?.warn(`Failed to save auth sessions: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   public baseCommandTest(): void {

@@ -127,6 +127,8 @@ export interface NormalizedConfig {
   cartridges?: string[];
   /** Project-relative directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /** Directory names skipped at any depth when archiving cartridges for deploy (replaces the default list) */
+  cartridgeIgnoreDirs?: string[];
 
   // Content
   /** Default content library ID for content export/list commands */

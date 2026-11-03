@@ -26,11 +26,20 @@ import type {
 import {z, type ZodRawShape} from 'zod';
 import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {redactAccessTokens} from '@salesforce/b2c-tooling-sdk/clients';
 import {BrowserLoginContinuations} from './utils/browser-login.js';
+import {ProjectDirectoryGate} from './utils/project-directory-gate.js';
 import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 
 /** MCP skills extension identifier (SEP-2640). */
 export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
+
+/** SDK cacheHints cover only built-in methods; skills extension results are cacheable from 2026-07-28. */
+function skillsCacheHints(context: ServerContext): {cacheScope?: 'private'; ttlMs?: number} {
+  return (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY]
+    ? {ttlMs: 300_000, cacheScope: 'private'}
+    : {};
+}
 
 /**
  * Agent ids, matching environment agent detection, for MCP clients that name
@@ -59,6 +68,8 @@ const reportedClients = new WeakSet<Telemetry>();
 export interface B2CDxMcpServerOptions extends ServerOptions {
   /** Release debugger sessions and log watches owned by this server instance. */
   cleanup?: () => Promise<void>;
+  /** Configured `--project-directory`; bounds the per-call `projectDirectory` argument with client roots. */
+  projectDirectory?: string;
   /**
    * Telemetry instance for tracking server and tool events.
    * If not provided, telemetry is disabled.
@@ -76,6 +87,9 @@ export class B2CDxMcpServer extends McpServer {
   private readonly cleanup?: () => Promise<void>;
   private clientLogged = false;
   private closePromise?: Promise<void>;
+  /** The 2025-era client's `roots/list` result, refreshed when the client reports a change. */
+  private legacyRoots?: Promise<unknown>;
+  private readonly projectDirectories: ProjectDirectoryGate;
   private readonly resourceReaders = new Map<string, (uri: string) => Promise<ReadResourceResult>>();
   private telemetry?: Telemetry;
 
@@ -86,7 +100,7 @@ export class B2CDxMcpServer extends McpServer {
    * @param options - Optional server configuration
    */
   public constructor(serverInfo: Implementation, options?: B2CDxMcpServerOptions) {
-    const {cleanup, telemetry, ...serverOptions} = options ?? {};
+    const {cleanup, projectDirectory, telemetry, ...serverOptions} = options ?? {};
     // The bundled SDK patch supports zero for human-paced approval with no server deadline.
     super(serverInfo, {
       ...serverOptions,
@@ -94,11 +108,17 @@ export class B2CDxMcpServer extends McpServer {
     });
     this.cleanup = cleanup;
     this.telemetry = telemetry;
+    this.projectDirectories = new ProjectDirectoryGate(projectDirectory);
 
     // Set up oninitialized handler
     this.server.oninitialized = (): void => {
       this.recordClient(this.server.getClientVersion());
+      // Prime roots so the first call that passes projectDirectory does not wait on them.
+      if (this.server.getClientCapabilities()?.roots) this.fetchLegacyRoots();
     };
+    this.server.setNotificationHandler('notifications/roots/list_changed', () => {
+      this.legacyRoots = undefined;
+    });
   }
 
   /** Register after resource metadata. Resolve raw URIs before URL dot-segment normalization. */
@@ -127,10 +147,7 @@ export class B2CDxMcpServer extends McpServer {
         this.recordRequestClient(context);
         // One page: an issued cursor never exists, so any cursor is invalid.
         if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid cursor.');
-        const modern = Boolean(
-          (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY],
-        );
-        return {skills: skills.list(), ...(modern && {ttlMs: 300_000, cacheScope: 'private'})};
+        return {skills: skills.list(), ...skillsCacheHints(context)};
       },
     );
     this.server.setRequestHandler(
@@ -138,7 +155,7 @@ export class B2CDxMcpServer extends McpServer {
       {params: z.object({uri: z.string()}).loose()},
       async (params, context) => {
         this.recordRequestClient(context);
-        return {skill: skills.get(params.uri)};
+        return {skill: skills.get(params.uri), ...skillsCacheHints(context)};
       },
     );
   }
@@ -170,7 +187,7 @@ export class B2CDxMcpServer extends McpServer {
         const capabilities = envelope?.[CLIENT_CAPABILITIES_META_KEY] ?? this.server.getClientCapabilities();
         const elicitation = capabilities?.elicitation;
         const contentReads: ContentRead[] = [];
-        const toolContext: ToolContext = {
+        let toolContext: ToolContext = {
           signal: context.mcpReq?.signal,
           requestState: context.mcpReq?.requestState?.(),
           inputResponses: context.mcpReq?.inputResponses,
@@ -179,6 +196,14 @@ export class B2CDxMcpServer extends McpServer {
           keepCancellation: !envelope?.[PROTOCOL_VERSION_META_KEY],
           recordContentRead: (read) => contentReads.push(read),
         };
+        if (typeof args.projectDirectory === 'string') {
+          const decision = await this.projectDirectories.check(args.projectDirectory, toolContext, {
+            declared: capabilities?.roots !== undefined,
+            fetch: envelope?.[PROTOCOL_VERSION_META_KEY] ? undefined : () => this.fetchLegacyRoots(),
+          });
+          if (!decision.ok) return decision.result;
+          toolContext = decision.context;
+        }
         // A retry after a browser login resumes the original call instead of running the handler again.
         const result = this.browserLogins.isContinuation(toolContext.requestState)
           ? await this.browserLogins.resume(toolContext.requestState, toolContext.inputResponses, toolContext.signal)
@@ -211,8 +236,8 @@ export class B2CDxMcpServer extends McpServer {
             toolName: name,
             runTimeMs,
             isError: true,
-            errorMessage: error instanceof Error ? error.message : String(error),
-            ...(error instanceof Error && error.cause ? {errorCause: String(error.cause)} : {}),
+            errorMessage: redactAccessTokens(error instanceof Error ? error.message : String(error)),
+            ...(error instanceof Error && error.cause ? {errorCause: redactAccessTokens(String(error.cause))} : {}),
           })
           .catch((error_: unknown) => {
             getLogger().debug({err: error_, toolName: name}, '[mcp] telemetry sendEventAndFlush failed');
@@ -278,6 +303,21 @@ export class B2CDxMcpServer extends McpServer {
     this.telemetry?.sendEventAndFlush('CONTENT_READ', {...read, via}).catch((error: unknown) => {
       getLogger().debug({err: error, via}, '[mcp] telemetry sendEventAndFlush failed');
     });
+  }
+
+  /**
+   * Request `roots/list` from a 2025-era client, once per change. Some clients
+   * send bare paths where the spec requires `file://` URIs, so the result is
+   * parsed leniently rather than with the SDK's strict schema.
+   */
+  private fetchLegacyRoots(): Promise<unknown> {
+    this.legacyRoots ??= this.server
+      .request({method: 'roots/list'}, z.object({roots: z.array(z.looseObject({uri: z.string()}))}).loose())
+      .catch((error: unknown) => {
+        getLogger().debug({err: error}, '[mcp] roots/list failed');
+        return null;
+      });
+    return this.legacyRoots;
   }
 
   /**

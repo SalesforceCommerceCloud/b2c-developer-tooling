@@ -7,9 +7,9 @@ Mirrors ``src/operations/metrics/tags.ts``.
 
 The Metrics API returns each series as ``{id, name, data}``, where ``id``/``name``
 pack every identifying dimension into a single display string using inconsistent
-delimiters — e.g. ``bdpx.product`` (realm ``.`` apiFamily), ``bdpx.product HIT``
-(realm ``.`` family `` `` cacheStatus), ``2xx bdpx.host`` (status class *before*
-the realm), or ``bdpx.host.socketReadTimeout`` (realm ``.`` host — whose own dots
+delimiters — e.g. ``bdpx_prd.product`` (tenant ``.`` apiFamily), ``bdpx_prd.product MISS``
+(tenant ``.`` family `` `` cacheStatus), ``2xx bdpx.host`` (eCDN: status class
+*before* the bare realm), or ``bdpx_prd.host.socketReadTimeout`` (tenant ``.`` host — whose own dots
 are ambiguous — ``.`` exceptionType). This makes the strings effectively
 unparseable in general and awkward to chart, group, or merge across realms.
 
@@ -109,15 +109,19 @@ def _split_realm_environment(tenant_id: str) -> tuple[str, str | None]:
     return normalized[:last_underscore], normalized[last_underscore + 1 :]
 
 
-def _strip_realm_prefix(series_id: str, realm: str) -> str:
-    """Strip a leading ``realm.`` or ``realm `` prefix from a packed series id, if present.
+def _strip_realm_prefix(series_id: str, realm: str, environment: str | None = None) -> str:
+    """Strip a leading tenant prefix from a packed series id, if present.
 
-    Returns the input unchanged when no realm prefix matches.
+    Most categories prefix ids with ``<realm>_<environment>`` (``bdpx_prd.Home-Show``,
+    ``bdpx_prd 2xx``); eCDN prefixes with the bare realm (``bdpx.host``). Either is
+    followed by a ``.`` or a space. The longer ``realm_environment`` form is tried
+    first so it is not mistaken for a realm-only prefix. Returns the input
+    unchanged when no prefix matches.
     """
-    if series_id.startswith(f"{realm}."):
-        return series_id[len(realm) + 1 :]
-    if series_id.startswith(f"{realm} "):
-        return series_id[len(realm) + 1 :]
+    prefixes = [f"{realm}_{environment}", realm] if environment else [realm]
+    for prefix in prefixes:
+        if series_id.startswith(f"{prefix}.") or series_id.startswith(f"{prefix} "):
+            return series_id[len(prefix) + 1 :]
     return series_id
 
 
@@ -210,11 +214,11 @@ EXTRACTORS: dict[str, dict[str, SeriesTagExtractor]] = {
         "requestLatency": _scapi_request_latency,
         "responseCount": _scapi_family_or_status,
         "errors4xx": _scapi_errors_4xx,
+        "errors5xx": _scapi_errors_4xx,
         "cacheHitRate": _scapi_cache_hit_rate,
     },
     "ocapi": {
-        "totalCalls": _ocapi_category,
-        "callsMean": _ocapi_category,
+        "*": _ocapi_category,
     },
     "controller": {
         "*": _controller,
@@ -260,14 +264,17 @@ def parse_series_tags(
     extractor: SeriesTagExtractor | None = None
     if category_rules is not None:
         extractor = category_rules.get(metric_id) or category_rules.get("*")
-    remainder = _strip_realm_prefix(series_id, realm)
+    remainder = _strip_realm_prefix(series_id, realm, environment)
 
-    if extractor is not None:
+    if remainder == metric_id:
+        # Placeholder series (the metric id echoed back with no data): no
+        # dimensions to extract.
+        pass
+    elif extractor is not None:
         tags.update(extractor(remainder, series_id, realm))
-    elif remainder and remainder != metric_id:
+    elif remainder:
         # No rule for this category/metric. Preserve the (realm-stripped)
-        # remainder so nothing is lost, unless it is just the metric id echoed
-        # back (a value-less fallback series).
+        # remainder so nothing is lost.
         tags["series"] = remainder
 
     # Applied filters are authoritative — stamp them last so they override any

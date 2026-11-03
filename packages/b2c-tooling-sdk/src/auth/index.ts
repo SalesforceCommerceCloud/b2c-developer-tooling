@@ -119,6 +119,7 @@ export {
   deleteAuthSession,
   listAuthSessions,
   clearAllAuthSessions,
+  flushAuthSessionStore,
   isAuthSessionTokenValid,
   resetAuthSessionStoreForTesting,
 } from './session-store.js';

@@ -10,7 +10,11 @@ import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
 import {
   createScriptsBackend,
   parseCodeVersionFile,
+  reloadCodeVersion,
+  WebDavLookupFallbackScriptsBackend,
   WebDavScriptsBackend,
+  type CodeVersionInfo,
+  type ScriptsBackend,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
 
@@ -180,6 +184,87 @@ describe('operations/code/webdav-scripts-backend', () => {
         {oauthStrategy: new MockAuthStrategy()},
       );
       expect(createScriptsBackend({instance: withClient}).name).to.not.equal('webdav');
+    });
+  });
+
+  describe('WebDavLookupFallbackScriptsBackend', () => {
+    function apiBackend(failure?: Error, versions: CodeVersionInfo[] = []) {
+      const calls: string[] = [];
+      const backend: ScriptsBackend = {
+        name: 'ocapi',
+        async listCodeVersions() {
+          calls.push('list');
+          if (failure) throw failure;
+          return versions;
+        },
+        async getActiveCodeVersion() {
+          calls.push('active');
+          if (failure) throw failure;
+          return versions.find((v) => v.active);
+        },
+        async activateCodeVersion(id) {
+          calls.push(`activate:${id}`);
+          return {alreadyActive: false};
+        },
+        async createCodeVersion(id) {
+          calls.push(`create:${id}`);
+        },
+        async deleteCodeVersion(id) {
+          calls.push(`delete:${id}`);
+        },
+      };
+      return {backend, calls};
+    }
+
+    it('uses the API when it answers', async () => {
+      const api = apiBackend(undefined, [{id: 'from_api', active: true}]);
+      const backend = new WebDavLookupFallbackScriptsBackend(api.backend, new WebDavScriptsBackend(instance));
+      expect((await backend.getActiveCodeVersion())?.id).to.equal('from_api');
+      expect(backend.name).to.equal('ocapi');
+    });
+
+    it('finds the active version over WebDAV when the API refuses the lookup', async () => {
+      const reads = serve();
+      const api = apiBackend(new Error("Failed to list code versions: Access to resource isn't allowed"));
+      const backend = new WebDavLookupFallbackScriptsBackend(api.backend, new WebDavScriptsBackend(instance));
+
+      expect((await backend.getActiveCodeVersion())?.id).to.equal('release_b');
+      expect(backend.name).to.equal('webdav');
+
+      // Later lookups go straight to WebDAV.
+      await backend.listCodeVersions();
+      expect(api.calls).to.deep.equal(['active']);
+      expect(reads()).to.equal(2);
+    });
+
+    it('reports both failures when WebDAV fails too', async () => {
+      server.use(http.all(`${BASE_URL}/Cartridges`, () => new HttpResponse(null, {status: 401})));
+      const api = apiBackend(new Error('Failed to list code versions: Unauthorized'));
+      const backend = new WebDavLookupFallbackScriptsBackend(api.backend, new WebDavScriptsBackend(instance));
+
+      const error = (await backend.listCodeVersions().catch((e: Error) => e)) as Error;
+      expect(error.message).to.include('Failed to list code versions: Unauthorized');
+      expect(error.message).to.include('Over WebDAV:');
+    });
+
+    it('keeps activation, creation, and deletion on the API', async () => {
+      const api = apiBackend(new Error('refused'));
+      const backend = new WebDavLookupFallbackScriptsBackend(api.backend, new WebDavScriptsBackend(instance));
+      await backend.activateCodeVersion('a');
+      await backend.createCodeVersion('b');
+      await backend.deleteCodeVersion('c');
+      expect(api.calls).to.deep.equal(['activate:a', 'create:b', 'delete:c']);
+    });
+
+    it('reloads through the API without a WebDAV lookup', async () => {
+      // No WebDAV handlers: any WebDAV request fails the test.
+      const api = apiBackend(undefined, [
+        {id: 'v1', active: true},
+        {id: 'v2', active: false},
+      ]);
+      const backend = new WebDavLookupFallbackScriptsBackend(api.backend, new WebDavScriptsBackend(instance));
+      await reloadCodeVersion(backend);
+      expect(api.calls).to.deep.equal(['list', 'activate:v2', 'activate:v1']);
     });
   });
 });

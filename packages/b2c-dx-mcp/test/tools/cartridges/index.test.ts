@@ -384,7 +384,7 @@ describe('tools/cartridges', () => {
 
     it('should resolve relative directory paths relative to project directory', async () => {
       const projectDir = '/path/to/project';
-      const relativePaths = ['./cartridges', 'cartridges', '../cartridges', './src/cartridges'];
+      const relativePaths = ['./cartridges', 'cartridges', 'src/../cartridges', './src/cartridges'];
 
       for (const relativePath of relativePaths) {
         findAndDeployCartridgesStub.resetHistory();
@@ -414,12 +414,9 @@ describe('tools/cartridges', () => {
       }
     });
 
-    it('should use absolute directory paths as-is', async () => {
-      const projectDir = '/path/to/project';
-      const absolutePaths =
-        process.platform === 'win32'
-          ? [String.raw`C:\cartridges`, String.raw`D:\projects\cartridges`]
-          : ['/absolute/cartridges', '/usr/local/cartridges'];
+    it('should accept absolute directory paths inside the project directory', async () => {
+      const projectDir = path.resolve('/path/to/project');
+      const absolutePaths = [projectDir, path.join(projectDir, 'cartridges')];
 
       for (const absolutePath of absolutePaths) {
         findAndDeployCartridgesStub.resetHistory();
@@ -445,6 +442,24 @@ describe('tools/cartridges', () => {
         expect(findAndDeployCartridgesStub.calledOnce).to.be.true;
         const [, dir] = findAndDeployCartridgesStub.firstCall.args as [B2CInstance, string, DeployOptions];
         expect(dir).to.equal(absolutePath);
+      }
+    });
+
+    it('should reject directory paths outside the project directory without deploying', async () => {
+      const projectDir = path.resolve('/path/to/project');
+      for (const directory of ['../cartridges', path.resolve('/usr/local/cartridges')]) {
+        const mockInstance = createMockB2CInstance();
+        const loadServices = createMockLoadServicesWrapper({b2cInstance: mockInstance, projectDirectory: projectDir});
+        const tool = createCartridgesTools(loadServices, {
+          findAndDeployCartridges: findAndDeployCartridgesStub,
+          getActiveCodeVersion: getActiveCodeVersionStub,
+        })[0];
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await tool.handler({directory});
+
+        expect(result.isError, directory).to.be.true;
+        expect(findAndDeployCartridgesStub.called).to.be.false;
       }
     });
 

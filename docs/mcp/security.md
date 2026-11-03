@@ -40,6 +40,21 @@ To keep credentials out of your assistant's environment, control which hosts
 and operations it can reach, and keep an audit log of its requests, run the MCP
 server in a sandbox. See [Agent Sandboxing](../guide/agent-sandboxing).
 
+## Project folders {#project-folders}
+
+Tools that read or write local files work inside the project directory. Your
+assistant can choose that directory for each call. The folders you chose bound
+that choice: `--project-directory` (or `SFCC_PROJECT_DIRECTORY`) and the workspace
+folders your client shares as MCP roots. The server's working directory does not
+count, because plugin installs often start the server in the plugin's folder or
+your home directory.
+
+If the assistant selects a project outside those folders, the client asks you to
+approve it. Approval lasts until the MCP server restarts. Clients that cannot ask
+reject the call; set `--project-directory` to a folder that contains the project.
+When neither `--project-directory` nor client roots are available, any project
+directory is accepted.
+
 ## Deployments {#deployments}
 
 Cartridge deployment writes to the selected code version. Confirm the instance
@@ -54,8 +69,10 @@ using configured Business Manager credentials/access keys or OAuth WebDAV access
 Grant read access for log investigation and write access only where uploads are needed.
 See [WebDAV permissions](../guide/authentication#webdav-access).
 
-Remote uploads can replace files when explicitly requested. Downloads write a new
-file on the machine running the MCP server; they do not overwrite an existing file.
+Remote uploads can replace files when explicitly requested. `webdav_get` only returns
+text to the client; `webdav_get_to_file` writes a new file on the machine running the
+MCP server and never overwrites an existing file. Local upload sources and download
+destinations must resolve, after following symlinks, inside the project directory.
 The configured Safety Mode applies to remote WebDAV requests, including uploads.
 Local download destinations use that machine's filesystem permissions.
 

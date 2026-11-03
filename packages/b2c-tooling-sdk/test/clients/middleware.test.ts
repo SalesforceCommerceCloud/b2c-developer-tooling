@@ -372,7 +372,7 @@ describe('clients/middleware', () => {
     it('preserves redirect, credentials, abort signal, and body through request modifications', async () => {
       const controller = new AbortController();
       const middleware = createExtraParamsMiddleware({
-        headers: {'x-mobify': 'true'},
+        headers: {'x-test-header': 'true'},
         query: {diagnostic: 'true'},
         body: {extra: 'value'},
       });
@@ -389,7 +389,7 @@ describe('clients/middleware', () => {
       if (!(result instanceof Request)) throw new Error('Expected a Request');
       expect(result.redirect).to.equal('manual');
       expect(result.credentials).to.equal('include');
-      expect(result.headers.get('x-mobify')).to.equal('true');
+      expect(result.headers.get('x-test-header')).to.equal('true');
       expect(new URL(result.url).searchParams.get('diagnostic')).to.equal('true');
       expect(await result.json()).to.deep.equal({original: 'value', extra: 'value'});
       controller.abort();

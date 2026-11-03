@@ -222,6 +222,24 @@ return new Status(Status.ERROR, null, 'Error message');
 
 **Important:** Custom status codes work **only** with OK status. If you use a custom code with ERROR status, it is replaced with ERROR. Custom status codes cannot contain commas, wildcards, leading/trailing whitespace, or exceed 100 characters.
 
+### Ending the Job Early
+
+A custom code on OK status can stop the rest of the flow. Declare the code in `steptypes.json` (`status-codes`), return it from the step, and add an `on-exit` rule to the step in `jobs.xml`. This is the usual pattern for a step that finds no input file: the job ends OK instead of failing or importing nothing.
+
+```javascript
+if (!feedFile) {
+    return new Status(Status.OK, 'NO_FILES_FOUND', 'No file in ' + dir.fullPath);
+}
+```
+
+```xml
+<step step-id="generate" type="custom.GenerateFeed">
+    <rules>
+        <on-exit status="NO_FILES_FOUND"><stop-job/></on-exit>
+    </rules>
+</step>
+```
+
 ## Chunk-Oriented Steps
 
 Use for bulk processing of countable data (products, orders, customers).
@@ -426,6 +444,10 @@ The bundled catalog covers the full set of standard step type IDs shown in the B
 
 Import steps share a common set of file-handling parameters (`WorkingFolder`, `FileNamePattern`, `ImportMode`, `NoFilesFoundHandling`, `ImportFailedHandling`, `AfterImportFileHandling`, `ArchiveFolder`); export steps share `ExportFile` / `FileNamePrefix` / `OverwriteExportFile`. Processing steps (replication, reindex, cache invalidation, `ExecutePipeline`/`ExecuteScriptModule`/`IncludeStepsFromJob`) have their own parameters. Read any step's doc for the exact list.
 
+### File-drop feeds (external system → scheduled import)
+
+A common integration shape: an external system (ERP, warehouse, PIM) uploads a file over WebDAV to a folder under `IMPEX/src/`, and a scheduled job on the instance imports whatever is there. Use a standard import step with `NoFilesFoundHandling` set to `NO_FILES_FOUND` or `OK` (so an empty run doesn't fail) and `AfterImportFileHandling` set to `Archive` or `Delete` (so the next run doesn't import the same file again). Give the job a `<run-recurring>` trigger that lists every weekday (see the [jobs.xml reference](references/JOBS-XML.md#run-recurring-scheduled)). To deploy the job definition with the code, put `jobs.xml` in cartridge metadata and apply it with `b2c job import-set` (`b2c-cli:b2c-import-set-migrations`).
+
 ### Referencing an IMPEX-staged file from a prior step
 
 Standard import steps read from the instance **IMPEX** area. The `WorkingFolder` parameter is resolved relative to `IMPEX/src/` (and defaults to `IMPEX/src/`); `FileNamePattern` is a regex that selects which file(s) in that folder to import. This is the hand-off contract: **a step that writes a file under `IMPEX/src/...` can be followed by a standard import step that reads it** — no download/upload round-trip.
@@ -505,10 +527,12 @@ Rule of thumb: data already on (or generated on) the instance → in-flow standa
 4. **Log progress** - helps debugging
 5. **Handle errors gracefully** - return proper Status objects
 6. **Don't rely on transactional=true** - use `Transaction.wrap()` for control
+7. **Check the `dw.io.File` API** - it is not `java.io.File`. For example, there is no `getParentFile()` (it fails at runtime with `Unknown property`); keep a reference to the folder you listed instead. Look up methods with `b2c docs read dw.io.File`
 
 ## Related Skills
 
 - `b2c-cli:b2c-job` - For **running** existing jobs and importing site archives via CLI
+- `b2c-cli:b2c-replication` - Ready-made job definitions for `ExecuteCodeReplication` / `ExecuteDataReplication` with JSON replication configuration
 - `b2c-cli:b2c-docs` - To look up standard job step type IDs and their parameters (`b2c docs read job-steps`, `b2c docs read <TypeID>`)
 - `b2c:b2c-webservices` - When job steps need to call external HTTP services or APIs, use the webservices skill for service configuration and HTTP client patterns
 

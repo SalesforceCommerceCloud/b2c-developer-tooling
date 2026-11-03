@@ -195,6 +195,7 @@ function createCartridgeDeployTool(
             include: args.cartridges,
             exclude: args.exclude,
             reload: args.reload,
+            ignoreDirs: context.services.getResolvedConfig().values.cartridgeIgnoreDirs,
           };
 
           // Log all computed variables before deploying

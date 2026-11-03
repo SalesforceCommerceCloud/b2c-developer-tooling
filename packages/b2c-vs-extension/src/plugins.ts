@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import type {AuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
 import {B2CPluginManager} from '@salesforce/b2c-tooling-sdk/plugins';
 import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
@@ -34,4 +35,9 @@ export async function initializePlugins(): Promise<void> {
     }
     manager = undefined;
   }
+}
+
+/** Auth session store provided by an installed plugin, if any. */
+export function getPluginAuthSessionBackend(): AuthSessionBackend | undefined {
+  return manager?.getAuthSessionBackend();
 }

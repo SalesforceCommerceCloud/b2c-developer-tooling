@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {describe, it, beforeEach, afterEach} from 'mocha';
 import {stub, restore, type SinonStub} from 'sinon';
-import {createMetricsGetTool} from '../../../src/tools/scapi/metrics-get.js';
+import {createMetricsGetTool, summarizeSeriesData} from '../../../src/tools/scapi/metrics-get.js';
 import {Services} from '../../../src/services.js';
 import {createMockResolvedConfig} from '../../test-helpers.js';
 import type {MetricsClient} from '@salesforce/b2c-tooling-sdk/clients';
@@ -172,5 +172,56 @@ describe('tools/scapi/metrics-get', () => {
     const data = parsed?.data as Array<{dataSeries: Array<{tags?: Record<string, string>}>}>;
     // Heuristic alone would yield apiFamily="shopper.auth.v1"; the filter corrects it.
     expect(data[0].dataSeries[0].tags?.apiFamily).to.equal('shopper');
+  });
+
+  it('replaces data points with per-series stats when summarize is set', async () => {
+    mockGet.resolves({
+      data: {
+        data: [
+          {
+            metricId: 'callsCount',
+            title: 'Calls',
+            description: '',
+            unit: '',
+            dataSeries: [
+              {
+                id: 'abcd_prd.api.example.com',
+                name: 'abcd_prd.api.example.com',
+                data: [
+                  {timestamp: 60, value: 2},
+                  {timestamp: 120, value: 6},
+                  {timestamp: 180, value: 1},
+                ],
+              },
+              {id: 'callsCount', name: 'callsCount', data: []},
+            ],
+          },
+        ],
+      },
+      error: undefined,
+      response: {status: 200},
+    });
+
+    const tool = createMetricsGetTool(() => services);
+    const result = await tool.handler({category: 'third-party', window: '1h', summarize: true});
+    const {parsed} = parseResultContent(result);
+
+    const series = (parsed?.data as Array<{dataSeries: Array<Record<string, unknown>>}>)[0].dataSeries;
+    expect(series[0]).to.not.have.property('data');
+    expect(series[0].tags).to.include({host: 'api.example.com'});
+    expect(series[0].summary).to.deep.include({points: 3, sum: 9, min: 1, max: 6, avg: 3});
+    expect((series[0].summary as Record<string, unknown>).maxAt).to.equal(new Date(120_000).toISOString()); // API seconds -> ms
+    expect(series[1].summary).to.deep.equal({points: 0});
+    expect((parsed?.query as Record<string, unknown>).summarize).to.equal(true);
+    expect((parsed?.notes as string[]).join(' ')).to.include('HTTP status, service ID');
+  });
+
+  it('summarizeSeriesData orders first/last by timestamp, not array order', () => {
+    const summary = summarizeSeriesData([
+      {timestamp: 300, value: 1},
+      {timestamp: 100, value: 1},
+    ]);
+    expect(summary.firstAt).to.equal(new Date(100).toISOString());
+    expect(summary.lastAt).to.equal(new Date(300).toISOString());
   });
 });

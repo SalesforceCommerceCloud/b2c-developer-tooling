@@ -21,11 +21,12 @@ pnpm run mcp:eval:ablation --runs 3 -j 5
 # Only some cases
 pnpm run mcp:eval --tag docs
 pnpm run mcp:eval --case 'category-rules-*'   # name glob; matches the case directory name, not its path
+                                              # only the last --case applies; use one glob
 ```
 
 The script defaults to `--model claude-sonnet-5-5`. Override it with `--model <full-id>`. Use full model IDs, not aliases: on some providers `sonnet`/`opus` resolve to older models. Tool-selection behaviour differs a lot between models (see the SCAPI skill-gate note below).
 
-Add `--keep-temp` to keep each run's trace (`out/trace.jsonl`) for debugging, and `--json` for machine-readable output. Results are written under `cases/results/` (gitignored).
+`-j` accepts at most 8. Add `--keep-temp` to keep each run's trace (`out/trace.jsonl`) for debugging, and `--json` for machine-readable output. Results are written under `cases/results/` (gitignored).
 
 ## Two kinds of case
 
@@ -72,9 +73,29 @@ Eval runs get a temporary `HOME`, so no user `dw.json`, credentials or telemetry
 
 Tag each case with the backend it needs:
 
-- `tier0`: offline tools only (docs, schemas, skills, CIP discovery, config inspection, tool/toolset guidance). Runs anywhere with no credentials. This is the whole suite today.
+- `tier0`: offline tools only (docs, schemas, skills, CIP discovery, config inspection, tool/toolset guidance). Runs anywhere with no credentials. This is the whole default suite.
 - `tier1` (planned): instance tools against a mock backend preloaded into the server process.
-- `tier2` (planned): live sandbox. Opt-in only, never in CI.
+- `tier2`: live instance, under `live/` (a separate `--eval-dir`, so `pnpm run mcp:eval` never runs it). Opt-in only, never in CI.
+
+### Live cases
+
+Live cases set `EVAL_MCP_LIVE: '1'` and read real data from an instance you name in your shell:
+
+```bash
+EVAL_LIVE_CONFIG=~/path/to/dw.json EVAL_LIVE_INSTANCE=my-production \
+  pnpm run mcp:eval:live --runs 2 -j 4
+```
+
+| Variable             | Effect                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| `EVAL_LIVE_CONFIG`   | A `dw.json`-format file. It is copied to a temp dir and passed as `--project-directory`. |
+| `EVAL_LIVE_INSTANCE` | Optional. The configuration name to use from that file, passed as `--instance`.          |
+
+The server runs with `SFCC_SAFETY_LEVEL=READ_ONLY`, which applies even when the configuration sets a lower level, so a live case cannot write to the instance. Grade live answers on how the agent reads the data (equal windows, volume next to rates, gaps not treated as zero), not on specific values, which change from run to run.
+
+The copied configuration contains credentials. `--keep-temp` keeps it in the run's temp directory; delete kept directories when you are done. Never commit a live configuration, and keep instance names, hostnames and other customer data out of case prompts and graders.
+
+Runs get a temporary `HOME`, so a Claude login that depends on settings in your home directory (for example an `apiKeyHelper`) is not visible to them. Export `ANTHROPIC_API_KEY` (or your provider's variables) in the shell before running.
 
 ## Writing cases
 

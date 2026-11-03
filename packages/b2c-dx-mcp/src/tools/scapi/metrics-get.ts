@@ -18,12 +18,7 @@ import {z} from 'zod';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
-import {
-  getMetricsByCategory,
-  resolveMetricsWindow,
-  enrichMetricsTags,
-  type MetricsDataResponse,
-} from '@salesforce/b2c-tooling-sdk';
+import {getMetricsByCategory, resolveMetricsWindow, enrichMetricsTags} from '@salesforce/b2c-tooling-sdk';
 
 /**
  * Input parameters for metrics_get tool.
@@ -47,7 +42,74 @@ interface MetricsGetInput {
   ocapiCategory?: string;
   /** Filter by OCAPI API (ocapi category only) */
   ocapiApi?: string;
+  /** Replace each series' data points with summary statistics (optional) */
+  summarize?: boolean;
 }
+
+/**
+ * Per-series statistics returned instead of data points when `summarize` is set.
+ * Statistics cover the returned points only; intervals without a point are
+ * absent from the API (not zero) and are not counted.
+ */
+interface MetricSeriesSummary {
+  points: number;
+  sum?: number;
+  min?: number;
+  max?: number;
+  avg?: number;
+  /** ISO timestamp of the maximum value. */
+  maxAt?: string;
+  firstAt?: string;
+  lastAt?: string;
+}
+
+const round = (n: number): number => Math.round(n * 1000) / 1000;
+
+/**
+ * Summarizes a series' data points. Placeholder series (no data) yield `{points: 0}`.
+ */
+export function summarizeSeriesData(data: Array<{timestamp: number; value: number}>): MetricSeriesSummary {
+  if (data.length === 0) return {points: 0};
+  let sum = 0;
+  let min = data[0];
+  let max = data[0];
+  let first = data[0];
+  let last = data[0];
+  for (const point of data) {
+    sum += point.value;
+    if (point.value < min.value) min = point;
+    if (point.value > max.value) max = point;
+    if (point.timestamp < first.timestamp) first = point;
+    if (point.timestamp > last.timestamp) last = point;
+  }
+  return {
+    points: data.length,
+    sum: round(sum),
+    min: round(min.value),
+    max: round(max.value),
+    avg: round(sum / data.length),
+    maxAt: new Date(max.timestamp).toISOString(),
+    firstAt: new Date(first.timestamp).toISOString(),
+    lastAt: new Date(last.timestamp).toISOString(),
+  };
+}
+
+const SIGNALS_URI = 'skill://b2c-ops/b2c-production-triage/references/metrics-signals.md';
+
+/**
+ * Reading caveats returned with every response. They describe what the data
+ * cannot show, which agents otherwise infer wrongly from the series alone.
+ */
+const COMMON_NOTES = [
+  'Latency and rate series only have points for intervals with events; a gap means no events, not zero.',
+  'A series whose id equals its metricId with no data is a placeholder (no events).',
+];
+const CATEGORY_NOTES: Partial<Record<MetricsGetInput['category'], string[]>> = {
+  ecdn: ['Includes every zone host (production, staging, development, Business Manager); filter by tags.host.'],
+  'third-party': [
+    'Series identify the outbound host only: HTTP status, service ID and response bodies are not in this data; use service logs.',
+  ],
+};
 
 /**
  * Output for metrics_get: the metrics response plus the effective query
@@ -55,7 +117,10 @@ interface MetricsGetInput {
  * was actually sent. Both `from` and `to` are always present: the resolver
  * derives whichever bound was left open from the 24-hour default window.
  */
-interface MetricsGetOutput extends MetricsDataResponse {
+interface MetricsGetOutput {
+  data: unknown[];
+  /** Category-specific limits of the data and where to read more. */
+  notes: string[];
   query: {
     category: MetricsGetInput['category'];
     from: string;
@@ -71,6 +136,7 @@ interface MetricsGetOutput extends MetricsDataResponse {
     apiName?: string;
     ocapiCategory?: string;
     ocapiApi?: string;
+    summarize?: boolean;
   };
 }
 
@@ -89,7 +155,8 @@ interface MetricsGetOutput extends MetricsDataResponse {
  * - **ocapi**: OCAPI endpoint metrics (filter by ocapiCategory, ocapiApi)
  *
  * Returns time-series data with metric metadata (title, description, unit) and data points
- * (timestamp, value) grouped by series (e.g., 2xx, 4xx, 5xx response codes).
+ * (timestamp, value) grouped by series. Each series carries a structured `tags` map
+ * (realm, environment, apiFamily, host, statusClass, …) parsed from its packed id.
  *
  * **Requirements:** OAuth with `sfcc.metrics` scope.
  *
@@ -105,7 +172,9 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
       openWorld: true,
       description:
         'CLOSED BETA. Retrieve B2C observability metric time series by category and time range. ' +
-        'Defaults to the last 24 hours. Requires Metrics API access and OAuth scope sfcc.metrics.',
+        'Defaults to the last 24 hours. Requires Metrics API access and OAuth scope sfcc.metrics. ' +
+        'For incidents follow skill://b2c-ops/b2c-performance-triage/SKILL.md or b2c-integration-triage (external services); ' +
+        'signal reference: skill://b2c-ops/b2c-production-triage/references/metrics-signals.md.',
       toolsets: ['SCAPI'],
       requiresInstance: false, // SCAPI uses OAuth directly
       usesConfigurationContext: true,
@@ -135,6 +204,10 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
         apiName: z.string().optional().describe('Filter by SCAPI API name (scapi category only)'),
         ocapiCategory: z.string().optional().describe('Filter by OCAPI category (ocapi category only)'),
         ocapiApi: z.string().optional().describe('Filter by OCAPI API (ocapi category only)'),
+        summarize: z
+          .boolean()
+          .optional()
+          .describe('Return per-series stats (points, sum, min, max, avg, maxAt) instead of data points.'),
       },
       async execute(args, {services: svc}) {
         // Get client and tenant ID
@@ -175,8 +248,19 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
           thirdPartyServiceId: args.thirdPartyServiceId,
         });
 
+        const data = args.summarize
+          ? response.data.map(({dataSeries, ...metric}) => ({
+              ...metric,
+              dataSeries: dataSeries.map(({data: points, ...series}) => ({
+                ...series,
+                summary: summarizeSeriesData(points ?? []),
+              })),
+            }))
+          : response.data;
+
         return {
-          ...response,
+          data,
+          notes: [...(CATEGORY_NOTES[args.category] ?? []), ...COMMON_NOTES, `Signal guide: ${SIGNALS_URI}`],
           query: {
             category: args.category,
             from: window.fromIso,
@@ -190,10 +274,12 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
             apiName: args.apiName,
             ocapiCategory: args.ocapiCategory,
             ocapiApi: args.ocapiApi,
+            summarize: args.summarize || undefined,
           },
         };
       },
-      formatOutput: (output) => jsonResult(output),
+      // Compact JSON: indentation roughly doubles the size of per-minute series.
+      formatOutput: (output) => jsonResult(output, 0),
     },
     loadServices,
   );

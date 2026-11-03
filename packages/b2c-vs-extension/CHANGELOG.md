@@ -1,5 +1,39 @@
 # Change Log
 
+## 1.7.3
+
+### Patch Changes
+
+- Updated dependencies [[`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527), [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288), [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3), [`e5ebe73`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e5ebe73c4cdd097485250c63b9373615470c27df)]:
+  - @salesforce/b2c-tooling-sdk@2.11.0
+
+## 1.7.2
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06), [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c), [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06)]:
+  - @salesforce/b2c-tooling-sdk@2.10.2
+
+## 1.7.1
+
+### Patch Changes
+
+- Updated dependencies [[`08c771f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/08c771f710e38ef8dcc57c945e233079a84a5d58)]:
+  - @salesforce/b2c-tooling-sdk@2.10.1
+
+## 1.7.0
+
+### Minor Changes
+
+- [#820](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/820) [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd) - New `b2c-dx.auth.usePluginSessionStore` setting keeps sign-in sessions in an installed B2C CLI plugin's auth session store instead of VS Code secret storage, so the extension and the CLI share sessions. Off by default. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`69afa8d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69afa8d250ded87639f9ae1a9ce320eefa3d6045), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325), [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304)]:
+  - @salesforce/b2c-tooling-sdk@2.10.0
+
 ## 1.6.0
 
 ### Minor Changes

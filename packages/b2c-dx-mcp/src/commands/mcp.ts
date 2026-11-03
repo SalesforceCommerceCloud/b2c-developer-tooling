@@ -26,6 +26,13 @@
  * | `SFCC_DISABLE_TELEMETRY` | Set to `true` to disable telemetry |
  * | `SFCC_APP_INSIGHTS_KEY` | Override connection string from package.json |
  *
+ * ### Update Check
+ * Once a day the server checks the npm registry for a newer release, without
+ * delaying startup. The cached result adds a one-line notice to the server
+ * instructions and appears as `version` in `config_inspect`. The check is off
+ * when `SFCC_DISABLE_UPDATE_CHECK`, `SFCC_DISABLE_TELEMETRY`, or
+ * `SF_DISABLE_TELEMETRY` is `true`, and in CI.
+ *
  * ### MRT Flags (from MrtCommand.baseFlags)
  * | Flag | Env Variable | Description |
  * |------|--------------|-------------|
@@ -155,6 +162,7 @@ import {
 import {B2CDxMcpServer} from '../server.js';
 import {Services, type ServicesResolutionInputs} from '../services.js';
 import {ServerContext} from '../server-context.js';
+import {UpdateCheck} from '../update-check.js';
 import {registerToolsets} from '../registry.js';
 import {TOOLSETS, type StartupFlags} from '../utils/index.js';
 import type {ProjectContextInput} from '../tools/project-context.js';
@@ -436,10 +444,16 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
 
     const loadServices = this.loadServices.bind(this) as ServicesLoader;
     let activeServer: B2CDxMcpServer | undefined;
+    const updateCheck = new UpdateCheck({
+      packageName: this.config.name,
+      currentVersion: this.config.version,
+      cacheFile: this.config.cacheDir ? path.join(this.config.cacheDir, 'mcp-update.json') : undefined,
+    });
+    const updateNote = updateCheck.note();
     const handle = serveStdio(
       async () => {
         // A protocol probe may be discarded; each factory instance owns its state.
-        const context = new ServerContext();
+        const context = new ServerContext({updateCheck});
         const server = new B2CDxMcpServer(
           {
             name: this.config.name,
@@ -452,6 +466,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
             },
             telemetry: this.telemetry,
             cleanup: () => context.destroyAll(),
+            projectDirectory: this.flags['project-directory'],
             cacheHints: {
               'tools/list': {ttlMs: 300_000, cacheScope: 'private'},
               'resources/list': {ttlMs: 300_000, cacheScope: 'private'},
@@ -463,9 +478,12 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
               'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
               'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
+              'New sandbox or realm setup (sample data, storefronts, replication): first read skill://b2c-cli/b2c-setup/SKILL.md. ' +
+              'Production incidents (slow or failing storefront/APIs, external service failures, jobs, orders): first read skill://b2c-ops/b2c-production-triage/SKILL.md. ' +
               'Missing credentials in config do not mean unauthenticated: instance tools may sign in through Account Manager in the browser; resolution.auth and config_inspect show how. ' +
               'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; artifacts or dashboards skill://mcp/b2c-mcp-claude-artifacts/SKILL.md; ' +
-              'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).',
+              'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).' +
+              (updateNote ? ` ${updateNote}` : ''),
           },
         );
 
@@ -508,6 +526,8 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
     });
 
     this.logger.info({version: this.config.version}, 'MCP Server running on stdio');
+    // Refreshes the cache for config_inspect and the next session's instructions; never blocks startup.
+    updateCheck.refresh();
   }
 
   /** Load --scapi-schemas once at startup; relative paths resolve from the project directory. */

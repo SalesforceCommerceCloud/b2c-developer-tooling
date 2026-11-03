@@ -303,6 +303,8 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
    */
   protected override hasOAuthCredentials(): boolean {
     if (!this.supportsDefaultWebDavClient()) return super.hasOAuthCredentials();
+    // The built-in client has no OCAPI or SCAPI access.
+    if (this.useDefaultClient) return false;
     if (this.resolvedConfig.hasOAuthConfig()) return true;
     const sessions = listAuthSessions();
     return sessions.length === 1 && sessions[0].clientId !== getDefaultPublicClientId(this.accountManagerHost);

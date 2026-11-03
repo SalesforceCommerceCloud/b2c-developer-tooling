@@ -31,7 +31,9 @@ Restart the MCP connection after changing startup settings.
 Your assistant can select a project or named instance for each task. To fix a
 startup default, use the shared `--project-directory`, `--config`, or `--instance`
 options. See [Configuration](../guide/configuration) for their values and file formats.
-These defaults do not restrict which projects the assistant can access.
+When `--project-directory` is set, or your client shares its workspace folders
+(MCP roots), the assistant can select a project outside them only after you
+approve it. See [Project folders](./security#project-folders).
 
 ## Tools and toolsets {#toolset-selection}
 
@@ -107,6 +109,18 @@ from `--project-directory` when it is set, or from the server's working director
 otherwise. An invalid contract stops the server when passed by flag, or fails the
 SCAPI tool call when set in project configuration.
 Safety Mode and request targeting work as they do for other contracts.
+
+## Update check
+
+Once a day the server checks the npm registry (or `npm_config_registry`) for a
+newer release. The check runs in the background, so it never delays startup.
+When a newer version is known, the server instructions note it and how to
+upgrade (update the agent plugin or MCP server configuration, then restart), so
+the agent can mention it. `config_inspect` also reports the running and latest
+versions.
+
+The check is off in CI and when any of `SFCC_DISABLE_UPDATE_CHECK`,
+`SFCC_DISABLE_TELEMETRY`, or `SF_DISABLE_TELEMETRY` is `true`.
 
 ## Logging
 

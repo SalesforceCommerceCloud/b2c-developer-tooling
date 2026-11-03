@@ -9,7 +9,7 @@ import {
   createInstanceManager,
   type InstanceInfo,
 } from '@salesforce/b2c-tooling-sdk/config';
-import {setAuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
+import {setAuthSessionBackend, type AuthSessionBackend} from '@salesforce/b2c-tooling-sdk/auth';
 import {detectWorkspaceType} from '@salesforce/b2c-tooling-sdk/discovery';
 import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {VsCodeSecretsAuthSessionBackend} from './pkce-secret-store.js';
@@ -27,7 +27,7 @@ import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
 import {registerLogs} from './logs/index.js';
 import {registerJobs} from './jobs/index.js';
-import {initializePlugins} from './plugins.js';
+import {getPluginAuthSessionBackend, initializePlugins} from './plugins.js';
 import {registerSafeCommand, registerSafety} from './safety.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
 import {registerScaffold} from './scaffold/index.js';
@@ -69,6 +69,7 @@ import {
 } from './walkthrough/index.js';
 
 let authSessionBackend: VsCodeSecretsAuthSessionBackend | undefined;
+let pluginSessionBackendInUse: AuthSessionBackend | undefined;
 
 interface InstanceQuickPickItem extends vscode.QuickPickItem {
   action?: 'follow' | 'inspect' | 'none';
@@ -331,7 +332,9 @@ export async function activate(context: vscode.ExtensionContext) {
 export async function deactivate(): Promise<void> {
   sendEvent('EXTENSION_DEACTIVATED');
   await authSessionBackend?.flush();
+  await pluginSessionBackendInUse?.flush?.();
   authSessionBackend = undefined;
+  pluginSessionBackendInUse = undefined;
   setAuthSessionBackend(null);
   await disposeTelemetry();
 }
@@ -580,11 +583,24 @@ async function activateInner(
 
   // Persist auth sessions via VS Code SecretStorage (OS keychain on
   // macOS/Windows/Linux, encrypted fallback otherwise — handled by VS Code).
+  // Users can opt in to a b2c-cli plugin's auth session store instead, which
+  // shares sessions with the CLI.
   // Hydrate the in-memory snapshot before registering, so the SDK's sync
   // reads see existing sessions on first call.
-  authSessionBackend = new VsCodeSecretsAuthSessionBackend(context);
-  await authSessionBackend.hydrate();
-  setAuthSessionBackend(authSessionBackend);
+  const pluginAuthSessionBackend = vscode.workspace
+    .getConfiguration('b2c-dx')
+    .get<boolean>('auth.usePluginSessionStore', false)
+    ? getPluginAuthSessionBackend()
+    : undefined;
+  if (pluginAuthSessionBackend) {
+    pluginSessionBackendInUse = pluginAuthSessionBackend;
+    setAuthSessionBackend(pluginAuthSessionBackend);
+    log.appendLine('Using auth session store provided by a b2c-cli plugin');
+  } else {
+    authSessionBackend = new VsCodeSecretsAuthSessionBackend(context);
+    await authSessionBackend.hydrate();
+    setAuthSessionBackend(authSessionBackend);
+  }
 
   const configProvider = new B2CExtensionConfig(log, context.workspaceState);
   lateConfigProvider = configProvider;

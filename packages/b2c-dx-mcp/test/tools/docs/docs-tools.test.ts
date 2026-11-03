@@ -123,7 +123,7 @@ describe('tools/docs', () => {
   });
 
   describe('createDocsTools', () => {
-    it('creates all six tools', () => {
+    it('creates all seven tools', () => {
       const tools = createDocsTools(loadServices);
       expect(tools.map((t) => t.name)).to.deep.equal([
         'docs_search',
@@ -132,6 +132,7 @@ describe('tools/docs', () => {
         'docs_schema_search',
         'docs_schema_read',
         'docs_schema_list',
+        'validate_xml_schema',
       ]);
     });
 

@@ -188,6 +188,7 @@ b2c plugins install sfcc-solutions-share/b2c-plugin-macos-keychain
 - Supports instance-specific credentials that override globals
 - Optional `defaultInstance` to auto-select an instance
 - Merges with other config sources (dw.json, environment variables)
+- Keeps sign-in sessions from `b2c auth login` and `b2c auth client` in the Keychain instead of a file (see [Auth Session Store](./extending#auth-session-store)); set `SFCC_KEYCHAIN_AUTH_SESSIONS=false` to keep the default file
 
 #### Storing Credentials
 
@@ -207,6 +208,7 @@ security add-generic-password -s 'b2c-cli' -a 'staging' \
 |----------|-------------|---------|
 | `SFCC_KEYCHAIN_SERVICE` | Service name in keychain | `b2c-cli` |
 | `SFCC_KEYCHAIN_INSTANCE` | Fallback instance name | (none) |
+| `SFCC_KEYCHAIN_AUTH_SESSIONS` | Set to `false` to keep sign-in sessions in the CLI's default file | `true` |
 
 #### Usage
 

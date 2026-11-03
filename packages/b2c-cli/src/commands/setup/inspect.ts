@@ -420,6 +420,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['autoUpload', config.autoUpload],
         ['cartridges', config.cartridges],
         ['importSetExclude', config.importSetExclude],
+        ['cartridgeIgnoreDirs', config.cartridgeIgnoreDirs],
         ['contentLibrary', config.contentLibrary],
         ['catalogs', config.catalogs],
         ['libraries', config.libraries],

@@ -143,6 +143,11 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
     description:
       'Cartridge names for deploy/watch filtering and IDE discovery. Array, or a colon/comma-separated string. Env: `SFCC_CARTRIDGES`.',
   },
+  'cartridge-ignore-dirs': {
+    ...stringArray,
+    description:
+      'Directory names skipped at any depth when archiving cartridges for deploy. Replaces the default list (`node_modules`, `.git`, `coverage`, `.cache`, `tmp`, `temp`); use `[]` to archive everything. Env: `SFCC_CARTRIDGE_IGNORE_DIRS`.',
+  },
   'auto-upload': {type: 'boolean', description: 'Automatically upload code changes from the VS Code extension.'},
   'content-library': {type: 'string', description: 'Default library for content list/export.'},
   catalogs: {...stringArray, description: 'Catalog IDs for WebDAV browsing. Env: `SFCC_CATALOGS`.'},

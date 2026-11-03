@@ -161,6 +161,12 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 | `b2c-dx.sandbox.pollingInterval` | `10`    | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
 | `b2c-dx.telemetry.enabled`       | `true`  | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting.                                                          |
 
+### Authentication
+
+| Setting                             | Default | Description                                                                                                                                                                                                                                                                                  |
+| ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c-dx.auth.usePluginSessionStore` | `false` | Store sign-in sessions in the [auth session store](../guide/extending#auth-session-store) of an installed B2C CLI plugin instead of VS Code secret storage, so the extension and the CLI share sessions. Has no effect when no plugin provides a store. Reload the window after changing it. |
+
 ### XML schema validation
 
 The extension contributes XSD-based validation for B2C metadata XML files via the [Red Hat XML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml), which is declared as an extension dependency and installed automatically. When a file path matches one of the contributed globs, diagnostics, autocomplete, and hover docs are driven by the corresponding B2C schema.
@@ -198,6 +204,7 @@ To opt out of the Red Hat XML dependency entirely, uninstall this extension or p
   "b2c-dx.logLevel": "info",
   "b2c-dx.sandbox.pollingInterval": 10,
   "b2c-dx.telemetry.enabled": true,
+  "b2c-dx.auth.usePluginSessionStore": false,
 }
 ```
 

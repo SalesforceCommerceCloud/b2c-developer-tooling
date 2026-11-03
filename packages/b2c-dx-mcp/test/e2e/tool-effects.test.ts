@@ -19,6 +19,7 @@ const groups = [
       'docs_schema_list',
       'docs_schema_search',
       'docs_schema_read',
+      'validate_xml_schema',
       'logs_watch_poll',
       'mrt_logs_watch_poll',
     ],
@@ -55,6 +56,10 @@ const groups = [
   {
     names: ['scapi_snippet_save'],
     annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false},
+  },
+  {
+    names: ['webdav_get_to_file'],
+    annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true},
   },
   {
     names: ['webdav_put'],

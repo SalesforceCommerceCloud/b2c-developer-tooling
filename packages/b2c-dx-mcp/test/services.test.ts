@@ -240,11 +240,27 @@ describe('services', () => {
       expect(services.resolveWithProjectDirectory()).to.equal(process.cwd());
     });
 
-    it('should return absolute path as-is', () => {
+    it('should accept an absolute path inside the project directory', () => {
+      const projectDir = path.resolve('/path/to/project');
+      const config = createMockResolvedConfig({projectDirectory: projectDir});
+      const services = new Services({resolvedConfig: config});
+
+      expect(services.resolveWithProjectDirectory(path.join(projectDir, 'a', 'b.txt'))).to.equal(
+        path.join(projectDir, 'a', 'b.txt'),
+      );
+      expect(services.resolveWithProjectDirectory('..dotted/name')).to.equal(path.resolve(projectDir, '..dotted/name'));
+    });
+
+    it('should reject paths that escape the project directory', () => {
       const config = createMockResolvedConfig({projectDirectory: '/path/to/project'});
       const services = new Services({resolvedConfig: config});
 
-      expect(services.resolveWithProjectDirectory('/absolute/path')).to.equal('/absolute/path');
+      for (const pathArg of ['/absolute/path', '../sibling/file.txt', 'a/../../b', '/path/to/project-other/x']) {
+        expect(() => services.resolveWithProjectDirectory(pathArg), pathArg).to.throw(/within the project directory/);
+      }
+      expect(() => services.resolveWithProjectDirectory('../x', '/other/root')).to.throw(
+        /within the project directory/,
+      );
     });
 
     it('should resolve relative path relative to project directory', () => {

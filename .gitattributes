@@ -1,2 +1,6 @@
 # Bundled upstream API contracts; keep schema metadata and tooling reviewable.
 schemas/scapi/**/*.json text eol=lf linguist-vendored=true linguist-generated=true
+
+# Built by packages/b2c-tooling-sdk/wasm/xml-validator/build.sh; CI verifies they match a rebuild from source.
+packages/b2c-tooling-sdk/data/xml-validator/*.wasm binary linguist-generated=true
+packages/b2c-tooling-sdk/data/xml-validator/*.mjs -diff linguist-generated=true

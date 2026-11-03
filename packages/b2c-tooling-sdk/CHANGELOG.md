@@ -1,5 +1,55 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.11.0
+
+### Minor Changes
+
+- [#838](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/838) [`779ae04`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/779ae04b6328da2c919f281b391307dbb7119288) - Add `--default-client` (or `SFCC_DEFAULT_CLIENT=true`) to sign in with the CLI's built-in client when another client or access key is configured, so WebDAV, code upload, logs, sandbox and Account Manager commands work with your Account Manager account without changing your config (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#840](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/840) [`4ba58fb`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4ba58fb939ac506d37ae82dacb1653bbe0a534d3) - `bundleGuidance` accepts `indexSummaries`, short per-skill lines used only in the `skill://index` listing; skill descriptions and search are unchanged. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#839](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/839) [`84cd0da`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84cd0da6a44ac3627acf3d02ba75350c15773527) - `b2c sites cartridges` commands with `--bm` now read and update the Business Manager cartridge path through the SCAPI Sites API instead of failing or running a site archive import. Site archive import remains the fallback when SCAPI isn't configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#841](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/841) [`e5ebe73`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e5ebe73c4cdd097485250c63b9373615470c27df) - The bundled tooling docs now cover the MCP server's update check and how to turn it off. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.10.2
+
+### Patch Changes
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge discovery now ignores a `.project` at a project root when real cartridges exist below it, and warns that a project root was detected as a cartridge. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Failed job commands now show the cause more often: they wait briefly for a log that isn't written yet, print `[DATAERROR]` lines from site import logs alongside the error, and when the log can't be downloaded, report why (for example a 401) with a `b2c webdav get --user-auth` command to read it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#833](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/833) [`1a5263c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/1a5263cad857e185c23f400e6f5cee101832ff8c) - Cartridge deploy no longer skips `build` or `dist` folders inside a cartridge. Use the new `--cartridge-ignore-dirs` flag or `cartridge-ignore-dirs` config to choose which directories are skipped. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#834](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/834) [`ad5f946`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ad5f946de076f552a7f5ceef96d16ca47e0a1f06) - Fix Metrics API series tags: `apiFamily`, `controller`, `host`, `ocapiCategory` and `statusClass` no longer include the `<realm>_<environment>` prefix, and empty placeholder series no longer get bogus dimensions. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.10.1
+
+### Patch Changes
+
+- [`08c771f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/08c771f710e38ef8dcc57c945e233079a84a5d58) - Maintenance release to verify the npm publishing pipeline. No functional changes. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.10.0
+
+### Minor Changes
+
+- [#820](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/820) [`077719a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/077719a218259b1cfdc6a385721c79b6bf04bccd) - Plugins can now store sign-in sessions (access and refresh tokens from `b2c auth login`, `b2c auth client`, and browser sign-in) somewhere other than the default `auth-sessions.json` file, such as an OS keychain, with the new `b2c:auth-session-store` hook. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#824](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/824) [`49d3428`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/49d3428ba34dd24168a6acfc245227bf0758a304) - Added `b2c validate` to check import/export XML (catalogs, price books, inventory, site archives, and more) against the bundled B2C Commerce XSDs before importing. It picks each file's schema automatically, reports errors with line numbers, and needs no `xmllint` install. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#818](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/818) [`69afa8d`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/69afa8d250ded87639f9ae1a9ce320eefa3d6045) - `b2c cap validate` no longer rejects Commerce Apps whose site cartridges contain a `controllers/` directory. (Thanks [@jbisaSF](https://github.com/jbisaSF)!)
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - `b2c code download` no longer fails after about five minutes on large code versions; when the server takes longer to zip the code than the connection waits, the download waits for the zip to finish and then downloads it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - Error messages, `--json` error output, logs, and telemetry no longer include the access token when an API rejects it as invalid. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#821](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/821) [`8157706`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8157706917708402f0be87ed0327e6baad9ee325) - `code deploy`, `download`, `watch`, and `list` now also find the active code version over WebDAV when your API client can't read code versions, instead of failing. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.9.0
 
 ### Minor Changes

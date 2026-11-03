@@ -34,7 +34,9 @@ plugins, `dw.json`, `~/.mobify` (MRT key), low-priority config plugins, then
 
 - Project: per-call `projectDirectory`, then server `--project-directory` /
   `SFCC_PROJECT_DIRECTORY`, then server working directory. The agent's project
-  may differ from the server's working directory; pass it explicitly.
+  may differ from the server's working directory; pass it explicitly. A
+  directory outside `--project-directory` and the client's workspace roots needs
+  user approval; preserve a declined or rejected result rather than retrying.
 - Primary file: per-call `configPath`, startup `--config` / `SFCC_CONFIG`,
   project `.env` `SFCC_CONFIG`, project `dw.json`, then shared global default.
   Relative `configPath` resolves from `projectDirectory`.

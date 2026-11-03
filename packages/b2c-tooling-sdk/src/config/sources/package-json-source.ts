@@ -34,6 +34,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'sandboxApiHost',
   'realm',
   'importSetExclude',
+  'cartridgeIgnoreDirs',
 ];
 
 /**
@@ -52,6 +53,7 @@ interface PackageJsonB2CConfig {
   sandboxApiHost?: string;
   realm?: string;
   importSetExclude?: string[];
+  cartridgeIgnoreDirs?: string[];
   [key: string]: unknown;
 }
 

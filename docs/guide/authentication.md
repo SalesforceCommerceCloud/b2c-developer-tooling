@@ -54,6 +54,8 @@ Account Manager commands that manage organizations and API clients need roles on
 
 ### Creating an API Client
 
+To create the client from the CLI with your own sign-in, use [`b2c am clients create`](/cli/account-manager#b2c-am-clients-create). This requires the API Administrator or Account Administrator role; see [API Client Provisioning](./account-manager#api-client-provisioning). To create one in Account Manager:
+
 1. Log in to [Account Manager](https://account.demandware.com).
 2. Navigate to **API Client** in the left menu.
 3. Click **Add API Client**.
@@ -156,6 +158,10 @@ SCAPI Admin APIs need a client secret or JWT; browser sign-in isn't supported ye
 | `b2c sites list`, `sites cartridges list`             | `sfcc.sites` or `sfcc.sites.rw`        | [Sites](/cli/sites)                   |
 | `b2c sites cartridges add/remove/set`                 | `sfcc.sites.rw`                        | [Sites](/cli/sites)                   |
 | Catalog discovery used by export/VS Code              | `sfcc.catalogs` or `sfcc.catalogs.rw`  | [Jobs](/cli/jobs)                     |
+| `b2c mrt project list/get` (SCAPI backend)            | `sfcc.storefront.storefronts` or `.rw` | [MRT Backends](/cli/mrt#mrt-backends) |
+| `b2c mrt project create/update/delete` (SCAPI)        | `sfcc.storefront.storefronts.rw`       | [MRT Backends](/cli/mrt#mrt-backends) |
+| `b2c mrt env`, `env var` reads (SCAPI backend)        | `sfcc.storefront.environments`         | [MRT Backends](/cli/mrt#mrt-backends) |
+| `b2c mrt env`, `env var` writes (SCAPI backend)       | `sfcc.storefront.environments.rw`      | [MRT Backends](/cli/mrt#mrt-backends) |
 | `b2c mrt bundle history` (SCAPI backend)              | `sfcc.storefront.deployments` or `.rw` | [MRT Backends](/cli/mrt#mrt-backends) |
 | `b2c mrt bundle deploy <id>` (SCAPI backend)          | `sfcc.storefront.deployments.rw`       | [MRT Backends](/cli/mrt#mrt-backends) |
 
@@ -438,6 +444,15 @@ Common paths for CLI operations:
 ### Which credentials WebDAV uses
 
 An access key is used when configured, then an API client, then signing in with your account. To use the API client for WebDAV when an access key is also configured, pass `--auth-methods client-credentials` (or set `SFCC_AUTH_METHODS=client-credentials`).
+
+To sign in with your account even when an access key or API client is configured, for example when the configured client isn't set up for browser sign-in, pass `--default-client` (or set `SFCC_DEFAULT_CLIENT=true`). It uses the built-in client and keeps the rest of your configuration, such as the server:
+
+```bash
+b2c auth login --default-client
+b2c webdav ls --root temp --server my-sandbox.dx.commercecloud.salesforce.com --default-client
+```
+
+Commands that call OCAPI or SCAPI can't use `--default-client`, because the built-in client has no API access.
 
 ::: warning
 Avoid `--auth-methods basic` on commands that also call APIs, such as `code deploy --activate`: it disables the API client for those calls too.

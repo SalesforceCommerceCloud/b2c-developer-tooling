@@ -23,6 +23,8 @@ claude plugin marketplace add SalesforceCommerceCloud/b2c-developer-tooling
 claude plugin install b2c-dx-mcp@b2c-developer-tooling
 ```
 
+Claude Code does not auto-update third-party marketplaces by default. To get new releases automatically, run `/plugin`, open **Marketplaces**, select `b2c-developer-tooling`, and choose **Enable auto-update**.
+
 **Codex**
 
 ```bash

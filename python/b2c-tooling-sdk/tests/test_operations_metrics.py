@@ -455,6 +455,59 @@ def test_parse_series_tags_realm_without_environment() -> None:
     assert tags == {"realm": "bdpx", "controller": "Home-Show"}
 
 
+@pytest.mark.parametrize(
+    ("category", "metric_id", "series_id", "expected"),
+    [
+        ("scapi", "responseCount", "bdpx_prd.shopper", {"apiFamily": "shopper"}),
+        ("scapi", "responseCount", "bdpx_prd 4xx", {"statusClass": "4xx"}),
+        ("scapi", "cacheHitRate", "bdpx_prd.product MISS", {"apiFamily": "product", "cacheStatus": "MISS"}),
+        ("scapi", "requestLatency", "bdpx_prd Average overall latency", {"aggregation": "overall"}),
+        ("scapi", "errors5xx", "bdpx_prd.custom", {"apiFamily": "custom"}),
+        ("controller", "totalErrors", "bdpx_prd.Product-Show", {"controller": "Product-Show"}),
+        ("ocapi", "errors4xx", "bdpx_prd.shop", {"ocapiCategory": "shop"}),
+        ("third-party", "callsCount", "bdpx_prd.www.example.com", {"host": "www.example.com"}),
+        (
+            "third-party",
+            "remoteExceptions",
+            "bdpx_prd.svc.example.com.socketReadTimeout",
+            {"host": "svc.example.com", "exceptionType": "socketReadTimeout"},
+        ),
+        ("scapi-hooks", "hookExecutionTimes", "bdpx_prd Shop average", {"series": "Shop average"}),
+    ],
+)
+def test_parse_series_tags_realm_environment_prefix(
+    category: str, metric_id: str, series_id: str, expected: dict[str, str]
+) -> None:
+    # Live tenants prefix most series ids with `<realm>_<environment>`.
+    tags = parse_series_tags(
+        category=category,  # type: ignore[arg-type]
+        metric_id=metric_id,
+        series_id=series_id,
+        context=MetricsTagContext(tenant_id="f_ecom_bdpx_prd"),
+    )
+    assert tags == {"realm": "bdpx", "environment": "prd", **expected}
+
+
+def test_parse_series_tags_ecdn_host_not_tenant_stripped() -> None:
+    tags = parse_series_tags(
+        category="ecdn",
+        metric_id="totalRequests",
+        series_id="bdpx.bdpx_prd_my_commercecloud_salesforce_com",
+        context=MetricsTagContext(tenant_id="f_ecom_bdpx_prd"),
+    )
+    assert tags["host"] == "bdpx_prd_my_commercecloud_salesforce_com"
+
+
+def test_parse_series_tags_placeholder_has_only_identity() -> None:
+    tags = parse_series_tags(
+        category="scapi",
+        metric_id="errors5xx",
+        series_id="errors5xx",
+        context=MetricsTagContext(tenant_id="f_ecom_bdpx_prd"),
+    )
+    assert tags == {"realm": "bdpx", "environment": "prd"}
+
+
 # --- enrich_metrics_tags --------------------------------------------------------
 
 

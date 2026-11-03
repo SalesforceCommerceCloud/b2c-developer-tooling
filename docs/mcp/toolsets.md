@@ -26,15 +26,16 @@ links to the source documentation.
 
 No B2C Commerce credentials required.
 
-| Tool                 | Capability                                                                   |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `skills_read`        | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
-| `docs_search`        | Find platform references, guides, Salesforce Help, and tooling docs.         |
-| `docs_read`          | Read a documentation article.                                                |
-| `docs_list`          | Browse documentation categories and titles.                                  |
-| `docs_schema_search` | Find XML import/export schemas.                                              |
-| `docs_schema_read`   | Read an XML schema.                                                          |
-| `docs_schema_list`   | List available XML schemas.                                                  |
+| Tool                  | Capability                                                                   |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `skills_read`         | Find development, operations, CLI, Storefront Next, and MCP workflow skills. |
+| `docs_search`         | Find platform references, guides, Salesforce Help, and tooling docs.         |
+| `docs_read`           | Read a documentation article.                                                |
+| `docs_list`           | Browse documentation categories and titles.                                  |
+| `docs_schema_search`  | Find XML import/export schemas.                                              |
+| `docs_schema_read`    | Read an XML schema.                                                          |
+| `docs_schema_list`    | List available XML schemas.                                                  |
+| `validate_xml_schema` | Check import/export XML files against the schemas.                           |
 
 The included [skill collections](../guide/agent-skills) complement documentation
 with development patterns and operational workflows. No separate skills
@@ -232,17 +233,20 @@ Browse instance directories, read exact job logs, and upload or download files
 without installing the CLI separately. Upload text directly or transfer files
 from the machine running the MCP server.
 
-| Tool          | Capability                                                               |
-| ------------- | ------------------------------------------------------------------------ |
-| `webdav_list` | List a directory with file sizes and modification dates.                 |
-| `webdav_get`  | Read part of a text file or download a whole file.                       |
-| `webdav_put`  | Upload text or a local file; replace existing files only when requested. |
+| Tool                 | Capability                                                               |
+| -------------------- | ------------------------------------------------------------------------ |
+| `webdav_list`        | List a directory with file sizes and modification dates.                 |
+| `webdav_get`         | Read part of a text file, or its end (`tail`), without writing locally.  |
+| `webdav_get_to_file` | Download a whole file, including binary archives, to a new local file.   |
+| `webdav_put`         | Upload text or a local file; replace existing files only when requested. |
 
 With only a hostname configured, the first call asks you to
 [sign in](../guide/authentication#webdav-access) with your Account Manager account,
 and your Business Manager roles decide what you can access. This also applies to logs
-and cartridge uploads. Run `b2c auth logout` to sign out. Whole-file transfers are limited
-to 64 MiB. Upload folders must already exist; local downloads require a new filename.
+and cartridge uploads. Run `b2c auth logout` to sign out. `webdav_get` returns up to 32,000
+bytes per call; whole-file downloads have no size limit, and uploads are limited to 64 MiB.
+Upload folders must already exist; local downloads require a new filename.
+Local files must be inside the project directory.
 Selected cartridge uploads support up to 100 files / 64 MiB total.
 See [file access](./security#instance-files).
 
@@ -291,6 +295,8 @@ See [analytics access](./security#cip).
 
 `metrics_get` reads B2C Commerce metrics. Requires tenant access
 to the Metrics API closed beta and OAuth scope `sfcc.metrics`.
+Pass `summarize: true` to get per-series statistics (point count, sum, min, max,
+average, peak time) instead of every data point, which keeps long windows readable.
 
 ## Configuration inspection
 

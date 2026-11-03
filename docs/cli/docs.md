@@ -322,14 +322,14 @@ b2c docs schema catalog --path
 
 ### Output
 
-Without `--json`, the command writes schema XML directly to stdout. With `--path`, it prints the resolved filesystem path (useful for passing to XML validation tools). With `--list`, it prints available schema IDs and a total count.
+Without `--json`, the command writes schema XML directly to stdout. With `--path`, it prints the resolved filesystem path (useful for editors and other XML tools). With `--list`, it prints available schema IDs and a total count.
 
-### Validating XML with xmllint
+### Validating XML
 
-Use the `--path` flag to pass schema paths directly to `xmllint` for XML validation (requires installation of `xmllint`):
+To check XML files against these schemas, use [`b2c validate`](./validate.md). It picks the schema from each file's root element namespace and needs no other tools installed:
 
 ```bash
-xmllint --schema "$(b2c docs schema catalog --path)" catalog.xml --noout
+b2c validate catalog.xml
 ```
 
 ---
