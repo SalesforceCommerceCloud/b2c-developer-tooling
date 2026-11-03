@@ -114,7 +114,7 @@ A few things to know:
 
 <ExamplePrompt>
 
-> Create a public SLAS client called "PWA Kit Dev" for RefArch with the default shopper scopes and a redirect URI of http://localhost:3000/callback.
+> Create a public SLAS client called "PWA Kit Dev" for RefArch with the default shopper scopes and a redirect URI of `http://localhost:3000/callback`.
 
 </ExamplePrompt>
 
