@@ -66,8 +66,7 @@ Snippet names below have the `builtin/` prefix. Describe only the relevant snipp
 | CORS origins for a site                       | `configuration/cors/v1`: replace-all PUT; `cors-preferences-update` snippet; [admin-config](admin-config.md)                                                |
 | SCAPI timeout overrides                       | `configuration/timeouts/v1`: replace-all PUT; [admin-config](admin-config.md)                                                                               |
 | Custom object records                         | `custom-object/custom-objects/v1`: global or `/sites/{siteId}`; [admin-config](admin-config.md)                                                             |
-| Store redirect mappings                       | `store/store-redirect-mappings/v1`: bulk returns counts only; [admin-config](admin-config.md)                                                               |
-| Sitemap upload, impex files                   | Multipart/binary, not in code mode: [file-transfer](file-transfer.md)                                                                                       |
+| Custom sitemap upload, other file transfers   | Multipart/binary, not in code mode: [file-transfer](file-transfer.md)                                                                                       |
 
 File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
 Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions

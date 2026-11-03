@@ -1,4 +1,4 @@
-# CORS, timeouts, custom objects, store redirects
+# CORS, timeouts, custom objects
 
 Contracts are bundled; inspect inputs before calling. This page covers behavior the contract does not state.
 
@@ -24,13 +24,3 @@ Empty CORS or timeouts configuration returns `200 {}`.
 - `searchCustomObjects` (`POST`, `query` required, `limit`/`offset`): searchable fields are `keyValueString`,
   `keyValueInteger`, `creationDate`, `lastModified`, `siteId` and custom attributes (`c_*`). Only
   searchable attributes sort. Use `schemas: "live"` to see a type's `c_*` fields.
-
-## Store redirect mappings (`sfcc.store-redirect-mappings[.rw]`)
-
-- `query.siteId` is required. `403` with `"feature": "CustomStoreRedirectMapping"` means the feature is off for
-  the instance, not a missing scope; report it.
-- `upsertStoreRedirectMappings` body `{storeRedirectMappings: {sourceStoreId: targetStoreId}}`;
-  `deleteStoreRedirectMappings` body `{sourceStoreIds: []}`. Both return counts only and silently skip blank
-  or unknown IDs. Verify with `getStoreRedirectMapping` per ID, or a paged `getAllStoreRedirectMappings`.
-- `getAllStoreRedirectMappings` without `limit` returns everything; pass `limit`/`offset` to stay under the
-  result cap.

@@ -27,8 +27,11 @@ export function isScapiTextMediaType(mediaType: string): boolean {
 /** Shared discovery/execution limit: code mode transports JSON requests and text responses. */
 export function unsupportedScapiTransfer(document: ScapiSchemaDocument, operation: ApiDocument): string | undefined {
   const body = operation.requestBody && resolveScapiReference(operation.requestBody, document.schema);
-  if (body?.required && !body.content?.['application/json'])
-    return `File upload: requires a ${Object.keys(body.content ?? {}).join(' or ') || 'non-JSON'} request body; code mode sends JSON only.`;
+  if (body?.required && !body.content?.['application/json']) {
+    const types = Object.keys(body.content ?? {});
+    const kind = types.some((type) => /multipart|octet-stream/i.test(type)) ? 'File upload' : 'Non-JSON body';
+    return `${kind}: requires a ${types.join(' or ') || 'non-JSON'} request body; code mode sends JSON only.`;
+  }
   const mediaTypes = Object.entries<ApiDocument>(operation.responses ?? {})
     .filter(([status]) => /^2(?:\d\d|XX)$/i.test(status))
     .flatMap(([, response]) => Object.keys(resolveScapiReference(response, document.schema).content ?? {}));

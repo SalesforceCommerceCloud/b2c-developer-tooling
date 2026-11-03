@@ -504,11 +504,7 @@ describe('SCAPI code mode', function () {
     });
     const uploads: Array<[string, string, string]> = [
       ['site/seo/v1', '/organizations/{organizationId}/sitemap', 'put'],
-      [
-        'inventory/impex/v1',
-        '/organizations/{organizationId}/availability-records/imports/uploadlink/{uploadLinkId}',
-        'post',
-      ],
+      ['storefront/deployments/v1', '/organizations/{organizationId}/storefronts/{storefrontId}/bundles', 'post'],
     ];
     for (const [id, path, method] of uploads) {
       const document = docs.find(({entry}) => entry.id === id)!;
