@@ -70,13 +70,19 @@ Classic content assets: `getContent`, `createOrUpdateContent`, `patchContent` an
 under `/libraries/{libraryId}/content/{contentId}`. Use the site ID for a site-private library, or
 the shared library ID.
 
-- Localized fields are maps: `{"name":{"default":"About"}}`. Unknown `c_*` keys return 400
-  `invalid-custom-property`.
+- Localized fields are maps: `{"name":{"default":"About"}}`. Asset `online` and `searchable` are
+  localized too (`{"default":true}`).
+- Custom attributes are localized maps. Markup attributes such as `c_body` take
+  `{"default":{"source":"<p>Hi</p>"}}`, and reads return `markup` alongside `source`. A plain
+  string returns 400 `invalid-custom-property`. Unknown `c_*` keys are dropped without an error.
+- `patchContent` merges per field and per locale. `getContent` returns 404 for Page Designer pages
+  and components.
 - Folders: `createOrUpdateContentFolder` (`parentFolderId`, localized `name`, boolean `online`).
-  Walk them with `getSubFolders` and `getFolderContent`. There is no library-wide list or search.
+  Walk them from `root` with `getSubFolders` and `getFolderContent`. There is no library-wide list
+  or search. `getContentFolder` needs `sfcc.experiences.rw`, but the walks work read-only.
 - Assign content to a folder with `createOrUpdateFolderAssignment`.
   `{"default": true}` makes it the classification folder.
-- `deleteContent` returns 204 even when the ID does not exist. Verify with a read.
+- `deleteContent` and `deleteContentFolder` return 204 even when the ID does not exist. Verify with a read.
 
 ## Slots
 
@@ -101,5 +107,6 @@ Slots cannot be created through the API; only their configurations can.
 - `assignmentInformation.active` shows whether a configuration is live now (enabled and in schedule).
 
 CLI equivalents: `b2c content types list`, `b2c content push` (validates first),
-`b2c content export`, `b2c content slot list|get`, and
+`b2c content export`, `b2c content asset get|put|update|delete`,
+`b2c content folder list|get|put|update|delete|assign|unassign`, `b2c content slot list|get`, and
 `b2c content slot config list|get|put|update|delete`.

@@ -159,3 +159,34 @@ export type {
   SlotSearchResult,
   SlotSiteOptions,
 } from './slots.js';
+
+export {
+  assignContentToFolder,
+  deleteContentAsset,
+  deleteContentFolder,
+  getContentAsset,
+  getContentAssetFolders,
+  getContentFolder,
+  listFolderContent,
+  listSubFolders,
+  patchContentAsset,
+  patchContentFolder,
+  putContentAsset,
+  putContentFolder,
+  unassignContentFromFolder,
+  walkContentFolder,
+} from './library-api.js';
+
+export type {
+  AssignContentOptions,
+  ContentFolderNode,
+  LibraryItemInput,
+  LibraryPutResult,
+  WalkContentFolderOptions,
+} from './library-api.js';
+
+export type {
+  ExperienceContentAsset,
+  ExperienceContentFolder,
+  ExperienceContentFolderAssignment,
+} from '../../clients/scapi-experiences.js';

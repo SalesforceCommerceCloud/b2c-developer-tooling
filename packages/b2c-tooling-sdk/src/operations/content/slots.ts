@@ -22,10 +22,9 @@
  */
 import type {B2CInstance} from '../../instance/index.js';
 import type {ExperienceSlot, ExperienceSlotConfiguration} from '../../clients/scapi-experiences.js';
-import {getApiErrorMessage} from '../../clients/error-utils.js';
 import {
   experiencesContext,
-  ExperiencesRequestError,
+  experiencesRequestFailure as requestFailure,
   experiencesUnavailable,
   READ_HEADERS,
   WRITE_HEADERS,
@@ -148,11 +147,6 @@ async function search<T>(
     if (!options.all || page.length === 0 || offset >= total) break;
   }
   return {total, hits};
-}
-
-function requestFailure(error: unknown, response: Response, what: string): Error {
-  if (response.status === 401 || response.status === 403) return experiencesUnavailable(error, response, what);
-  return new ExperiencesRequestError(`${what}: ${getApiErrorMessage(error, response)}`, response.status, error);
 }
 
 /**

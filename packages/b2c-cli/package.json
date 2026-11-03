@@ -133,10 +133,16 @@
         "description": "Deploy and manage code versions on instances\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html"
       },
       "content": {
-        "description": "Export, list, validate, and push Page Designer content; manage content slots"
+        "description": "Export, list, validate, and push Page Designer content; manage content assets, folders, and slots"
       },
       "content:types": {
         "description": "Inspect Page Designer page and component types deployed to an instance"
+      },
+      "content:asset": {
+        "description": "Get, create, update, and delete library content assets"
+      },
+      "content:folder": {
+        "description": "Walk, create, update, and delete library folders and assign content to them"
       },
       "content:slot": {
         "description": "List content slots and inspect their configurations"

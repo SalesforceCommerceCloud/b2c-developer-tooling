@@ -161,8 +161,12 @@ function slotContentFromFlags(flags: InputFlags): SlotConfigurationInput['slotCo
 export async function buildSlotConfigurationInput(flags: InputFlags): Promise<SlotConfigurationInput> {
   let input: SlotConfigurationInput = {};
   if (flags.file) {
-    const raw = await fs.promises.readFile(flags.file, 'utf8');
-    const parsed = JSON.parse(raw) as unknown;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await fs.promises.readFile(flags.file, 'utf8'));
+    } catch (error) {
+      throw new Error(`${flags.file}: ${(error as Error).message}`);
+    }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       throw new Error(`${flags.file} must contain a JSON object`);
     }

@@ -1,10 +1,10 @@
 ---
-description: Commands for exporting, listing, validating, and pushing Page Designer content and managing content slot configurations in B2C Commerce.
+description: Commands for exporting, listing, validating, and pushing Page Designer content, managing library content assets and folders, and managing content slot configurations in B2C Commerce.
 ---
 
 # Content Commands
 
-Commands for working with Page Designer content libraries, metadefinitions, and content slots.
+Commands for working with Page Designer content libraries, content assets and folders, metadefinitions, and content slots.
 
 [![B2C CLI exporting MarketStreet's About Us template from an instance: one page, two components, two content blocks, and one downloaded image.](/terminal/content-export.png)](/terminal/content-export.png)
 
@@ -21,6 +21,8 @@ The `content export` and `content list` commands require OAuth authentication:
 | `content validate` | None (local file validation) |
 | `content types list`, `content types get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
 | `content push` | SCAPI: `sfcc.experiences.rw` |
+| `content asset get`, `content folder list` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
+| `content folder get`, and changes to assets and folders | SCAPI: `sfcc.experiences.rw` |
 | `content slot list`, `content slot get`, `content slot config list`, `content slot config get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
 | `content slot config put`, `update`, `delete` | SCAPI: `sfcc.experiences.rw` |
 
@@ -31,7 +33,7 @@ export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 ```
 
-`content types`, `content push`, and `content slot` use the SCAPI Admin Experiences API (`experience/experiences/v1`). They need an API client using client credentials or JWT, with the `sfcc.experiences.rw` scope (or read-only `sfcc.experiences` for the read commands), the tenant scope, and a configured short code and tenant ID. Browser sign-in is not supported for these commands. Without these scopes, the other content commands keep working as before.
+`content types`, `content push`, `content asset`, `content folder`, and `content slot` use the SCAPI Admin Experiences API (`experience/experiences/v1`). They need an API client using client credentials or JWT, with the `sfcc.experiences.rw` scope (or read-only `sfcc.experiences` for the read commands), the tenant scope, and a configured short code and tenant ID. Browser sign-in is not supported for these commands. Without these scopes, the other content commands keep working as before.
 
 The `content export` and `content list` commands also support a `--library-file` flag for offline use with a local XML file, which skips authentication entirely.
 
@@ -499,6 +501,103 @@ With `--json`, the command returns `{siteId, dryRun, pages: [{pageId, source, st
 - Components removed from a region stay in the library as unassigned components.
 - The type of an existing page can't be changed. Push a new page ID instead.
 - The Experiences API can't read, delete, or publish pages. Use `b2c content export` to read pages back, and Business Manager to activate or delete them.
+
+---
+
+## b2c content asset
+
+Read and change classic library content assets (not Page Designer pages) without an export or import job.
+
+### Usage
+
+```bash
+b2c content asset get <contentId> [--library <id>] [--folders]
+b2c content asset put <contentId> [--file <json>] [field flags] [--folder <folderId>]
+b2c content asset update <contentId> [--file <json>] [field flags]
+b2c content asset delete <contentId> [--force]
+```
+
+`--library` takes a shared library ID, or a site ID for a site-private library. It defaults to `content-library` or the first `libraries` entry in `dw.json`.
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--library` | Library ID (shared library or site ID) |
+| `-f`, `--file` | JSON body (as printed by `get`); flags override its fields |
+| `--name`, `--description`, `--page-title`, `--page-description` | Localized values for `--locale` |
+| `--[no-]online` | Online in `--locale` |
+| `-a`, `--attribute c_id=value` | Localized string custom attribute (repeatable) |
+| `--markup c_id=<html>` | Localized markup custom attribute such as `c_body` (repeatable) |
+| `--template` | Rendering template |
+| `--locale` | Locale for localized values (default `default`) |
+| `--folder` | `put` only: assign the asset to this classification folder |
+| `--folders` | `get` only: include the folders the asset is in |
+| `--force` | `delete` only: skip the confirmation prompt |
+
+### Examples
+
+```bash
+b2c content asset put summer-banner --name "Summer Banner" --online \
+  --markup c_body="<p>Summer is here</p>" --folder promos
+b2c content asset update summer-banner --locale fr --markup c_body="<p>L'été est là</p>"
+b2c content asset get summer-banner > summer-banner.json
+b2c content asset delete summer-banner --force
+```
+
+### Notes
+
+- `update` merges fields and locales into the existing asset.
+- The platform ignores custom attribute IDs it doesn't know, so check the result with `get`.
+- If `put --folder` saves the asset but the folder assignment fails, the command says so. Retry the assignment with `b2c content folder assign`.
+- `delete` asks for confirmation unless you pass `--force` or `--json`.
+
+## b2c content folder
+
+Walk and change the folder tree of a library.
+
+### Usage
+
+```bash
+b2c content folder list [--folder <id>] [--depth <n>] [--folders-only] [--tree]
+b2c content folder get <folderId>
+b2c content folder put <folderId> [--parent <id>] [--name <name>] [--[no-]online]
+b2c content folder update <folderId> [--parent <id>] [field flags]
+b2c content folder delete <folderId> [--force]
+b2c content folder assign <folderId> <contentId> [--default] [--position <n>]
+b2c content folder unassign <folderId> <contentId>
+```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--library` | Library ID (shared library or site ID) |
+| `--folder` | `list` only: starting folder (default `root`) |
+| `--depth` | `list` only: maximum depth below the starting folder |
+| `--folders-only` | `list` only: skip content assets |
+| `--tree` | `list` only: print a tree instead of a table |
+| `--parent` | `put`/`update`: parent folder (default `root`) |
+| `--name`, `--description`, `--page-title`, `--page-description`, `-a`, `--file`, `--locale` | Same as `content asset` |
+| `--[no-]online` | Folder online flag (not localized) |
+| `--default` | `assign` only: make this the asset's classification folder |
+| `--position` | `assign` only: sort position in the folder |
+| `--force` | `delete` only: skip the confirmation prompt |
+
+### Examples
+
+```bash
+b2c content folder put promos --name Promotions --online
+b2c content folder assign promos summer-banner --default
+b2c content folder list --folder promos --tree
+b2c content folder list --folders-only --json
+```
+
+### Notes
+
+- `list` starts at `root` (or `--folder`) and lists sub-folders and their content assets. It's faster than `content list` for folder-scoped views, but it can't show Page Designer pages or assets that aren't in any folder.
+- `list` works with the read-only `sfcc.experiences` scope. `get` and all writes need `sfcc.experiences.rw`.
+- `delete` refuses to delete `root`.
 
 ---
 

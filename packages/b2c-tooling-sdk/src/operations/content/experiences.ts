@@ -159,6 +159,15 @@ export function experiencesUnavailable(
   return new ExperiencesUnavailableError(`${what}: ${detail}`, 'error', response?.status, {cause: error});
 }
 
+/**
+ * @internal Map a non-2xx response: 401/403 to {@link ExperiencesUnavailableError}
+ * (missing scope), anything else to {@link ExperiencesRequestError}.
+ */
+export function experiencesRequestFailure(error: unknown, response: Response, what: string): Error {
+  if (response.status === 401 || response.status === 403) return experiencesUnavailable(error, response, what);
+  return new ExperiencesRequestError(`${what}: ${getApiErrorMessage(error, response)}`, response.status, error);
+}
+
 /** Options for listing page/component types. */
 export interface ListExperienceTypesOptions {
   /** Site ID whose cartridge path defines the available types. */
