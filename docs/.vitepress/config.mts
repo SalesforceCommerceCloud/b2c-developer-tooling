@@ -208,6 +208,7 @@ const referenceSidebar = [
       {text: 'Logs', link: '/cli/logs'},
       {text: 'Metrics', link: '/cli/metrics'},
       {text: 'MRT', link: '/cli/mrt'},
+      {text: 'Object Types', link: '/cli/object-types'},
       {text: 'Preferences', link: '/cli/preferences'},
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},

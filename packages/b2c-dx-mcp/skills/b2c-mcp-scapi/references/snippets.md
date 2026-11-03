@@ -87,3 +87,27 @@ Input JSON Schema:
 ```json
 {"type":"object","properties":{"siteId":{"type":"string","minLength":1},"expectedCartridges":{"type":"array","maxItems":50,"items":{"type":"string","minLength":1}}},"required":["siteId"],"additionalProperties":false}
 ```
+
+## builtin/object-type-attributes-inspect
+
+List attribute definitions of a system object type (Product, Order, Profile, ...) as compact rows with value types and enum values; filter by custom/system, IDs, or text.
+
+Effect: read.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"objectType":{"type":"string","minLength":1,"description":"System object type, for example Product."},"custom":{"type":"boolean","description":"true for custom attributes only, false for system attributes only."},"ids":{"type":"array","maxItems":50,"items":{"type":"string","minLength":1},"description":"Attribute IDs, with or without the c_ prefix."},"text":{"type":"string","minLength":1,"description":"Match text in the attribute ID or display name."},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":100}},"required":["objectType"],"additionalProperties":false}
+```
+
+## builtin/attribute-create-and-group
+
+Create a custom attribute definition on a system object type if it does not exist, optionally create or reuse an attribute group and assign it, then verify.
+
+Effect: write.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"objectType":{"type":"string","minLength":1},"attributeId":{"type":"string","minLength":1,"description":"Attribute ID, with or without the c_ prefix."},"valueType":{"type":"string","enum":["string","int","double","text","html","date","image","boolean","money","quantity","datetime","email","password","set_of_string","set_of_int","set_of_double","enum_of_string","enum_of_int"]},"displayName":{"type":"string","minLength":1,"description":"Display name in the default locale."},"properties":{"type":"object","description":"Extra ObjectAttributeDefinition fields, for example {\"localizable\": true, \"siteSpecific\": true}. valueDefinitions is ignored by the API."},"groupId":{"type":"string","minLength":1,"description":"Attribute group to assign the attribute to; created if missing."},"groupDisplayName":{"type":"string","minLength":1}},"required":["objectType","attributeId","valueType"],"additionalProperties":false}
+```

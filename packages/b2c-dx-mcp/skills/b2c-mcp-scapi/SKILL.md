@@ -104,4 +104,5 @@ async () => {
 | Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
 | Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
 | Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |
+| System object attributes (`c_*` definitions, enum values, attribute groups); add attributes                         | [object-definitions](references/object-definitions.md)                         |
 | Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing               | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

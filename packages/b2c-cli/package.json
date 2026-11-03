@@ -278,6 +278,17 @@
           }
         }
       },
+      "object-types": {
+        "description": "Manage system object type attribute definitions and attribute groups\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/object-types.html",
+        "subtopics": {
+          "attributes": {
+            "description": "List, create, update, and delete attribute definitions"
+          },
+          "groups": {
+            "description": "Manage attribute groups and their assigned attributes"
+          }
+        }
+      },
       "metrics": {
         "description": "[CLOSED BETA] Retrieve observability metrics from SCAPI Metrics API\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/metrics.html"
       },
