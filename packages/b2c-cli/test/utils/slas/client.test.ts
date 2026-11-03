@@ -161,6 +161,9 @@ describe('utils/slas/client', () => {
         channels: ['SiteA'],
         redirectUri: 'https://example.com/callback',
         isPrivateClient: true,
+        loginEpRestrict: false,
+        isSixDigitOtp: false,
+        strictClientAuth: false,
       };
 
       printClientDetails(output);
@@ -184,6 +187,9 @@ describe('utils/slas/client', () => {
         channels: [],
         redirectUri: '',
         isPrivateClient: true,
+        loginEpRestrict: false,
+        isSixDigitOtp: false,
+        strictClientAuth: false,
         secret: 'my-secret',
       };
 
@@ -202,6 +208,9 @@ describe('utils/slas/client', () => {
         channels: [],
         redirectUri: '',
         isPrivateClient: true,
+        loginEpRestrict: false,
+        isSixDigitOtp: false,
+        strictClientAuth: false,
         secret: 'my-secret',
       };
 
@@ -220,6 +229,9 @@ describe('utils/slas/client', () => {
         channels: [],
         redirectUri: 'http://a.example.com|http://b.example.com|http://c.example.com',
         isPrivateClient: true,
+        loginEpRestrict: false,
+        isSixDigitOtp: false,
+        strictClientAuth: false,
       };
 
       printClientDetails(output, false);
@@ -246,6 +258,9 @@ describe('utils/slas/client', () => {
         channels: [],
         redirectUri: '',
         isPrivateClient: false,
+        loginEpRestrict: false,
+        isSixDigitOtp: false,
+        strictClientAuth: false,
         callbackUri: 'https://example.com/cb',
       };
 
@@ -264,6 +279,9 @@ describe('utils/slas/client', () => {
         channels: [],
         redirectUri: '',
         isPrivateClient: true,
+        loginEpRestrict: false,
+        isSixDigitOtp: false,
+        strictClientAuth: false,
         callbackUri: 'https://a.example.com/cb|https://b.example.com/cb|https://c.example.com/cb',
       };
 

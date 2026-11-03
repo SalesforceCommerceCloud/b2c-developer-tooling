@@ -15,6 +15,8 @@ export interface ScapiOperationMatch {
   operationId?: string;
   summary?: string;
   score: number;
+  /** Set when code mode cannot run the operation (file upload or download); see `op.auth.unsupported`. */
+  unsupported?: string;
   /** Older versions of the same API that declare this operation; only the newest is returned. */
   otherVersions?: string[];
 }
@@ -32,6 +34,7 @@ interface IndexedOperation {
   summary?: string;
   description: string;
   tags: string[];
+  unsupported?: string;
   apiVersion: string;
   otherVersions: string[];
 }
@@ -81,6 +84,7 @@ export function createScapiOperationSearch(documents: readonly ScapiSchemaDocume
           summary: operation.summary,
           description: operation.description ?? '',
           tags: operation.tags ?? [],
+          unsupported: operation.auth?.unsupported,
           apiVersion,
           otherVersions: existing ? [...existing.otherVersions, existing.apiVersion] : [],
         });
@@ -105,7 +109,9 @@ export function createScapiOperationSearch(documents: readonly ScapiSchemaDocume
         .search(query, {fuzzy: (term) => (term.length > 4 ? 0.2 : false)})
         .slice(0, limit)
         .map((result) => {
-          const {api, method, path, operationId, summary, otherVersions} = operations.get(result.id as string)!;
+          const {api, method, path, operationId, summary, unsupported, otherVersions} = operations.get(
+            result.id as string,
+          )!;
           return {
             api,
             method,
@@ -113,6 +119,7 @@ export function createScapiOperationSearch(documents: readonly ScapiSchemaDocume
             ...(operationId === undefined ? {} : {operationId}),
             ...(summary === undefined ? {} : {summary: brief(summary)}),
             score: Math.round(result.score * 100) / 100,
+            ...(unsupported ? {unsupported} : {}),
             ...(otherVersions.length > 0 ? {otherVersions: otherVersions.sort()} : {}),
           };
         })

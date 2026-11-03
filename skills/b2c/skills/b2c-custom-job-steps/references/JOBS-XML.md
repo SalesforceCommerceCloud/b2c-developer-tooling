@@ -183,7 +183,7 @@ Use for jobs you trigger from the CLI or Business Manager rather than on a sched
 | `<date-to>` | No | Optional end date. |
 | `<start-time>` | Yes | Time of day (`HH:MM:SS.SSSZ`). |
 | `<interval>` | No | e.g. `1d`, `30m`, `1h` (max 10 chars). |
-| `<day-of-week>/<weekday>` | No | One or more of `Monday`…`Sunday`. |
+| `<day-of-week>/<weekday>` | Yes, in practice | One or more of `Monday`…`Sunday`. The schema allows omitting it, but the instance then stores an empty weekday list and the job never fires. For a daily or interval schedule, list all seven days. |
 
 ## Importing & Running
 
@@ -200,6 +200,7 @@ If the import fails with a schema validation error, the most common causes are a
 ## Common Pitfalls
 
 - **Missing `<triggers>`** — the element is required by the XSD; import fails without it. For a manually-run job, use `<run-once enabled="false">`.
+- **Scheduled job never runs** — a `<run-recurring>` trigger without `<day-of-week>` imports cleanly but never fires, even with a past `<date-from>`. List every weekday the job should run on.
 - **Child order** — `description → parameters → flow/split → rules → triggers`. Out-of-order children fail validation.
 - **`type` vs `@type-id`** — `jobs.xml` uses the `type` attribute on `<step>`; it must match the `@type-id` in `steptypes.json` (or a system step type-id).
 - **Custom step not deployed** — the cartridge carrying the step's `steptypes.json` and module must be on the active code version (and on the cartridge path) before the job can resolve the step type.

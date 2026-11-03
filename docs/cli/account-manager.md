@@ -826,6 +826,8 @@ When not using `--json`, displays formatted API client information including:
 
 Create a new Account Manager API client. Clients are created inactive by default and must be explicitly activated (e.g. via update).
 
+Before creating the client, the command shows its details (name, organizations, roles, role tenant filter, scopes, redirect URLs, auth method, and active state, but not the password) and asks for confirmation. Pass `--force` to skip the prompt in scripts; with `--json` or in a non-interactive session, `--force` is required.
+
 #### Usage
 
 ```bash
@@ -852,9 +854,10 @@ b2c am clients create [FLAGS]
 | `--scopes` | Comma-separated OAuth scopes |
 | `--default-scopes` | Comma-separated default OAuth scopes |
 | `--version-control` | Comma-separated version control system identifiers |
-| `--token-endpoint-auth-method` | Token endpoint auth method: `private_key_jwt`, `client_secret_post`, `client_secret_basic`, or `none` |
+| `--token-endpoint-auth-method` | Token endpoint auth method: `private_key_jwt`, `client_secret_post`, `client_secret_basic` (default), or `none` |
 | `--jwt-public-key` | Public key for JWT authentication (PEM or inline) |
-| `--json` | Output results as JSON |
+| `--force`, `-f` | Skip the confirmation prompt |
+| `--json` | Output results as JSON (requires `--force`) |
 
 #### Examples
 
@@ -862,6 +865,9 @@ b2c am clients create [FLAGS]
 b2c am clients create --name my-client --orgs org-id-1 --password "SecureP@ss123"
 b2c am clients create -n my-client -o "My Organization" -p "SecureP@ss123" -r SALESFORCE_COMMERCE_API
 b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" --scopes "mail,openid" --default-scopes "mail"
+
+# In a script, skip the confirmation prompt
+b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" --force --json
 ```
 
 #### Notes
@@ -870,6 +876,7 @@ b2c am clients create -n my-client -o org-id-1 -p "SecureP@ss123" --scopes "mail
 - Password must be 12–128 characters
 - Role tenant filter must match pattern: `ROLE:realm_instance(,realm_instance)*(;ROLE:...)*` (e.g. SALESFORCE_COMMERCE_API:abcd_prd)
 - At least one organization ID is required
+- The token endpoint auth method defaults to `client_secret_basic`, so the client can authenticate with its password (client secret). Pass `--token-endpoint-auth-method private_key_jwt` with `--jwt-public-key` for [JWT authentication](/guide/authentication#jwt-authentication-certificate-based)
 
 ---
 

@@ -13,6 +13,7 @@ import type {ToolResult} from '../../../src/utils/types.js';
 import type {NormalizedConfig, ConfigSourceInfo} from '@salesforce/b2c-tooling-sdk/config';
 import type {InstanceAuthSummary} from '@salesforce/b2c-tooling-sdk/auth';
 import type {SkillReference} from '../../../src/skill-references.js';
+import {UpdateCheck, type UpdateStatus} from '../../../src/update-check.js';
 
 interface ConfigInspectOutput {
   config: Record<string, unknown>;
@@ -21,6 +22,7 @@ interface ConfigInspectOutput {
   auth?: InstanceAuthSummary;
   warnings?: string[];
   skillReferences?: SkillReference[];
+  version?: UpdateStatus;
 }
 
 function getResultJson<T>(result: ToolResult): T {
@@ -43,6 +45,15 @@ function createServices(
 }
 
 describe('config_inspect tool', () => {
+  it('reports the server version and update status', async () => {
+    const updateCheck = new UpdateCheck({packageName: '@salesforce/b2c-dx-mcp', currentVersion: '1.0.0', env: {}});
+    const tool = createConfigInspectTool(createMockLoadServices(createServices()), updateCheck);
+
+    const result = getResultJson<ConfigInspectOutput>(await tool.handler({}));
+
+    expect(result.version).to.deep.equal({current: '1.0.0'});
+  });
+
   it('reports how the instance authenticates', async () => {
     const services = createServices({hostname: 'example.demandware.net', username: 'u', password: 'p'});
     const tool = createConfigInspectTool(createMockLoadServices(services));

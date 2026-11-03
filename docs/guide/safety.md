@@ -62,7 +62,7 @@ Likewise, `NO_DELETE` does not block data removal performed through another meth
 
 `NO_UPDATE` is a legacy setting that does not prevent all updates.
 It blocks DELETE and POST requests whose paths contain `/reset`, `/stop`,
-`/restart`, or `/operations`; PUT, PATCH, and other POST requests remain allowed.
+`/restart`, `/operations`, or `/batch-logout`; PUT, PATCH, and other POST requests remain allowed.
 For new configurations, use one of the levels above with rules for your needs.
 
 :::
@@ -412,6 +412,8 @@ array. This abbreviated example omits credentials:
   ]
 }
 ```
+
+For a realm setup example, see [Realm Setup](./realm-setup#protect-shared-instances).
 
 Confirm the target before requesting a change. CLI `-i production`, your
 assistant's selected target, and the IDE's instance picker can each select a

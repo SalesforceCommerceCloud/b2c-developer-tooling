@@ -69,7 +69,8 @@ jobs:
 
       # npm can take a few minutes to serve a just-published version. Wait for it so
       # the smoke test runs against the new CLI and the tags aren't published before
-      # the CLI they install is available.
+      # the CLI they install is available. The CLI pins the exact SDK version, which
+      # npm may serve later than the CLI itself, so wait for that too.
       - name: Wait for CLI on npm
         if: inputs.cli-version != ''
         env:
@@ -80,16 +81,25 @@ jobs:
             echo "::error::CLI $CLI_VERSION is not in the Action's CLI major ($CLI_MAJOR)"
             exit 1
           fi
-          for attempt in $(seq 1 30); do
-            if [ "$(npm view "@salesforce/b2c-cli@$CLI_VERSION" version 2>/dev/null)" = "$CLI_VERSION" ]; then
-              echo "@salesforce/b2c-cli@$CLI_VERSION is available on npm"
-              exit 0
-            fi
-            echo "Waiting for @salesforce/b2c-cli@$CLI_VERSION on npm (attempt $attempt/30)"
-            sleep 20
-          done
-          echo "::error::@salesforce/b2c-cli@$CLI_VERSION was not available on npm after 10 minutes"
-          exit 1
+          wait_for() {
+            local spec="$1" expected="$2"
+            for attempt in $(seq 1 30); do
+              if [ "$(npm view "$spec" version 2>/dev/null)" = "$expected" ]; then
+                echo "$spec is available on npm"
+                return 0
+              fi
+              echo "Waiting for $spec on npm (attempt $attempt/30)"
+              sleep 20
+            done
+            echo "::error::$spec was not available on npm after 10 minutes"
+            return 1
+          }
+
+          wait_for "@salesforce/b2c-cli@$CLI_VERSION" "$CLI_VERSION"
+          SDK_VERSION=$(npm view "@salesforce/b2c-cli@$CLI_VERSION" 'dependencies.@salesforce/b2c-tooling-sdk')
+          if [ -n "$SDK_VERSION" ]; then
+            wait_for "@salesforce/b2c-tooling-sdk@$SDK_VERSION" "$SDK_VERSION"
+          fi
 
       - name: Install the compatible CLI
         id: setup

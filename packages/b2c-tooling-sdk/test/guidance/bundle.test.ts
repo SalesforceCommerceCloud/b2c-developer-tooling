@@ -121,4 +121,25 @@ describe('guidance bundler', () => {
     expect(() => bundle()).to.throw('Skill name must be');
     expect(readFileSync(join(destination, 'index.json'), 'utf8')).to.include('"demo/alpha"');
   });
+
+  it('stores index summaries without changing descriptions or frontmatter', () => {
+    writeSkill('alpha', '# Alpha\n');
+    const write = (indexSummaries: Record<string, string>) =>
+      bundleGuidance({
+        repoRoot,
+        collections: [{id: 'demo', title: 'Demo', isGA: true, plugin: 'demo'}],
+        indexSummaries,
+        destination,
+      });
+
+    write({'demo/alpha': 'Short alpha line.'});
+    const [entry] = (JSON.parse(readFileSync(join(destination, 'index.json'), 'utf8')) as GuidanceManifest).entries;
+    expect(entry.indexSummary).to.equal('Short alpha line.');
+    expect(entry.description).to.equal('alpha skill');
+    expect(entry.frontmatter.description).to.equal('alpha skill');
+
+    expect(() => write({'demo/missing': 'Line.'})).to.throw('unknown entry');
+    expect(() => write({'demo/alpha': 'x'.repeat(101)})).to.throw('1-100 characters');
+    expect(() => write({'demo/alpha': 'Two\nlines'})).to.throw('one trimmed line');
+  });
 });
