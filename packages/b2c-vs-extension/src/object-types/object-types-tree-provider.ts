@@ -17,7 +17,6 @@ import {
   attributeSummary,
   attributeTooltip,
   describeObjectTypesError,
-  effectiveAttributeId,
   isValuesUnavailable,
   mergeAttributeGroups,
   splitAttributes,
@@ -92,10 +91,6 @@ export class AttributeTreeItem extends vscode.TreeItem {
       title: 'Open Attribute Definition',
       arguments: [this],
     };
-  }
-
-  get effectiveId(): string {
-    return effectiveAttributeId(this.attribute);
   }
 }
 

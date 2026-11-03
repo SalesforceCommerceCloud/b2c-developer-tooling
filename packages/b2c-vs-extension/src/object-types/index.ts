@@ -92,8 +92,8 @@ export function registerObjectTypes(
 
   const copyIdCmd = registerSafeCommand('b2c-dx.objectTypes.copyAttributeId', async (item: AttributeTreeItem) => {
     if (!(item instanceof AttributeTreeItem)) return;
-    await vscode.env.clipboard.writeText(item.effectiveId);
-    vscode.window.setStatusBarMessage(`Copied ${item.effectiveId}`, 3000);
+    await vscode.env.clipboard.writeText(item.attribute.id);
+    vscode.window.setStatusBarMessage(`Copied ${item.attribute.id}`, 3000);
   });
 
   const exportCmd = registerSafeCommand('b2c-dx.objectTypes.exportXml', async (item: ObjectTypeTreeItem) => {
