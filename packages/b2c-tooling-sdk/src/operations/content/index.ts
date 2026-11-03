@@ -127,7 +127,20 @@ export type {
   PageValidationResult,
 } from './page-validate.js';
 
-export {libraryPageToPageRequest, toExperienceTypeId} from './page-convert.js';
+export {
+  libraryPageToPageRequest,
+  libraryXmlToPageRequests,
+  pageRequestsToLibraryXml,
+  planLibraryPagePush,
+  toExperienceTypeId,
+} from './page-convert.js';
+
+export type {
+  LibraryPagePushPlan,
+  LibraryXmlToPageRequestsOptions,
+  PageRequestsToLibraryXmlOptions,
+  PlanLibraryPagePushOptions,
+} from './page-convert.js';
 
 export type {
   ExperienceComponentRequest,

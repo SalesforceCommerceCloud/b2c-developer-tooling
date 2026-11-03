@@ -161,6 +161,12 @@ The B2C Script Debugger registers regardless of these toggles — it activates o
 | `b2c-dx.sandbox.pollingInterval` | `10`    | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
 | `b2c-dx.telemetry.enabled`       | `true`  | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting.                                                          |
 
+### Content Libraries
+
+| Setting                                 | Default | Description                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c-dx.content.saveWithExperiencesApi` | `true`  | When you save an edited Page Designer page from the Content Libraries view, write it as a draft through the Experiences API instead of a site archive import. Saves that the API can't write (online or visibility changes, other locales, site-specific values, cleared attributes, content assets, fragments) and saves without Experiences API access use the import, as before. |
+
 ### Authentication
 
 | Setting                             | Default | Description                                                                                                                                                                                                                                                                                  |

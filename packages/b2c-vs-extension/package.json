@@ -164,6 +164,11 @@
           "default": true,
           "description": "Enable the Content Libraries browser."
         },
+        "b2c-dx.content.saveWithExperiencesApi": {
+          "type": "boolean",
+          "default": true,
+          "description": "Save edited Page Designer pages from the Content Libraries browser with the Experiences API (faster, keeps region assignments) when the edit allows it. Falls back to a site archive import when the API is unavailable or the edit changes fields only an import can write."
+        },
         "b2c-dx.features.logTailing": {
           "type": "boolean",
           "default": true,

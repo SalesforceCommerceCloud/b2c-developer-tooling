@@ -50,7 +50,12 @@ own regions, nested in the same shape. Type IDs come from the site's cartridge p
 
 - 201 = created, 200 = updated. The response is the saved page with defaults applied.
 - Updates merge per region. A region you send replaces its component list. Regions you leave out
-  are kept. Removed components stay in the library unassigned.
+  are kept. Send `{"id":"region","components":[]}` to empty a region. Removed components stay in
+  the library unassigned.
+- Component `data` merges: attributes you leave out keep their value. An attribute can't be
+  cleared (`null`, and `""` for enums, give 400).
+- The PUT writes the default locale only. Other locales, online and visibility state, and
+  site-specific values are kept and can't be changed here; use a library import for those.
 - An existing page's `typeId` cannot change. The platform ignores it and then rejects regions that
   belong to the new type (`Region 'x' not found in page type 'y'`). Use a new page ID.
 - The server rejects unknown regions, unknown component types and bad enum values (400). It

@@ -12,6 +12,7 @@ import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {openJobLog} from '../job-log-viewer.js';
+import {saveContentXml, type ContentSaveResult} from './content-save.js';
 
 export const CONTENT_SCHEME = 'b2c-content';
 
@@ -121,6 +122,8 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   // Cache only mtime — size is intentionally omitted because readFile returns dynamically
   // generated XML whose byte length doesn't match the bytes the user wrote.
   private mtimes = new Map<string, number>();
+  // XML as last read or saved, per item, so a save can tell which fields the edit changed.
+  private originals = new Map<string, string>();
 
   constructor(private configProvider: ContentConfigProvider) {}
 
@@ -169,6 +172,7 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     }
 
     const xmlString = generateContentXML(library, contentId);
+    this.originals.set(`${libraryId}:${contentId}`, xmlString);
     return new TextEncoder().encode(xmlString);
   }
 
@@ -180,13 +184,26 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     }
 
     const xmlContent = Buffer.from(content).toString('utf-8');
+    const key = `${libraryId}:${contentId}`;
+    let result: ContentSaveResult;
 
     try {
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Importing content to ${libraryId}...`},
-        async () => {
-          await importLibraryXML(instance, libraryId, isSiteLibrary, xmlContent);
-        },
+      result = await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Saving content to ${libraryId}...`},
+        () =>
+          saveContentXml({
+            instance,
+            libraryId,
+            isSiteLibrary,
+            contentId: contentId ?? '',
+            xml: xmlContent,
+            originalXml: this.originals.get(key),
+            siteId: this.configProvider.getSiteId(),
+            useExperiencesApi: vscode.workspace
+              .getConfiguration('b2c-dx')
+              .get<boolean>('content.saveWithExperiencesApi', true),
+            importXml: () => importLibraryXML(instance, libraryId, isSiteLibrary, xmlContent),
+          }),
       );
     } catch (err) {
       // Show job log in editor on failure
@@ -207,10 +224,15 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     // Record mtime so subsequent stat() calls return a stable timestamp instead of Date.now(),
     // preventing VS Code from thinking the file changed externally.
     if (contentId) {
-      this.mtimes.set(`${libraryId}:${contentId}`, Date.now());
+      this.mtimes.set(key, Date.now());
+      this.originals.set(key, xmlContent);
     }
     this._onDidChangeFile.fire([{type: vscode.FileChangeType.Changed, uri}]);
-    vscode.window.showInformationMessage(`Content imported to ${libraryId} successfully.`);
+    vscode.window.showInformationMessage(
+      result.method === 'experiences-api'
+        ? `Saved page ${contentId} to ${libraryId} (site ${result.siteId}).`
+        : `Content imported to ${libraryId} successfully.`,
+    );
   }
 
   createDirectory(): never {

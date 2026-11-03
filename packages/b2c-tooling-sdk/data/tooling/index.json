@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-03T03:55:35.252Z",
+  "generatedAt": "2026-11-03T05:04:07.262Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -566,7 +566,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • Authentication • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • Content Libraries • Authentication • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {
