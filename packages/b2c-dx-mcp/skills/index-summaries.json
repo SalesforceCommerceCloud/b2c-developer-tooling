@@ -13,6 +13,7 @@
   "b2c-cli/b2c-job": "Run and monitor jobs, inspect failures, rebuild search indexes, and import or export archives.",
   "b2c-cli/b2c-logs": "Get, search, and tail instance logs to investigate errors and server-side failures.",
   "b2c-cli/b2c-metrics": "CLI Metrics API (closed beta): request volume, latency, errors, cache, and integration health.",
+  "b2c-cli/b2c-object-types": "System object attribute definitions and groups: list, create, update, export, and apply metadata.",
   "b2c-cli/b2c-mrt": "Managed Runtime: deploy bundles, manage projects, environments, env vars, and redirects.",
   "b2c-cli/b2c-replication": "Automate staging-to-production code and data replication with a custom job.",
   "b2c-cli/b2c-sandbox": "Create, list, start, stop, and manage on-demand sandboxes.",

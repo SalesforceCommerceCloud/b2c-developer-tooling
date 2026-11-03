@@ -47,6 +47,8 @@ const SEARCH_CASES: Array<[query: string, tool: string]> = [
   ['managed runtime logs for pwa kit storefront', 'mrt_logs_watch'],
   ['storefront next server logs', 'mrt_logs_watch'],
   ['api response time latency metrics', 'metrics_get'],
+  ['custom attributes on product object type', 'object_types_describe'],
+  ['enum values of a system object attribute', 'object_types_describe'],
   ['get product by id via shopper api', 'scapi_execute'],
   ['update order status', 'scapi_execute'],
   ['create a customer', 'scapi_execute'],
