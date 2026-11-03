@@ -497,6 +497,47 @@ describe('SCAPI code mode', function () {
     expect(downloads).to.equal(6);
   });
 
+  it('explains unsupported file uploads at discovery and execution', async () => {
+    const docs = loadScapiSchemas();
+    const call = request({level: 'NONE'}, () => {
+      throw new Error('Authentication must not load');
+    });
+    const uploads: Array<[string, string, string]> = [
+      ['site/seo/v1', '/organizations/{organizationId}/sitemap', 'put'],
+      [
+        'inventory/impex/v1',
+        '/organizations/{organizationId}/availability-records/imports/uploadlink/{uploadLinkId}',
+        'post',
+      ],
+    ];
+    for (const [id, path, method] of uploads) {
+      const document = docs.find(({entry}) => entry.id === id)!;
+      const operation = document.schema.paths[path][method];
+      const info = getScapiAuthInfo(document, operation);
+      expect(info.executable).to.equal(false);
+      expect(info.unsupported).to.include('multipart/form-data');
+      const resolvedPath =
+        `/${id}` + path.replace('{organizationId}', 'f_ecom_test_001').replaceAll(/\{[^}]+\}/g, 'test');
+      let message = '';
+      try {
+        await call({method, path: resolvedPath, query: {siteId: 'RefArch'}}, new AbortController().signal);
+      } catch (error) {
+        message = (error as Error).message;
+      }
+      expect(message).to.include(`SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}`);
+      expect(message).to.include('No request sent');
+      expect(message).to.include('auth.accountManager(');
+    }
+    const matches = (await runScapiCode({
+      documents: docs.filter(({entry}) => ['site/seo/v1', 'configuration/cors/v1'].includes(entry.id)),
+      code: "async () => [await spec.search('upload custom sitemap', {limit: 1}), await spec.search('get cors preferences', {limit: 1})]",
+    })) as Array<Array<{operationId: string; unsupported?: string}>>;
+    const [[match], [json]] = matches;
+    expect(match).to.include({operationId: 'uploadCustomSitemapAndTriggerSitemapGeneration'});
+    expect(match.unsupported).to.include('File upload');
+    expect(json).to.not.have.property('unsupported');
+  });
+
   it('rejects unexpected binary successes and preserves text HTTP errors', async () => {
     server.use(
       http.get(

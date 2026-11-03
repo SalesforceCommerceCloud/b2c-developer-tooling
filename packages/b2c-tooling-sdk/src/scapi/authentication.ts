@@ -15,6 +15,8 @@ export interface ScapiAuthInfo {
   types: ScapiAuthType[];
   schemes: string[];
   executable: boolean;
+  /** Why code mode cannot run the operation despite supported auth, e.g. a file upload or download. */
+  unsupported?: string;
 }
 
 export function isScapiTextMediaType(mediaType: string): boolean {
@@ -26,12 +28,12 @@ export function isScapiTextMediaType(mediaType: string): boolean {
 export function unsupportedScapiTransfer(document: ScapiSchemaDocument, operation: ApiDocument): string | undefined {
   const body = operation.requestBody && resolveScapiReference(operation.requestBody, document.schema);
   if (body?.required && !body.content?.['application/json'])
-    return 'This operation requires a non-JSON request body. File uploads are not supported.';
+    return `File upload: requires a ${Object.keys(body.content ?? {}).join(' or ') || 'non-JSON'} request body; code mode sends JSON only.`;
   const mediaTypes = Object.entries<ApiDocument>(operation.responses ?? {})
     .filter(([status]) => /^2(?:\d\d|XX)$/i.test(status))
     .flatMap(([, response]) => Object.keys(resolveScapiReference(response, document.schema).content ?? {}));
   if (mediaTypes.length && !mediaTypes.some(isScapiTextMediaType))
-    return 'This operation returns a binary file. File downloads are not supported.';
+    return `File download: returns ${[...new Set(mediaTypes)].join(' or ')}; code mode reads JSON and text only.`;
 }
 
 export type ScapiRequestAuth = {type: 'admin' | 'shopper'; scopes: string[]};
@@ -67,10 +69,12 @@ export function getScapiAuthInfo(document: ScapiSchemaDocument, operation: ApiDo
   }
   // OAuth endpoints can declare credentials in grant parameters instead of security schemes.
   if (!types.size) types.add(document.entry.id === 'shopper/auth/v1' ? 'shopper' : 'unknown');
+  const unsupported = unsupportedScapiTransfer(document, operation);
   return {
     types: [...types].sort(),
     schemes,
-    executable: Boolean(selectScapiAuth(document, operation)) && !unsupportedScapiTransfer(document, operation),
+    executable: Boolean(selectScapiAuth(document, operation)) && !unsupported,
+    ...(unsupported ? {unsupported} : {}),
   };
 }
 
