@@ -61,7 +61,7 @@ function createMrtLogsWatchStartTool(
       idempotent: true,
       openWorld: true,
       description:
-        'Start, list, or stop live MRT log watches. Requires project/environment to start; read with mrt_logs_watch_poll. Stop discards unread entries; safe to repeat.',
+        'Start, list, or stop live Managed Runtime (MRT) log watches for PWA Kit or Storefront Next storefront servers. Requires project/environment to start; read with mrt_logs_watch_poll. Stop discards unread entries; safe to repeat.',
       toolsets: ['DIAGNOSTICS', 'MRT', 'PWAV3', 'STOREFRONTNEXT'],
       requiresMrtAuth: true,
       inputSchema: {

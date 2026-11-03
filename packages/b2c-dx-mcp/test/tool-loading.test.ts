@@ -18,6 +18,73 @@ const CODEX_PLUGIN_TOTAL_BYTES = 64_000;
 
 const ALWAYS_LOADED = ['config_inspect', 'docs_search', 'scapi_search', 'skills_read'];
 
+/**
+ * Task phrasings an assistant might pass to client tool search, and the tool it should find.
+ * Codex ranks deferred tools with BM25 over names and descriptions, so these guard description vocabulary.
+ */
+const SEARCH_CASES: Array<[query: string, tool: string]> = [
+  ['deploy my cartridge to the sandbox', 'cartridge_deploy'],
+  ['upload code to instance', 'cartridge_deploy'],
+  ['why is checkout failing errors in logs', 'logs_get_recent'],
+  ['show recent exceptions on sandbox', 'logs_get_recent'],
+  ['tail the server error log', 'logs_watch'],
+  ['which log files exist', 'logs_list_files'],
+  ['set a breakpoint in my controller', 'debug_set_breakpoints'],
+  ['debug script on instance', 'debug_start_session'],
+  ['inspect variables at breakpoint', 'debug_inspect'],
+  ['download a file from webdav', 'webdav_get'],
+  ['upload import xml to impex', 'webdav_put'],
+  ['list files in impex folder', 'webdav_list'],
+  ['save site export zip locally', 'webdav_get_to_file'],
+  ['validate my catalog xml against schema', 'validate_xml_schema'],
+  ['xml schema for price books', 'docs_schema_search'],
+  ['sales revenue report last week', 'cip_query'],
+  ['top selling products analytics', 'cip_query'],
+  ['managed runtime logs for pwa kit storefront', 'mrt_logs_watch'],
+  ['storefront next server logs', 'mrt_logs_watch'],
+  ['api response time latency metrics', 'metrics_get'],
+  ['get product by id via shopper api', 'scapi_execute'],
+  ['update order status', 'scapi_execute'],
+  ['create a customer', 'scapi_execute'],
+  ['is my custom api registered', 'scapi_custom_apis_get_status'],
+  ['list available scapi apis', 'scapi_schemas_list'],
+  ['script api class reference', 'docs_read'],
+];
+
+function tokenize(text: string): string[] {
+  return text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+}
+
+/** Rank tools with Okapi BM25 (k1 1.2, b 0.75) over name and description, without stemming. */
+function rankTools(tools: Array<{description?: string; name: string}>, query: string): string[] {
+  const documents = tools.map((tool) => ({
+    name: tool.name,
+    terms: tokenize(`${tool.name.replaceAll('_', ' ')} ${tool.description ?? ''}`),
+  }));
+  let totalLength = 0;
+  for (const document of documents) totalLength += document.terms.length;
+  const averageLength = totalLength / documents.length;
+  const frequency = new Map<string, number>();
+  for (const document of documents) {
+    for (const term of new Set(document.terms)) frequency.set(term, (frequency.get(term) ?? 0) + 1);
+  }
+  const score = (terms: string[]) => {
+    let total = 0;
+    for (const term of tokenize(query)) {
+      const count = terms.filter((candidate) => candidate === term).length;
+      if (count === 0) continue;
+      const containing = frequency.get(term) ?? 0;
+      const idf = Math.log(1 + (documents.length - containing + 0.5) / (containing + 0.5));
+      total += (idf * count * 2.2) / (count + 1.2 * (0.25 + (0.75 * terms.length) / averageLength));
+    }
+    return total;
+  };
+  return documents
+    .map((document) => ({name: document.name, score: score(document.terms)}))
+    .sort((a, b) => b.score - a.score)
+    .map((result) => result.name);
+}
+
 async function listTools() {
   const services = new Services({resolvedConfig: createMockResolvedConfig()});
   const server = new B2CDxMcpServer({name: 'tool-loading', version: '1'});
@@ -51,6 +118,15 @@ describe('tool loading hints', () => {
     const listed = JSON.stringify(tools);
     expect(listed).not.to.include('"$schema"');
     expect(listed).not.to.include(String(Number.MAX_SAFE_INTEGER));
+  });
+
+  it('ranks the right tool in the top 3 for common task searches', async () => {
+    const {tools} = await listTools();
+    const misses = SEARCH_CASES.flatMap(([query, tool]) => {
+      const rank = rankTools(tools, query).indexOf(tool) + 1;
+      return rank >= 1 && rank <= 3 ? [] : [`${tool} ranked ${rank} for "${query}"`];
+    });
+    expect(misses).to.deep.equal([]);
   });
 
   it('stays within the Codex plugin tool budget', async () => {

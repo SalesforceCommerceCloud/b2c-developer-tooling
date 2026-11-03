@@ -41,7 +41,8 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
         effect: 'read',
         idempotent: true,
         openWorld: true,
-        description: 'List one WebDAV directory with file metadata and pagination. Does not recurse.',
+        description:
+          'List files in one WebDAV directory (Impex, Cartridges, Logs, Catalogs, Libraries) with metadata and pagination. Does not recurse.',
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -129,7 +130,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
         idempotent: false,
         openWorld: true,
         description:
-          'Download a whole WebDAV file, including binary archives, to a new file on the MCP host. Streams any size; never overwrites.',
+          'Download and save a whole WebDAV file, including binary archives such as site export zips, to a new local file on the MCP host. Streams any size; never overwrites.',
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -180,7 +181,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
         idempotent: true,
         openWorld: true,
         description:
-          'Upload one WebDAV file from text or a local file on the MCP host. Parent directory must exist. Replacement requires overwrite: true.',
+          'Upload one WebDAV file, such as import XML to Impex, from text or a local file on the MCP host. Parent directory must exist. Replacement requires overwrite: true.',
         toolsets: ['CARTRIDGES', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
