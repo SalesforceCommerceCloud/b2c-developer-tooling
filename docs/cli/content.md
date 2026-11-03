@@ -1,10 +1,10 @@
 ---
-description: Commands for exporting, listing, validating, and pushing Page Designer content in B2C Commerce content libraries.
+description: Commands for exporting, listing, validating, and pushing Page Designer content and managing content slot configurations in B2C Commerce.
 ---
 
 # Content Commands
 
-Commands for working with Page Designer content libraries and metadefinitions.
+Commands for working with Page Designer content libraries, metadefinitions, and content slots.
 
 [![B2C CLI exporting MarketStreet's About Us template from an instance: one page, two components, two content blocks, and one downloaded image.](/terminal/content-export.png)](/terminal/content-export.png)
 
@@ -21,6 +21,8 @@ The `content export` and `content list` commands require OAuth authentication:
 | `content validate` | None (local file validation) |
 | `content types list`, `content types get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
 | `content push` | SCAPI: `sfcc.experiences.rw` |
+| `content slot list`, `content slot get`, `content slot config list`, `content slot config get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw` |
+| `content slot config put`, `update`, `delete` | SCAPI: `sfcc.experiences.rw` |
 
 Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` and the tenant scope. `--api-backend ocapi` selects OCAPI explicitly; the default `auto` mode supports OCAPI fallback. See [Job Authentication](./jobs.md#authentication) for setup.
 
@@ -29,7 +31,7 @@ export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 ```
 
-`content types` and `content push` use the SCAPI Admin Experiences API (`experience/experiences/v1`). They need an API client using client credentials or JWT, with the `sfcc.experiences.rw` scope (or read-only `sfcc.experiences` for `content types`), the tenant scope, and a configured short code and tenant ID. Browser sign-in is not supported for these commands. Without these scopes, the other content commands keep working as before.
+`content types`, `content push`, and `content slot` use the SCAPI Admin Experiences API (`experience/experiences/v1`). They need an API client using client credentials or JWT, with the `sfcc.experiences.rw` scope (or read-only `sfcc.experiences` for the read commands), the tenant scope, and a configured short code and tenant ID. Browser sign-in is not supported for these commands. Without these scopes, the other content commands keep working as before.
 
 The `content export` and `content list` commands also support a `--library-file` flag for offline use with a local XML file, which skips authentication entirely.
 
@@ -498,3 +500,133 @@ With `--json`, the command returns `{siteId, dryRun, pages: [{pageId, source, st
 - The type of an existing page can't be changed. Push a new page ID instead.
 - The Experiences API can't read, delete, or publish pages. Use `b2c content export` to read pages back, and Business Manager to activate or delete them.
 
+---
+
+## b2c content slot list
+
+List the content slots of a site with their context type, number of configurations, and which configurations are active now.
+
+### Usage
+
+```bash
+b2c content slot list [--site-id <site>] [--context global|category|folder]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--site-id` | Site whose slots to list | `siteId` from configuration |
+| `--context` | Only slots of this context type | All |
+| `--columns`, `--extended` | Select table columns (`slotId`, `contextType`, `configurations`, `activeConfigurations`, `description`) | |
+
+## b2c content slot get
+
+Show a slot and all of its configurations.
+
+### Usage
+
+```bash
+b2c content slot get <slotId> [--site-id <site>] [--context global|category|folder]
+```
+
+`--context` defaults to `global`.
+
+## b2c content slot config list
+
+List slot configurations with their context, enabled and active state, content type, and content IDs.
+
+### Usage
+
+```bash
+b2c content slot config list [--site-id <site>] [--slot-id <slot>] [--context global|category|folder]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--site-id` | Site whose configurations to list | `siteId` from configuration |
+| `--slot-id` | Only configurations of this slot | All slots |
+| `--context` | Only configurations with this context | All |
+| `--columns`, `--extended` | Select table columns (`slotId`, `configurationId`, `context`, `enabled`, `active`, `default`, `rank`, `contentType`, `content`, `customerGroups`, `schedule`, `template`) | |
+
+`active` means the configuration is enabled and inside its schedule now.
+
+## b2c content slot config get
+
+Print one slot configuration as JSON. Redirect the output to a file to edit it and pass it back to `put --file`.
+
+```bash
+b2c content slot config get <slotId> <configurationId> [--site-id <site>] [--context <context>]
+```
+
+## b2c content slot config put
+
+Create or replace a slot configuration. The slot must already exist. Slots are defined by templates and can't be created through the API.
+
+### Usage
+
+```bash
+b2c content slot config put <slotId> <configurationId> [content flag] --template <template> [flags]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag | Description |
+|------|-------------|
+| `--site-id` | Site the slot belongs to (default: `siteId` from configuration) |
+| `-f`, `--file` | JSON file with the configuration body; flags override its fields |
+| `--content-assets` | Comma-separated content asset IDs |
+| `--products` | Comma-separated product IDs |
+| `--categories` | Comma-separated category IDs |
+| `--html` | HTML markup for the default locale |
+| `--template` | Rendering template, for example `slots/content/htmlslotcontainer.isml` |
+| `--context`, `--context-id` | `global` (default), or `category`/`folder` with the category or folder ID |
+| `--[no-]enabled`, `--[no-]default` | Enable the configuration, or make it the slot's default |
+| `--rank` | Rank used to order configurations |
+| `--customer-groups` | Comma-separated customer group IDs |
+| `--start-date`, `--end-date` | Schedule window (ISO 8601) |
+| `--description` | Configuration description |
+
+Content (one of `--content-assets`, `--products`, `--categories`, `--html`, or `slotContent` in `--file`) and a template are required. Referenced content must exist: content assets are looked up in the site's library.
+
+### Examples
+
+```bash
+b2c content slot config put home-main summer-sale \
+  --content-assets summer-banner \
+  --template slots/content/htmlslotcontainer.isml \
+  --enabled --customer-groups Everyone \
+  --start-date 2026-06-01T00:00:00Z --end-date 2026-09-01T00:00:00Z
+
+# Copy a configuration
+b2c content slot config get home-main summer-sale > summer.json
+b2c content slot config put home-main winter-sale --file summer.json --start-date 2026-12-01T00:00:00Z
+```
+
+## b2c content slot config update
+
+Change fields of an existing configuration and keep the rest. Takes the same flags as `put`. The current content is kept unless you pass a content flag.
+
+```bash
+# Disable a configuration
+b2c content slot config update home-main summer-sale --no-enabled
+
+# Extend the schedule
+b2c content slot config update home-main summer-sale --end-date 2026-09-15T00:00:00Z
+```
+
+## b2c content slot config delete
+
+Delete a slot configuration. Asks for confirmation unless you pass `--force` or `--json`. The command is blocked on instances marked as production or read-only in your configuration.
+
+```bash
+b2c content slot config delete home-main summer-sale --force
+```

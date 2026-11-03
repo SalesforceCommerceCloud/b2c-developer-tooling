@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-03T03:04:33.639Z",
+  "generatedAt": "2026-11-03T03:37:13.200Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -71,8 +71,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/content.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/content.md",
-      "headings": "Authentication • b2c content export • Usage • Arguments • Flags • Examples • Configuring multiple libraries • Output • Notes • b2c content list • Usage • Flags • Examples • Output • b2c content validate • Usage • Arguments • Flags • Examples • Output • Notes • b2c content types list • Usage • Flags • Examples • b2c content types get • Usage • Examples • b2c content push • Usage • Arguments • Flags • Examples • Output • Notes",
-      "preview": "Commands for exporting, listing, validating, and pushing Page Designer content in B2C Commerce content libraries."
+      "headings": "Authentication • b2c content export • Usage • Arguments • Flags • Examples • Configuring multiple libraries • Output • Notes • b2c content list • Usage • Flags • Examples • Output • b2c content validate • Usage • Arguments • Flags • Examples • Output • Notes • b2c content types list • Usage • Flags • Examples • b2c content types get • Usage • Examples • b2c content push • Usage • Arguments • Flags • Examples • Output • Notes • b2c content slot list • Usage • Flags • b2c content slot get • Usage • b2c content slot config list • Usage • Flags • b2c content slot config get • b2c content slot config put • Usage • Flags • Examples • b2c content slot config update • b2c content slot config delete",
+      "preview": "Commands for exporting, listing, validating, and pushing Page Designer content and managing content slot configurations in B2C Commerce."
     },
     {
       "id": "cli-custom-apis",

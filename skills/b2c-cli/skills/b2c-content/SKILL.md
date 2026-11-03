@@ -1,6 +1,6 @@
 ---
 name: b2c-content
-description: Export, list, validate, and push Page Designer content in B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, create or update a draft page from JSON, inspect the page and component types deployed to an instance, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
+description: Export, list, validate, and push Page Designer content in B2C Commerce libraries, and manage content slot configurations. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, create or update a draft page from JSON, inspect the page and component types deployed to an instance, list or change content slot configurations (banners, schedules, customer groups), discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill
@@ -17,7 +17,7 @@ Run `b2c setup inspect` to see the resolved configuration and which source provi
 
 Online export/list starts a system export job: SCAPI uses `sfcc.jobs.rw` plus the tenant scope; WebDAV downloads the archive and assets. `--api-backend ocapi` forces OCAPI; `auto` permits fallback. If an error only mentions OCAPI, retry with `--api-backend scapi` to expose the SCAPI failure before assuming OCAPI permissions are needed.
 
-`content types` and `content push` use the SCAPI Admin Experiences API: client credentials or JWT auth with `sfcc.experiences.rw` (or read-only `sfcc.experiences` for `types`) plus the tenant scope. If those scopes are missing, only these commands fail. Export, list, and validate are unaffected.
+`content types`, `content push`, and `content slot` use the SCAPI Admin Experiences API: client credentials or JWT auth with `sfcc.experiences.rw` (or read-only `sfcc.experiences` for reads) plus the tenant scope. If those scopes are missing, only these commands fail. Export, list, and validate are unaffected.
 
 ## Examples
 
@@ -197,6 +197,32 @@ A page body is `{id, name, typeId, data?, regions: [{id, components: [{id, typeI
 - An existing page's type can't be changed.
 - The API can't read, delete, or publish pages. Use `content export` to read pages back.
 
+### Content Slots
+
+```bash
+# slots of a site, with configuration counts and which configurations are live
+b2c content slot list --site-id RefArch
+
+# configurations of one slot, with schedule, groups, and template
+b2c content slot config list --slot-id home-main --extended
+
+# create or replace a configuration (the slot must already exist)
+b2c content slot config put home-main summer-sale --content-assets summer-banner \
+  --template slots/content/htmlslotcontainer.isml --enabled \
+  --start-date 2026-06-01T00:00:00Z --end-date 2026-09-01T00:00:00Z
+
+# change only some fields (content is kept)
+b2c content slot config update home-main summer-sale --no-enabled
+
+# delete a configuration
+b2c content slot config delete home-main summer-sale --force
+```
+
+- Slots come from templates and can't be created through the API. Run `content slot list` to find slot IDs.
+- `put` needs content (`--content-assets`, `--products`, `--categories`, `--html` or `--file`) and `--template`. Referenced content assets must exist in the site's library.
+- Export a configuration with `content slot config get ... > file.json` and reuse it with `put --file`.
+- `active` in the output means the configuration is enabled and inside its schedule now.
+
 ### More Commands
 
 See `b2c content --help` for a full list of available commands and options in the `content` topic.
@@ -207,7 +233,7 @@ See `b2c content --help` for a full list of available commands and options in th
 - **Authentication errors** -- Inspect resolved configuration first. SCAPI needs client-credentials or JWT authentication with `sfcc.jobs.rw` and the tenant scope; browser login is OCAPI/WebDAV-only. Use `b2c-cli:b2c-config` for setup. `--library-file` skips the remote export job; add `--offline` to skip asset downloads too.
 - **Library not found** -- Verify the library ID matches exactly. For site-private libraries, add `--site-library`.
 - **No content found** -- Check that the page/content IDs exist. Use `b2c content list` to discover available IDs.
-- **Experiences API errors on `content types` or `content push`** -- A 403 or "not granted the Experiences scope" error means the API client needs `sfcc.experiences.rw` (or `sfcc.experiences`) in Account Manager. These commands also need client credentials (not browser login), a short code, and a tenant ID.
+- **Experiences API errors on `content types`, `content push`, or `content slot`** -- A 403 or "not granted the Experiences scope" error means the API client needs `sfcc.experiences.rw` (or `sfcc.experiences`) in Account Manager. These commands also need client credentials (not browser login), a short code, and a tenant ID.
 - **Timeout errors** -- Large libraries may exceed the default timeout. Use `--timeout <seconds>` to increase it.
 
 ## Related Skills

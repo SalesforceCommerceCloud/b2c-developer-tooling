@@ -87,10 +87,19 @@ Slots cannot be created through the API; only their configurations can.
   or `{"query":{"matchAllQuery":{}}}`. Use `builtin/slot-configurations-inspect`.
 - `getSlot`: `/slots/{slotId}/{contextType}` (`global`, `category` or `folder`, plus `contextId`
   for the non-global contexts).
-- `createOrUpdateSlotConfiguration`: `/slots/{slotId}/slot-configurations/{configurationId}`.
-  Responses report `slotContent.type` in snake*case (`content_assets`, `html`, `products`,
-  `categories`); compare case-insensitively and ignoring `*`.
+- `createOrUpdateSlotConfiguration` (PUT, 201 created / 200 replaced):
+  `/slots/{slotId}/slot-configurations/{configurationId}?siteId=...`. The slot must already exist
+  (404 otherwise). `slotContent` and `template` are required.
+- Write `slotContent.type` in snake_case: `content_assets`, `products`, `categories`, `html`,
+  `recommended_products`. The spec's camelCase values (`contentAssets`) are rejected with 400.
+  Content IDs must exist (assets are looked up in the site's library), or the write fails with 404.
+- HTML content: `{"type":"html","body":{"default":{"source":"<p>Hi</p>"}}}`. Write `source`;
+  `markup` is returned on read but ignored on write.
+- `updateSlotConfiguration` (PATCH) also requires `slotContent`; send the current one back when
+  changing only `enabled`, `schedule`, `rank` or `customerGroups`.
+- `deleteSlotConfiguration` returns 204 even when the configuration does not exist.
 - `assignmentInformation.active` shows whether a configuration is live now (enabled and in schedule).
 
-CLI equivalents: `b2c content types list`, `b2c content push` (validates first), and
-`b2c content export`.
+CLI equivalents: `b2c content types list`, `b2c content push` (validates first),
+`b2c content export`, `b2c content slot list|get`, and
+`b2c content slot config list|get|put|update|delete`.

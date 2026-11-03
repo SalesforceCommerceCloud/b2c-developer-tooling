@@ -32,8 +32,10 @@ import {getApiErrorMessage} from '../../clients/error-utils.js';
 import {isInvalidScopeError} from '../../clients/scapi-backend-utils.js';
 import {getLogger} from '../../logging/logger.js';
 
-const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
-const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
+/** @internal */
+export const READ_HEADERS = {[SCOPE_MODE_HEADER]: 'read'};
+/** @internal */
+export const WRITE_HEADERS = {[SCOPE_MODE_HEADER]: 'write'};
 
 /** Page size used when walking type listings (spec maximum). */
 const TYPE_PAGE_SIZE = 200;
@@ -65,14 +67,22 @@ export class ExperiencesUnavailableError extends Error {
   }
 }
 
-/** Raised for a page push the API rejected (400/404/409), with the API detail. */
-export class PagePushError extends Error {
+/** Raised when the Experiences API rejects a request (400/404/409), with the API detail. */
+export class ExperiencesRequestError extends Error {
   constructor(
     message: string,
     public readonly status: number,
     public readonly body?: unknown,
   ) {
     super(message);
+    this.name = 'ExperiencesRequestError';
+  }
+}
+
+/** Raised for a page push the API rejected (400/404/409), with the API detail. */
+export class PagePushError extends ExperiencesRequestError {
+  constructor(message: string, status: number, body?: unknown) {
+    super(message, status, body);
     this.name = 'PagePushError';
   }
 }
@@ -80,7 +90,8 @@ export class PagePushError extends Error {
 const SCOPE_HINT =
   'The Experiences API needs an Account Manager API client with the "sfcc.experiences.rw" (or read-only "sfcc.experiences") scope, client credentials or JWT auth, and a configured short code and tenant ID.';
 
-interface ExperiencesContext {
+/** @internal */
+export interface ExperiencesContext {
   client: ScapiExperiencesClient;
   organizationId: string;
 }
@@ -88,7 +99,8 @@ interface ExperiencesContext {
 /** Cache clients per instance so repeated calls reuse token state. */
 const contextCache = new WeakMap<B2CInstance, ExperiencesContext>();
 
-function getContext(instance: B2CInstance): ExperiencesContext {
+/** @internal Shared Experiences API client and organization ID for an instance. */
+export function experiencesContext(instance: B2CInstance): ExperiencesContext {
   const cached = contextCache.get(instance);
   if (cached) return cached;
 
@@ -115,7 +127,12 @@ function getContext(instance: B2CInstance): ExperiencesContext {
 }
 
 /** Map a thrown token error or an HTTP failure to {@link ExperiencesUnavailableError}. */
-function toUnavailable(error: unknown, response: Response | undefined, what: string): ExperiencesUnavailableError {
+/** @internal */
+export function experiencesUnavailable(
+  error: unknown,
+  response: Response | undefined,
+  what: string,
+): ExperiencesUnavailableError {
   if (isInvalidScopeError(error)) {
     return new ExperiencesUnavailableError(
       `${what}: the API client is not granted the Experiences scope. ${SCOPE_HINT}`,
@@ -153,7 +170,7 @@ async function walkTypes<T>(
   kind: 'page-types' | 'component-types',
   siteId: string,
 ): Promise<T[]> {
-  const {client, organizationId} = getContext(instance);
+  const {client, organizationId} = experiencesContext(instance);
   const path =
     kind === 'page-types'
       ? ('/organizations/{organizationId}/page-types' as const)
@@ -170,11 +187,11 @@ async function walkTypes<T>(
         headers: READ_HEADERS,
       });
     } catch (error) {
-      throw toUnavailable(error, undefined, what);
+      throw experiencesUnavailable(error, undefined, what);
     }
     const {data, error, response} = result;
     if (!data) {
-      throw toUnavailable(error, response, what);
+      throw experiencesUnavailable(error, response, what);
     }
     const hits = (data.hits ?? []) as T[];
     all.push(...hits);
@@ -251,7 +268,7 @@ export async function getExperiencesAvailability(
   options: ListExperienceTypesOptions,
 ): Promise<ExperiencesAvailability> {
   try {
-    const {client, organizationId} = getContext(instance);
+    const {client, organizationId} = experiencesContext(instance);
     let result;
     try {
       result = await client.GET('/organizations/{organizationId}/page-types', {
@@ -259,10 +276,10 @@ export async function getExperiencesAvailability(
         headers: READ_HEADERS,
       });
     } catch (error) {
-      throw toUnavailable(error, undefined, 'Experiences API unavailable');
+      throw experiencesUnavailable(error, undefined, 'Experiences API unavailable');
     }
     if (!result.data) {
-      throw toUnavailable(result.error, result.response, 'Experiences API unavailable');
+      throw experiencesUnavailable(result.error, result.response, 'Experiences API unavailable');
     }
     return {available: true};
   } catch (error) {
@@ -306,7 +323,7 @@ export async function pushPage(
   options: PushPageOptions,
 ): Promise<PushPageResult> {
   const logger = getLogger();
-  const {client, organizationId} = getContext(instance);
+  const {client, organizationId} = experiencesContext(instance);
   const what = `Failed to push page ${page.id}`;
 
   let result;
@@ -319,13 +336,13 @@ export async function pushPage(
       headers: WRITE_HEADERS,
     });
   } catch (error) {
-    throw toUnavailable(error, undefined, what);
+    throw experiencesUnavailable(error, undefined, what);
   }
 
   const {data, error, response} = result;
   if (!data) {
     if (response.status === 401 || response.status === 403) {
-      throw toUnavailable(error, response, what);
+      throw experiencesUnavailable(error, response, what);
     }
     throw new PagePushError(`${what}: ${getApiErrorMessage(error, response)}`, response.status, error);
   }

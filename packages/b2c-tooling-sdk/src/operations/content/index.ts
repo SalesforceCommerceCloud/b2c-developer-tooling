@@ -92,6 +92,7 @@ export type {
 } from './validate.js';
 
 export {
+  ExperiencesRequestError,
   ExperiencesUnavailableError,
   PagePushError,
   fetchExperienceTypes,
@@ -136,3 +137,25 @@ export type {
   ExperiencePageType,
   ExperienceRegionRequest,
 } from '../../clients/scapi-experiences.js';
+
+export {
+  deleteSlotConfiguration,
+  getSlot,
+  getSlotConfiguration,
+  putSlotConfiguration,
+  searchSlotConfigurations,
+  searchSlots,
+  toWireSlotContentType,
+  updateSlotConfiguration,
+} from './slots.js';
+
+export type {
+  PutSlotConfigurationResult,
+  SearchSlotConfigurationsOptions,
+  SearchSlotsOptions,
+  SlotConfigurationInput,
+  SlotContentType,
+  SlotContextType,
+  SlotSearchResult,
+  SlotSiteOptions,
+} from './slots.js';
