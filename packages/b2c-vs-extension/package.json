@@ -1086,6 +1086,11 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.content.openType",
+        "title": "Open Page Designer Type Definition",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.content.revealBlock",
         "title": "Reveal Content Block",
         "icon": "$(references)",
@@ -2231,6 +2236,10 @@
         },
         {
           "command": "b2c-dx.content.revealBlock",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.openType",
           "when": "false"
         },
         {

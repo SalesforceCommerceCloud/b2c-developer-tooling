@@ -6,6 +6,7 @@
 
 import type {LibraryNode} from '@salesforce/b2c-tooling-sdk/operations/content';
 import {fetchContentLibrary} from '@salesforce/b2c-tooling-sdk/operations/content';
+import {ExperienceTypesNode, ExperienceTypesSource} from './experience-types.js';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {contentItemUri} from './content-fs-provider.js';
@@ -197,14 +198,20 @@ export class ContentTreeItem extends vscode.TreeItem {
   }
 }
 
-export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentTreeItem> {
-  private _onDidChangeTreeData = new vscode.EventEmitter<ContentTreeItem | undefined | void>();
+export type ContentTreeElement = ContentTreeItem | ExperienceTypesNode;
+
+export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentTreeElement> {
+  private _onDidChangeTreeData = new vscode.EventEmitter<ContentTreeElement | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private filterPattern: string | undefined;
+  private readonly types: ExperienceTypesSource;
 
-  constructor(private configProvider: ContentConfigProvider) {}
+  constructor(private configProvider: ContentConfigProvider) {
+    this.types = new ExperienceTypesSource(configProvider);
+  }
 
   refresh(): void {
+    this.types.clear();
     this._onDidChangeTreeData.fire();
   }
 
@@ -218,11 +225,12 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
     return this.filterPattern;
   }
 
-  getTreeItem(element: ContentTreeItem): vscode.TreeItem {
+  getTreeItem(element: ContentTreeElement): vscode.TreeItem {
     return element;
   }
 
-  getParent(element: ContentTreeItem): ContentTreeItem | undefined {
+  getParent(element: ContentTreeElement): ContentTreeElement | undefined {
+    if (element instanceof ExperienceTypesNode) return undefined;
     // Only the source-fragment → group → library chain needs a parent, which is
     // what TreeView.reveal walks when surfacing a block from a reference click.
     if (element.nodeType === 'fragment') {
@@ -234,9 +242,17 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
     return undefined;
   }
 
-  async getChildren(element?: ContentTreeItem): Promise<ContentTreeItem[]> {
+  async getChildren(element?: ContentTreeElement): Promise<ContentTreeElement[]> {
     if (!element) {
-      return this.getRootChildren();
+      const libraries: ContentTreeElement[] = this.getRootChildren();
+      // Live Page Designer types are an optional extra: they are added only once
+      // something else is shown (so the empty-state welcome view still appears),
+      // and never fail the tree when the Experiences API is unavailable.
+      return libraries.length > 0 ? [...libraries, this.types.root()] : libraries;
+    }
+
+    if (element instanceof ExperienceTypesNode) {
+      return this.types.getChildren(element);
     }
 
     if (element.nodeType === 'library') {

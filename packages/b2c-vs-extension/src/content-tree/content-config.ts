@@ -64,6 +64,18 @@ export class ContentConfigProvider {
     }));
   }
 
+  /**
+   * Site whose cartridge path defines live Page Designer types: the configured
+   * `siteId`, else the first browsed site-private library (its ID is the site ID).
+   */
+  getSiteId(): string | undefined {
+    const configured = this.configProvider.getConfig()?.values.siteId;
+    if (configured) return configured;
+    return (
+      this.libraries.find((l) => l.isSiteLibrary)?.id ?? this.getConfiguredLibraries().find((l) => l.siteLibrary)?.id
+    );
+  }
+
   getAssetQuery(): string[] | undefined {
     return this.configProvider.getConfig()?.values.assetQuery;
   }

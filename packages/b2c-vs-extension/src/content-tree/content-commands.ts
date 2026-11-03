@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
-import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
+import {ContentTreeItem, type ContentTreeDataProvider, type ContentTreeElement} from './content-tree-provider.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {registerSafeCommand} from '../safety.js';
 
@@ -28,12 +28,18 @@ async function showJobError(err: unknown, instance: B2CInstance, label: string):
   vscode.window.showErrorMessage(`${label}: ${message}`);
 }
 
+/** Library content items from a (possibly mixed) multi-selection; type nodes are ignored. */
+function contentSelection(node: ContentTreeItem | undefined, selected?: ContentTreeElement[]): ContentTreeItem[] {
+  const items = (selected ?? []).filter((n): n is ContentTreeItem => n instanceof ContentTreeItem);
+  return items.length > 0 ? items : node ? [node] : [];
+}
+
 export function registerContentCommands(
   _context: vscode.ExtensionContext,
   configProvider: ContentConfigProvider,
   treeProvider: ContentTreeDataProvider,
   _fsProvider: ContentFileSystemProvider,
-  treeView: vscode.TreeView<ContentTreeItem>,
+  treeView: vscode.TreeView<ContentTreeElement>,
 ): vscode.Disposable[] {
   const refresh = registerSafeCommand('b2c-dx.content.refresh', () => {
     configProvider.clearCache();
@@ -169,8 +175,8 @@ export function registerContentCommands(
 
   const exportCmd = registerSafeCommand(
     'b2c-dx.content.export',
-    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
-      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeElement[]) => {
+      const nodes = contentSelection(node, selectedNodes);
       if (!nodes.length) return;
       await runExport(nodes, {offline: false, assetsOnly: false});
     },
@@ -178,8 +184,8 @@ export function registerContentCommands(
 
   const exportNoAssets = registerSafeCommand(
     'b2c-dx.content.exportNoAssets',
-    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
-      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeElement[]) => {
+      const nodes = contentSelection(node, selectedNodes);
       if (!nodes.length) return;
       await runExport(nodes, {offline: true, assetsOnly: false});
     },
@@ -187,8 +193,8 @@ export function registerContentCommands(
 
   const exportAssets = registerSafeCommand(
     'b2c-dx.content.exportAssets',
-    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
-      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeElement[]) => {
+      const nodes = contentSelection(node, selectedNodes);
       if (!nodes.length) return;
       await runExport(nodes, {offline: false, assetsOnly: true});
     },
@@ -290,7 +296,16 @@ export function registerContentCommands(
     }
   });
 
+  // Opens a live Page Designer type definition as read-only JSON (from the
+  // optional "Page Designer Types" branch of the tree).
+  const openType = registerSafeCommand('b2c-dx.content.openType', async (type: {id: string}) => {
+    if (!type?.id) return;
+    const doc = await vscode.workspace.openTextDocument({language: 'json', content: JSON.stringify(type, null, 2)});
+    await vscode.window.showTextDocument(doc, {preview: true});
+  });
+
   return [
+    openType,
     refresh,
     addLibrary,
     removeLibrary,

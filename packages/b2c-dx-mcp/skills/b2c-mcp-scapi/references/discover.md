@@ -62,6 +62,10 @@ Snippet names below have the `builtin/` prefix. Describe only the relevant snipp
 | Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                                                                        |
 | Basic product + optional category assignment  | `create-product` snippet; [products](products.md)                                                                                                           |
 | Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](promotions.md)                                                                                                  |
+| Page Designer page/component types for a site | `experience/experiences/v1`: `getPageTypes` / `getComponentTypes`; `content-types-inspect` snippet; [content](content.md)                                   |
+| Create or update a Page Designer page (draft) | `experience/experiences/v1`: `createOrUpdatePage`; `page-push` snippet; [content](content.md)                                                               |
+| Content assets, library folders, assignments  | `experience/experiences/v1`: `getContent` / `createOrUpdateContent`, `getSubFolders`; [content](content.md#content-assets-and-folders)                      |
+| Content slot configurations                   | `experience/experiences/v1`: `searchSlotConfigurations`; `slot-configurations-inspect` snippet; [content](content.md#slots)                                 |
 
 File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
 Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions

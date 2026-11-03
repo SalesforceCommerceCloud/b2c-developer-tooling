@@ -87,3 +87,39 @@ Input JSON Schema:
 ```json
 {"type":"object","properties":{"siteId":{"type":"string","minLength":1},"expectedCartridges":{"type":"array","maxItems":50,"items":{"type":"string","minLength":1}}},"required":["siteId"],"additionalProperties":false}
 ```
+
+## builtin/content-types-inspect
+
+Summarize Page Designer page and component types for a site (regions, attributes); full detail for named type IDs.
+
+Effect: read.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"siteId":{"type":"string","minLength":1,"description":"Site whose cartridge path and slots are used."},"kind":{"type":"string","enum":["page","component"]},"group":{"type":"string","minLength":1,"description":"Component group, e.g. Content or Layout."},"typeIds":{"type":"array","maxItems":20,"items":{"type":"string","minLength":1},"description":"Return full region and attribute detail for these type IDs only."}},"required":["siteId"],"additionalProperties":false}
+```
+
+## builtin/page-push
+
+Validate a Page Designer page body against the site's live page and component types, then create or update it as a draft.
+
+Effect: write.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"siteId":{"type":"string","minLength":1,"description":"Site whose cartridge path and slots are used."},"page":{"type":"object","description":"createOrUpdatePage body: {id, name, typeId, data?, regions: [{id, components: [{id, typeId, data?, regions?}]}]}.","properties":{"id":{"type":"string","minLength":1},"name":{"type":"string","minLength":1},"typeId":{"type":"string","minLength":1}},"required":["id","name","typeId"]},"dryRun":{"type":"boolean","default":false,"description":"Validate only; do not PUT."}},"required":["siteId","page"],"additionalProperties":false}
+```
+
+## builtin/slot-configurations-inspect
+
+Search a site's content slot configurations (optionally one slot or context) and return compact status, schedule and content.
+
+Effect: read.
+
+Input JSON Schema:
+
+```json
+{"type":"object","properties":{"siteId":{"type":"string","minLength":1,"description":"Site whose cartridge path and slots are used."},"slotId":{"type":"string","minLength":1},"context":{"type":"string","enum":["global","category","folder"]},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":50}},"required":["siteId"],"additionalProperties":false}
+```
