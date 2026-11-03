@@ -58,6 +58,14 @@ describe('safety/read-only-searches', () => {
     ).to.equal('block');
   });
 
+  it('ignores trailing slashes and handles long runs of them quickly', () => {
+    expect(isReadOnlySearch('POST', '/s/-/dw/data/v25_6/product_search///')).to.equal(true);
+    expect(isReadOnlySearch('POST', '/')).to.equal(false);
+    const start = Date.now();
+    expect(isReadOnlySearch('POST', `/${'/'.repeat(100_000)}x`)).to.equal(false);
+    expect(Date.now() - start).to.be.below(1000);
+  });
+
   it('lists only POST operations that exist in the bundled API specs', () => {
     const known = new Set<string>();
     for (const document of loadScapiSchemas()) {

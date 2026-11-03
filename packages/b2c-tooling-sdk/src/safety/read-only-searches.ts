@@ -75,6 +75,13 @@ export const READ_ONLY_SEARCH_PATHS: readonly string[] = [
 
 let matchers: Minimatch[] | undefined;
 
+/** Removes trailing slashes (keeps a lone `/`). A loop instead of a regex, which backtracks on long runs of `/`. */
+function trimTrailingSlashes(path: string): string {
+  let end = path.length;
+  while (end > 1 && path[end - 1] === '/') end--;
+  return path.slice(0, end);
+}
+
 /**
  * Returns true when a request is a POST to a known read-only search endpoint
  * (see {@link READ_ONLY_SEARCH_PATHS}).
@@ -82,6 +89,6 @@ let matchers: Minimatch[] | undefined;
 export function isReadOnlySearch(method: string, path: string): boolean {
   if (method.toUpperCase() !== 'POST') return false;
   matchers ??= READ_ONLY_SEARCH_PATHS.map((pattern) => new Minimatch(pattern, {dot: true}));
-  const normalized = path.length > 1 ? path.replace(/\/+$/, '') : path;
+  const normalized = trimTrailingSlashes(path);
   return matchers.some((matcher) => matcher.match(normalized));
 }
