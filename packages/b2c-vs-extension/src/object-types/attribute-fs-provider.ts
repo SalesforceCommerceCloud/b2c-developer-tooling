@@ -9,7 +9,10 @@ import {
   importObjectTypeExtensions,
   planObjectTypeSync,
 } from '@salesforce/b2c-tooling-sdk/operations/object-types';
-import type {ObjectAttributeDefinition} from '@salesforce/b2c-tooling-sdk/operations/object-types';
+import type {
+  MetaAttributeDefinition,
+  ObjectAttributeDefinition,
+} from '@salesforce/b2c-tooling-sdk/operations/object-types';
 import * as vscode from 'vscode';
 
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -101,7 +104,6 @@ export class AttributeFileSystemProvider implements vscode.FileSystemProvider {
     const target = parseUri(uri);
     if (!target) throw vscode.FileSystemError.NoPermissions(uri);
     const {objectType, id} = target;
-    const label = `${objectType}.${id}`;
 
     let desired;
     try {
@@ -110,6 +112,27 @@ export class AttributeFileSystemProvider implements vscode.FileSystemProvider {
       throw vscode.FileSystemError.Unavailable(error instanceof Error ? error.message : String(error));
     }
 
+    let outcome;
+    try {
+      outcome = await this.apply(objectType, desired);
+    } catch (error) {
+      throw vscode.FileSystemError.Unavailable(describeObjectTypesError(error, objectType).message);
+    }
+    if (outcome === 'cancelled') throw vscode.FileSystemError.Unavailable('Not saved: the changes were not applied.');
+    if (outcome === 'unchanged') this.store(uri, content);
+  }
+
+  /**
+   * Compares a desired custom attribute definition with the instance, asks for
+   * confirmation, and applies it: writable properties through the API, enum
+   * values and default values through a site import. Refreshes an open
+   * document and the tree afterwards. Errors are logged (with the job log for
+   * a failed import) and rethrown.
+   */
+  async apply(objectType: string, desired: MetaAttributeDefinition): Promise<'applied' | 'cancelled' | 'unchanged'> {
+    const {id} = desired;
+    const label = `${objectType}.${id}`;
+    const uri = attributeUri(objectType, id);
     try {
       const client = await this.treeProvider.getClient();
       const plan = await vscode.window.withProgress(
@@ -120,8 +143,7 @@ export class AttributeFileSystemProvider implements vscode.FileSystemProvider {
       if (api.length === 0 && importItems.length === 0) {
         if (warnings.length > 0) void vscode.window.showWarningMessage(`B2C DX: ${warnings.join(' ')}`);
         else vscode.window.setStatusBarMessage(`B2C DX: ${label} has no changes to apply`, 4000);
-        this.store(uri, content);
-        return;
+        return 'unchanged';
       }
 
       const instance = importItems.length > 0 ? this.configProvider.getInstance() : null;
@@ -143,7 +165,7 @@ export class AttributeFileSystemProvider implements vscode.FileSystemProvider {
         {modal: true, detail},
         'Apply',
       );
-      if (choice !== 'Apply') throw new Error('Not saved: the changes were not applied.');
+      if (choice !== 'Apply') return 'cancelled';
 
       await vscode.window.withProgress(
         {location: vscode.ProgressLocation.Notification, title: `B2C DX: Applying ${label}`},
@@ -168,11 +190,80 @@ export class AttributeFileSystemProvider implements vscode.FileSystemProvider {
       this._onDidChangeFile.fire([{type: vscode.FileChangeType.Changed, uri}]);
       this.treeProvider.invalidate(objectType);
       vscode.window.showInformationMessage(`B2C DX: Applied changes to ${label}.`);
+      return 'applied';
     } catch (error) {
-      if (error instanceof vscode.FileSystemError) throw error;
       await this.showJobLog(error);
-      this.log.appendLine(`[Object Types] Saving ${label} failed: ${String(error)}`);
-      throw vscode.FileSystemError.Unavailable(describeObjectTypesError(error, objectType).message);
+      this.log.appendLine(`[Object Types] Applying ${label} failed: ${String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Removes one enum value. The Object Definitions API cannot, and a merge
+   * import keeps values it does not list, so this imports the full live list
+   * without the value (an import replaces the list).
+   */
+  async removeValue(objectType: string, id: string, value: string): Promise<boolean> {
+    const label = `${objectType}.${id}`;
+    try {
+      const client = await this.treeProvider.getClient();
+      const live = await client.getAttributeDefinition(objectType, id, {includeValues: true});
+      const remaining = (live.valueDefinitions ?? []).filter((entry) => entry.value !== value);
+      if (remaining.length === (live.valueDefinitions ?? []).length) {
+        vscode.window.showWarningMessage(`B2C DX: ${value} is no longer a value of ${label}.`);
+        return false;
+      }
+      const instance = this.configProvider.getInstance();
+      if (!instance) {
+        throw new Error(
+          'Removing enum values uses a site import, which needs the instance hostname in the configuration.',
+        );
+      }
+      const host = this.configProvider.getConfig()?.values.hostname ?? 'the instance';
+      const choice = await vscode.window.showWarningMessage(
+        `Remove value "${value}" from ${label} on ${host}?`,
+        {
+          modal: true,
+          detail:
+            'Objects that use this value keep it stored, but it is no longer offered in Business Manager. This runs the site archive import job.',
+        },
+        'Remove',
+      );
+      if (choice !== 'Remove') return false;
+      await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `B2C DX: Removing ${value} from ${label}`},
+        () =>
+          runWithSafety(
+            () =>
+              importObjectTypeExtensions(instance, [
+                {
+                  objectType,
+                  id,
+                  changes: [`remove value ${value}`],
+                  attribute: {
+                    id,
+                    valueType: live.valueType,
+                    valueDefinitions: remaining.map((entry) => ({
+                      value: entry.value,
+                      ...(entry.displayValue ? {displayValue: entry.displayValue} : {}),
+                    })),
+                  },
+                },
+              ]),
+            `Remove ${value} from ${label}?`,
+          ),
+      );
+      const saved = await client.getAttributeDefinition(objectType, id, {includeValues: true});
+      const uri = attributeUri(objectType, id);
+      this.store(uri, render(saved));
+      this._onDidChangeFile.fire([{type: vscode.FileChangeType.Changed, uri}]);
+      this.treeProvider.invalidate(objectType);
+      vscode.window.showInformationMessage(`B2C DX: Removed ${value} from ${label}.`);
+      return true;
+    } catch (error) {
+      await this.showJobLog(error);
+      this.log.appendLine(`[Object Types] Removing ${value} from ${label} failed: ${String(error)}`);
+      throw error;
     }
   }
 

@@ -10,9 +10,10 @@ import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand, runWithSafety} from '../safety.js';
 import {ATTRIBUTE_SCHEME, AttributeFileSystemProvider} from './attribute-fs-provider.js';
-import {describeObjectTypesError, validateAttributeId} from './model.js';
+import {describeObjectTypesError, validateAttributeId, validateEnumValue} from './model.js';
 import {
   AttributeTreeItem,
+  EnumValueTreeItem,
   FolderTreeItem,
   ObjectTypeTreeItem,
   ObjectTypesTreeDataProvider,
@@ -182,7 +183,7 @@ export function registerObjectTypes(
         await vscode.languages.setTextDocumentLanguage(doc, 'json');
         await vscode.window.showTextDocument(doc, {preview: false});
         const hint = typePick.label.startsWith('enum_of_')
-          ? ' Add valueDefinitions in the document and save to import them.'
+          ? ' Right-click it in the Object Types view and choose Add Value... to add values.'
           : '';
         vscode.window.showInformationMessage(`B2C DX: Created ${objectType}.${id}.${hint}`);
       } catch (error) {
@@ -193,6 +194,73 @@ export function registerObjectTypes(
       }
     },
   );
+
+  /** Runs an enum value change and reports failures as an error message. */
+  const valueChange = async (label: string, run: () => Promise<unknown>) => {
+    try {
+      await run();
+    } catch (error) {
+      vscode.window.showErrorMessage(`B2C DX: ${label} failed. ${describeObjectTypesError(error).message}`);
+    }
+  };
+
+  const addValueCmd = registerSafeCommand('b2c-dx.objectTypes.addEnumValue', async (item: AttributeTreeItem) => {
+    if (!(item instanceof AttributeTreeItem) || item.attribute.system) return;
+    const {objectType, attribute} = item;
+    const existing = (attribute.valueDefinitions ?? []).map((entry) => String(entry.value));
+    const title = `Add Value to ${objectType}.${attribute.id}`;
+    const value = (
+      await vscode.window.showInputBox({
+        title: `${title} (1/2)`,
+        prompt: attribute.valueType === 'enum_of_int' ? 'Value (a whole number)' : 'Value (stored on objects)',
+        validateInput: (input) => validateEnumValue(input, attribute.valueType, existing),
+      })
+    )?.trim();
+    if (!value) return;
+    const display = await vscode.window.showInputBox({
+      title: `${title} (2/2)`,
+      prompt: 'Display value shown in Business Manager (default locale)',
+      value,
+    });
+    if (display === undefined) return;
+    await valueChange('Adding the value', () =>
+      attributeFs.apply(objectType, {
+        id: attribute.id,
+        valueDefinitions: [{value, ...(display ? {displayValue: {default: display}} : {})}],
+      }),
+    );
+  });
+
+  const editValueCmd = registerSafeCommand('b2c-dx.objectTypes.editEnumValue', async (item: EnumValueTreeItem) => {
+    if (!(item instanceof EnumValueTreeItem) || item.attribute.system) return;
+    const display = await vscode.window.showInputBox({
+      title: `Edit Display Value of ${item.value}`,
+      prompt: 'Display value shown in Business Manager (default locale; other locales are kept)',
+      value: item.display ?? item.value,
+      validateInput: (input) => (input.trim() ? undefined : 'Enter a display value.'),
+    });
+    if (display === undefined || display === item.display) return;
+    await valueChange('Editing the value', () =>
+      attributeFs.apply(item.objectType, {
+        id: item.attribute.id,
+        valueDefinitions: [{value: item.value, displayValue: {default: display}}],
+      }),
+    );
+  });
+
+  const defaultValueCmd = registerSafeCommand('b2c-dx.objectTypes.setDefaultValue', async (item: EnumValueTreeItem) => {
+    if (!(item instanceof EnumValueTreeItem) || item.attribute.system) return;
+    await valueChange('Setting the default value', () =>
+      attributeFs.apply(item.objectType, {id: item.attribute.id, defaultValue: {value: item.value}}),
+    );
+  });
+
+  const removeValueCmd = registerSafeCommand('b2c-dx.objectTypes.removeEnumValue', async (item: EnumValueTreeItem) => {
+    if (!(item instanceof EnumValueTreeItem) || item.attribute.system) return;
+    await valueChange('Removing the value', () =>
+      attributeFs.removeValue(item.objectType, item.attribute.id, item.value),
+    );
+  });
 
   const resetSub = configProvider.onDidReset(() => treeProvider.reset());
 
@@ -207,6 +275,10 @@ export function registerObjectTypes(
     copyIdCmd,
     exportCmd,
     createCmd,
+    addValueCmd,
+    editValueCmd,
+    defaultValueCmd,
+    removeValueCmd,
     resetSub,
   );
 }

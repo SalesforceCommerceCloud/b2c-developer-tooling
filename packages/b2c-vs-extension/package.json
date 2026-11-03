@@ -636,6 +636,28 @@
         "category": "B2C DX - Object Types"
       },
       {
+        "command": "b2c-dx.objectTypes.addEnumValue",
+        "title": "Add Value...",
+        "icon": "$(add)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.editEnumValue",
+        "title": "Edit Display Value...",
+        "icon": "$(edit)",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.setDefaultValue",
+        "title": "Set as Default Value",
+        "category": "B2C DX - Object Types"
+      },
+      {
+        "command": "b2c-dx.objectTypes.removeEnumValue",
+        "title": "Remove Value...",
+        "category": "B2C DX - Object Types"
+      },
+      {
         "command": "b2c-dx.apiBrowser.help",
         "title": "Setup Help",
         "icon": "$(question)",
@@ -1735,6 +1757,26 @@
           "group": "inline"
         },
         {
+          "command": "b2c-dx.objectTypes.addEnumValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttribute-custom-enum",
+          "group": "0_values@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.editEnumValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttributeValue-custom",
+          "group": "0_values@1"
+        },
+        {
+          "command": "b2c-dx.objectTypes.setDefaultValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttributeValue-custom",
+          "group": "0_values@2"
+        },
+        {
+          "command": "b2c-dx.objectTypes.removeEnumValue",
+          "when": "view == b2cObjectTypesExplorer && viewItem == objectAttributeValue-custom",
+          "group": "9_remove@1"
+        },
+        {
           "command": "b2c-dx.apiBrowser.scapiAdd",
           "when": "view == b2cApiBrowser && viewItem == apiSchema-shopper && b2c-dx.isStorefrontNext",
           "group": "1_storefront@1"
@@ -2218,6 +2260,22 @@
         },
         {
           "command": "b2c-dx.objectTypes.exportXml",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.addEnumValue",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.editEnumValue",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.setDefaultValue",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.objectTypes.removeEnumValue",
           "when": "false"
         },
         {

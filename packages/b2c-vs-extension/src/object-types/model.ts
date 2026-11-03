@@ -205,3 +205,20 @@ export function validateAttributeId(id: string): string | undefined {
   if (value.length > 256) return 'Use at most 256 characters.';
   return undefined;
 }
+
+/**
+ * Validates a new enum value: not empty, not already defined, and an integer
+ * for `enum_of_int`.
+ */
+export function validateEnumValue(
+  value: string,
+  valueType: string | undefined,
+  existing: string[],
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return 'Enter a value.';
+  if (existing.includes(trimmed)) return `${trimmed} is already a value of this attribute.`;
+  if (valueType === 'enum_of_int' && !/^-?\d+$/.test(trimmed)) return 'Enter a whole number.';
+  if (trimmed.length > 4000) return 'Use at most 4000 characters.';
+  return undefined;
+}

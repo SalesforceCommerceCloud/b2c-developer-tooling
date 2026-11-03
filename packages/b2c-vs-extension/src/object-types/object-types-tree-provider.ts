@@ -78,7 +78,12 @@ export class AttributeTreeItem extends vscode.TreeItem {
       values.length > 0 ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
     );
     this.id = `${parentId}:attr:${attribute.id}`;
-    this.contextValue = attribute.system ? 'objectAttribute-system' : 'objectAttribute-custom';
+    // Menus match `^objectAttribute-`; custom enums also get value commands.
+    this.contextValue = attribute.system
+      ? 'objectAttribute-system'
+      : attribute.valueType?.startsWith('enum_of_')
+        ? 'objectAttribute-custom-enum'
+        : 'objectAttribute-custom';
     this.description = attributeSummary(attribute);
     this.tooltip = new vscode.MarkdownString(attributeTooltip(attribute));
     this.iconPath = new vscode.ThemeIcon(values.length > 0 ? 'symbol-enum' : 'symbol-field');
@@ -113,12 +118,20 @@ export class GroupTreeItem extends vscode.TreeItem {
 
 export class EnumValueTreeItem extends vscode.TreeItem {
   readonly nodeType = 'enumValue' as const;
-  constructor(value: string, display: string | undefined, parentId: string) {
+  constructor(
+    readonly objectType: string,
+    readonly attribute: ObjectAttributeDefinition,
+    readonly value: string,
+    readonly display: string | undefined,
+    parentId: string,
+  ) {
     super(value, vscode.TreeItemCollapsibleState.None);
     this.id = `${parentId}:value:${value}`;
-    this.contextValue = 'objectAttributeValue';
-    if (display && display !== value) this.description = display;
-    this.iconPath = new vscode.ThemeIcon('symbol-constant');
+    this.contextValue = attribute.system ? 'objectAttributeValue-system' : 'objectAttributeValue-custom';
+    const isDefault = attribute.defaultValue?.value === value;
+    const parts = [display && display !== value ? display : undefined, isDefault ? '(default)' : undefined];
+    this.description = parts.filter(Boolean).join(' ') || undefined;
+    this.iconPath = new vscode.ThemeIcon(isDefault ? 'star-full' : 'symbol-constant');
   }
 }
 
@@ -191,7 +204,14 @@ export class ObjectTypesTreeDataProvider implements vscode.TreeDataProvider<Obje
     }
     if (element instanceof AttributeTreeItem) {
       return (element.attribute.valueDefinitions ?? []).map(
-        (value) => new EnumValueTreeItem(String(value.value ?? ''), localizedDefault(value.displayValue), element.id!),
+        (value) =>
+          new EnumValueTreeItem(
+            element.objectType,
+            element.attribute,
+            String(value.value ?? ''),
+            localizedDefault(value.displayValue),
+            element.id!,
+          ),
       );
     }
     return [];

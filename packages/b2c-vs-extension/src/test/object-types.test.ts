@@ -17,6 +17,7 @@ import {
   mergeAttributeGroups,
   splitAttributes,
   validateAttributeId,
+  validateEnumValue,
   withEnumValues,
 } from '../object-types/model.js';
 
@@ -167,5 +168,15 @@ suite('object types: validateAttributeId', () => {
     assert.ok(validateAttributeId('c_myAttr')?.includes('c_'));
     assert.ok(validateAttributeId('2bad'));
     assert.ok(validateAttributeId('has-dash'));
+  });
+});
+
+suite('object types: validateEnumValue', () => {
+  test('rejects empty, duplicate, and non-integer values', () => {
+    assert.strictEqual(validateEnumValue('Hiking', 'enum_of_string', ['Biking']), undefined);
+    assert.ok(validateEnumValue('  ', 'enum_of_string', []));
+    assert.ok(validateEnumValue('Biking', 'enum_of_string', ['Biking'])?.includes('already'));
+    assert.ok(validateEnumValue('1.5', 'enum_of_int', []));
+    assert.strictEqual(validateEnumValue('-3', 'enum_of_int', []), undefined);
   });
 });
