@@ -11,9 +11,265 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Retrieve a list of catalog IDs. */
         get: operations["getCatalogs"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve details of a specific catalog. */
+        get: operations["getCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update details of a specific catalog. */
+        patch: operations["updateCatalog"];
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve all categories within a catalog. */
+        get: operations["getCategoriesFromCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve details of a specific category within a catalog. */
+        get: operations["getCategoryFromCatalog"];
+        /** Create or update a category within a catalog. */
+        put: operations["createCategoryInCatalog"];
+        post?: never;
+        /** Delete a specific category from a catalog. */
+        delete: operations["deleteCategoryFromCatalog"];
+        options?: never;
+        head?: never;
+        /** Update a specific category within a catalog. */
+        patch: operations["updateCategoryInCatalog"];
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/category-product-assignment-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search for category product assignments. */
+        post: operations["searchProductsAssignedToCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/products/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a category product assignment. */
+        get: operations["getAssignedProductFromCategory"];
+        /** Create a category product assignment. */
+        put: operations["assignProductToCategory"];
+        post?: never;
+        /** Remove a category product assignment. */
+        delete: operations["unassignProductFromCategory"];
+        options?: never;
+        head?: never;
+        /** Update a category product assignment. */
+        patch: operations["updateProductCategoryAssignment"];
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules-execution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the status of the latest categorization job. */
+        get: operations["getCategorizationStatus"];
+        put?: never;
+        /** Submit a job to evaluate or execute the rules. */
+        post: operations["runCategoryRules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/excluded-products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the list of excluded products. */
+        get: operations["getExclusionList"];
+        put?: never;
+        /** Add products to the exclusion list. */
+        post: operations["addProductsToExclusionList"];
+        /** Remove products from the exclusion list. */
+        delete: operations["removeProductsFromExclusionList"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve all rules for a catalog and category. */
+        get: operations["getCategoryRules"];
+        put?: never;
+        /** Create rules and conditions for a catalog and category. */
+        post: operations["createCategoryRules"];
+        /** Delete all rules and conditions for a catalog and category. */
+        delete: operations["deleteCategoryRules"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules/{ruleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a rule by ID. */
+        get: operations["getRuleById"];
+        /** Create or update a rule. */
+        put: operations["createUpdateRule"];
+        post?: never;
+        /** Delete a rule. */
+        delete: operations["deleteRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules/{ruleId}/conditions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve conditions for a rule. */
+        get: operations["getCategoryRuleConditions"];
+        put?: never;
+        post?: never;
+        /** Delete all conditions for a rule. */
+        delete: operations["deleteCategoryRuleConditions"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/categories/{categoryId}/rules/{ruleId}/conditions/{conditionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieve a condition by ID. */
+        get: operations["getCategoryRuleCondition"];
+        /** Create or update a condition. */
+        put: operations["createOrUpdateCategoryRuleCondition"];
+        post?: never;
+        /** Delete a condition. */
+        delete: operations["deleteCategoryRuleCondition"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalogs/{catalogId}/category-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search for catalog categories. */
+        post: operations["searchCategoriesInCatalog"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/catalog-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search for catalogs. */
+        post: operations["searchCatalogs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{organizationId}/category-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search for categories within an organization. */
+        post: operations["searchCategories"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24,24 +280,75 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        Catalog: {
-            id: string;
-            name?: {
-                [key: string]: string;
+        OrganizationId: string;
+        /**
+         * Format: int32
+         * @default 0
+         */
+        Total: number;
+        ResultBase: {
+            /** Format: int32 */
+            limit: number;
+            total: components["schemas"]["Total"];
+        };
+        /**
+         * Format: int32
+         * @default 0
+         */
+        Offset: number;
+        PaginatedResultBase: {
+            offset: components["schemas"]["Offset"];
+        } & WithRequired<components["schemas"]["ResultBase"], "limit" | "total">;
+        SiteId: string;
+        Site: {
+            cartridges?: string;
+            customerListLink?: {
+                customerListId: string;
+                title?: {
+                    [key: string]: string;
+                };
             };
             description?: {
                 [key: string]: string;
             };
+            displayName: {
+                [key: string]: string;
+            };
+            id: components["schemas"]["SiteId"];
+            inDeletion?: boolean;
+            /** @enum {string} */
+            storefrontStatus?: "online" | "maintenance" | "to_be_deleted" | "protected";
+        };
+        CatalogId: string;
+        Catalog: {
+            /** Format: int32 */
+            assignedProductCount?: number;
+            assignedSites?: components["schemas"]["Site"][];
+            /** Format: int32 */
+            categoryCount?: number;
+            /** Format: date-time */
+            creationDate?: string;
+            description?: {
+                [key: string]: string;
+            };
+            id: components["schemas"]["CatalogId"];
+            /** Format: date-time */
+            lastModified?: string;
+            name?: {
+                [key: string]: string;
+            };
             online?: boolean;
+            /** Format: int32 */
+            ownedProductCount?: number;
+            /** Format: int32 */
+            recommendationCount?: number;
+            rootCategory?: string;
         } & {
             [key: string]: unknown;
         };
         Catalogs: {
             data: components["schemas"]["Catalog"][];
-            limit: number;
-            offset: number;
-            total: number;
-        };
+        } & WithRequired<components["schemas"]["PaginatedResultBase"], "offset">;
         ErrorResponse: {
             title: string;
             type: string;
@@ -50,9 +357,521 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        Category: {
+            catalogId?: components["schemas"]["CatalogId"];
+            categories?: components["schemas"]["Category"][];
+            /** Format: date-time */
+            creationDate?: string;
+            description?: {
+                [key: string]: string;
+            };
+            id: components["schemas"]["CategoryId"];
+            image?: string;
+            /** Format: date-time */
+            lastModified?: string;
+            name?: {
+                [key: string]: string;
+            };
+            online?: boolean;
+            pageDescription?: {
+                [key: string]: string;
+            };
+            pageKeywords?: {
+                [key: string]: string;
+            };
+            pageTitle?: {
+                [key: string]: string;
+            };
+            parentCategoryId?: string;
+            paths?: components["schemas"]["PathRecord"][];
+            /** Format: double */
+            position?: number;
+            sortingRules?: components["schemas"]["SortingRule"][];
+            thumbnail?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        CategoryId: string;
+        PathRecord: {
+            id?: components["schemas"]["CategoryId"];
+            name?: {
+                [key: string]: string;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        SortingRuleStep: {
+            attributeId?: string;
+            /** @enum {string} */
+            direction?: "asc" | "desc";
+            isSystem?: boolean;
+            /** Format: int32 */
+            position?: number;
+            textRelevanceIncluded?: boolean;
+            typeId?: string;
+        } & {
+            [key: string]: unknown;
+        };
+        SortingRule: {
+            /** Format: date-time */
+            creationDate?: string;
+            description?: string;
+            id?: string;
+            productSortingRuleSteps?: components["schemas"]["SortingRuleStep"][];
+            /** @enum {string} */
+            ruleContext?: "site" | "global";
+            site?: components["schemas"]["SiteId"];
+        } & {
+            [key: string]: unknown;
+        };
+        Categories: {
+            data: components["schemas"]["Category"][];
+        } & WithRequired<components["schemas"]["PaginatedResultBase"], "offset">;
+        Query: {
+            boolQuery?: components["schemas"]["BoolQuery"];
+            filteredQuery?: components["schemas"]["FilteredQuery"];
+            matchAllQuery?: components["schemas"]["MatchAllQuery"];
+            nestedQuery?: components["schemas"]["NestedQuery"];
+            termQuery?: components["schemas"]["TermQuery"];
+            textQuery?: components["schemas"]["TextQuery"];
+        };
+        BoolQuery: {
+            must?: components["schemas"]["Query"][];
+            mustNot?: components["schemas"]["Query"][];
+            should?: components["schemas"]["Query"][];
+        };
+        Filter: {
+            boolFilter?: components["schemas"]["BoolFilter"];
+            queryFilter?: components["schemas"]["QueryFilter"];
+            range2Filter?: components["schemas"]["Range2Filter"];
+            rangeFilter?: components["schemas"]["RangeFilter"];
+            termFilter?: components["schemas"]["TermFilter"];
+        };
+        BoolFilter: {
+            filters?: components["schemas"]["Filter"][];
+            /** @enum {string} */
+            operator: "and" | "or" | "not";
+        };
+        QueryFilter: {
+            query: components["schemas"]["Query"];
+        };
+        Field: string;
+        Range2Filter: {
+            /**
+             * @default overlap
+             * @enum {string}
+             */
+            filterMode: "overlap" | "containing" | "contained";
+            fromField: components["schemas"]["Field"];
+            /** @default true */
+            fromInclusive: boolean;
+            fromValue?: unknown;
+            toField: components["schemas"]["Field"];
+            /** @default true */
+            toInclusive: boolean;
+            toValue?: unknown;
+        };
+        RangeFilter: {
+            field: components["schemas"]["Field"];
+            from?: string | number;
+            /** @default true */
+            fromInclusive: boolean;
+            to?: string | number;
+            /** @default true */
+            toInclusive: boolean;
+        };
+        TermFilter: {
+            field: components["schemas"]["Field"];
+            /** @enum {string} */
+            operator: "is" | "one_of" | "is_null" | "is_not_null" | "less" | "greater" | "not_in" | "neq";
+            values?: string[];
+        };
+        FilteredQuery: {
+            filter: components["schemas"]["Filter"];
+            query: components["schemas"]["Query"];
+        };
+        MatchAllQuery: Record<string, never>;
+        NestedQuery: {
+            path: string;
+            query: components["schemas"]["Query"];
+            /** @enum {string} */
+            scoreMode?: "avg" | "total" | "max" | "none";
+        };
+        TermQuery: {
+            fields: components["schemas"]["Field"][];
+            /** @enum {string} */
+            operator: "is" | "one_of" | "is_null" | "is_not_null" | "less" | "greater" | "not_in" | "neq";
+            values?: (string | number | boolean)[];
+        };
+        TextQuery: {
+            fields: components["schemas"]["Field"][];
+            searchPhrase: string;
+        };
+        Sort: {
+            field: string;
+            /**
+             * @default asc
+             * @enum {string}
+             */
+            sortOrder: "asc" | "desc";
+        };
+        SearchRequest: {
+            /** Format: int32 */
+            limit?: number;
+            query: components["schemas"]["Query"];
+            sorts?: components["schemas"]["Sort"][];
+            offset?: components["schemas"]["Offset"];
+        };
+        CategoryProductAssignmentSearchRequest: WithRequired<components["schemas"]["SearchRequest"], "query">;
+        PaginatedSearchResult: {
+            query: components["schemas"]["Query"];
+            sorts?: components["schemas"]["Sort"][];
+            hits?: Record<string, never>[];
+        } & components["schemas"]["PaginatedResultBase"];
+        CatalogCategoryId: {
+            catalogId: components["schemas"]["CatalogId"];
+            categoryId: components["schemas"]["CategoryId"];
+        };
+        Product: {
+            assignedCategories?: components["schemas"]["CatalogCategoryId"][];
+            /** Format: double */
+            ats?: number;
+            brand?: string;
+            bundledProducts?: components["schemas"]["Product"][];
+            classificationCategory?: components["schemas"]["CatalogCategoryId"];
+            /** Format: date-time */
+            creationDate?: string;
+            defaultVariantId?: string;
+            ean?: string;
+            id: components["schemas"]["ProductId"];
+            image?: components["schemas"]["MediaFile"];
+            imageGroups?: components["schemas"]["ImageGroup"][];
+            inStock?: boolean;
+            /** Format: date-time */
+            lastModified?: string;
+            localizedTaxClassId?: {
+                [key: string]: string;
+            };
+            longDescription?: {
+                [key: string]: components["schemas"]["MarkupText"];
+            };
+            manufacturerName?: string;
+            manufacturerSku?: string;
+            master?: components["schemas"]["Master"];
+            name?: {
+                [key: string]: string;
+            };
+            online?: boolean;
+            onlineFlag?: {
+                [key: string]: boolean;
+            };
+            owningCatalogId?: string;
+            owningCatalogName?: {
+                [key: string]: string;
+            };
+            pageDescription?: {
+                [key: string]: string;
+            };
+            pageKeywords?: {
+                [key: string]: string;
+            };
+            pageTitle?: {
+                [key: string]: string;
+            };
+            /** Format: double */
+            price?: number;
+            priceCurrency?: string;
+            /** Format: double */
+            pricePerUnit?: number;
+            primaryCategories?: components["schemas"]["CatalogCategoryId"][];
+            primaryCategoryId?: string;
+            productBundles?: components["schemas"]["Product"][];
+            productOptions?: components["schemas"]["ProductOption"][];
+            productSets?: components["schemas"]["Product"][];
+            searchable?: {
+                [key: string]: boolean;
+            };
+            setProducts?: components["schemas"]["Product"][];
+            shortDescription?: {
+                [key: string]: components["schemas"]["MarkupText"];
+            };
+            taxClassId?: string;
+            type?: components["schemas"]["ProductType"];
+            unit?: string;
+            unitMeasure?: string;
+            /** Format: double */
+            unitQuantity?: number;
+            upc?: string;
+            validFrom?: {
+                [key: string]: string;
+            };
+            validTo?: {
+                [key: string]: string;
+            };
+            variants?: components["schemas"]["Variant"][];
+            variationAttributes?: components["schemas"]["VariationAttribute"][];
+            variationGroups?: components["schemas"]["VariationGroup"][];
+            variationValues?: {
+                [key: string]: string;
+            };
+        };
+        ProductId: string;
+        MediaFile: {
+            absUrl?: string;
+            alt?: {
+                [key: string]: string;
+            };
+            disBaseUrl?: string;
+            path: string;
+            title?: {
+                [key: string]: string;
+            };
+        };
+        VariationAttributeValue: {
+            description?: {
+                [key: string]: string;
+            };
+            image?: components["schemas"]["MediaFile"];
+            imageSwatch?: components["schemas"]["MediaFile"];
+            name?: {
+                [key: string]: string;
+            };
+            orderable?: boolean;
+            /** Format: double */
+            position?: number;
+            value: string;
+        };
+        VariationAttribute: {
+            attributeDefinitionId: string;
+            attributeDefinitionName?: {
+                [key: string]: string;
+            };
+            defaultValue?: string;
+            id?: string;
+            name?: {
+                [key: string]: string;
+            };
+            shared?: boolean;
+            slicing?: boolean;
+            values?: components["schemas"]["VariationAttributeValue"][];
+            /** @enum {string} */
+            variationAttributeType?: "string" | "int" | "unknown";
+        };
+        ImageGroup: {
+            images: components["schemas"]["MediaFile"][];
+            variationAttributes?: components["schemas"]["VariationAttribute"][];
+            viewType: string;
+        };
+        MarkupText: {
+            markup: string;
+            source: string;
+        };
+        Master: {
+            masterId: components["schemas"]["ProductId"];
+            orderable?: boolean;
+            /** Format: double */
+            price?: number;
+            /** Format: double */
+            priceMax?: number;
+            prices?: {
+                [key: string]: number;
+            };
+        };
+        CurrencyCode: string;
+        Money: {
+            currencyMnemonic?: components["schemas"]["CurrencyCode"];
+            /** Format: double */
+            value?: number;
+        };
+        ProductOptionValue: {
+            defaultProductOptionValue?: boolean;
+            id: string;
+            optionPrices?: components["schemas"]["Money"][];
+            skuExtension?: string;
+            value: {
+                [key: string]: string;
+            };
+        };
+        ProductOption: {
+            customName?: {
+                [key: string]: string;
+            };
+            defaultProductOptionValue?: string;
+            description?: {
+                [key: string]: string;
+            };
+            id: string;
+            image?: components["schemas"]["MediaFile"];
+            name?: string;
+            selectedOptionValue?: string;
+            shared?: boolean;
+            /** @enum {string} */
+            sortingMode?: "byexplicitorder" | "byoptionprice";
+            values?: components["schemas"]["ProductOptionValue"][];
+        };
+        ProductType: {
+            bundle?: boolean;
+            bundled?: boolean;
+            item?: boolean;
+            master: boolean;
+            option?: boolean;
+            partOfProductSet?: boolean;
+            partOfRetailSet?: boolean;
+            retailSet?: boolean;
+            set?: boolean;
+            variant?: boolean;
+            variationGroup?: boolean;
+        };
+        Variant: {
+            /** Format: double */
+            ats?: number;
+            defaultProductVariation?: boolean;
+            image?: components["schemas"]["MediaFile"];
+            inStock?: boolean;
+            online?: boolean;
+            orderable?: boolean;
+            /** Format: double */
+            price?: number;
+            priceCurrency?: string;
+            productId: components["schemas"]["ProductId"];
+            searchable?: {
+                [key: string]: boolean;
+            };
+            variationAttributes?: components["schemas"]["VariationAttribute"][];
+            variationValues?: {
+                [key: string]: string;
+            };
+        };
+        VariationGroup: {
+            orderable?: boolean;
+            /** Format: double */
+            price?: number;
+            productId: string;
+            variationValues?: {
+                [key: string]: string;
+            };
+        };
+        CategoryProductAssignment: {
+            catalogId: components["schemas"]["CatalogId"];
+            categoryId: components["schemas"]["CategoryId"];
+            /** Format: date-time */
+            creationDate?: string;
+            /** Format: date-time */
+            lastModified?: string;
+            owningCatalogName?: {
+                [key: string]: string;
+            };
+            /** Format: double */
+            position?: number;
+            product?: components["schemas"]["Product"];
+            productId: components["schemas"]["ProductId"];
+            productName?: Record<string, never>;
+        };
+        CategoryProductAssignmentSearchResult: {
+            hits: components["schemas"]["CategoryProductAssignment"][];
+        } & WithRequired<components["schemas"]["PaginatedSearchResult"], "hits">;
+        /**
+         * Format: int32
+         * @default 10
+         */
+        Limit: number;
+        ExecutionJobStatusResult: {
+            /** @enum {string} */
+            type?: "evaluation" | "execution";
+            assignedCount?: number;
+            unassignedCount?: number;
+            matchedCount?: number;
+            /** @enum {string} */
+            jobStatus: "inProgress" | "success" | "error" | "unavailable";
+            message?: string;
+            /** Format: date-time */
+            lastRunDate?: string;
+            productIds?: string[];
+            limit?: components["schemas"]["Limit"];
+            offset?: components["schemas"]["Offset"];
+        };
+        ExecutionRequest: {
+            /** @default true */
+            evaluation: boolean;
+        };
+        ExcludedProduct: {
+            productId: components["schemas"]["ProductId"];
+        };
+        ExcludedProductsResult: {
+            limit: components["schemas"]["Limit"];
+            data?: components["schemas"]["ExcludedProduct"][];
+            total: components["schemas"]["Total"];
+        };
+        ExcludedProductRequest: {
+            data: components["schemas"]["ExcludedProduct"][];
+        };
+        Condition: {
+            id: string;
+            attributeKey: string;
+            attributeName?: string;
+            attributeValue: string[];
+            /** @enum {string} */
+            operator: "starts_with" | "contains" | "equals" | "not_equals" | "greater_than" | "less_than" | "is_one_of" | "not_one_of" | "is_defined" | "is_not_defined";
+        };
+        Rule: {
+            id: string;
+            /** @default false */
+            enabled: boolean;
+            /** @default false */
+            exclusion: boolean;
+            categorizationLocaleId?: string;
+            /** @default false */
+            categorizationClassificationFlag: boolean;
+            /** @default false */
+            categorizationPrimaryFlag: boolean;
+            conditions?: components["schemas"]["Condition"][];
+        };
+        RulesResult: {
+            data?: components["schemas"]["Rule"][];
+        } & WithRequired<components["schemas"]["ResultBase"], "limit" | "total">;
+        RulesRequest: {
+            data?: components["schemas"]["Rule"][];
+        };
+        RuleRequest: {
+            id: string;
+            /** @default false */
+            enabled: boolean;
+            /** @default false */
+            exclusion: boolean;
+            categorizationLocaleId?: string;
+            /** @default false */
+            categorizationClassificationFlag: boolean;
+            /** @default false */
+            categorizationPrimaryFlag: boolean;
+        };
+        ConditionsResult: {
+            limit: components["schemas"]["Limit"];
+            conditions?: components["schemas"]["Condition"][];
+            total: components["schemas"]["Total"];
+        };
+        CatalogCategorySearchRequest: WithRequired<components["schemas"]["SearchRequest"], "query">;
+        CategorySearchResult: {
+            hits: components["schemas"]["Category"][];
+        } & WithRequired<components["schemas"]["PaginatedSearchResult"], "hits">;
+        CatalogSearchRequest: WithRequired<components["schemas"]["SearchRequest"], "query">;
+        CatalogSearchResult: {
+            hits: components["schemas"]["Catalog"][];
+        } & WithRequired<components["schemas"]["PaginatedSearchResult"], "hits">;
+        CategorySearchRequest: WithRequired<components["schemas"]["SearchRequest"], "query">;
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        organizationId: components["schemas"]["OrganizationId"];
+        catalogId: components["schemas"]["CatalogId"];
+        categoryId: components["schemas"]["CategoryId"];
+        levels: number;
+        siteId: components["schemas"]["SiteId"];
+        productId: components["schemas"]["ProductId"];
+        limit: components["schemas"]["Limit"];
+        offset: components["schemas"]["Offset"];
+        ruleId: string;
+        conditionId: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -67,13 +886,12 @@ export interface operations {
             };
             header?: never;
             path: {
-                organizationId: string;
+                organizationId: components["schemas"]["OrganizationId"];
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Catalogs retrieved successfully. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -82,7 +900,6 @@ export interface operations {
                     "application/json": components["schemas"]["Catalogs"];
                 };
             };
-            /** @description Bad Request */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -91,7 +908,6 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -102,4 +918,1497 @@ export interface operations {
             };
         };
     };
+    getCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Catalog"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Catalog"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Catalog"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCategoriesFromCatalog: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Categories"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCategoryFromCatalog: {
+        parameters: {
+            query?: {
+                levels?: number;
+            };
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCategoryInCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Category"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteCategoryFromCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCategoryInCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Category"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    searchProductsAssignedToCategory: {
+        parameters: {
+            query?: {
+                siteId?: components["schemas"]["SiteId"];
+            };
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryProductAssignmentSearchRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProductAssignmentSearchResult"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getAssignedProductFromCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: components["schemas"]["ProductId"];
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProductAssignment"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    assignProductToCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: components["schemas"]["ProductId"];
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryProductAssignment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProductAssignment"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProductAssignment"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unassignProductFromCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: components["schemas"]["ProductId"];
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProductCategoryAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                productId: components["schemas"]["ProductId"];
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryProductAssignment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProductAssignment"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCategorizationStatus: {
+        parameters: {
+            query?: {
+                limit?: components["schemas"]["Limit"];
+                offset?: components["schemas"]["Offset"];
+            };
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionJobStatusResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    runCategoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecutionRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getExclusionList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExcludedProductsResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addProductsToExclusionList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExcludedProductRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExcludedProductsResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    removeProductsFromExclusionList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExcludedProductRequest"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCategoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulesResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCategoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RulesRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulesResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteCategoryRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getRuleById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createUpdateRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCategoryRuleConditions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConditionsResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteCategoryRuleConditions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCategoryRuleCondition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conditionId: string;
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Condition"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createOrUpdateCategoryRuleCondition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conditionId: string;
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Condition"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Condition"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Condition"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteCategoryRuleCondition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conditionId: string;
+                ruleId: string;
+                categoryId: components["schemas"]["CategoryId"];
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    searchCategoriesInCatalog: {
+        parameters: {
+            query?: {
+                levels?: number;
+            };
+            header?: never;
+            path: {
+                catalogId: components["schemas"]["CatalogId"];
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogCategorySearchRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySearchResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    searchCatalogs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogSearchRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogSearchResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    searchCategories: {
+        parameters: {
+            query?: {
+                levels?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: components["schemas"]["OrganizationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategorySearchRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySearchResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
 }
+type WithRequired<T, K extends keyof T> = T & {
+    [P in K]-?: T[P];
+};

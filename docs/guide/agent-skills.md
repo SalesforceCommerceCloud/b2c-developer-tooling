@@ -15,7 +15,8 @@ B2C skills give your AI assistant guidance for B2C Commerce development,
 operations, CLI workflows, and Storefront Next projects.
 
 **The [B2C MCP](../mcp/) gives your assistant access to guidance from the `b2c`,
-`b2c-cli`, `b2c-ops`, and `storefront-next` collections** through its
+`b2c-cli`, `b2c-ops`, and `storefront-next` collections, plus the
+[`cap-dev`](./commerce-apps) Commerce App Package authoring skills,** through its
 [`skills_read` tool](../mcp/toolsets#documentation). Your assistant can find and read
 that guidance as needed, without a separate skills installation. You can also
 install these collections directly in your assistant, alongside the MCP or on their own.

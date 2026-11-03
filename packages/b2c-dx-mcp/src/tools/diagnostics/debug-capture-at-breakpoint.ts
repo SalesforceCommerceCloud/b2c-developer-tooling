@@ -65,11 +65,12 @@ export function createDebugCaptureAtBreakpointTool(
   return createToolAdapter<CaptureInput, CaptureOutput>(
     {
       name: 'debug_capture_at_breakpoint',
+      searchHint: 'debug why wrong value runtime variables state request breakpoint',
       effect: 'write',
       idempotent: false,
       openWorld: true,
       description:
-        'Add a breakpoint and wait for a halt; return stack, variables, and evaluations. ' +
+        'Debug a request: add a breakpoint, wait for a halt, and return stack, variables, and evaluations. ' +
         'Trigger a GET here or an external request concurrently. Capture does not resume by default. ' +
         'Workflow: skill://mcp/b2c-mcp-debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],

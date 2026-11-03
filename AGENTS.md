@@ -170,16 +170,17 @@ Before reporting a change as complete:
 
 1. Run `pnpm run lint:agent`. It catches prettier formatting, import ordering, class member ordering (`perfectionist/sort-classes`), and other issues that fail CI.
 2. Run `pnpm run typecheck:agent` and `test:agent` for each changed package (or from the root).
-3. Add or update tests for behavior changes (see [Testing](#testing)).
-4. When commands, flags, MCP tools, or output change, update docs, user-facing skills, and the tooling documentation index (below).
-5. Add a changeset for user-facing changes (see [Changesets](#changesets)).
-6. Review the diff (see the [review skill](./.claude/skills/review/SKILL.md)).
+3. If any Markdown under `docs/` changed, run `pnpm --filter @salesforce/b2c-tooling-sdk run check:tooling-index` (see [Tooling documentation index](#tooling-documentation-index)).
+4. Add or update tests for behavior changes (see [Testing](#testing)).
+5. When commands, flags, MCP tools, or output change, update docs, user-facing skills, and the tooling documentation index (below).
+6. Add a changeset for user-facing changes (see [Changesets](#changesets)).
+7. Review the diff (see the [review skill](./.claude/skills/review/SKILL.md)).
 
 If a check cannot run (missing credentials, no instance available, an environment problem), report which check and why instead of calling the work done. Do not describe a targeted test run as a full-suite pass.
 
 ### Tooling documentation index
 
-When you add/remove/rename a CLI command or change the MRT docs (`docs/cli/`) or user-facing skills (`skills/b2c-cli/`), regenerate the checked-in tooling documentation index (`packages/b2c-tooling-sdk/data/tooling/index.json`) and commit the result:
+The checked-in tooling documentation index (`packages/b2c-tooling-sdk/data/tooling/index.json`) is generated from every Markdown page under `docs/guide/`, `docs/cli/`, `docs/mcp/`, and `docs/vscode-extension/`. Regenerate it and commit the result whenever any of those pages changes, including small wording edits and docs updated for a new or renamed command. The index ships in `@salesforce/b2c-tooling-sdk`, so include the SDK in the PR's changeset.
 
 ```bash
 # Regenerate the index (run after doc/command changes)

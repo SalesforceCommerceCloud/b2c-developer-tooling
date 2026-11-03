@@ -9,6 +9,7 @@ import {spy, type SinonSpy} from 'sinon';
 import {fileURLToPath} from 'node:url';
 import {Client, type ClientOptions} from '@modelcontextprotocol/client';
 import {StdioClientTransport} from '@modelcontextprotocol/client/stdio';
+import {z} from 'zod';
 
 const runJs = fileURLToPath(new URL('../../bin/run.js', import.meta.url));
 const skillUri = 'skill://mcp/b2c-mcp-debugger/SKILL.md';
@@ -100,6 +101,18 @@ for (const mode of modes) {
         expect(result.isError).not.to.equal(true);
       }
       expect(requestCount('tools/call')).to.equal(2);
+    });
+
+    it('marks skills extension results cacheable only on the modern protocol', async () => {
+      const result = z.object({}).loose();
+      const results = [
+        await client.request({method: 'skills/list', params: {}}, result),
+        await client.request({method: 'skills/get', params: {uri: skillUri}}, result),
+      ];
+      for (const entry of results) {
+        if (mode.era === 'modern') expect(entry).to.include({ttlMs: 300_000, cacheScope: 'private'});
+        else expect(entry).to.not.have.any.keys('ttlMs', 'cacheScope');
+      }
     });
 
     it('logs client identity and protocol once on stderr at debug level', async () => {

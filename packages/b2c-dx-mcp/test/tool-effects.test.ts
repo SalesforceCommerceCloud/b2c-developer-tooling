@@ -5,7 +5,7 @@
  */
 
 import {expect} from 'chai';
-import {toToolAnnotations} from '../src/utils/index.js';
+import {toToolAnnotations, toToolMeta} from '../src/utils/index.js';
 
 describe('tool effects', () => {
   it('distinguishes non-destructive writes from reads and destructive updates', () => {
@@ -26,6 +26,15 @@ describe('tool effects', () => {
       destructiveHint: true,
       idempotentHint: true,
       openWorldHint: false,
+    });
+  });
+
+  it('advertises loading and search hints only when set', () => {
+    expect(toToolMeta({})).to.equal(undefined);
+    expect(toToolMeta({alwaysLoad: false, searchHint: ''})).to.equal(undefined);
+    expect(toToolMeta({alwaysLoad: true, searchHint: 'tail logs'})).to.deep.equal({
+      'anthropic/alwaysLoad': true,
+      'anthropic/searchHint': 'tail logs',
     });
   });
 });

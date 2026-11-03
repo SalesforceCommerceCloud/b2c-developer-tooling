@@ -9,7 +9,7 @@ import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
 import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
-import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES, toToolAnnotations} from './utils/index.js';
+import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES, toToolAnnotations, toToolMeta} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
 import type {ServerContext} from './server-context.js';
 import type {ServicesLoader} from './tools/adapter.js';
@@ -200,6 +200,7 @@ async function registerTools(tools: McpTool[], server: B2CDxMcpServer): Promise<
         title: tool.title,
         annotations: toToolAnnotations(tool),
         outputSchema: tool.outputSchema,
+        _meta: toToolMeta(tool),
       },
     );
   }

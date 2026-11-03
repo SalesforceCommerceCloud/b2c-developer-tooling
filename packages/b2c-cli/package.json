@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "2.10.2",
+  "version": "2.11.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -244,10 +244,24 @@
         }
       },
       "slas": {
-        "description": "Manage SLAS API clients and credentials\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
+        "description": "Manage SLAS tenants, clients, identity providers, and shoppers\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
         "subtopics": {
           "client": {
-            "description": "Manage SLAS client configurations\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html"
+            "description": "Manage SLAS client configurations\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html",
+            "subtopics": {
+              "template": {
+                "description": "Manage password action templates (passwordless login, password reset) of a SLAS client\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html"
+              }
+            }
+          },
+          "idp": {
+            "description": "Manage SLAS identity providers for social and third-party login\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html"
+          },
+          "shopper": {
+            "description": "Log out or delete SLAS shoppers\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html"
+          },
+          "tenant": {
+            "description": "View and update SLAS tenant registration\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/slas.html"
           }
         }
       },

@@ -110,6 +110,18 @@ otherwise. An invalid contract stops the server when passed by flag, or fails th
 SCAPI tool call when set in project configuration.
 Safety Mode and request targeting work as they do for other contracts.
 
+## Update check
+
+Once a day the server checks the npm registry (or `npm_config_registry`) for a
+newer release. The check runs in the background, so it never delays startup.
+When a newer version is known, the server instructions note it and how to
+upgrade (update the agent plugin or MCP server configuration, then restart), so
+the agent can mention it. `config_inspect` also reports the running and latest
+versions.
+
+The check is off in CI and when any of `SFCC_DISABLE_UPDATE_CHECK`,
+`SFCC_DISABLE_TELEMETRY`, or `SF_DISABLE_TELEMETRY` is `true`.
+
 ## Logging
 
 Use `--log-level debug` temporarily when investigating a connection or

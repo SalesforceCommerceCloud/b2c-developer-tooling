@@ -25,6 +25,7 @@ export function createDocsSchemaReadTool(loadServices: () => Promise<Services> |
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_schema_read',
+      searchHint: 'xsd xml import export file format structure elements catalog inventory promotions',
       effect: 'read',
       idempotent: true,
       openWorld: false,

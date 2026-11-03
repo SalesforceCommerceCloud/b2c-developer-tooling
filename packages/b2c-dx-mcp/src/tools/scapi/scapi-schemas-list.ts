@@ -380,11 +380,12 @@ export function createScapiSchemasListTool(
   return createToolAdapter<SchemasListInput, SchemaGetOutput | SchemasListOutput>(
     {
       name: 'scapi_schemas_list',
+      searchHint: 'available apis openapi spec families versions',
       effect: 'read',
       idempotent: true,
       openWorld: true,
       description:
-        'List SCAPI schema metadata or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
+        'List available SCAPI APIs (schema metadata) or fetch an OpenAPI schema. Fetch requires includeSchemas, apiFamily, apiName, and apiVersion. Use scapi_custom_apis_get_status for endpoint status.',
       toolsets: ['PWAV3', 'SCAPI', 'STOREFRONTNEXT'],
       requiresInstance: false, // SCAPI uses OAuth directly, doesn't need B2CInstance (hostname)
       usesConfigurationContext: true,

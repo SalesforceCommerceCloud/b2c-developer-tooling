@@ -167,6 +167,7 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
   return createToolAdapter<MetricsGetInput, MetricsGetOutput>(
     {
       name: 'metrics_get',
+      searchHint: 'performance slow latency response time error rate traffic requests observability health',
       effect: 'read',
       idempotent: true,
       openWorld: true,
@@ -279,7 +280,7 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
         };
       },
       // Compact JSON: indentation roughly doubles the size of per-minute series.
-      formatOutput: (output) => jsonResult(output, 0),
+      formatOutput: (output) => jsonResult(output),
     },
     loadServices,
   );

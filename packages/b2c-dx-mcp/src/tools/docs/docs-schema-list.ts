@@ -19,6 +19,7 @@ export function createDocsSchemaListTool(loadServices: () => Promise<Services> |
   return createToolAdapter<Record<string, never>, ListOutput>(
     {
       name: 'docs_schema_list',
+      searchHint: 'available xsd xml schemas formats',
       effect: 'read',
       idempotent: true,
       openWorld: false,

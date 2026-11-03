@@ -41,6 +41,7 @@ export function createDocsReadTool(
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_read',
+      searchHint: 'script api class reference documentation guide help article dw',
       effect: 'read',
       idempotent: true,
       openWorld: true,

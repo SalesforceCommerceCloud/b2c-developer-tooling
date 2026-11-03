@@ -34,6 +34,13 @@ import type {ContentRead, McpToolConfig, ToolContext} from './utils/types.js';
 /** MCP skills extension identifier (SEP-2640). */
 export const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
 
+/** SDK cacheHints cover only built-in methods; skills extension results are cacheable from 2026-07-28. */
+function skillsCacheHints(context: ServerContext): {cacheScope?: 'private'; ttlMs?: number} {
+  return (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY]
+    ? {ttlMs: 300_000, cacheScope: 'private'}
+    : {};
+}
+
 /**
  * Agent ids, matching environment agent detection, for MCP clients that name
  * themselves in `clientInfo`. Keys are lowercase. Clients spawned with no
@@ -75,6 +82,39 @@ export interface B2CDxMcpServerOptions extends ServerOptions {
  *
  * @augments {McpServer}
  */
+/** Drop JSON Schema keys that cost tokens in every tools/list without telling the model anything. */
+function stripSchemaNoise(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map((item) => stripSchemaNoise(item));
+  if (node === null || typeof node !== 'object') return node;
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (key === '$schema') continue;
+    // z.number().int() adds the safe-integer range to every integer field.
+    if ((key === 'minimum' || key === 'maximum') && Math.abs(value as number) === Number.MAX_SAFE_INTEGER) continue;
+    result[key] = stripSchemaNoise(value);
+  }
+  return result;
+}
+
+/** Make the MCP SDK list a schema without `$schema` and default safe-integer bounds; validation is unchanged. */
+export function compactJsonSchema<T extends z.ZodType>(schema: T): T {
+  const standard = schema['~standard'] as StandardJsonSchemaProps;
+  const {jsonSchema} = standard;
+  if (!jsonSchema) return schema;
+  (schema as {'~standard': StandardJsonSchemaProps})['~standard'] = {
+    ...standard,
+    jsonSchema: {
+      input: (options) => stripSchemaNoise(jsonSchema.input(options)) as Record<string, unknown>,
+      output: (options) => stripSchemaNoise(jsonSchema.output(options)) as Record<string, unknown>,
+    },
+  };
+  return schema;
+}
+
+type StandardJsonSchemaProps = z.ZodType['~standard'] & {
+  jsonSchema?: Record<'input' | 'output', (options: {target: string}) => Record<string, unknown>>;
+};
+
 export class B2CDxMcpServer extends McpServer {
   private readonly browserLogins = new BrowserLoginContinuations();
   private readonly cleanup?: () => Promise<void>;
@@ -140,10 +180,7 @@ export class B2CDxMcpServer extends McpServer {
         this.recordRequestClient(context);
         // One page: an issued cursor never exists, so any cursor is invalid.
         if (params?.cursor !== undefined) throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid cursor.');
-        const modern = Boolean(
-          (context.mcpReq?.envelope as Record<string, unknown> | undefined)?.[PROTOCOL_VERSION_META_KEY],
-        );
-        return {skills: skills.list(), ...(modern && {ttlMs: 300_000, cacheScope: 'private'})};
+        return {skills: skills.list(), ...skillsCacheHints(context)};
       },
     );
     this.server.setRequestHandler(
@@ -151,7 +188,7 @@ export class B2CDxMcpServer extends McpServer {
       {params: z.object({uri: z.string()}).loose()},
       async (params, context) => {
         this.recordRequestClient(context);
-        return {skill: skills.get(params.uri)};
+        return {skill: skills.get(params.uri), ...skillsCacheHints(context)};
       },
     );
   }
@@ -171,7 +208,10 @@ export class B2CDxMcpServer extends McpServer {
     description: string,
     inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>, context?: ToolContext) => Promise<CallToolResult>,
-    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
+    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {
+      annotations?: ToolAnnotations;
+      _meta?: Record<string, unknown>;
+    } = {},
   ): void {
     const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
       this.recordRequestClient(context);
@@ -248,9 +288,9 @@ export class B2CDxMcpServer extends McpServer {
       name,
       {
         description,
-        inputSchema: z.object(inputSchema).strict(),
+        inputSchema: compactJsonSchema(z.object(inputSchema).strict()),
         ...metadata,
-        outputSchema: metadata.outputSchema ? z.object(metadata.outputSchema) : undefined,
+        outputSchema: metadata.outputSchema ? compactJsonSchema(z.object(metadata.outputSchema)) : undefined,
       },
       wrappedHandler,
     );

@@ -37,7 +37,9 @@ For packaging and protocol details, read [the catalog contract](../../../package
 Native skill changes use an agent-plugin changeset; the MCP's bundled
 `workspace:*` dependency automatically triggers an MCP patch release. Keep it in
 `dependencies` and `bundledDependencies`, not `devDependencies`. MCP-specific
-skills and collection changes need an MCP changeset.
+skills and collection changes need an MCP changeset. Every bundled skill needs a
+short `skill://index` line in `packages/b2c-dx-mcp/skills/index-summaries.json`;
+add one when you add a skill (a test enforces this).
 
 ## Tools and context
 

@@ -105,17 +105,17 @@ export function createProjectDirectoryInput() {
     .string()
     .refine((value) => path.isAbsolute(value), 'projectDirectory must be an absolute path')
     .optional()
-    .describe('Absolute project root; overrides the server default.');
+    .describe('Absolute project root; overrides server default.');
 }
 
 /** Build the canonical explicit primary dw.json field. */
 export function createConfigPathInput() {
-  return z.string().optional().describe('Path to dw.json-format config; relative to projectDirectory.');
+  return z.string().optional().describe('dw.json-format file; relative to projectDirectory.');
 }
 
 /** Build the canonical named-instance selection field. */
 export function createInstanceNameInput() {
-  return z.string().min(1).optional().describe('Named instance from dw.json.');
+  return z.string().min(1).optional().describe('dw.json instance name.');
 }
 
 /** Build flat canonical schema fields for a local-project or configuration-aware tool. */

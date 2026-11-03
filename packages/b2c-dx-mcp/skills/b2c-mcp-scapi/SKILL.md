@@ -91,7 +91,8 @@ async () => {
 - Admin `AmOAuth2`: Account Manager `clientId`/secret. Shopper `ShopperToken`: SLAS guest (`slasClientId`, needs `siteId`).
 - Op's declared security picks credential. No auth option.
 - Missing creds: `config_inspect`. 401/403: keep `status`/`data`/`diagnostic`. 403 alone != missing scope.
-- Unsupported: registered-shopper-only ops, SLAS itself (`shopper/auth/v1`).
+- Unsupported: registered-shopper-only ops, SLAS itself (`shopper/auth/v1`), SLAS Admin (`shopper/auth-admin/v1`).
+- SLAS Admin tasks (tenants, SLAS clients, password action templates, identity providers, shopper logout, shopper GDPR delete): use the `b2c slas` CLI in a terminal (`b2c slas --help`). Logout and delete are destructive; confirm with the user first.
 - Detail: [authentication](references/authentication.md).
 
 ## Read when needed (do not read all)
@@ -105,4 +106,6 @@ async () => {
 | Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
 | Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |
 | System object attributes (`c_*` definitions, enum values, attribute groups); add attributes                         | [object-definitions](references/object-definitions.md)                         |
+| Categories/rules; CORS, timeouts, custom objects                                                                    | [catalogs](references/catalogs.md), [admin-config](references/admin-config.md) |
+| File upload/download ops (e.g. custom sitemap upload)                                                               | [file-transfer](references/file-transfer.md)                                   |
 | Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing               | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

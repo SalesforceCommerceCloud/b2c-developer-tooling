@@ -1,11 +1,11 @@
 ---
 name: b2c-slas
-description: Create, update, and manage SLAS (Shopper Login and API Access Service) clients using the b2c CLI. Use this skill whenever the user needs to provision a SLAS client, update OAuth scopes, rotate client secrets, get a shopper access token, or configure shopper authentication for headless, PWA, or Storefront Next (SFNext) storefronts — even if they just say "I need a shopper token" or "set up auth for my storefront".
+description: Create, update, and manage SLAS (Shopper Login and API Access Service) tenants, clients, password action templates, identity providers, and shopper sessions using the b2c CLI. Use this skill whenever the user needs to provision a SLAS client, update OAuth scopes, rotate client secrets, get a shopper access token, configure passwordless or password reset email/SMS templates, set up social login (Google, Apple, Okta, and others), force shoppers to log out, delete shopper login data for GDPR, or configure shopper authentication for headless, PWA, or Storefront Next (SFNext) storefronts — even if they just say "I need a shopper token" or "set up auth for my storefront".
 ---
 
 # B2C SLAS Skill
 
-Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) API clients and credentials.
+Use the `b2c` CLI plugin to manage SLAS (Shopper Login and API Access Service) tenants, API clients and credentials, password action templates, identity providers, and shopper sessions.
 
 > **Important:** SLAS is for **shopper** (customer) authentication used by storefronts and headless commerce. For **admin** tokens (OCAPI, Admin APIs), use `b2c auth token` - see the `b2c-config` skill.
 
@@ -23,8 +23,9 @@ Relevant overrides:
 - `--short-code` / `SFCC_SHORTCODE` / `shortCode`
 - `--slas-client-id` / `SFCC_SLAS_CLIENT_ID` / `slasClientId`
 - `--slas-client-secret` / `SFCC_SLAS_CLIENT_SECRET` / `slasClientSecret`
+- `--site-id` (alias `--channel-id`) / `SFCC_SITE_ID` / `siteId` — for `client template` and `shopper logout`
 
-Commands that target an existing client (`get`, `update`, `delete`, and `open`) use the configured `slasClientId` when their positional client ID is omitted. A positional client ID takes precedence over configuration.
+Commands that target an existing client (`get`, `update`, `delete`, `open`, and `client template`) use the configured `slasClientId` when their positional client ID is omitted. A positional client ID takes precedence over configuration.
 
 ## When to Use
 
@@ -33,6 +34,10 @@ Common scenarios requiring SLAS client management:
 - **Testing Custom APIs**: Create a client with custom scopes (e.g., `c_loyalty`) to test your Custom API endpoints
 - **PWA/Headless Development**: Configure clients for composable storefronts
 - **Integration Testing**: Create dedicated test clients with specific scope sets
+- **Passwordless login and password reset**: Manage the email/SMS templates SLAS sends (`slas client template`)
+- **Social and third-party login**: Configure identity providers (`slas idp`)
+- **Security incidents**: Log shoppers out of all sessions (`slas shopper logout`)
+- **GDPR deletion requests**: Delete a shopper's SLAS records (`slas shopper delete`)
 
 ## Examples
 
@@ -170,6 +175,89 @@ b2c slas client open
 
 # override the configured client ID
 b2c slas client open my-client-id
+```
+
+### Client Login Settings
+
+```bash
+# restrict login endpoints to this client and use 6-digit passwordless codes
+b2c slas client update my-client-id --login-restricted --six-digit-otp
+
+# require client authentication on token requests (private clients only)
+b2c slas client update my-client-id --strict-client-auth
+
+# convert a public client to private (prints the generated secret once)
+b2c slas client update my-client-id --private
+```
+
+Settings you don't pass keep their current values.
+
+### Password Action Templates
+
+Templates are keyed by site, action type (`PWDLESS_LOGIN`, `PWD_RESET_ACTION`, `PWD_RESET_CROSS_DEVICE_ACTION`, `WEBAUTHN_AUTHORIZE_USER`), template type (`EMAIL`, `SMS`), and locale.
+
+```bash
+# list templates of a client for a site
+b2c slas client template list my-client-id --site-id RefArch
+
+# create an email template for passwordless login
+b2c slas client template set my-client-id --site-id RefArch \
+  --action-type PWDLESS_LOGIN --template-type EMAIL --locale en-us \
+  --name "Login code" --subject "Your login code" \
+  --link 'https://example.com/login?token=${token}' --template-file login-email.html
+
+# change one field of an existing template
+b2c slas client template set my-client-id --site-id RefArch \
+  --action-type PWDLESS_LOGIN --template-type EMAIL --locale en-us --subject "Sign in"
+
+# delete a template
+b2c slas client template delete my-client-id --site-id RefArch \
+  --action-type PWDLESS_LOGIN --template-type EMAIL --locale en-us --force
+```
+
+### Identity Providers
+
+Names are a provider (`google`, `apple`, `okta`, `azure`, `auth0`, `facebook`, ...) optionally followed by `-<suffix>`. For any other OpenID Connect provider use `default` and pass `--claim-mapper` (for example `subject=sub,userId=sub,email=email,...`). Use `--idp-client-id`/`--idp-client-secret` for the provider's credentials; `--client-id`/`--client-secret` are the Account Manager credentials that call SLAS.
+
+```bash
+b2c slas idp list
+b2c slas idp get google
+
+# create; the SLAS callback URL is filled in for new providers
+b2c slas idp set google --idp-client-id 1234.apps.googleusercontent.com --idp-client-secret xxx \
+  --well-known-url https://accounts.google.com/.well-known/openid-configuration \
+  --auth-url https://accounts.google.com/o/oauth2/v2/auth --token-url https://oauth2.googleapis.com/token \
+  --token-info-url https://oauth2.googleapis.com/tokeninfo --user-info-url https://www.googleapis.com/oauth2/v3/userinfo \
+  --scopes openid,email,profile
+
+# update a single field
+b2c slas idp set google --preferred
+
+b2c slas idp delete google --force
+```
+
+Secrets are masked in output unless you pass `--show-secret`.
+
+### Tenant
+
+```bash
+b2c slas tenant get
+b2c slas tenant set --merchant-name "Example Store" --contact "Ops Team" --email ops@example.com
+```
+
+SLAS has no API to delete or list tenants.
+
+### Shopper Sessions and Data
+
+These commands are destructive: they prompt for confirmation (use `--force` in scripts) and are blocked by the `NO_UPDATE` safety level.
+
+```bash
+# log shoppers out of all sessions (batches of 50; exits 1 if any fail)
+b2c slas shopper logout --site-id RefArch --login-id a@example.com,b@example.com --force
+b2c slas shopper logout --site-id RefArch --file login-ids.txt --force --json
+
+# delete a shopper's SLAS records (GDPR); the B2C Commerce customer profile is separate
+b2c slas shopper delete abcdKZmKZm1234567890abcd --email shopper@example.com --force
 ```
 
 ### More Commands
