@@ -151,6 +151,7 @@ export interface TemplateQuery {
 /**
  * Fetch the templates of one client/site/action/type combination. SLAS requires all
  * four filters and answers 404 when nothing matches, which is returned as an empty list.
+ * A missing client or tenant is an error.
  */
 export async function fetchTemplates(
   slasClient: SlasClient,
@@ -167,7 +168,7 @@ export async function fetchTemplates(
     },
   );
   if (error) {
-    if (isSlasNotFound(error, response)) return [];
+    if (isSlasNotFound(error, response, 'PasswordActionTemplateNotFoundException')) return [];
     throw new Error(
       t('commands.slas.client.template.fetchError', 'Failed to get password action templates: {{message}}', {
         message: formatApiError(error, response),

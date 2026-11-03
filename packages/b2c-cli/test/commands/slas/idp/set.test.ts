@@ -6,6 +6,9 @@
 
 import {expect} from 'chai';
 import sinon from 'sinon';
+import {mkdtemp, rm, writeFile} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import {Config} from '@oclif/core';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
 import SlasIdpSet from '../../../../src/commands/slas/idp/set.js';
@@ -125,5 +128,37 @@ describe('slas idp set', () => {
     expect(body.clientSecret).to.equal('shh');
     expect(body.clientAuthType).to.equal('client_secret');
     expect(body).to.not.have.any.keys('id', 'tenantId', 'idpOrigin');
+  });
+
+  it('drops server-owned and masked fields from a --file copied from another tenant', async () => {
+    const exported = {
+      id: 7,
+      tenantId: 'abcd_123',
+      idpOrigin: 'google',
+      name: 'google',
+      clientId: 'c1',
+      clientSecret: 'shh',
+      authUrl: 'https://idp.example.com/auth',
+      tokenUrl: 'https://idp.example.com/token',
+      tokenInfoUrl: 'https://idp.example.com/info',
+      userInfoUrl: 'https://idp.example.com/user',
+      wellKnownUrl: 'https://idp.example.com/.well-known/openid-configuration',
+      redirectUrl: 'https://kv7kzm78.api.commercecloud.salesforce.com/shopper/auth/v1/idp/callback/google',
+      scopes: ['openid'],
+      privateJwtKeyPair: '********',
+    };
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'slas-idp-'));
+    const file = path.join(dir, 'google.json');
+    await writeFile(file, JSON.stringify(exported));
+    const command = await createCommand({'tenant-id': 'efgh_456', file}, {name: 'google'});
+    const putStub = sinon.stub().resolves({data: {name: 'google'}, error: undefined});
+    sinon.stub(command, 'getSlasClient').returns({GET: sinon.stub().resolves(notFound), PUT: putStub});
+
+    await command.run();
+
+    const {body} = putStub.firstCall.args[1];
+    expect(body).to.not.have.any.keys('id', 'tenantId', 'idpOrigin', 'privateJwtKeyPair');
+    expect(body.clientSecret).to.equal('shh');
+    await rm(dir, {recursive: true, force: true});
   });
 });

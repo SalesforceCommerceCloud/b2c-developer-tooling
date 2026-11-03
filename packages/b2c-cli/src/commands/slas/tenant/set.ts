@@ -46,7 +46,7 @@ export default class SlasTenantSet extends SlasClientCommand<typeof SlasTenantSe
     const existing = await slasClient.GET('/tenants/{tenantId}', {params: {path: {tenantId}}});
     let current: Partial<Tenant> | undefined;
     if (existing.error) {
-      if (!isSlasNotFound(existing.error, existing.response)) {
+      if (!isSlasNotFound(existing.error, existing.response, 'TenantNotFoundException')) {
         this.error(
           t('commands.slas.tenant.set.fetchError', 'Failed to get SLAS tenant: {{message}}', {
             message: formatApiError(existing.error, existing.response),

@@ -5,6 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {randomUUID} from 'node:crypto';
+import {ERROR_CODE} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   ExistingSlasClientCommand,
   clientSettingFlags,
@@ -139,6 +140,17 @@ export default class SlasClientUpdate extends ExistingSlasClientCommand<typeof S
     const existing = existingData as Client;
     const wasPrivate = existing.isPrivateClient ?? true;
     const isPrivate = makePublic ? false : makePrivate ? true : wasPrivate;
+
+    if (secret && !isPrivate) {
+      this.error(
+        t(
+          'commands.slas.client.update.secretPublic',
+          'Client {{clientId}} is public, so it has no secret to rotate. Add --private to make it private with this secret.',
+          {clientId},
+        ),
+        {code: ERROR_CODE.VALIDATION},
+      );
+    }
 
     if (!isPrivate && settings.strictClientAuth) {
       this.warn(

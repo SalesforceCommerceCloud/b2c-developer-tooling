@@ -135,15 +135,15 @@ export default class SlasIdpSet extends SlasClientCommand<typeof SlasIdpSet> {
       teamId: f['team-id'],
       keyId: f['key-id'],
     };
-    const changes = Object.fromEntries(
-      Object.entries({...fileValues, ...flagValues}).filter(([, v]) => v !== undefined),
-    ) as Partial<IdentityProviderRequest>;
+    // Drop unset flags first so they do not erase --file values.
+    const setFlags = Object.fromEntries(Object.entries(flagValues).filter(([, v]) => v !== undefined));
+    const changes = {...fileValues, ...setFlags} as Partial<IdentityProviderRequest>;
 
     const slasClient = this.getSlasClient();
     const current = await slasClient.GET('/tenants/{tenantId}/idps/{name}', {params: {path: {tenantId, name}}});
     let existing: IdentityProvider | undefined;
     if (current.error) {
-      if (!isSlasNotFound(current.error, current.response)) {
+      if (!isSlasNotFound(current.error, current.response, 'IdpNotFoundException')) {
         this.error(
           t('commands.slas.idp.get.error', 'Failed to get identity provider: {{message}}', {
             message: formatApiError(current.error, current.response),

@@ -363,9 +363,15 @@ export function slasExceptionName(error: unknown): string | undefined {
 /**
  * Whether a SLAS error means "nothing found". SLAS answers several list/read
  * calls with 404 (or 400 with a `*NotFoundException`) when the collection is empty.
+ *
+ * Pass `expected` when an empty result is acceptable: SLAS also answers 404 for a missing
+ * parent resource (for example `ClientNotFoundException` on a template lookup), which must
+ * surface as an error rather than as "nothing found".
  */
-export function isSlasNotFound(error: unknown, response: {status: number}): boolean {
-  return response.status === 404 || Boolean(slasExceptionName(error)?.endsWith('NotFoundException'));
+export function isSlasNotFound(error: unknown, response: {status: number}, expected?: string): boolean {
+  const name = slasExceptionName(error);
+  if (expected && name) return name === expected;
+  return response.status === 404 || Boolean(name?.endsWith('NotFoundException'));
 }
 
 /**

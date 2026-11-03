@@ -302,4 +302,25 @@ describe('slas client update', () => {
     expect(options.body.secret).to.match(/^sk_[0-9a-f]{32}$/);
     expect(result.secret).to.equal(options.body.secret);
   });
+
+  it('rejects --secret on a public client unless --private is given', async () => {
+    const command: any = await createCommand({'tenant-id': 'abcd_123', secret: 'new-secret'}, {clientId: 'my-client'});
+    stubAuthAndJson(command);
+
+    const putStub = sinon.stub();
+    sinon.stub(command, 'getSlasClient').returns({
+      GET: sinon.stub().resolves({data: {...existingPrivate, isPrivateClient: false}, error: undefined}),
+      PUT: putStub,
+    } as any);
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.firstCall.args[0]).to.include('is public');
+    expect(putStub.called).to.equal(false);
+  });
 });

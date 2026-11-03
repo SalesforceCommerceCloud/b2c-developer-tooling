@@ -16,12 +16,15 @@ export const IDP_PROVIDERS = [
   'apple',
   'auth0',
   'azure',
+  'azure_adb2c',
   'cognito',
+  'default',
   'facebook',
   'forgerock',
   'gigya',
   'gigya_social',
   'google',
+  'line',
   'okta',
   'ping',
   'salesforce',
@@ -69,14 +72,14 @@ export function buildIdpRequest(
   existing: IdentityProvider | undefined,
   changes: Partial<IdentityProviderRequest>,
 ): IdentityProviderRequest {
-  const base: Record<string, unknown> = {...existing};
-  for (const field of SERVER_FIELDS) delete base[field];
-  const merged: Record<string, unknown> = {...base, ...changes, name};
+  // Strip server-owned fields from both sides: a --file copied from another tenant carries its id/tenantId.
+  const merged: Record<string, unknown> = {...existing, ...changes, name};
+  for (const field of SERVER_FIELDS) delete merged[field];
   merged.isPreferred ??= false;
   merged.isClientCredsBody ??= false;
   if (existing) merged.clientAuthType ??= existing.clientAuthType ?? 'client_secret';
   for (const [key, value] of Object.entries(merged)) {
-    if (value === null || value === undefined) delete merged[key];
+    if (value === null || value === undefined || value === REDACTED) delete merged[key];
   }
   return merged as IdentityProviderRequest;
 }

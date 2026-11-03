@@ -85,4 +85,22 @@ describe('slas client template list', () => {
     });
     expect(result.templates).to.deep.equal([]);
   });
+
+  it('reports an unknown client instead of an empty list', async () => {
+    const command = await createCommand({'tenant-id': 'abcd_123', 'site-id': 'RefArch'}, {clientId: 'nope'});
+    const getStub = sinon.stub().resolves({
+      error: {exception_name: 'ClientNotFoundException', message: 'Client for action template not found'},
+      response: {status: 404, statusText: 'Not Found'},
+    });
+    sinon.stub(command, 'getSlasClient').returns({GET: getStub});
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    try {
+      await command.run();
+    } catch {
+      // expected
+    }
+
+    expect(errorStub.firstCall.args[0]).to.include('Client for action template not found');
+  });
 });

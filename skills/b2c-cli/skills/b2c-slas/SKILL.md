@@ -217,7 +217,7 @@ b2c slas client template delete my-client-id --site-id RefArch \
 
 ### Identity Providers
 
-Names are a provider (`google`, `apple`, `okta`, `azure`, `auth0`, `facebook`, ...) optionally followed by `-<suffix>`. Use `--idp-client-id`/`--idp-client-secret` for the provider's credentials; `--client-id`/`--client-secret` are the Account Manager credentials that call SLAS.
+Names are a provider (`google`, `apple`, `okta`, `azure`, `auth0`, `facebook`, ...) optionally followed by `-<suffix>`. For any other OpenID Connect provider use `default` and pass `--claim-mapper` (for example `subject=sub,userId=sub,email=email,...`). Use `--idp-client-id`/`--idp-client-secret` for the provider's credentials; `--client-id`/`--client-secret` are the Account Manager credentials that call SLAS.
 
 ```bash
 b2c slas idp list

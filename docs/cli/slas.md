@@ -6,6 +6,10 @@ description: Commands for managing Shopper Login and API Access Service (SLAS) t
 
 Commands for managing Shopper Login and API Access Service (SLAS) tenants, clients, password action templates, identity providers, and shopper sessions. For client types, user roles, and shopper authentication flows, see Salesforce's [Authorization for Shopper APIs](https://developer.salesforce.com/docs/commerce/commerce-api/guide/authorization-for-shopper-apis.html).
 
+::: tip
+New to SLAS? The [SLAS guide](/guide/slas) walks through common tasks step by step.
+:::
+
 ## Global SLAS Flags
 
 These flags are available on all SLAS commands:
@@ -703,7 +707,7 @@ b2c slas idp get <NAME> --tenant-id <TENANT_ID> [--show-secret]
 
 Create or update an identity provider for social or third-party shopper login. When the provider exists, only the fields you pass change.
 
-The name must be a supported provider (`adfs`, `apple`, `auth0`, `azure`, `cognito`, `facebook`, `forgerock`, `gigya`, `gigya_social`, `google`, `okta`, `ping`, `salesforce`), optionally followed by `-<suffix>`, for example `google-staging`.
+The name must be a supported provider (`adfs`, `apple`, `auth0`, `azure`, `azure_adb2c`, `cognito`, `facebook`, `forgerock`, `gigya`, `gigya_social`, `google`, `line`, `okta`, `ping`, `salesforce`), or `default` for any other OpenID Connect provider, optionally followed by `-<suffix>`, for example `google-staging`. A `default` provider needs `--claim-mapper` to tell SLAS which claims hold the shopper's details.
 
 ### Usage
 

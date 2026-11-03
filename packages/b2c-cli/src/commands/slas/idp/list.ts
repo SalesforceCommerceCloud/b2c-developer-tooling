@@ -58,7 +58,7 @@ export default class SlasIdpList extends SlasClientCommand<typeof SlasIdpList> {
     });
 
     // SLAS answers 404 when a tenant has no identity providers.
-    if (error && !isSlasNotFound(error, response)) {
+    if (error && !isSlasNotFound(error, response, 'IdpNotFoundException')) {
       this.error(
         t('commands.slas.idp.list.error', 'Failed to list identity providers: {{message}}', {
           message: formatApiError(error, response),
