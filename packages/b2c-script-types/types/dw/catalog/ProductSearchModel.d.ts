@@ -449,7 +449,7 @@ declare class ProductSearchModel extends SearchModel {
      * Returns the underlying ProductSearchHit for a product, or null if no
      * ProductSearchHit found for this product.
      */
-    getProductSearchHit(product: Product<any>): ProductSearchHit | null;
+    getProductSearchHit(product: Product): ProductSearchHit | null;
     /**
      * Returns the product search hits in the search result.
      * 

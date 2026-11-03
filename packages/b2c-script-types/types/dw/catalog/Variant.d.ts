@@ -112,7 +112,7 @@ declare class Variant extends Product<ICustomAttributes.Variant> {
     /**
      * Returns the ProductMaster for this mastered product.
      */
-    readonly masterProduct: Product<any>;
+    readonly masterProduct: Product;
     /**
      * Returns the name of the product variant.
      * 
@@ -359,7 +359,7 @@ declare class Variant extends Product<ICustomAttributes.Variant> {
     /**
      * Returns the ProductMaster for this mastered product.
      */
-    getMasterProduct(): Product<any>;
+    getMasterProduct(): Product;
     /**
      * Returns the name of the product variant.
      * 

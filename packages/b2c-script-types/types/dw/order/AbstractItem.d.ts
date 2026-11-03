@@ -21,7 +21,7 @@ declare abstract class AbstractItem extends Extensible {
     /**
      * Returns the Order Product- or Shipping- LineItem associated with this item. Should never return null.
      */
-    readonly lineItem: LineItem<any>;
+    readonly lineItem: LineItem;
     /**
      * Net price of item.
      */
@@ -59,7 +59,7 @@ declare abstract class AbstractItem extends Extensible {
     /**
      * Returns the Order Product- or Shipping- LineItem associated with this item. Should never return null.
      */
-    getLineItem(): LineItem<any>;
+    getLineItem(): LineItem;
     /**
      * Net price of item.
      */

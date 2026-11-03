@@ -29,7 +29,7 @@ declare class BonusChoiceDiscount extends Discount {
      * dw.catalog.ProductSearchModel.PROMOTION_PRODUCT_TYPE_BONUS and
      * dw.catalog.ProductSearchModel.setPromotionID
      */
-    readonly bonusProducts: List<Product<any>>;
+    readonly bonusProducts: List<Product>;
     /**
      * Returns the maximum number of bonus items that a customer is entitled to
      * select for this discount.
@@ -59,7 +59,7 @@ declare class BonusChoiceDiscount extends Discount {
      * be returned. If the passed product is not a valid bonus product, this
      * method throws an exception.
      */
-    getBonusProductPrice(product: Product<any>): number;
+    getBonusProductPrice(product: Product): number;
     /**
      * Get the list of bonus products which the customer is allowed to choose
      * from for this discount. This list is configured by a merchant entering a
@@ -81,7 +81,7 @@ declare class BonusChoiceDiscount extends Discount {
      * dw.catalog.ProductSearchModel.PROMOTION_PRODUCT_TYPE_BONUS and
      * dw.catalog.ProductSearchModel.setPromotionID
      */
-    getBonusProducts(): List<Product<any>>;
+    getBonusProducts(): List<Product>;
     /**
      * Returns the maximum number of bonus items that a customer is entitled to
      * select for this discount.

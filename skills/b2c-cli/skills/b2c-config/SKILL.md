@@ -232,6 +232,9 @@ Use `b2c setup ide` to configure IDE tooling that consumes the resolved CLI conf
 # Vendor Script API TypeScript definitions + jsconfig.json (plain VS Code, WebStorm, etc.)
 b2c setup ide vscode-types
 
+# Also type obj.custom.* from the instance's custom attributes (needs sfcc.object-definitions scope)
+b2c setup ide vscode-types --custom-attributes --force
+
 # Print the TS Server plugin path for LSP-based editors (Neovim, Helix, Zed, ...)
 b2c setup ide tsserver-plugin --json
 ```

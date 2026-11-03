@@ -98,7 +98,7 @@ declare class Shipment extends ExtensibleObject<ICustomAttributes.Shipment> {
      * Each dw.order.ProductLineItem in the collection may itself contain bundled or option product line items,
      * as well as a product-level shipping line item.
      */
-    readonly allLineItems: Collection<LineItem<any>>;
+    readonly allLineItems: Collection<LineItem>;
     /**
      * Returns true if this is the default shipment. The default is the shipment with ID "me". If no shipment with
      * ID "me" exists, the shipment with the lowest ID is used as the default. A "me" shipment can be absent if
@@ -317,7 +317,7 @@ declare class Shipment extends ExtensibleObject<ICustomAttributes.Shipment> {
      * Each dw.order.ProductLineItem in the collection may itself contain bundled or option product line items,
      * as well as a product-level shipping line item.
      */
-    getAllLineItems(): Collection<LineItem<any>>;
+    getAllLineItems(): Collection<LineItem>;
     /**
      * Returns all gift certificate line items of the shipment.
      */

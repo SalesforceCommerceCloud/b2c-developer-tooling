@@ -105,7 +105,7 @@ declare class PromotionMgr {
      * container if the related to promotions/discounts are no longer
      * applicable.
      */
-    static applyDiscounts(lineItemCtnr: LineItemCtnr<any>): void;
+    static applyDiscounts(lineItemCtnr: LineItemCtnr): void;
     /**
      * Applies the discounts contained in the specified discount plan
      * to the line item container associated with the discount
@@ -204,7 +204,7 @@ declare class PromotionMgr {
      * The applicable discounts are contained in the returned instance of
      * dw.campaign.DiscountPlan.
      */
-    static getDiscounts(lineItemCtnr: LineItemCtnr<any>): DiscountPlan;
+    static getDiscounts(lineItemCtnr: LineItemCtnr): DiscountPlan;
     /**
      * Returns the discounts applicable for the current customer, active
      * source code and specified line item container, based on the specified
@@ -218,7 +218,7 @@ declare class PromotionMgr {
      * The applicable discounts are contained in the returned instance of
      * dw.campaign.DiscountPlan.
      */
-    static getDiscounts(lineItemCtnr: LineItemCtnr<any>, promotionPlan: PromotionPlan): DiscountPlan;
+    static getDiscounts(lineItemCtnr: LineItemCtnr, promotionPlan: PromotionPlan): DiscountPlan;
     /**
      * Returns the promotion identified by the specified ID. The same logical
      * promotion may be assigned to multiple campaigns or AB-tests. In this

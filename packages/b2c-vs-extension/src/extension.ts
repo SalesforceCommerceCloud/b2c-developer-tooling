@@ -1114,7 +1114,7 @@ async function activateInner(
   }
   if (settings.get<boolean>('features.scriptTypes', true)) {
     runActivationStep(log, 'Script Types registration', () => {
-      registerScriptTypes(context, cartridgeService, log);
+      registerScriptTypes(context, cartridgeService, configProvider, log);
     });
   }
 

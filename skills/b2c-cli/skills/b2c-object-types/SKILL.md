@@ -106,6 +106,7 @@ b2c object-types apply site-data/meta/system-objecttype-extensions.xml -t Produc
 - **The value type can't change** after an attribute is created. Delete the attribute and recreate it, which removes its stored values.
 - **`create --replace` replaces the whole definition.** Properties you leave out are reset to their defaults. Use `update` for partial changes.
 - **System attributes** can't be deleted, but they can be assigned to custom groups.
+- **Script API IntelliSense** for `obj.custom.*` is generated from these definitions with `b2c setup ide vscode-types --custom-attributes` (`b2c-cli:b2c-config`).
 - For changes that must be repeatable across environments (CI, many sandboxes), keep metadata XML in an import set (`b2c-cli:b2c-import-set-migrations`). `apply --dry-run` shows how an instance differs from that XML.
 
 ## Related Skills

@@ -122,7 +122,7 @@ declare interface ShippingHooks {
      * 
      * exports.calculate = calculate;
      */
-    calculate(lineItemCtnr: LineItemCtnr<any>): Status | null;
+    calculate(lineItemCtnr: LineItemCtnr): Status | null;
     /**
      * The function is called by extension point extensionPointQuote on every invocation of
      * `GET /baskets/{basket_id}/shipments/{shipment_id}/shipping_methods`. ECOM pre-populates a

@@ -39,7 +39,7 @@ declare class CategoryAssignment extends ExtensibleObject<ICustomAttributes.Cate
     /**
      * Returns the product to which this category assignment is bound.
      */
-    readonly product: Product<any>;
+    readonly product: Product;
     /**
      * Returns the category assignment's short description in the current locale.
      */
@@ -68,7 +68,7 @@ declare class CategoryAssignment extends ExtensibleObject<ICustomAttributes.Cate
     /**
      * Returns the product to which this category assignment is bound.
      */
-    getProduct(): Product<any>;
+    getProduct(): Product;
     /**
      * Returns the category assignment's short description in the current locale.
      */

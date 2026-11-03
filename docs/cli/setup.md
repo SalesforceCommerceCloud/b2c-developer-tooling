@@ -278,12 +278,16 @@ b2c setup ide vscode-types [FLAGS]
 
 ### Flags
 
-| Flag             | Description                                                       | Default         |
-| ---------------- | ----------------------------------------------------------------- | --------------- |
-| `--output`, `-o` | Path for the generated `jsconfig.json` (relative to project root) | `jsconfig.json` |
-| `--force`, `-f`  | Overwrite output files if they already exist                      | `false`         |
-| `--[no-]copy`    | Copy bundled types into `./.b2c-script-types/`                    | `true`          |
-| `--json`         | Output results as JSON                                            | `false`         |
+| Flag                  | Description                                                                                      | Default         |
+| --------------------- | ------------------------------------------------------------------------------------------------ | --------------- |
+| `--output`, `-o`      | Path for the generated `jsconfig.json` (relative to project root)                                | `jsconfig.json` |
+| `--force`, `-f`       | Overwrite output files if they already exist                                                     | `false`         |
+| `--[no-]copy`         | Copy bundled types into `./.b2c-script-types/`                                                   | `true`          |
+| `--custom-attributes` | Also generate `./.b2c-script-types/custom-attributes.d.ts` from the instance's custom attributes | `false`         |
+| `--object-type`       | Object type to include with `--custom-attributes` (repeatable)                                   | all             |
+| `--json`              | Output results as JSON                                                                           | `false`         |
+
+`--custom-attributes` reads attribute definitions from the instance through the Object Definitions API, so it needs an Account Manager API client with the `sfcc.object-definitions` scope plus `short-code` and `tenant-id` (see [Object Types](./object-types.md)). Enum values become literal types only with `sfcc.object-definitions.rw`; without it, the file is generated without them.
 
 The generated `paths` mappings are written relative to the repo root, so `--output` is only intended for renaming the file itself (e.g., `--output jsconfig.cartridges.json`), not for relocating it into a subdirectory.
 
@@ -298,6 +302,12 @@ b2c setup ide vscode-types --force
 
 # Regenerate jsconfig only (skip the type bundle copy; types must already be vendored)
 b2c setup ide vscode-types --no-copy --force
+
+# Add the instance's custom attributes (product.custom.color, ...)
+b2c setup ide vscode-types --custom-attributes --force
+
+# Only some object types
+b2c setup ide vscode-types --custom-attributes --object-type Product --object-type Order --force
 ```
 
 ### Output
@@ -305,6 +315,7 @@ b2c setup ide vscode-types --no-copy --force
 The command produces:
 
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions, version-pinned to the CLI release. Safe to commit.
+- `./.b2c-script-types/custom-attributes.d.ts` (with `--custom-attributes`) — custom attribute declarations for the configured instance, so `product.custom.myAttribute` gets completions, hover docs, and types. Regenerate it when attribute definitions change. The VS Code extension uses this file instead of its own background copy when it exists.
 - `./jsconfig.json` (or the path passed to `--output`) — TypeScript Language Service configuration mapping `dw/*` to the vendored types. Cartridge-relative requires (`~/cartridge/...`, `*/cartridge/...`) can't be expressed in standalone TypeScript `paths` mappings and will appear unresolved without the Salesforce B2C Commerce VS Code extension.
 
 See the [IDE Integration guide](/guide/ide-integration#script-api-intellisense) for editor-specific setup notes (Neovim, Helix, Zed, etc.).

@@ -54,7 +54,7 @@ declare class ProductInventoryList extends ExtensibleObject<ICustomAttributes.Pr
      * Returns the inventory record for the specified product or null
      * if there is no record for the product in this list.
      */
-    getRecord(product: Product<any>): ProductInventoryRecord | null;
+    getRecord(product: Product): ProductInventoryRecord | null;
     /**
      * Returns the inventory record for the specified product ID or null
      * if there is no record for the product id in this list.

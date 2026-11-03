@@ -27,11 +27,11 @@ b2c object-types apply meta/system-objecttype-extensions.xml --dry-run
 
 Object type commands require an Account Manager API client with OAuth credentials, a tenant ID, and a short code.
 
-| Scope | When requested |
-|-------|----------------|
-| `sfcc.object-definitions.rw` | Write commands, plus filtered listing (`--custom`, `--system`, `--search`, `--group`) and enum values (`--values`, `attributes get`) |
-| `sfcc.object-definitions` | Read-only fallback for unfiltered `list` and `get` |
-| `SALESFORCE_COMMERCE_API:<tenant_id>` | Always |
+| Scope                                 | When requested                                                                                                                       |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `sfcc.object-definitions.rw`          | Write commands, plus filtered listing (`--custom`, `--system`, `--search`, `--group`) and enum values (`--values`, `attributes get`) |
+| `sfcc.object-definitions`             | Read-only fallback for unfiltered `list` and `get`                                                                                   |
+| `SALESFORCE_COMMERCE_API:<tenant_id>` | Always                                                                                                                               |
 
 The read-only scope can't run attribute searches. If your client has only `sfcc.object-definitions`, the filtered listings and enum values fail with a 403.
 
@@ -52,6 +52,10 @@ For setup details, see the [Authentication Guide](/guide/authentication#scapi-au
 b2c object-types attributes create Product fabric --type string -n Fabric -n fr=Tissu -n de=Stoff
 ```
 
+## Script API IntelliSense
+
+Attribute definitions also drive custom attribute IntelliSense (`product.custom.myAttribute`) in cartridge code. Generate the declarations with `b2c setup ide vscode-types --custom-attributes` (see [Setup](./setup.md#b2c-setup-ide-vscode-types)); the VS Code extension generates them automatically. See the [IDE Integration guide](/guide/ide-integration#custom-attributes).
+
 ---
 
 ## b2c object-types list
@@ -64,11 +68,11 @@ b2c object-types list --extended
 b2c object-types list --json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--columns`, `-c` | Columns: `objectType`, `displayName`, `attributes`, `groups`, `readOnly`, `contentObject`, `description` |
-| `--extended`, `-x` | Show all columns |
-| `--json` | Output as JSON |
+| Flag               | Description                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `--columns`, `-c`  | Columns: `objectType`, `displayName`, `attributes`, `groups`, `readOnly`, `contentObject`, `description` |
+| `--extended`, `-x` | Show all columns                                                                                         |
+| `--json`           | Output as JSON                                                                                           |
 
 ## b2c object-types get
 
@@ -88,11 +92,11 @@ b2c object-types export Product Order -o site-data/meta/system-objecttype-extens
 b2c object-types export Product --format json -o product.json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--output`, `-o` | File to write. Without it, the output goes to stdout. |
-| `--format` | `xml` (default) or `json` |
-| `--include-internal` | Include internal attribute groups |
+| Flag                 | Description                                           |
+| -------------------- | ----------------------------------------------------- |
+| `--output`, `-o`     | File to write. Without it, the output goes to stdout. |
+| `--format`           | `xml` (default) or `json`                             |
+| `--include-internal` | Include internal attribute groups                     |
 
 ## b2c object-types apply
 
@@ -104,11 +108,11 @@ b2c object-types apply site-data --force
 b2c object-types apply site-data -t Product -t Order
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--dry-run` | Show the changes without applying them |
-| `--type`, `-t` | Only apply these object types (repeatable) |
-| `--force`, `-f` | Skip the confirmation prompt |
+| Flag            | Description                                |
+| --------------- | ------------------------------------------ |
+| `--dry-run`     | Show the changes without applying them     |
+| `--type`, `-t`  | Only apply these object types (repeatable) |
+| `--force`, `-f` | Skip the confirmation prompt               |
 
 The changes are additive:
 
@@ -133,16 +137,16 @@ b2c object-types attributes list Product --group storefrontAttributes
 b2c object-types attributes list Order --custom --json
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--custom` | Only custom attributes |
-| `--system` | Only system attributes |
-| `--search`, `-q` | Filter by text in the attribute ID or display name |
-| `--group`, `-g` | Only attributes assigned to this group |
-| `--values` | Include enum values (always on with `--extended`) |
-| `--columns`, `-c` | Columns: `id`, `displayName`, `valueType`, `system`, `mandatory`, `localizable`, `siteSpecific`, `searchable`, `multiValue`, `values` |
-| `--extended`, `-x` | Show all columns |
-| `--json` | Output as JSON |
+| Flag               | Description                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `--custom`         | Only custom attributes                                                                                                                |
+| `--system`         | Only system attributes                                                                                                                |
+| `--search`, `-q`   | Filter by text in the attribute ID or display name                                                                                    |
+| `--group`, `-g`    | Only attributes assigned to this group                                                                                                |
+| `--values`         | Include enum values (always on with `--extended`)                                                                                     |
+| `--columns`, `-c`  | Columns: `id`, `displayName`, `valueType`, `system`, `mandatory`, `localizable`, `siteSpecific`, `searchable`, `multiValue`, `values` |
+| `--extended`, `-x` | Show all columns                                                                                                                      |
+| `--json`           | Output as JSON                                                                                                                        |
 
 ## b2c object-types attributes get
 
@@ -164,15 +168,15 @@ b2c object-types attributes create Order erpId --type string --no-visible --exte
 b2c object-types attributes create Product fabric --file fabric.json --replace
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--type`, `-t` | Value type: `string`, `int`, `double`, `text`, `html`, `date`, `image`, `boolean`, `money`, `quantity`, `datetime`, `email`, `password`, `set_of_string`, `set_of_int`, `set_of_double`, `enum_of_string`, `enum_of_int`. Required unless the file sets `valueType`. |
-| `--file` | JSON body in the API's `ObjectAttributeDefinition` shape. Use `-` to read stdin. Flags override values from the file. |
-| `--replace` | Overwrite an existing definition. Properties you leave out are reset. |
-| `--display-name`, `-n` | Display name; repeatable as `locale=text` |
-| `--description` | Description; repeatable as `locale=text` |
-| `--[no-]mandatory`, `--[no-]localizable`, `--[no-]site-specific`, `--[no-]searchable`, `--[no-]visible`, `--[no-]multi-value`, `--[no-]externally-managed`, `--[no-]order-required` | Boolean properties |
-| `--min-length`, `--field-length`, `--regular-expression` | String constraints |
+| Flag                                                                                                                                                                                | Description                                                                                                                                                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--type`, `-t`                                                                                                                                                                      | Value type: `string`, `int`, `double`, `text`, `html`, `date`, `image`, `boolean`, `money`, `quantity`, `datetime`, `email`, `password`, `set_of_string`, `set_of_int`, `set_of_double`, `enum_of_string`, `enum_of_int`. Required unless the file sets `valueType`. |
+| `--file`                                                                                                                                                                            | JSON body in the API's `ObjectAttributeDefinition` shape. Use `-` to read stdin. Flags override values from the file.                                                                                                                                                |
+| `--replace`                                                                                                                                                                         | Overwrite an existing definition. Properties you leave out are reset.                                                                                                                                                                                                |
+| `--display-name`, `-n`                                                                                                                                                              | Display name; repeatable as `locale=text`                                                                                                                                                                                                                            |
+| `--description`                                                                                                                                                                     | Description; repeatable as `locale=text`                                                                                                                                                                                                                             |
+| `--[no-]mandatory`, `--[no-]localizable`, `--[no-]site-specific`, `--[no-]searchable`, `--[no-]visible`, `--[no-]multi-value`, `--[no-]externally-managed`, `--[no-]order-required` | Boolean properties                                                                                                                                                                                                                                                   |
+| `--min-length`, `--field-length`, `--regular-expression`                                                                                                                            | String constraints                                                                                                                                                                                                                                                   |
 
 Without `--replace`, the command fails if the attribute already exists.
 
@@ -227,12 +231,12 @@ Create an attribute group and, if you pass `--attribute`, assign attributes to i
 b2c object-types groups create Product materials --display-name Materials -a c_fabric -a c_lining
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--display-name`, `-n` | Display name; repeatable as `locale=text` |
-| `--description` | Description; repeatable as `locale=text` |
-| `--position` | Sort position in Business Manager |
-| `--attribute`, `-a` | Attribute to assign (repeatable). System attributes can be assigned too. |
+| Flag                   | Description                                                              |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `--display-name`, `-n` | Display name; repeatable as `locale=text`                                |
+| `--description`        | Description; repeatable as `locale=text`                                 |
+| `--position`           | Sort position in Business Manager                                        |
+| `--attribute`, `-a`    | Attribute to assign (repeatable). System attributes can be assigned too. |
 
 The command fails if the group already exists. Use `groups update` to change it.
 

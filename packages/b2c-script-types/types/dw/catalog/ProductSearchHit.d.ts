@@ -89,7 +89,7 @@ declare class ProductSearchHit {
      * @see getRepresentedProducts
      * @see getLastRepresentedProduct
      */
-    readonly firstRepresentedProduct: Product<any>;
+    readonly firstRepresentedProduct: Product;
     /**
      * Returns the ID of the product that is actually hit by the search and has the highest
      * sort rank according to the sorting conditions used for the search query.
@@ -114,7 +114,7 @@ declare class ProductSearchHit {
      * @see getRepresentedProducts
      * @see getLastRepresentedProduct
      */
-    readonly lastRepresentedProduct: Product<any>;
+    readonly lastRepresentedProduct: Product;
     /**
      * Returns the ID of the product that is actually hit by the search and has the lowest
      * sort rank according to the sorting conditions used for the search query.
@@ -180,7 +180,7 @@ declare class ProductSearchHit {
      * To retrieve the product(s) actually hit by the search use getRepresentedProducts.
      * @see getRepresentedProducts
      */
-    readonly product: Product<any>;
+    readonly product: Product;
     /**
      * Returns the ID of the presentation product of this ProductSearchHit corresponding to the ProductSearchHit type.
      * 
@@ -229,7 +229,7 @@ declare class ProductSearchHit {
      * @see getFirstRepresentedProduct
      * @see getLastRepresentedProduct
      */
-    readonly representedProducts: List<Product<any>>;
+    readonly representedProducts: List<Product>;
     private constructor();
     /**
      * Returns the product that is actually hit by the search and has the highest
@@ -237,7 +237,7 @@ declare class ProductSearchHit {
      * @see getRepresentedProducts
      * @see getLastRepresentedProduct
      */
-    getFirstRepresentedProduct(): Product<any>;
+    getFirstRepresentedProduct(): Product;
     /**
      * Returns the ID of the product that is actually hit by the search and has the highest
      * sort rank according to the sorting conditions used for the search query.
@@ -262,7 +262,7 @@ declare class ProductSearchHit {
      * @see getRepresentedProducts
      * @see getLastRepresentedProduct
      */
-    getLastRepresentedProduct(): Product<any>;
+    getLastRepresentedProduct(): Product;
     /**
      * Returns the ID of the product that is actually hit by the search and has the lowest
      * sort rank according to the sorting conditions used for the search query.
@@ -322,7 +322,7 @@ declare class ProductSearchHit {
      * To retrieve the product(s) actually hit by the search use getRepresentedProducts.
      * @see getRepresentedProducts
      */
-    getProduct(): Product<any>;
+    getProduct(): Product;
     /**
      * Returns the ID of the presentation product of this ProductSearchHit corresponding to the ProductSearchHit type.
      * 
@@ -371,7 +371,7 @@ declare class ProductSearchHit {
      * @see getFirstRepresentedProduct
      * @see getLastRepresentedProduct
      */
-    getRepresentedProducts(): List<Product<any>>;
+    getRepresentedProducts(): List<Product>;
     /**
      * This method is only applicable if this ProductSearchHit represents a
      * product variation (see getRepresentedProducts). It returns the

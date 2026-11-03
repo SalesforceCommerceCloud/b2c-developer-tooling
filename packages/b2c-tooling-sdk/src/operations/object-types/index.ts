@@ -31,6 +31,12 @@ export type {
   ObjectTypeExtension,
   ParsedObjectTypeExtensions,
 } from './meta-xml.js';
+export {buildCustomAttributeTypes, customAttributePropertyTypes, generateCustomAttributeTypes} from './script-types.js';
+export type {
+  CustomAttributeTypeSource,
+  CustomAttributeTypesResult,
+  GenerateCustomAttributeTypesOptions,
+} from './script-types.js';
 export {applyObjectTypeSync, exportObjectTypes, planObjectTypeSync} from './sync.js';
 export type {
   ExportObjectTypesOptions,
