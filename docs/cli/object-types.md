@@ -11,6 +11,8 @@ b2c object-types list
 b2c object-types attributes list Product --custom
 b2c object-types attributes create Product fabric --type string --display-name Fabric
 b2c object-types groups create Product materials --display-name Materials -a fabric
+b2c object-types export Product -o meta/system-objecttype-extensions.xml
+b2c object-types apply meta/system-objecttype-extensions.xml --dry-run
 ```
 
 ## What the API Can and Cannot Do
@@ -75,6 +77,47 @@ Show one system object type.
 ```bash
 b2c object-types get Product
 ```
+
+## b2c object-types export
+
+Export the custom attribute definitions and attribute groups of one or more object types as metadata XML (`system-objecttype-extensions.xml`), the format used by site imports. System attribute definitions aren't exported. Groups marked internal are left out unless you pass `--include-internal`.
+
+```bash
+b2c object-types export Product
+b2c object-types export Product Order -o site-data/meta/system-objecttype-extensions.xml
+b2c object-types export Product --format json -o product.json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--output`, `-o` | File to write. Without it, the output goes to stdout. |
+| `--format` | `xml` (default) or `json` |
+| `--include-internal` | Include internal attribute groups |
+
+## b2c object-types apply
+
+Compare metadata XML with the instance and make the differences through the API, with no import job. The path can be a metadata XML file, a JSON file from `export --format json`, or a directory. For a directory, the command reads the `*.xml` files in it and in its `meta/` folder, so a site archive folder works.
+
+```bash
+b2c object-types apply meta/system-objecttype-extensions.xml --dry-run
+b2c object-types apply site-data --force
+b2c object-types apply site-data -t Product -t Order
+```
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Show the changes without applying them |
+| `--type`, `-t` | Only apply these object types (repeatable) |
+| `--force`, `-f` | Skip the confirmation prompt |
+
+The changes are additive:
+
+- Missing custom attributes are created.
+- Properties that differ are updated. For localized values, only the locales in the file are compared and written, and other locales on the instance are kept.
+- System attribute overrides (`<system-attribute-definitions>`) update the display name, description, visibility, and order-required flag.
+- Missing groups are created, and missing attributes are assigned to groups.
+
+Nothing is deleted or unassigned. The API can't apply some things in the file. Enum values, default values, value type changes, and custom object types are listed as warnings. To apply them, import the file with [`b2c job import`](/cli/jobs#b2c-job-import).
 
 ---
 

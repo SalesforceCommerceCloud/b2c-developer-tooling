@@ -15,6 +15,8 @@ Use `b2c object-types` to work with the attribute definitions and attribute grou
 object-types
 ├── list                                   - system object types with attribute/group counts
 ├── get <type>
+├── export <type...> [-o file] [--format xml|json]   - custom attributes + groups as metadata XML
+├── apply <file|dir> [--dry-run] [-t type] [--force]  - create/update from metadata XML or JSON
 ├── attributes
 │   ├── list <type> [--custom|--system] [-q text] [-g group] [--values]
 │   ├── get <type> <id>                    - includes enum values
@@ -79,6 +81,24 @@ b2c object-types groups assign Product materials c_care
 b2c object-types attributes delete Product c_fabric --force
 ```
 
+## Export and Apply Metadata XML
+
+`export` writes custom attribute definitions and groups as `system-objecttype-extensions.xml`. `apply` compares a metadata XML file (or a site archive directory with `meta/*.xml`) against the instance and makes the changes through the API, with no import job.
+
+```bash
+# Snapshot Product and Order definitions into an import set
+b2c object-types export Product Order -o site-data/meta/system-objecttype-extensions.xml
+
+# Preview what applying a file would change, then apply it
+b2c object-types apply site-data --dry-run
+b2c object-types apply site-data --force
+
+# Only one object type from a larger file
+b2c object-types apply site-data/meta/system-objecttype-extensions.xml -t Product --dry-run
+```
+
+`apply` is additive: it creates missing attributes and groups, updates properties that differ, and assigns missing group members. It never deletes or unassigns. Enum values, default values, value type changes, and custom object types are reported as warnings; import those with `b2c job import`.
+
 ## Limits — When to Use a Site Import Instead
 
 - **Enum values can't be written.** `valueDefinitions` is ignored on create and update. For `enum_of_string` or `enum_of_int` values, use `meta/system-objecttype-extensions.xml` with `b2c job import` (see `b2c:b2c-metadata`). You can read the values with `attributes get`.
@@ -86,7 +106,7 @@ b2c object-types attributes delete Product c_fabric --force
 - **The value type can't change** after an attribute is created. Delete the attribute and recreate it, which removes its stored values.
 - **`create --replace` replaces the whole definition.** Properties you leave out are reset to their defaults. Use `update` for partial changes.
 - **System attributes** can't be deleted, but they can be assigned to custom groups.
-- For changes that must be repeatable across environments (CI, many sandboxes), prefer metadata XML in an import set (`b2c-cli:b2c-import-set-migrations`). The CLI commands are best for exploring, quick changes, and sandboxes.
+- For changes that must be repeatable across environments (CI, many sandboxes), keep metadata XML in an import set (`b2c-cli:b2c-import-set-migrations`). `apply --dry-run` shows how an instance differs from that XML.
 
 ## Related Skills
 

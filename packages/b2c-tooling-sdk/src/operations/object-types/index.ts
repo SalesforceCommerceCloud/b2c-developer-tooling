@@ -18,6 +18,26 @@
  * @module operations/object-types
  */
 export {ObjectTypesClient, localizedDefault, normalizeAttributeId} from './object-types.js';
+export {
+  buildObjectTypeExtensionsXml,
+  parseObjectTypeExtensions,
+  valueTypeToXmlType,
+  xmlTypeToValueType,
+} from './meta-xml.js';
+export type {
+  MetaAttributeDefinition,
+  MetaAttributeGroup,
+  MetaAttributeReference,
+  ObjectTypeExtension,
+  ParsedObjectTypeExtensions,
+} from './meta-xml.js';
+export {applyObjectTypeSync, exportObjectTypes, planObjectTypeSync} from './sync.js';
+export type {
+  ExportObjectTypesOptions,
+  ObjectTypeSyncAction,
+  ObjectTypeSyncPlan,
+  ObjectTypeSyncWarning,
+} from './sync.js';
 export type {ListAttributeDefinitionsOptions, ListAttributeGroupsOptions, ObjectTypesConfig} from './object-types.js';
 export type {
   ObjectAttributeDefinition,

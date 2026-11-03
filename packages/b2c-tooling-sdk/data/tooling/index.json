@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-03T03:03:36.676Z",
+  "generatedAt": "2026-11-03T03:22:38.789Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -170,7 +170,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/object-types.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/object-types.md",
-      "headings": "What the API Can and Cannot Do • Authentication • Localized Values • b2c object-types list • b2c object-types get • b2c object-types attributes list • b2c object-types attributes get • b2c object-types attributes create • b2c object-types attributes update • b2c object-types attributes delete • b2c object-types groups list • b2c object-types groups get • b2c object-types groups create • b2c object-types groups update • b2c object-types groups delete • b2c object-types groups assign • b2c object-types groups unassign",
+      "headings": "What the API Can and Cannot Do • Authentication • Localized Values • b2c object-types list • b2c object-types get • b2c object-types export • b2c object-types apply • b2c object-types attributes list • b2c object-types attributes get • b2c object-types attributes create • b2c object-types attributes update • b2c object-types attributes delete • b2c object-types groups list • b2c object-types groups get • b2c object-types groups create • b2c object-types groups update • b2c object-types groups delete • b2c object-types groups assign • b2c object-types groups unassign",
       "preview": "Commands for inspecting and managing system object type attribute definitions and attribute groups."
     },
     {
