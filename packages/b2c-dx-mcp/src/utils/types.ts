@@ -70,6 +70,11 @@ export interface McpToolConfig<T extends ZodRawShape = ZodRawShape> extends Tool
    * Reserve for the few entry points nearly every session uses; each costs context upfront.
    */
   alwaysLoad?: boolean;
+  /**
+   * Extra words Claude Code's tool search matches (synonyms, task phrasing) without sending them to the model.
+   * Put vocabulary here when only search needs it; descriptions are paid for in every listing.
+   */
+  searchHint?: string;
 }
 
 /**

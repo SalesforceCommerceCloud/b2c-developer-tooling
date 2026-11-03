@@ -144,6 +144,7 @@ export interface ToolAdapterOptions<TInput, TOutput> extends ToolEffects {
   title?: McpTool['title'];
   outputSchema?: McpTool['outputSchema'];
   alwaysLoad?: McpTool['alwaysLoad'];
+  searchHint?: McpTool['searchHint'];
   /** Tool name (used in MCP protocol) */
   name: string;
 
@@ -371,6 +372,7 @@ export function createToolAdapter<TInput, TOutput>(
     openWorld: options.openWorld,
     outputSchema: options.outputSchema,
     alwaysLoad: options.alwaysLoad,
+    searchHint: options.searchHint,
     toolsets,
 
     async handler(rawArgs: Record<string, unknown>, toolContext?: ToolContext): Promise<ToolResult> {

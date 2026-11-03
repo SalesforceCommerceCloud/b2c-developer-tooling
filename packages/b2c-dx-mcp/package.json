@@ -125,6 +125,7 @@
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
     "@types/sinon": "catalog:",
+    "@types/snowball-stemmers": "0.6.2",
     "c8": "catalog:",
     "chai": "catalog:",
     "eslint": "catalog:",
@@ -137,6 +138,7 @@
     "prettier": "catalog:",
     "shx": "catalog:",
     "sinon": "catalog:",
+    "snowball-stemmers": "0.6.0",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"

@@ -72,6 +72,7 @@ export function createLogsGetRecentTool(
   return createToolAdapter<GetRecentInput, GetRecentOutput>(
     {
       name: 'logs_get_recent',
+      searchHint: 'errors exceptions failing broken why server logs recent',
       effect: 'read',
       idempotent: true,
       openWorld: true,

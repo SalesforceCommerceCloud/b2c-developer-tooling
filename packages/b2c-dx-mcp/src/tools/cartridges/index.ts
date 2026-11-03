@@ -97,6 +97,7 @@ function createCartridgeDeployTool(
   return createToolAdapter<CartridgeDeployInput, CartridgeDeployOutput>(
     {
       name: 'cartridge_deploy',
+      searchHint: 'upload push sync code cartridges to instance sandbox code version',
       effect: 'destructive',
       idempotent: false,
       openWorld: true,

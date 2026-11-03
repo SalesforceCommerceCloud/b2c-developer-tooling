@@ -21,7 +21,20 @@ export function toToolAnnotations({effect, idempotent, openWorld}: ToolEffects):
 /** Claude Code reads this tools/list `_meta` key to load a tool upfront when it defers MCP tools. */
 export const ALWAYS_LOAD_META_KEY = 'anthropic/alwaysLoad';
 
-/** Client loading hints advertised in a tool's `_meta`. */
-export function toToolMeta({alwaysLoad}: {alwaysLoad?: boolean}): Record<string, unknown> | undefined {
-  return alwaysLoad ? {[ALWAYS_LOAD_META_KEY]: true} : undefined;
+/** Claude Code adds this tools/list `_meta` text to tool search matching only; the model never sees it. */
+export const SEARCH_HINT_META_KEY = 'anthropic/searchHint';
+
+/** Client loading and search hints advertised in a tool's `_meta`. */
+export function toToolMeta({
+  alwaysLoad,
+  searchHint,
+}: {
+  alwaysLoad?: boolean;
+  searchHint?: string;
+}): Record<string, unknown> | undefined {
+  const meta = {
+    ...(alwaysLoad && {[ALWAYS_LOAD_META_KEY]: true}),
+    ...(searchHint && {[SEARCH_HINT_META_KEY]: searchHint}),
+  };
+  return Object.keys(meta).length > 0 ? meta : undefined;
 }

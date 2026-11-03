@@ -6,10 +6,12 @@
 
 import {Client, InMemoryTransport} from '@modelcontextprotocol/client';
 import {expect} from 'chai';
+import {SERVER_INSTRUCTIONS} from '../src/commands/mcp.js';
 import {registerToolsets} from '../src/registry.js';
 import {B2CDxMcpServer} from '../src/server.js';
 import {Services} from '../src/services.js';
 import {ALWAYS_LOAD_META_KEY} from '../src/utils/index.js';
+import {rankClaudeCode, rankCodex} from './tool-search-models.js';
 import {createMockResolvedConfig} from './test-helpers.js';
 
 /** Codex hides plugin-provided MCP tools past these model-spec budgets. */
@@ -18,10 +20,12 @@ const CODEX_PLUGIN_TOTAL_BYTES = 64_000;
 
 const ALWAYS_LOADED = ['config_inspect', 'docs_search', 'scapi_search', 'skills_read'];
 
-/**
- * Task phrasings an assistant might pass to client tool search, and the tool it should find.
- * Codex ranks deferred tools with BM25 over names and descriptions, so these guard description vocabulary.
- */
+/** Codex keeps the top 8 tool search results and Claude Code the top 5; require a margin under both. */
+const CODEX_TOP = 5;
+const CLAUDE_CODE_TOP = 3;
+const SERVER_NAME = 'b2c-dx-mcp';
+
+/** Task phrasings an assistant might pass to client tool search, and the tool it should find. */
 const SEARCH_CASES: Array<[query: string, tool: string]> = [
   ['deploy my cartridge to the sandbox', 'cartridge_deploy'],
   ['upload code to instance', 'cartridge_deploy'],
@@ -51,40 +55,6 @@ const SEARCH_CASES: Array<[query: string, tool: string]> = [
   ['script api class reference', 'docs_read'],
 ];
 
-function tokenize(text: string): string[] {
-  return text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
-}
-
-/** Rank tools with Okapi BM25 (k1 1.2, b 0.75) over name and description, without stemming. */
-function rankTools(tools: Array<{description?: string; name: string}>, query: string): string[] {
-  const documents = tools.map((tool) => ({
-    name: tool.name,
-    terms: tokenize(`${tool.name.replaceAll('_', ' ')} ${tool.description ?? ''}`),
-  }));
-  let totalLength = 0;
-  for (const document of documents) totalLength += document.terms.length;
-  const averageLength = totalLength / documents.length;
-  const frequency = new Map<string, number>();
-  for (const document of documents) {
-    for (const term of new Set(document.terms)) frequency.set(term, (frequency.get(term) ?? 0) + 1);
-  }
-  const score = (terms: string[]) => {
-    let total = 0;
-    for (const term of tokenize(query)) {
-      const count = terms.filter((candidate) => candidate === term).length;
-      if (count === 0) continue;
-      const containing = frequency.get(term) ?? 0;
-      const idf = Math.log(1 + (documents.length - containing + 0.5) / (containing + 0.5));
-      total += (idf * count * 2.2) / (count + 1.2 * (0.25 + (0.75 * terms.length) / averageLength));
-    }
-    return total;
-  };
-  return documents
-    .map((document) => ({name: document.name, score: score(document.terms)}))
-    .sort((a, b) => b.score - a.score)
-    .map((result) => result.name);
-}
-
 async function listTools() {
   const services = new Services({resolvedConfig: createMockResolvedConfig()});
   const server = new B2CDxMcpServer({name: 'tool-loading', version: '1'});
@@ -94,7 +64,7 @@ async function listTools() {
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   try {
-    return await client.listTools();
+    return {...(await client.listTools()), instructions: SERVER_INSTRUCTIONS};
   } finally {
     await client.close();
     await server.close();
@@ -120,11 +90,16 @@ describe('tool loading hints', () => {
     expect(listed).not.to.include(String(Number.MAX_SAFE_INTEGER));
   });
 
-  it('ranks the right tool in the top 3 for common task searches', async () => {
-    const {tools} = await listTools();
+  it('ranks the right tool near the top of Codex and Claude Code tool search', async () => {
+    const {tools, instructions} = await listTools();
     const misses = SEARCH_CASES.flatMap(([query, tool]) => {
-      const rank = rankTools(tools, query).indexOf(tool) + 1;
-      return rank >= 1 && rank <= 3 ? [] : [`${tool} ranked ${rank} for "${query}"`];
+      const codex = rankCodex(tools, query, SERVER_NAME, instructions).indexOf(tool) + 1;
+      const claudeCode = rankClaudeCode(tools, query, SERVER_NAME).indexOf(tool) + 1;
+      const failures = [];
+      if (codex < 1 || codex > CODEX_TOP) failures.push(`Codex ranked ${tool} ${codex} for "${query}"`);
+      if (claudeCode < 1 || claudeCode > CLAUDE_CODE_TOP)
+        failures.push(`Claude Code ranked ${tool} ${claudeCode} for "${query}"`);
+      return failures;
     });
     expect(misses).to.deep.equal([]);
   });

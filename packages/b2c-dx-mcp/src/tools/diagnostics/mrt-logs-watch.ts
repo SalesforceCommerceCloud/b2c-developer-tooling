@@ -57,6 +57,7 @@ function createMrtLogsWatchStartTool(
   return createToolAdapter<StartInput, StartOutput>(
     {
       name: 'mrt_logs_watch',
+      searchHint: 'managed runtime mrt pwa kit storefront next server logs tail',
       effect: 'read',
       idempotent: true,
       openWorld: true,

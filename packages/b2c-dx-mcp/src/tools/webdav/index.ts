@@ -38,11 +38,11 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
     createToolAdapter(
       {
         name: 'webdav_list',
+        searchHint: 'list browse files folders directory impex cartridges logs catalogs libraries',
         effect: 'read',
         idempotent: true,
         openWorld: true,
-        description:
-          'List files in one WebDAV directory (Impex, Cartridges, Logs, Catalogs, Libraries) with metadata and pagination. Does not recurse.',
+        description: 'List one WebDAV directory with file metadata and pagination. Does not recurse.',
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -81,6 +81,7 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
     createToolAdapter(
       {
         name: 'webdav_get',
+        searchHint: 'download read view file contents tail log impex',
         effect: 'read',
         idempotent: true,
         openWorld: true,
@@ -126,11 +127,12 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
     createToolAdapter(
       {
         name: 'webdav_get_to_file',
+        searchHint: 'download save file locally site export zip archive binary',
         effect: 'write',
         idempotent: false,
         openWorld: true,
         description:
-          'Download and save a whole WebDAV file, including binary archives such as site export zips, to a new local file on the MCP host. Streams any size; never overwrites.',
+          'Download and save a whole WebDAV file, including binary archives such as zips, to a new local file on the MCP host. Streams any size; never overwrites.',
         toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
@@ -177,11 +179,12 @@ export function createWebDavTools(loadServices: ServicesLoader): McpTool[] {
     createToolAdapter(
       {
         name: 'webdav_put',
+        searchHint: 'upload write import file impex xml zip',
         effect: 'destructive',
         idempotent: true,
         openWorld: true,
         description:
-          'Upload one WebDAV file, such as import XML to Impex, from text or a local file on the MCP host. Parent directory must exist. Replacement requires overwrite: true.',
+          'Upload one WebDAV file from text or a local file on the MCP host. Parent directory must exist. Replacement requires overwrite: true.',
         toolsets: ['CARTRIDGES', 'SCAPI'],
         requiresInstance: true,
         inputSchema: {
