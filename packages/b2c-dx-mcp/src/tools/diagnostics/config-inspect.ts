@@ -57,16 +57,13 @@ export function createConfigInspectTool(
       idempotent: true,
       openWorld: false,
       description:
-        'Inspect resolved B2C configuration, sources, warnings, paths, how the instance authenticates, and whether this server is up to date; usually no need to read dw.json. ' +
-        'Secrets are masked by default.',
+        'Show resolved B2C configuration, its sources, warnings, paths, how the instance authenticates and whether this server is up to date; usually replaces reading dw.json. Secrets are masked by default.',
       toolsets: ['DIAGNOSTICS', 'CIP'],
+      alwaysLoad: true,
       requiresInstance: false,
       usesConfigurationContext: true,
       inputSchema: {
-        unmask: z
-          .boolean()
-          .optional()
-          .describe('Return secrets unmasked. Default: false; use only when explicitly requested.'),
+        unmask: z.boolean().optional().describe('Unmask secrets; only when the user asks.'),
       },
       async execute(args, {services}) {
         const resolved = services.getResolvedConfig();

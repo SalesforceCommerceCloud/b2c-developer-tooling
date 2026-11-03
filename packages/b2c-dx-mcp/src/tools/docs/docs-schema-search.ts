@@ -25,6 +25,7 @@ export function createDocsSchemaSearchTool(loadServices: () => Promise<Services>
   return createToolAdapter<SearchInput, SearchOutput>(
     {
       name: 'docs_schema_search',
+      searchHint: 'xsd xml import export file format schema',
       effect: 'read',
       idempotent: true,
       openWorld: false,

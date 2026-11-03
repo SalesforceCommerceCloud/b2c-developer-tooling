@@ -68,11 +68,12 @@ export function createDocsListTool(
   return createToolAdapter<ListInput, ListOutput>(
     {
       name: 'docs_list',
+      searchHint: 'browse all documentation topics guides index catalog',
       effect: 'read',
       idempotent: true,
       openWorld: false,
       description:
-        'List IDs and titles for B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
+        'List documentation IDs and titles for B2C Commerce (SFCC/Demandware) Script API, job steps, developer guides, admin/merchant help, and tooling docs. ' +
         'Without a filter, returns category counts. ' +
         'Use docs_search for questions and docs_read for content.' +
         enabledCategoriesNote(enabledCategories) +

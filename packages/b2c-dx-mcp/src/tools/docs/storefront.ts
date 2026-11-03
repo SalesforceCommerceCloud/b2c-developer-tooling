@@ -44,7 +44,7 @@ export const workspaceInputSchema = {
     .min(1)
     .refine(isAbsolute, 'Use an absolute project directory.')
     .optional()
-    .describe('Project to detect for this call; never defaults to the server directory.'),
+    .describe('Project to detect; no server-directory default.'),
 };
 
 /** Detect only a caller-supplied project, with no startup cwd fallback or cross-call cache. */
