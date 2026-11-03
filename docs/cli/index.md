@@ -48,7 +48,7 @@ the IDE Extension and MCP tools.
 | ---------------------- | ------ | ----------- |
 | `SFCC_SAFETY_LEVEL` | `NONE` (default) | No restrictions |
 | | `NO_DELETE` | Block DELETE operations |
-| | `READ_ONLY` | Block POST, PUT, PATCH, and DELETE requests |
+| | `READ_ONLY` | Block POST, PUT, PATCH, and DELETE requests, except [known searches](../guide/safety#read-only-searches) |
 | `SFCC_SAFETY_CONFIRM` | `true`, `1` | Ask for approval instead of blocking requests under the selected level, where supported. Explicit block rules still block. |
 | `SFCC_SAFETY_CONFIG` | File path | Use a shared safety configuration file. |
 
