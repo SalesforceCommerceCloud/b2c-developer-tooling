@@ -72,6 +72,7 @@
   "storefront-next/sfnext-scapi": "Storefront Next SCAPI clients: typing c_ attributes and adding custom API clients.",
   "storefront-next/sfnext-security": "Storefront Next security headers, CSP and contributors, Turnstile, and cookie domain.",
   "storefront-next/sfnext-seo": "Storefront Next SEO: meta tags, JSON-LD, canonical and hreflang, and SEO URL routes.",
+  "storefront-next/sfnext-site-audit": "Storefront Next pre-launch site audit: Playhouse runs, rules, and a go/no-go dashboard.",
   "storefront-next/sfnext-state-management": "Choose Storefront Next state: loader data, URL, cookies, optimistic UI, or context.",
   "storefront-next/sfnext-testing": "Storefront Next tests: Vitest, loader/action tests, Storybook stories, and e2e pointers.",
   "storefront-next/sfnext-theming": "Rebrand Storefront Next: colors, shape tokens, fonts, logo, and contrast checks.",
