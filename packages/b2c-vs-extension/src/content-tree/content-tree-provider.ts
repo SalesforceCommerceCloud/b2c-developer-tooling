@@ -5,7 +5,6 @@
  */
 
 import type {LibraryNode} from '@salesforce/b2c-tooling-sdk/operations/content';
-import {fetchContentLibrary} from '@salesforce/b2c-tooling-sdk/operations/content';
 import {ExperienceTypesNode, ExperienceTypesSource} from './experience-types.js';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
@@ -330,23 +329,15 @@ export class ContentTreeDataProvider implements vscode.TreeDataProvider<ContentT
     let library = this.configProvider.getCachedLibrary(element.libraryId);
 
     if (!library) {
-      const instance = this.configProvider.getInstance();
-      if (!instance) {
+      if (!this.configProvider.getInstance()) {
         return [];
       }
 
       try {
         library = await vscode.window.withProgress(
           {location: vscode.ProgressLocation.Notification, title: `Fetching library ${element.libraryId}...`},
-          async () => {
-            const result = await fetchContentLibrary(instance, element.libraryId, {
-              isSiteLibrary: element.isSiteLibrary,
-              assetQuery: this.configProvider.getAssetQuery(),
-            });
-            return result.library;
-          },
+          () => this.configProvider.loadLibrary(element.libraryId, element.isSiteLibrary),
         );
-        this.configProvider.setCachedLibrary(element.libraryId, library);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         // Expand/collapse cycles re-fetch the library, so throttle per library

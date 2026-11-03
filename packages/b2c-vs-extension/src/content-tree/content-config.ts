@@ -6,7 +6,7 @@
 
 import {resolveLibraryEntries} from '@salesforce/b2c-tooling-sdk/config';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
-import type {Library} from '@salesforce/b2c-tooling-sdk/operations/content';
+import {fetchContentLibrary, type Library} from '@salesforce/b2c-tooling-sdk/operations/content';
 import type {B2CExtensionConfig} from '../config-provider.js';
 
 export interface BrowsedLibrary {
@@ -17,8 +17,12 @@ export interface BrowsedLibrary {
 export class ContentConfigProvider {
   private libraries: BrowsedLibrary[] = [];
   private libraryCache = new Map<string, Library>();
+  private libraryLoads = new Map<string, Promise<Library>>();
 
-  constructor(private readonly configProvider: B2CExtensionConfig) {
+  constructor(
+    private readonly configProvider: B2CExtensionConfig,
+    private readonly fetchLibrary: typeof fetchContentLibrary = fetchContentLibrary,
+  ) {
     configProvider.onDidReset(() => {
       // Reset browsed libraries so the next tree refresh re-seeds from the
       // newly active instance's contentLibrary. Libraries from the previous
@@ -26,6 +30,7 @@ export class ContentConfigProvider {
       // extras via "Add Library".
       this.libraries = [];
       this.libraryCache.clear();
+      this.libraryLoads.clear();
     });
   }
 
@@ -92,7 +97,7 @@ export class ContentConfigProvider {
 
   removeLibrary(id: string): void {
     this.libraries = this.libraries.filter((l) => l.id !== id);
-    this.libraryCache.delete(id);
+    this.invalidateLibrary(id);
   }
 
   getCachedLibrary(id: string): Library | undefined {
@@ -103,15 +108,44 @@ export class ContentConfigProvider {
     this.libraryCache.set(id, library);
   }
 
+  /**
+   * Returns the cached library, or fetches it from the instance and caches it.
+   * Concurrent calls for the same library share one fetch. A save invalidates
+   * the cache, so editors opened (or reopened) afterwards load it here instead
+   * of failing until the tree is refreshed.
+   */
+  async loadLibrary(id: string, isSiteLibrary: boolean): Promise<Library> {
+    const cached = this.libraryCache.get(id);
+    if (cached) return cached;
+    const pending = this.libraryLoads.get(id);
+    if (pending) return pending;
+
+    const instance = this.getInstance();
+    if (!instance) throw new Error('No B2C Commerce instance configured');
+    const load = this.fetchLibrary(instance, id, {isSiteLibrary, assetQuery: this.getAssetQuery()})
+      .then(({library}) => {
+        // Don't cache a load that a reset or invalidation superseded.
+        if (this.libraryLoads.get(id) === load) this.libraryCache.set(id, library);
+        return library;
+      })
+      .finally(() => {
+        if (this.libraryLoads.get(id) === load) this.libraryLoads.delete(id);
+      });
+    this.libraryLoads.set(id, load);
+    return load;
+  }
+
   invalidateLibrary(id: string): void {
     this.libraryCache.delete(id);
+    this.libraryLoads.delete(id);
   }
 
   clearCache(): void {
     this.libraryCache.clear();
+    this.libraryLoads.clear();
   }
 
   reset(): void {
-    this.libraryCache.clear();
+    this.clearCache();
   }
 }

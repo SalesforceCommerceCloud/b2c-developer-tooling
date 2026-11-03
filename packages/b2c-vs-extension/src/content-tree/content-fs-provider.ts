@@ -148,32 +148,40 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-    const {libraryId} = parseContentUri(uri);
-    const library = this.configProvider.getCachedLibrary(libraryId);
-    if (!library) {
-      return [];
-    }
+    const {libraryId, isSiteLibrary} = parseContentUri(uri);
+    const library = await this.loadLibrary(libraryId, isSiteLibrary);
     return library.tree.children
       .filter((node) => !node.hidden)
       .map((node) => [`${node.id}.xml`, vscode.FileType.File] as [string, vscode.FileType]);
   }
 
   async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-    const {libraryId, contentId} = parseContentUri(uri);
+    const {libraryId, contentId, isSiteLibrary} = parseContentUri(uri);
     if (!contentId) {
       throw vscode.FileSystemError.FileIsADirectory(uri);
     }
 
-    const library = this.configProvider.getCachedLibrary(libraryId);
-    if (!library) {
-      throw vscode.FileSystemError.Unavailable(
-        `Library "${libraryId}" not loaded. Expand it in the Content tree first.`,
-      );
-    }
+    const library = await this.loadLibrary(libraryId, isSiteLibrary);
 
     const xmlString = generateContentXML(library, contentId);
     this.originals.set(`${libraryId}:${contentId}`, xmlString);
     return new TextEncoder().encode(xmlString);
+  }
+
+  /** The cached library, fetched from the instance when a save (or reset) cleared it. */
+  private async loadLibrary(libraryId: string, isSiteLibrary: boolean): Promise<Library> {
+    try {
+      return (
+        this.configProvider.getCachedLibrary(libraryId) ??
+        (await vscode.window.withProgress(
+          {location: vscode.ProgressLocation.Window, title: `Loading library ${libraryId}...`},
+          () => this.configProvider.loadLibrary(libraryId, isSiteLibrary),
+        ))
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw vscode.FileSystemError.Unavailable(`Failed to load library "${libraryId}": ${message}`);
+    }
   }
 
   async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
