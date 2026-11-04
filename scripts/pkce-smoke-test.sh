@@ -26,7 +26,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION (override via environment, e.g. `PKCE_CLIENT_ID=... ./scripts/pkce-smoke-test.sh`)
 #
-#   PKCE_CLIENT_ID        Public (PKCE-capable) AM client id. Default: prod default a40a7a9b…
+#   PKCE_CLIENT_ID        Public (PKCE-capable) AM client id. Default: prod default 3496b7e8…
 #   IMPLICIT_CLIENT_ID    An implicit-ONLY AM client id (for §4 fallback + §7 implicit).
 #   CC_CLIENT_ID          Client-credentials client id (for §9/§10 + instance §14/§16).
 #   CC_CLIENT_SECRET      Client-credentials secret.
@@ -62,7 +62,7 @@ set -u
 set -o pipefail
 
 # ── Defaults ─────────────────────────────────────────────────────────────────
-DEFAULT_PUBLIC_CLIENT_ID="a40a7a9b-e854-4aa6-8078-d5f79872aa65"
+DEFAULT_PUBLIC_CLIENT_ID="3496b7e8-9cff-4cd3-8252-a7528d0e312d"
 
 PKCE_CLIENT_ID="${PKCE_CLIENT_ID:-$DEFAULT_PUBLIC_CLIENT_ID}"
 IMPLICIT_CLIENT_ID="${IMPLICIT_CLIENT_ID:-}"
