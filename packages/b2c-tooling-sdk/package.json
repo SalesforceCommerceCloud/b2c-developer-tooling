@@ -45,6 +45,11 @@
       "types": "./dist/esm/instance/index.d.ts",
       "default": "./dist/esm/instance/index.js"
     },
+    "./utils": {
+      "development": "./src/utils/index.ts",
+      "types": "./dist/esm/utils/index.d.ts",
+      "default": "./dist/esm/utils/index.js"
+    },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
       "types": "./dist/esm/operations/code/index.d.ts",
@@ -306,6 +311,7 @@
     "@types/sinon": "catalog:",
     "@types/tar-fs": "^2.0.4",
     "@types/xml2js": "^0.4.14",
+    "@types/yazl": "3.3.1",
     "c8": "catalog:",
     "chai": "catalog:",
     "eslint": "catalog:",
@@ -355,6 +361,7 @@
     "protobufjs": "7.6.6",
     "tar-fs": "3.1.2",
     "undici": "7.30.1",
-    "xml2js": "0.6.2"
+    "xml2js": "0.6.2",
+    "yazl": "3.3.1"
   }
 }

@@ -478,6 +478,12 @@ describe('cli/config', () => {
       expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.be.undefined;
     });
 
+    it('maps --max-archive-size as a string', () => {
+      expect(extractInstanceFlags({'max-archive-size': '150mb'}).maxArchiveSize).to.equal('150mb');
+      expect(extractInstanceFlags({'max-archive-size': 200}).maxArchiveSize).to.equal('200');
+      expect(extractInstanceFlags({}).maxArchiveSize).to.be.undefined;
+    });
+
     it('includes OAuth flags', () => {
       const flags: ParsedFlags = {
         server: 'my-sandbox.demandware.net',

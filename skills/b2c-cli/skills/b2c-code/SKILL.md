@@ -61,6 +61,10 @@ b2c code deploy -x test_cartridge
 
 # replace the directory names skipped inside cartridges (default: node_modules,.git,coverage,.cache,tmp,temp)
 b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
+
+# large code versions are split into archives of up to 200 MiB automatically;
+# lower the limit if uploads are rejected (413) or keep dropping
+b2c code deploy --max-archive-size 100mb
 ```
 
 ### Download Cartridges

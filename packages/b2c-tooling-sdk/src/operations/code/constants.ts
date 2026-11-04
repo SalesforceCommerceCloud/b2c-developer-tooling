@@ -11,14 +11,11 @@
 export const LONG_OPERATION_TIMEOUT_MS = 600_000;
 
 /**
- * Timeout for the server-side unzip operation (5 minutes).
+ * Timeout for one server-side unzip request (60 seconds).
  *
- * The unzip is a synchronous WebDAV POST with no server-side job handle, so it is
- * issued exactly ONCE and never retried on a network drop: re-issuing could start a
- * second extraction concurrently with one still running on the backend, racing writes
- * into the same code-version directory. This timeout therefore bounds how long the
- * client waits for the single attempt before surfacing a clear error — it is generous
- * enough for legitimately slow extractions of large archives to complete, while still
- * guaranteeing we don't hang indefinitely on a dead connection.
+ * Deploy splits code into archives small enough to unzip well within this.
+ * When a request takes longer or drops, deploy asks the server again: a 423
+ * (Locked) response means the extraction is still running (see `UNZIP_WAIT`
+ * in deploy.ts).
  */
-export const UNZIP_TIMEOUT_MS = 300_000;
+export const UNZIP_TIMEOUT_MS = 60_000;
