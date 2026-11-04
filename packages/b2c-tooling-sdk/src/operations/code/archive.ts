@@ -16,8 +16,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {Readable} from 'node:stream';
 import zlib from 'node:zlib';
-import yazl from 'yazl';
+import JSZip from 'jszip';
 import {getLogger} from '../../logging/logger.js';
 import {parseByteSize} from '../../utils/byte-size.js';
 import type {CartridgeMapping} from './cartridges.js';
@@ -32,6 +33,15 @@ import type {CartridgeMapping} from './cartridges.js';
 export const DEFAULT_MAX_ARCHIVE_BYTES = 200 * 1024 * 1024;
 
 /**
+ * Largest supported archive. Archives are written without zip64 extensions,
+ * so one archive must stay under 4 GiB and {@link MAX_ARCHIVE_ENTRIES} files.
+ */
+export const MAX_ARCHIVE_BYTES = 4 * 1024 * 1024 * 1024 - 1;
+
+/** Most files one archive can hold without zip64 extensions. */
+const MAX_ARCHIVE_ENTRIES = 65_535;
+
+/**
  * Converts the `maxArchiveSize` config value (e.g. `"200mb"`, `"150"`) to
  * bytes, or `undefined` to use {@link DEFAULT_MAX_ARCHIVE_BYTES}.
  *
@@ -42,6 +52,9 @@ export function maxArchiveBytesFromConfig(value: string | undefined): number | u
   const bytes = parseByteSize(value);
   if (bytes < 1024 * 1024) {
     throw new Error(`Invalid max archive size "${value}": must be at least 1 MiB.`);
+  }
+  if (bytes > MAX_ARCHIVE_BYTES) {
+    throw new Error(`Invalid max archive size "${value}": must be less than 4 GiB.`);
   }
   return bytes;
 }
@@ -76,10 +89,10 @@ const STORED_EXTENSIONS = new Set([
   '.zip',
 ]);
 
-/** Local header + central directory record + data descriptor, without the name (zip64 worst case). */
-const ZIP_ENTRY_OVERHEAD = 30 + 46 + 24 + 32;
-/** End-of-central-directory records (zip64 + classic). */
-const ZIP_END_OVERHEAD = 56 + 20 + 22;
+/** Local header + central directory record + data descriptor, without the name. */
+const ZIP_ENTRY_OVERHEAD = 30 + 46 + 16;
+/** End-of-central-directory record. */
+const ZIP_END_OVERHEAD = 22;
 
 /** A file to place in a cartridge archive. */
 export interface ArchiveEntry {
@@ -181,7 +194,8 @@ function cartridgeOf(entry: ArchiveEntry): string {
 }
 
 /**
- * Splits archive entries into parts that each stay under `maxBytes`.
+ * Splits archive entries into parts that each stay under `maxBytes` (and
+ * under the per-archive file count limit).
  *
  * Whole cartridges are kept together where they fit, packed in the given
  * cartridge order. A cartridge larger than the budget on its own is split
@@ -191,7 +205,9 @@ function cartridgeOf(entry: ArchiveEntry): string {
  * @throws Error if a single file is larger than `maxBytes`
  */
 export function planArchiveParts(entries: ArchiveEntry[], maxBytes: number): ArchivePart[] {
-  const budget = maxBytes - ZIP_END_OVERHEAD;
+  // Sizes are estimated with zlib; the archive writer's DEFLATE output runs
+  // slightly larger (under 0.5%), so keep 1% in reserve.
+  const budget = Math.floor(maxBytes * 0.99) - ZIP_END_OVERHEAD;
   const groups = new Map<string, ArchiveEntry[]>();
   for (const entry of entries) {
     const key = cartridgeOf(entry);
@@ -209,6 +225,8 @@ export function planArchiveParts(entries: ArchiveEntry[], maxBytes: number): Arc
     }
     current = {entries: [], cartridges: [], estimatedBytes: 0};
   };
+  const fits = (bytes: number, count: number) =>
+    current.estimatedBytes + bytes <= budget && current.entries.length + count <= MAX_ARCHIVE_ENTRIES;
   const add = (cartridge: string, entry: ArchiveEntry) => {
     current.entries.push(entry);
     current.estimatedBytes += entry.packedSize;
@@ -217,8 +235,8 @@ export function planArchiveParts(entries: ArchiveEntry[], maxBytes: number): Arc
 
   for (const [cartridge, group] of groups) {
     const groupBytes = group.reduce((sum, e) => sum + e.packedSize, 0);
-    if (groupBytes <= budget) {
-      if (current.estimatedBytes + groupBytes > budget) flush();
+    if (groupBytes <= budget && group.length <= MAX_ARCHIVE_ENTRIES) {
+      if (!fits(groupBytes, group.length)) flush();
       for (const entry of group) add(cartridge, entry);
       continue;
     }
@@ -231,7 +249,7 @@ export function planArchiveParts(entries: ArchiveEntry[], maxBytes: number): Arc
             `Raise the archive size limit or remove the file from the cartridge.`,
         );
       }
-      if (current.estimatedBytes + entry.packedSize > budget) flush();
+      if (!fits(entry.packedSize, 1)) flush();
       add(cartridge, entry);
     }
   }
@@ -248,22 +266,43 @@ export interface WrittenArchive {
 }
 
 /**
+ * A readable stream of a file's contents that opens the file only when the
+ * archive reaches it, so a large archive never holds every file open at once.
+ */
+function lazyFileStream(abs: string): Readable {
+  return Readable.from(
+    (async function* () {
+      yield* fs.createReadStream(abs);
+    })(),
+    {objectMode: false},
+  );
+}
+
+/**
  * Streams entries into a zip file at `outPath`.
  */
 export async function writeArchive(entries: ArchiveEntry[], outPath: string): Promise<WrittenArchive> {
-  const zip = new yazl.ZipFile();
-  const output = fs.createWriteStream(outPath);
-  const done = new Promise<void>((resolve, reject) => {
+  const zip = new JSZip();
+  for (const entry of entries) {
+    zip.file(entry.name, lazyFileStream(entry.abs), {
+      binary: true,
+      createFolders: false,
+      compression: entry.compress ? 'DEFLATE' : 'STORE',
+      compressionOptions: entry.compress ? {level: 9} : null,
+    });
+  }
+  await new Promise<void>((resolve, reject) => {
+    const output = fs.createWriteStream(outPath);
     output.on('close', resolve);
     output.on('error', reject);
-    zip.outputStream.on('error', reject);
+    zip
+      .generateNodeStream({type: 'nodebuffer', streamFiles: true})
+      .on('error', (error: Error) => {
+        output.destroy();
+        reject(error);
+      })
+      .pipe(output);
   });
-  zip.outputStream.pipe(output);
-  for (const entry of entries) {
-    zip.addFile(entry.abs, entry.name, {compressionLevel: entry.compress ? 9 : 0});
-  }
-  zip.end();
-  await done;
   const {size} = await fs.promises.stat(outPath);
   return {path: outPath, bytes: size};
 }
