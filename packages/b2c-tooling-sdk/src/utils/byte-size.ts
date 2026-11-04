@@ -24,7 +24,8 @@ const MULTIPLIERS: Record<string, number> = {
  * @throws Error if the input cannot be parsed
  */
 export function parseByteSize(input: string | number): number {
-  const match = /^\s*(\d+(?:\.\d+)?)\s*(b|kb|kib|mb|mib|gb|gib)?\s*$/i.exec(String(input));
+  // Trim first so the pattern has no adjacent optional whitespace (avoids polynomial backtracking).
+  const match = /^(\d+(?:\.\d+)?)(?:\s*(b|kb|kib|mb|mib|gb|gib))?$/i.exec(String(input).trim());
   if (!match) {
     throw new Error(`Invalid size: "${input}". Use e.g. 200, 200mb, or 512kb.`);
   }

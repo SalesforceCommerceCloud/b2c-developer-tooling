@@ -35,4 +35,14 @@ describe('utils/byte-size', () => {
     expect(() => parseByteSize('-5mb')).to.throw(/Invalid size/);
     expect(() => parseByteSize('')).to.throw(/Invalid size/);
   });
+
+  it('accepts surrounding whitespace', () => {
+    expect(parseByteSize('  200 mb  ')).to.equal(200 * MIB);
+  });
+
+  it('rejects long whitespace runs quickly', () => {
+    const start = Date.now();
+    expect(() => parseByteSize(`9${' '.repeat(50_000)}x`)).to.throw(/Invalid size/);
+    expect(Date.now() - start).to.be.below(100);
+  });
 });
