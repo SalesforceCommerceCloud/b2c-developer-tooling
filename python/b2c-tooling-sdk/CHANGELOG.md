@@ -1,5 +1,11 @@
 # @salesforce/b2c-tooling-sdk-python
 
+## 0.4.4
+
+### Patch Changes
+
+- [`315118c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/315118c96fff84319bd3eff7f44a3a3d7422876c) - Fix browser sign-in with the built-in client, which Account Manager stopped accepting for PKCE. Sign-in no longer falls back to the deprecated implicit flow, and MCP tools that sign in through the built-in client no longer hang. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.3
 
 ### Patch Changes
