@@ -11,8 +11,12 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
-import type {ContentTreeDataProvider, ContentTreeItem} from './content-tree-provider.js';
+import {ContentTreeItem, type ContentTreeDataProvider, type ContentTreeElement} from './content-tree-provider.js';
+import {ExperienceTypesNode} from './experience-types.js';
+import {findTypeSources, type TypeKind} from './type-sources.js';
 import {openJobLog} from '../job-log-viewer.js';
+import {isStorefrontNextWorkspace} from '../project-type.js';
+import {findCartridgesSafe} from '../workspace-discovery.js';
 import {registerSafeCommand} from '../safety.js';
 
 async function showJobError(err: unknown, instance: B2CInstance, label: string): Promise<void> {
@@ -28,12 +32,36 @@ async function showJobError(err: unknown, instance: B2CInstance, label: string):
   vscode.window.showErrorMessage(`${label}: ${message}`);
 }
 
+/** Library content items from a (possibly mixed) multi-selection; type nodes are ignored. */
+function contentSelection(node: ContentTreeItem | undefined, selected?: ContentTreeElement[]): ContentTreeItem[] {
+  const items = (selected ?? []).filter((n): n is ContentTreeItem => n instanceof ContentTreeItem);
+  return items.length > 0 ? items : node ? [node] : [];
+}
+
+const SOURCE_EXCLUDE = '{**/node_modules/**,**/dist/**,**/build/**,**/*.test.ts,**/*.test.tsx,**/*.d.ts}';
+
+/** The type a tree item stands for: a live type, or the type of a page or component. */
+function typeTarget(
+  item: ContentTreeElement | {id: string} | undefined,
+): {typeId: string; kind: TypeKind; type?: {id: string}} | undefined {
+  if (item instanceof ExperienceTypesNode) {
+    const type = item.options.type;
+    return type ? {typeId: type.id, kind: item.options.group === 'page' ? 'page' : 'component', type} : undefined;
+  }
+  if (item instanceof ContentTreeItem) {
+    const typeId = item.libraryNode?.typeId;
+    if (!typeId || !/^(page|component)\./.test(typeId)) return undefined;
+    return {typeId, kind: typeId.startsWith('page.') ? 'page' : 'component'};
+  }
+  return undefined;
+}
+
 export function registerContentCommands(
   _context: vscode.ExtensionContext,
   configProvider: ContentConfigProvider,
   treeProvider: ContentTreeDataProvider,
   _fsProvider: ContentFileSystemProvider,
-  treeView: vscode.TreeView<ContentTreeItem>,
+  treeView: vscode.TreeView<ContentTreeElement>,
 ): vscode.Disposable[] {
   const refresh = registerSafeCommand('b2c-dx.content.refresh', () => {
     configProvider.clearCache();
@@ -169,8 +197,8 @@ export function registerContentCommands(
 
   const exportCmd = registerSafeCommand(
     'b2c-dx.content.export',
-    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
-      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeElement[]) => {
+      const nodes = contentSelection(node, selectedNodes);
       if (!nodes.length) return;
       await runExport(nodes, {offline: false, assetsOnly: false});
     },
@@ -178,8 +206,8 @@ export function registerContentCommands(
 
   const exportNoAssets = registerSafeCommand(
     'b2c-dx.content.exportNoAssets',
-    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
-      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeElement[]) => {
+      const nodes = contentSelection(node, selectedNodes);
       if (!nodes.length) return;
       await runExport(nodes, {offline: true, assetsOnly: false});
     },
@@ -187,8 +215,8 @@ export function registerContentCommands(
 
   const exportAssets = registerSafeCommand(
     'b2c-dx.content.exportAssets',
-    async (node: ContentTreeItem, selectedNodes?: ContentTreeItem[]) => {
-      const nodes = selectedNodes?.length ? selectedNodes : node ? [node] : [];
+    async (node: ContentTreeItem, selectedNodes?: ContentTreeElement[]) => {
+      const nodes = contentSelection(node, selectedNodes);
       if (!nodes.length) return;
       await runExport(nodes, {offline: false, assetsOnly: true});
     },
@@ -290,7 +318,67 @@ export function registerContentCommands(
     }
   });
 
+  // Opens a live Page Designer type definition as read-only JSON (from the
+  // optional "Page Designer Types" branch of the tree).
+  const openType = registerSafeCommand('b2c-dx.content.openType', async (type: {id: string}) => {
+    if (!type?.id) return;
+    const doc = await vscode.workspace.openTextDocument({language: 'json', content: JSON.stringify(type, null, 2)});
+    await vscode.window.showTextDocument(doc, {preview: true});
+  });
+
+  const goToTypeSource = registerSafeCommand(
+    'b2c-dx.content.goToTypeSource',
+    async (item?: ContentTreeElement | {id: string}) => {
+      const target = typeTarget(item);
+      if (!target) {
+        vscode.window.showWarningMessage('Select a page or component type, or a page or component.');
+        return;
+      }
+      const workingDir = configProvider.getWorkingDirectory();
+      const sources = await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Window, title: `Finding ${target.typeId}...`},
+        async () => {
+          const sfnext = isStorefrontNextWorkspace();
+          const sourceFiles = sfnext
+            ? (await vscode.workspace.findFiles('**/src/**/*.{ts,tsx}', SOURCE_EXCLUDE, 5000)).map((u) => u.fsPath)
+            : [];
+          return findTypeSources(target.typeId, {
+            kind: target.kind,
+            cartridges: findCartridgesSafe(workingDir),
+            sourceFiles,
+            projectRoot: workingDir,
+          });
+        },
+      );
+      if (sources.length === 0) {
+        const message = `No project files found for ${target.typeId}.`;
+        if (!target.type) {
+          vscode.window.showInformationMessage(message);
+          return;
+        }
+        const choice = await vscode.window.showInformationMessage(message, 'Show Instance Definition');
+        if (choice) await vscode.commands.executeCommand('b2c-dx.content.openType', target.type);
+        return;
+      }
+      const picked =
+        sources.length === 1
+          ? sources[0]
+          : (
+              await vscode.window.showQuickPick(
+                sources.map((s) => ({label: path.basename(s.file), description: s.label, detail: s.detail, source: s})),
+                {title: `Files for ${target.typeId}`, placeHolder: 'Select a file to open', matchOnDescription: true},
+              )
+            )?.source;
+      if (!picked) return;
+      const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(picked.file));
+      const position = new vscode.Position(picked.line ?? 0, 0);
+      await vscode.window.showTextDocument(doc, {selection: new vscode.Range(position, position)});
+    },
+  );
+
   return [
+    goToTypeSource,
+    openType,
     refresh,
     addLibrary,
     removeLibrary,

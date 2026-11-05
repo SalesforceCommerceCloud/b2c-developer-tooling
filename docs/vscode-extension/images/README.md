@@ -33,7 +33,6 @@ grep -rn "TODO(screenshot)" docs/vscode-extension/
 | `code-sync` | `features.md`, `index.md` |
 | `api-browser` | `features.md` |
 | `script-debugger` | `features.md`, `index.md` |
-| `page-designer-assistant` | `features.md`, `index.md` |
 | `scaffold-picker` | `features.md` |
 | `release-assets`, `install-vsix` | `installation.md` |
 | `settings`, `output-channel` | `configuration.md` |

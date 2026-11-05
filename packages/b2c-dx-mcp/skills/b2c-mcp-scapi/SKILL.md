@@ -23,7 +23,15 @@ declare const spec: {
   search(query: string, o?: {limit?: number}): Promise<Array<Match>>; // limit default 10, max 50
 };
 // spec.paths[m.path][m.method] is the full op; otherVersions = older versions with the same op
-type Match = {api: string; method: string; path: string; operationId?: string; summary?: string; score: number; otherVersions?: string[]};
+type Match = {
+  api: string;
+  method: string;
+  path: string;
+  operationId?: string;
+  summary?: string;
+  score: number;
+  otherVersions?: string[];
+};
 // fullPath = '/' + api id + path, e.g. '/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}'
 interface Operation {
   api: string;
@@ -97,15 +105,16 @@ async () => {
 
 ## Read when needed (do not read all)
 
-| Need                                                                                                                | Read                                                                           |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Pick API for a task (jobs, code versions, sites, products, promotions); live/custom schemas; `c_*` fields; `expand` | [discover](references/discover.md)                                             |
-| Compose multi-call program, verify, paging, limits                                                                  | [compose-verify](references/compose-verify.md)                                 |
-| Approval, cancel, `input_required`                                                                                  | [confirmation](references/confirmation.md)                                     |
-| Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
-| Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
-| Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |
-| System object attributes (`c_*` definitions, enum values, attribute groups); add attributes                         | [object-definitions](references/object-definitions.md)                         |
-| Categories/rules; CORS, timeouts, custom objects                                                                    | [catalogs](references/catalogs.md), [admin-config](references/admin-config.md) |
-| File upload/download ops (e.g. custom sitemap upload)                                                               | [file-transfer](references/file-transfer.md)                                   |
-| Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing               | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |
+| Need                                                                                                                         | Read                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Pick API for a task (jobs, code versions, sites, products, promotions, content); live/custom schemas; `c_*` fields; `expand` | [discover](references/discover.md)                                             |
+| Compose multi-call program, verify, paging, limits                                                                           | [compose-verify](references/compose-verify.md)                                 |
+| Approval, cancel, `input_required`                                                                                           | [confirmation](references/confirmation.md)                                     |
+| Auth, scopes, token export                                                                                                   | [authentication](references/authentication.md), [tokens](references/tokens.md) |
+| Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                               | [workflows](references/workflows.md)                                           |
+| Custom API                                                                                                                   | [custom-apis](references/custom-apis.md)                                       |
+| Page Designer pages, page/component types, content assets and folders, content slots                                         | [content](references/content.md)                                               |
+| System object attributes (`c_*` definitions, enum values, attribute groups); add attributes                                  | [object-definitions](references/object-definitions.md)                         |
+| Categories/rules; CORS, timeouts, custom objects                                                                             | [catalogs](references/catalogs.md), [admin-config](references/admin-config.md) |
+| File upload/download ops (e.g. custom sitemap upload)                                                                        | [file-transfer](references/file-transfer.md)                                   |
+| Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing                        | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

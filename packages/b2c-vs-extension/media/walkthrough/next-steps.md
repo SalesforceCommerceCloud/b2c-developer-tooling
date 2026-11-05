@@ -4,13 +4,13 @@ You've got a connected instance, a deployed cartridge, and a scaffold workflow. 
 
 ## Day-to-day commands
 
-| Goal | Command |
-|---|---|
-| Browse remote files | **B2C DX: List WebDAV** or open the WebDAV view |
-| Watch & auto-deploy | **B2C DX - Code Sync: Toggle Code Sync** |
-| Tail instance logs | **B2C DX - Logs: Start Tailing Logs** |
-| Switch active instance | Click the `$(cloud)` item in the status bar |
-| Inspect resolved config | **B2C DX: Inspect Resolved Config** |
+| Goal                    | Command                                         |
+| ----------------------- | ----------------------------------------------- |
+| Browse remote files     | **B2C DX: List WebDAV** or open the WebDAV view |
+| Watch & auto-deploy     | **B2C DX - Code Sync: Toggle Code Sync**        |
+| Tail instance logs      | **B2C DX - Logs: Start Tailing Logs**           |
+| Switch active instance  | Click the `$(cloud)` item in the status bar     |
+| Inspect resolved config | **B2C DX: Inspect Resolved Config**             |
 
 ## Features worth exploring
 
@@ -18,7 +18,7 @@ You've got a connected instance, a deployed cartridge, and a scaffold workflow. 
 - **Sandbox Explorer** — start, stop, restart, extend, and create sandboxes. Needs OAuth.
 - **B2C Script Debugger** — set breakpoints in server-side `.js`/`.ds` files; F5 to attach.
 - **Commerce App Packages (CAP)** — install B2C apps from a `commerce-app.json`.
-- **Page Designer Assistant** — generate Page Designer page files from a guided UI.
+- **Content Libraries** — browse, export and edit Page Designer pages, and see the page and component types live on your site.
 
 ## Going further
 

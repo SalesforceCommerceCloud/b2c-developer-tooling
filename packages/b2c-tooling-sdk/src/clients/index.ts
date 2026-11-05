@@ -436,6 +436,30 @@ export type {
 } from './scapi-scripts.js';
 
 // SCAPI Sites
+export {
+  createScapiExperiencesClient,
+  SCAPI_EXPERIENCES_CASCADE,
+  SCAPI_EXPERIENCES_SCOPES,
+} from './scapi-experiences.js';
+export type {
+  ScapiExperiencesClient,
+  ScapiExperiencesClientConfig,
+  ScapiExperiencesError,
+  ExperiencePageRequest,
+  ExperienceRegionRequest,
+  ExperienceComponentRequest,
+  ExperiencePage,
+  ExperiencePageType,
+  ExperienceComponentType,
+  ExperienceContentAsset,
+  ExperienceContentFolder,
+  ExperienceContentFolderAssignment,
+  ExperienceSlot,
+  ExperienceSlotConfiguration,
+  ExperienceSearchRequest,
+  paths as ScapiExperiencesPaths,
+  components as ScapiExperiencesComponents,
+} from './scapi-experiences.js';
 export {createScapiSitesClient, SCAPI_SITES_CASCADE} from './scapi-sites.js';
 export type {
   ScapiSitesClient,

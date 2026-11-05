@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-03T21:38:41.967Z",
+  "generatedAt": "2026-11-05T17:16:16.828Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -71,8 +71,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/content.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/content.md",
-      "headings": "Authentication • b2c content export • Usage • Arguments • Flags • Examples • Configuring multiple libraries • Output • Notes • b2c content list • Usage • Flags • Examples • Output • b2c content validate • Usage • Arguments • Flags • Examples • Output • Notes",
-      "preview": "Commands for exporting, listing, and validating Page Designer content from B2C Commerce content libraries."
+      "headings": "Authentication • b2c content export • Usage • Arguments • Flags • Examples • Configuring multiple libraries • Output • Notes • b2c content list • Usage • Flags • Examples • Output • b2c content validate • Usage • Arguments • Flags • Examples • Output • Notes • b2c content types list • Usage • Flags • Examples • b2c content types get • Usage • Examples • b2c content push • Usage • Arguments • Flags • Examples • Output • Notes • b2c content asset • Usage • Flags • Examples • Notes • b2c content folder • Usage • Flags • Examples • Notes • b2c content slot list • Usage • Flags • b2c content slot get • Usage • b2c content slot config list • Usage • Flags • b2c content slot config get • b2c content slot config put • Usage • Flags • Examples • b2c content slot config update • b2c content slot config delete",
+      "preview": "Commands for exporting, listing, validating, and pushing Page Designer content, managing library content assets and folders, and managing content slot configurations in B2C Commerce."
     },
     {
       "id": "cli-custom-apis",
@@ -593,7 +593,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/configuration.md",
-      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • Authentication • XML schema validation • Complete defaults (copy-paste) • Next Steps",
+      "headings": "Connecting to a B2C Instance • Code sync with only a server • Per-feature requirements • Example `dw.json` • API Browser Setup • How the Extension Chooses a Project • Selecting an Instance • Safety Mode • Settings Reference • Feature toggles • Verbosity, polling, telemetry • Content Libraries • Authentication • XML schema validation • Complete defaults (copy-paste) • Next Steps",
       "preview": "Connect the Salesforce B2C Commerce IDE Extension to a B2C Commerce instance — credentials, OAuth, telemetry, and the b2c-dx.* settings reference."
     },
     {

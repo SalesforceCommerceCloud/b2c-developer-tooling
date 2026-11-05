@@ -1,10 +1,10 @@
 ---
-description: Commands for exporting, listing, and validating Page Designer content from B2C Commerce content libraries.
+description: Commands for exporting, listing, validating, and pushing Page Designer content, managing library content assets and folders, and managing content slot configurations in B2C Commerce.
 ---
 
 # Content Commands
 
-Commands for working with Page Designer content libraries and metadefinitions.
+Commands for working with Page Designer content libraries, content assets and folders, metadefinitions, and content slots.
 
 [![B2C CLI exporting MarketStreet's About Us template from an instance: one page, two components, two content blocks, and one downloaded image.](/terminal/content-export.png)](/terminal/content-export.png)
 
@@ -14,11 +14,17 @@ Export a page from your instance with its nested components, reusable content bl
 
 The `content export` and `content list` commands require OAuth authentication:
 
-| Operation | Auth Required |
-|-----------|--------------|
-| `content export` | OAuth for the export job and WebDAV access for the archive and assets |
-| `content list` | OAuth for the export job and WebDAV access for the archive |
-| `content validate` | None (local file validation) |
+| Operation                                                                                      | Auth Required                                                         |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `content export`                                                                               | OAuth for the export job and WebDAV access for the archive and assets |
+| `content list`                                                                                 | OAuth for the export job and WebDAV access for the archive            |
+| `content validate`                                                                             | None (local file validation)                                          |
+| `content types list`, `content types get`                                                      | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw`                    |
+| `content push`                                                                                 | SCAPI: `sfcc.experiences.rw`                                          |
+| `content asset get`, `content folder list`                                                     | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw`                    |
+| `content folder get`, and changes to assets and folders                                        | SCAPI: `sfcc.experiences.rw`                                          |
+| `content slot list`, `content slot get`, `content slot config list`, `content slot config get` | SCAPI: `sfcc.experiences` or `sfcc.experiences.rw`                    |
+| `content slot config put`, `update`, `delete`                                                  | SCAPI: `sfcc.experiences.rw`                                          |
 
 Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` and the tenant scope. `--api-backend ocapi` selects OCAPI explicitly; the default `auto` mode supports OCAPI fallback. See [Job Authentication](./jobs.md#authentication) for setup.
 
@@ -26,6 +32,8 @@ Online exports and listings use SCAPI when configured, requiring `sfcc.jobs.rw` 
 export SFCC_CLIENT_ID=your-client-id
 export SFCC_CLIENT_SECRET=your-client-secret
 ```
+
+`content types`, `content push`, `content asset`, `content folder`, and `content slot` use the SCAPI Admin Experiences API (`experience/experiences/v1`). They need an API client using client credentials or JWT, with the `sfcc.experiences.rw` scope (or read-only `sfcc.experiences` for the read commands), the tenant scope, and a configured short code and tenant ID. Browser sign-in is not supported for these commands. Without these scopes, the other content commands keep working as before.
 
 The `content export` and `content list` commands also support a `--library-file` flag for offline use with a local XML file, which skips authentication entirely.
 
@@ -47,28 +55,28 @@ b2c content export [PAGES...] --library <library-id>
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `PAGES` | One or more content IDs to export (pages, content assets, components, or content blocks) | Yes |
+| Argument | Description                                                                              | Required |
+| -------- | ---------------------------------------------------------------------------------------- | -------- |
+| `PAGES`  | One or more content IDs to export (pages, content assets, components, or content blocks) | Yes      |
 
 ### Flags
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
-| `--output`, `-o` | Output directory | `content-<timestamp>` |
-| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
-| `--asset-query`, `-q` | JSON dot-paths for static asset extraction (can be repeated) | `image.path` |
-| `--regex`, `-r` | Treat page IDs as regular expressions | `false` |
-| `--folder` | Filter by folder classification (can be repeated) | |
-| `--offline` | Skip asset downloads | `false` |
-| `--library-file` | Use a local library XML file instead of fetching from instance | |
-| `--keep-orphans` | Include orphan components (not linked to any page) in export | `false` |
-| `--show-tree` | Display tree structure of exported content | `true` |
-| `--timeout` | Export job timeout in seconds | |
-| `--dry-run` | Preview export without downloading assets or writing files | `false` |
+| Flag                                   | Description                                                                                                       | Default               |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `--library`                            | Library ID or site ID. Also configurable via `content-library` in dw.json.                                        |                       |
+| `--output`, `-o`                       | Output directory                                                                                                  | `content-<timestamp>` |
+| `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config           |
+| `--asset-query`, `-q`                  | JSON dot-paths for static asset extraction (can be repeated)                                                      | `image.path`          |
+| `--regex`, `-r`                        | Treat page IDs as regular expressions                                                                             | `false`               |
+| `--folder`                             | Filter by folder classification (can be repeated)                                                                 |                       |
+| `--offline`                            | Skip asset downloads                                                                                              | `false`               |
+| `--library-file`                       | Use a local library XML file instead of fetching from instance                                                    |                       |
+| `--keep-orphans`                       | Include orphan components (not linked to any page) in export                                                      | `false`               |
+| `--show-tree`                          | Display tree structure of exported content                                                                        | `true`                |
+| `--timeout`                            | Export job timeout in seconds                                                                                     |                       |
+| `--dry-run`                            | Preview export without downloading assets or writing files                                                        | `false`               |
 
 ### Examples
 
@@ -121,10 +129,7 @@ Listing libraries under `b2c.libraries` in `package.json` (or `libraries` in `dw
 ```json
 {
   "b2c": {
-    "libraries": [
-      "RefArchSharedLibrary",
-      { "id": "SiteGenesis", "siteLibrary": true }
-    ]
+    "libraries": ["RefArchSharedLibrary", {"id": "SiteGenesis", "siteLibrary": true}]
   }
 }
 ```
@@ -181,17 +186,17 @@ b2c content list --library <library-id>
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--library` | Library ID or site ID. Also configurable via `content-library` in dw.json. | |
+| Flag                                   | Description                                                                                                       | Default     |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------- |
+| `--library`                            | Library ID or site ID. Also configurable via `content-library` in dw.json.                                        |             |
 | `--site-library` / `--no-site-library` | Treat the library as a site-private library. Defaults from a matching `libraries` config entry, otherwise `false` | from config |
-| `--library-file` | Use a local library XML file instead of fetching from instance | |
-| `--type` | Filter by node type: `page`, `content`, `component`, or `fragment` (content blocks) | |
-| `--components` | Include components in table output | `false` |
-| `--tree` | Show tree structure instead of table | `false` |
-| `--timeout` | Job timeout in seconds | |
-| `--columns`, `-c` | Columns to display (comma-separated). Available: id, type, typeId, children | All columns |
-| `--extended`, `-x` | Show all columns including extended fields | `false` |
+| `--library-file`                       | Use a local library XML file instead of fetching from instance                                                    |             |
+| `--type`                               | Filter by node type: `page`, `content`, `component`, or `fragment` (content blocks)                               |             |
+| `--components`                         | Include components in table output                                                                                | `false`     |
+| `--tree`                               | Show tree structure instead of table                                                                              | `false`     |
+| `--timeout`                            | Job timeout in seconds                                                                                            |             |
+| `--columns`, `-c`                      | Columns to display (comma-separated). Available: id, type, typeId, children                                       | All columns |
+| `--extended`, `-x`                     | Show all columns including extended fields                                                                        | `false`     |
 
 ### Examples
 
@@ -270,13 +275,14 @@ The command auto-detects the schema type using file path conventions (`experienc
 
 ```bash
 b2c content validate <files...>
+b2c content validate --page <files...> [--types-dir <dir>...]
 ```
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `files` | One or more file paths, directories, or glob patterns | Yes |
+| Argument | Description                                           | Required |
+| -------- | ----------------------------------------------------- | -------- |
+| `files`  | One or more file paths, directories, or glob patterns | Yes      |
 
 When a directory is passed, all `*.json` files within it are validated recursively.
 
@@ -284,9 +290,11 @@ When a directory is passed, all `*.json` files within it are validated recursive
 
 In addition to [global flags](./index#global-flags):
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--type`, `-t` | Schema type to validate against (skips auto-detection) | Auto-detected |
+| Flag           | Description                                                                                                          | Default           |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `--type`, `-t` | Schema type to validate against (skips auto-detection)                                                               | Auto-detected     |
+| `--page`       | Validate page bodies (page JSON or exported library XML) against page and component types instead of metadefinitions | `false`           |
+| `--types-dir`  | Directory searched for cartridge `experience/` type definitions in `--page` mode (repeatable)                        | Current directory |
 
 Available schema types: `pagetype`, `componenttype`, `aspecttype`, `cmsrecord`, `customeditortype`, `contentassetpageconfig`, `contentassetcomponentconfig`, `contentassetstructuredcontentdata`, `image`.
 
@@ -310,7 +318,12 @@ b2c content validate pages/home.json pages/about.json components/hero.json
 
 # JSON output for CI/scripting
 b2c content validate cartridge/experience/ --json
+
+# Validate a page body against the types in your cartridges (offline)
+b2c content validate --page pages/campaign.json --types-dir ./cartridges
 ```
+
+With `--page`, each page is checked for unknown page types, regions, and component types; region exclusions and inclusions; required attributes; attribute value types (enum, boolean, integer, image); and duplicate component IDs. Attribute keys that the type doesn't define, and regions with more components than `max_components`, are reported as warnings. To validate against the types deployed to an instance, use `b2c content push --dry-run`.
 
 ### Output
 
@@ -350,3 +363,366 @@ With `--json`, returns a structured result:
 - Auto-detection uses file path conventions first: files under `experience/pages/` are validated as `pagetype`, files under `experience/components/` as `componenttype`. For other schema types, use `--type`.
 - Schemas are bundled with the SDK and follow the [Page Designer metadefinition specification](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/b2c-page-designer.html).
 - Use `b2c content validate` in CI pipelines to catch metadefinition errors before deployment.
+
+---
+
+## b2c content types list
+
+List the Page Designer page and component types deployed for a site, as reported live by the instance. The types come from the site's cartridge path.
+
+### Usage
+
+```bash
+b2c content types list [--site-id <site>] [--kind page|component]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag                      | Description                                                                               | Default                     |
+| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------- |
+| `--site-id`               | Site whose cartridge path defines the types                                               | `siteId` from configuration |
+| `--kind`                  | Only list `page` or `component` types                                                     | Both                        |
+| `--columns`, `--extended` | Select table columns (`id`, `kind`, `name`, `group`, `regions`, `attributes`, `archType`) |                             |
+
+### Examples
+
+```bash
+b2c content types list --site-id RefArch
+b2c content types list --kind component --json
+```
+
+Type IDs are shown without the `page.` and `component.` prefixes used in library XML (for example `Content.hero`, stored in library XML as `component.Content.hero`).
+
+## b2c content types get
+
+Show one page or component type with its regions (including `maxComponents` and excluded component types) and attributes (type, required, enum values, defaults).
+
+### Usage
+
+```bash
+b2c content types get <typeId> [--site-id <site>]
+```
+
+### Examples
+
+```bash
+b2c content types get Content.hero
+b2c content types get homePage --site-id RefArch --json
+```
+
+---
+
+## b2c content push
+
+Create or update Page Designer pages, with their regions and components, through the Experiences API without a site archive import. A new page is created **offline**: set it online in Business Manager. An update keeps the page's online state, so changes to an online page are live on the storefront right away.
+
+Before pushing, each page is validated against the page and component types deployed for the site (the same checks as `content validate --page`). The platform accepts a page that is missing required attributes and silently drops unknown attribute keys, so this check catches problems the API would let through. Pages with validation errors are not pushed unless you pass `--force`.
+
+### Usage
+
+```bash
+b2c content push <files...> [--site-id <site>] [--page <id>...] [--dry-run]
+```
+
+### Arguments
+
+| Argument | Description                                                                        | Required |
+| -------- | ---------------------------------------------------------------------------------- | -------- |
+| `files`  | Page JSON files (one page body or an array of pages) or exported library XML files | Yes      |
+
+A page JSON file uses the Experiences API page body:
+
+```json
+{
+  "id": "summer-campaign",
+  "name": "Summer Campaign",
+  "typeId": "homePage",
+  "regions": [
+    {
+      "id": "main",
+      "components": [
+        {"id": "summer-hero", "typeId": "Content.hero", "data": {"title": "Summer is here", "height": "md"}}
+      ]
+    }
+  ]
+}
+```
+
+Layout components nest their own `regions` in the same shape. Library XML from `b2c content export` is converted automatically, so you can export a page, edit it, and push it back. Pages that link shared content blocks (fragments) can't be pushed.
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag              | Description                                                                                                              | Default                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `--site-id`       | Site the pages belong to                                                                                                 | `siteId` from configuration |
+| `--page`          | Only push these page IDs from the input files (repeatable)                                                               | All pages                   |
+| `--dry-run`       | Validate against the instance types without pushing                                                                      | `false`                     |
+| `--[no-]validate` | Validate before pushing                                                                                                  | `true`                      |
+| `--local-types`   | Directory with cartridge `experience/` definitions that override instance types, for types not yet deployed (repeatable) |                             |
+| `--force`         | Push pages even when validation reports errors                                                                           | `false`                     |
+
+### Examples
+
+```bash
+# Validate only
+b2c content push pages/summer.json --site-id RefArch --dry-run
+
+# Create or update a page
+b2c content push pages/summer.json --site-id RefArch
+
+# Round-trip an exported page
+b2c content export homepage -o ./export
+b2c content push ./export/libraries/SharedLibrary/library.xml --page homepage
+
+# Validate against component types you haven't deployed yet
+b2c content push pages/summer.json --local-types ./cartridges --dry-run
+```
+
+### Output
+
+```
+summer-campaign (pages/summer.json): created
+
+1 page(s) saved. New pages are offline until you set them online in Business Manager; changes to an online page are live right away.
+```
+
+With `--json`, the command returns `{siteId, dryRun, pages: [{pageId, source, status, errors?, warnings?, message?}]}`, where `status` is `created`, `updated`, `validated` (dry run), `invalid`, or `failed`. The command exits with a non-zero status when any page is invalid or rejected.
+
+### Notes
+
+- **Updates merge by region.** A region included in the body replaces that region's components. Regions you leave out are kept as they are.
+- Components removed from a region stay in the library as unassigned components.
+- The type of an existing page can't be changed. Push a new page ID instead.
+- The Experiences API can't read, delete, or publish pages. Use `b2c content export` to read pages back, and Business Manager to activate or delete them.
+
+---
+
+## b2c content asset
+
+Read and change classic library content assets (not Page Designer pages) without an export or import job.
+
+### Usage
+
+```bash
+b2c content asset get <contentId> [--library <id>] [--folders]
+b2c content asset put <contentId> [--file <json>] [field flags] [--folder <folderId>]
+b2c content asset update <contentId> [--file <json>] [field flags]
+b2c content asset delete <contentId> [--force]
+```
+
+`--library` takes a shared library ID, or a site ID for a site-private library. It defaults to `content-library` or the first `libraries` entry in `dw.json`.
+
+### Flags
+
+| Flag                                                            | Description                                                     |
+| --------------------------------------------------------------- | --------------------------------------------------------------- |
+| `--library`                                                     | Library ID (shared library or site ID)                          |
+| `-f`, `--file`                                                  | JSON body (as printed by `get`); flags override its fields      |
+| `--name`, `--description`, `--page-title`, `--page-description` | Localized values for `--locale`                                 |
+| `--[no-]online`                                                 | Online in `--locale`                                            |
+| `-a`, `--attribute c_id=value`                                  | Localized string custom attribute (repeatable)                  |
+| `--markup c_id=<html>`                                          | Localized markup custom attribute such as `c_body` (repeatable) |
+| `--template`                                                    | Rendering template                                              |
+| `--locale`                                                      | Locale for localized values (default `default`)                 |
+| `--folder`                                                      | `put` only: assign the asset to this classification folder      |
+| `--folders`                                                     | `get` only: include the folders the asset is in                 |
+| `--force`                                                       | `delete` only: skip the confirmation prompt                     |
+
+### Examples
+
+```bash
+b2c content asset put summer-banner --name "Summer Banner" --online \
+  --markup c_body="<p>Summer is here</p>" --folder promos
+b2c content asset update summer-banner --locale fr --markup c_body="<p>L'été est là</p>"
+b2c content asset get summer-banner > summer-banner.json
+b2c content asset delete summer-banner --force
+```
+
+### Notes
+
+- `update` merges fields and locales into the existing asset.
+- The platform ignores custom attribute IDs it doesn't know, so check the result with `get`.
+- If `put --folder` saves the asset but the folder assignment fails, the command says so. Retry the assignment with `b2c content folder assign`.
+- `delete` asks for confirmation unless you pass `--force` or `--json`.
+
+## b2c content folder
+
+Walk and change the folder tree of a library.
+
+### Usage
+
+```bash
+b2c content folder list [--folder <id>] [--depth <n>] [--folders-only] [--tree]
+b2c content folder get <folderId>
+b2c content folder put <folderId> [--parent <id>] [--name <name>] [--[no-]online]
+b2c content folder update <folderId> [--parent <id>] [field flags]
+b2c content folder delete <folderId> [--force]
+b2c content folder assign <folderId> <contentId> [--default] [--position <n>]
+b2c content folder unassign <folderId> <contentId>
+```
+
+### Flags
+
+| Flag                                                                                        | Description                                                |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `--library`                                                                                 | Library ID (shared library or site ID)                     |
+| `--folder`                                                                                  | `list` only: starting folder (default `root`)              |
+| `--depth`                                                                                   | `list` only: maximum depth below the starting folder       |
+| `--folders-only`                                                                            | `list` only: skip content assets                           |
+| `--tree`                                                                                    | `list` only: print a tree instead of a table               |
+| `--parent`                                                                                  | `put`/`update`: parent folder (default `root`)             |
+| `--name`, `--description`, `--page-title`, `--page-description`, `-a`, `--file`, `--locale` | Same as `content asset`                                    |
+| `--[no-]online`                                                                             | Folder online flag (not localized)                         |
+| `--default`                                                                                 | `assign` only: make this the asset's classification folder |
+| `--position`                                                                                | `assign` only: sort position in the folder                 |
+| `--force`                                                                                   | `delete` only: skip the confirmation prompt                |
+
+### Examples
+
+```bash
+b2c content folder put promos --name Promotions --online
+b2c content folder assign promos summer-banner --default
+b2c content folder list --folder promos --tree
+b2c content folder list --folders-only --json
+```
+
+### Notes
+
+- `list` starts at `root` (or `--folder`) and lists sub-folders and their content assets. It's faster than `content list` for folder-scoped views, but it can't show Page Designer pages or assets that aren't in any folder.
+- `list` works with the read-only `sfcc.experiences` scope. `get` and all writes need `sfcc.experiences.rw`.
+- `delete` refuses to delete `root`.
+
+---
+
+## b2c content slot list
+
+List the content slots of a site with their context type, number of configurations, and which configurations are active now.
+
+### Usage
+
+```bash
+b2c content slot list [--site-id <site>] [--context global|category|folder]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag                      | Description                                                                                             | Default                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `--site-id`               | Site whose slots to list                                                                                | `siteId` from configuration |
+| `--context`               | Only slots of this context type                                                                         | All                         |
+| `--columns`, `--extended` | Select table columns (`slotId`, `contextType`, `configurations`, `activeConfigurations`, `description`) |                             |
+
+## b2c content slot get
+
+Show a slot and all of its configurations.
+
+### Usage
+
+```bash
+b2c content slot get <slotId> [--site-id <site>] [--context global|category|folder]
+```
+
+`--context` defaults to `global`.
+
+## b2c content slot config list
+
+List slot configurations with their context, enabled and active state, content type, and content IDs.
+
+### Usage
+
+```bash
+b2c content slot config list [--site-id <site>] [--slot-id <slot>] [--context global|category|folder]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag                      | Description                                                                                                                                                               | Default                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `--site-id`               | Site whose configurations to list                                                                                                                                         | `siteId` from configuration |
+| `--slot-id`               | Only configurations of this slot                                                                                                                                          | All slots                   |
+| `--context`               | Only configurations with this context                                                                                                                                     | All                         |
+| `--columns`, `--extended` | Select table columns (`slotId`, `configurationId`, `context`, `enabled`, `active`, `default`, `rank`, `contentType`, `content`, `customerGroups`, `schedule`, `template`) |                             |
+
+`active` means the configuration is enabled and inside its schedule now.
+
+## b2c content slot config get
+
+Print one slot configuration as JSON. Redirect the output to a file to edit it and pass it back to `put --file`.
+
+```bash
+b2c content slot config get <slotId> <configurationId> [--site-id <site>] [--context <context>]
+```
+
+## b2c content slot config put
+
+Create or replace a slot configuration. The slot must already exist. Slots are defined by templates and can't be created through the API.
+
+### Usage
+
+```bash
+b2c content slot config put <slotId> <configurationId> [content flag] --template <template> [flags]
+```
+
+### Flags
+
+In addition to [global flags](./index#global-flags):
+
+| Flag                               | Description                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `--site-id`                        | Site the slot belongs to (default: `siteId` from configuration)           |
+| `-f`, `--file`                     | JSON file with the configuration body; flags override its fields          |
+| `--content-assets`                 | Comma-separated content asset IDs                                         |
+| `--products`                       | Comma-separated product IDs                                               |
+| `--categories`                     | Comma-separated category IDs                                              |
+| `--html`                           | HTML markup for the default locale                                        |
+| `--template`                       | Rendering template, for example `slots/content/htmlslotcontainer.isml`    |
+| `--context`, `--context-id`        | `global` (default), or `category`/`folder` with the category or folder ID |
+| `--[no-]enabled`, `--[no-]default` | Enable the configuration, or make it the slot's default                   |
+| `--rank`                           | Rank used to order configurations                                         |
+| `--customer-groups`                | Comma-separated customer group IDs                                        |
+| `--start-date`, `--end-date`       | Schedule window (ISO 8601)                                                |
+| `--description`                    | Configuration description                                                 |
+
+Content (one of `--content-assets`, `--products`, `--categories`, `--html`, or `slotContent` in `--file`) and a template are required. Referenced content must exist: content assets are looked up in the site's library.
+
+### Examples
+
+```bash
+b2c content slot config put home-main summer-sale \
+  --content-assets summer-banner \
+  --template slots/content/htmlslotcontainer.isml \
+  --enabled --customer-groups Everyone \
+  --start-date 2026-06-01T00:00:00Z --end-date 2026-09-01T00:00:00Z
+
+# Copy a configuration
+b2c content slot config get home-main summer-sale > summer.json
+b2c content slot config put home-main winter-sale --file summer.json --start-date 2026-12-01T00:00:00Z
+```
+
+## b2c content slot config update
+
+Change fields of an existing configuration and keep the rest. Takes the same flags as `put`. The current content is kept unless you pass a content flag.
+
+```bash
+# Disable a configuration
+b2c content slot config update home-main summer-sale --no-enabled
+
+# Extend the schedule
+b2c content slot config update home-main summer-sale --end-date 2026-09-15T00:00:00Z
+```
+
+## b2c content slot config delete
+
+Delete a slot configuration. Asks for confirmation unless you pass `--force` or `--json`. The command is blocked on instances marked as production or read-only in your configuration.
+
+```bash
+b2c content slot config delete home-main summer-sale --force
+```

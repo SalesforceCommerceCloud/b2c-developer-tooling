@@ -90,3 +90,116 @@ export type {
   MetaDefinitionValidationResult,
   ValidateMetaDefinitionOptions,
 } from './validate.js';
+
+export {
+  ExperiencesRequestError,
+  ExperiencesUnavailableError,
+  PagePushError,
+  fetchExperienceTypes,
+  getExperiencesAvailability,
+  listComponentTypes,
+  listPageTypes,
+  pushPage,
+} from './experiences.js';
+
+export type {
+  ExperienceTypes,
+  ExperiencesAvailability,
+  ExperiencesUnavailableReason,
+  ListExperienceTypesOptions,
+  PushPageOptions,
+  PushPageResult,
+} from './experiences.js';
+
+export {
+  catalogFromExperienceTypes,
+  catalogFromLocalCartridges,
+  mergeTypeCatalogs,
+  validatePageRequest,
+} from './page-validate.js';
+
+export type {
+  PageDesignerAttributeDefinition,
+  PageDesignerRegionDefinition,
+  PageDesignerTypeCatalog,
+  PageDesignerTypeDefinition,
+  PageValidationIssue,
+  PageValidationResult,
+} from './page-validate.js';
+
+export {
+  libraryPageToPageRequest,
+  libraryXmlToPageRequests,
+  pageRequestsToLibraryXml,
+  planLibraryPagePush,
+  toExperienceTypeId,
+} from './page-convert.js';
+
+export type {
+  LibraryPagePushPlan,
+  LibraryXmlToPageRequestsOptions,
+  PageRequestsToLibraryXmlOptions,
+  PlanLibraryPagePushOptions,
+} from './page-convert.js';
+
+export type {
+  ExperienceComponentRequest,
+  ExperienceComponentType,
+  ExperiencePage,
+  ExperiencePageRequest,
+  ExperiencePageType,
+  ExperienceRegionRequest,
+} from '../../clients/scapi-experiences.js';
+
+export {
+  deleteSlotConfiguration,
+  getSlot,
+  getSlotConfiguration,
+  putSlotConfiguration,
+  searchSlotConfigurations,
+  searchSlots,
+  toWireSlotContentType,
+  updateSlotConfiguration,
+} from './slots.js';
+
+export type {
+  PutSlotConfigurationResult,
+  SearchSlotConfigurationsOptions,
+  SearchSlotsOptions,
+  SlotConfigurationInput,
+  SlotContentType,
+  SlotContextType,
+  SlotSearchResult,
+  SlotSiteOptions,
+} from './slots.js';
+
+export {
+  assignContentToFolder,
+  deleteContentAsset,
+  deleteContentFolder,
+  getContentAsset,
+  getContentAssetFolders,
+  getContentFolder,
+  listFolderContent,
+  listSubFolders,
+  patchContentAsset,
+  patchContentFolder,
+  putContentAsset,
+  putContentFolder,
+  unassignContentFromFolder,
+  walkContentFolder,
+} from './library-api.js';
+
+export type {
+  AssignContentOptions,
+  ContentFolderNode,
+  LibraryItemInput,
+  LibraryPutResult,
+  WalkContentFolderOptions,
+} from './library-api.js';
+
+export type {
+  ExperienceContentAsset,
+  ExperienceContentFolder,
+  ExperienceContentFolderAssignment,
+} from '../../clients/scapi-experiences.js';
