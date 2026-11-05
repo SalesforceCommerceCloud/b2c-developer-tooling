@@ -1,5 +1,32 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.12.1
+
+### Patch Changes
+
+- Updated dependencies [[`315118c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/315118c96fff84319bd3eff7f44a3a3d7422876c)]:
+  - @salesforce/b2c-tooling-sdk@2.12.1
+
+## 3.12.0
+
+### Minor Changes
+
+- [#846](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/846) [`2a3316f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2a3316f988d60bb03ef39d42f7d0e1c08e0c514d) - Load core B2C tools (`skills_read`, `docs_search`, `scapi_search`, `config_inspect`) at session start in Claude Code, and help assistants that use tool search find B2C tools through clearer server instructions, task-focused descriptions and Claude Code search hints. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added the `object_types_describe` tool so assistants can look up system object attributes (such as `c_color` on Product), their value types, enum values, and attribute groups before writing code. SCAPI code mode also gains guidance and built-in snippets for adding custom attributes through the Object Definitions API. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#842](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/842) [`a865d27`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a865d27b2e815385348f8f2234f8efb4c096ed5f) - SCAPI code mode now guides agents through catalog categorization rules, CORS, timeouts and custom objects, including the PUTs that replace all existing values. New built-in snippets update one client's CORS origins safely and run category rules with status polling. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#846](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/846) [`2a3316f`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2a3316f988d60bb03ef39d42f7d0e1c08e0c514d) - Use fewer tokens for MCP tool definitions and results: tool schemas drop boilerplate JSON Schema keywords, and JSON tool results are no longer pretty-printed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - The SCAPI skill now directs SLAS Admin tasks (tenants, SLAS clients, templates, identity providers, shopper logout and deletion) to the `b2c slas` CLI, since `scapi_execute` can't call the SLAS Admin API. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`a865d27`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a865d27b2e815385348f8f2234f8efb4c096ed5f), [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a), [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a)]:
+  - @salesforce/b2c-agent-plugins@1.15.0
+  - @salesforce/b2c-tooling-sdk@2.12.0
+
 ## 3.11.0
 
 ### Minor Changes

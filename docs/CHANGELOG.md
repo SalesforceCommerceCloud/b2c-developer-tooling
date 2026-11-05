@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.13
+
+### Patch Changes
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - New [SLAS guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/slas) walks through shopper tokens, SLAS clients, passwordless login templates, social login, and shopper logout, with example prompts for your AI assistant. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.12
 
 ### Patch Changes

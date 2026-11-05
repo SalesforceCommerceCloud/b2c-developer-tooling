@@ -95,7 +95,7 @@ declare class ShippingMgr {
      * - shipping cost is not applied to bundled product line items or options
      * line items
      */
-    static applyShippingCost(lineItemCtnr: LineItemCtnr<any>): void;
+    static applyShippingCost(lineItemCtnr: LineItemCtnr): void;
     /**
      * Returns the active shipping methods of the current site applicable to the session currency and current customer group.
      */
@@ -110,7 +110,7 @@ declare class ShippingMgr {
     /**
      * Returns the shipping model for the specified product.
      */
-    static getProductShippingModel(product: Product<any>): ProductShippingModel;
+    static getProductShippingModel(product: Product): ProductShippingModel;
     /**
      * Returns the shipping model for the specified shipment.
      */

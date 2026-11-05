@@ -193,7 +193,7 @@ declare class ProductList extends ExtensibleObject<ICustomAttributes.ProductList
     /**
      * Create an item in the list that references the specified product.
      */
-    createProductItem(product: Product<any>): ProductListItem;
+    createProductItem(product: Product): ProductListItem;
     /**
      * Create a ProductListRegistrant and assign it to the registrant attribute
      * of the list.  An exception is thrown if the list already has a registrant

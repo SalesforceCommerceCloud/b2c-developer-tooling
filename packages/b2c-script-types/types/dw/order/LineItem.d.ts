@@ -29,7 +29,7 @@ declare class LineItem<T extends ICustomAttributes.LineItem = ICustomAttributes.
     /**
      * Returns the line item ctnr of the line item.
      */
-    readonly lineItemCtnr: LineItemCtnr<any>;
+    readonly lineItemCtnr: LineItemCtnr;
     /**
      * Returns the display text for the line item.
      */
@@ -91,7 +91,7 @@ declare class LineItem<T extends ICustomAttributes.LineItem = ICustomAttributes.
     /**
      * Returns the line item ctnr of the line item.
      */
-    getLineItemCtnr(): LineItemCtnr<any>;
+    getLineItemCtnr(): LineItemCtnr;
     /**
      * Returns the display text for the line item.
      */

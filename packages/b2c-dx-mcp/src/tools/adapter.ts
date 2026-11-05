@@ -268,7 +268,9 @@ export function attachResolution(result: ToolResult, resolution: ToolResolution,
       const parsed = JSON.parse(content[0].text) as unknown;
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         const output = {...(parsed as Record<string, unknown>), resolution};
-        content = [{...content[0], text: JSON.stringify(output, null, indent)}];
+        // Compact JSON (no literal newlines) stays compact.
+        const effectiveIndent = content[0].text.includes('\n') ? indent : 0;
+        content = [{...content[0], text: JSON.stringify(output, null, effectiveIndent)}];
         structuredContent = {...output, ...structured, resolution};
       }
     } catch {

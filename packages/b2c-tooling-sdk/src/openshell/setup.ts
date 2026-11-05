@@ -11,6 +11,7 @@
  */
 import yaml from 'js-yaml';
 import {Minimatch} from 'minimatch';
+import {READ_ONLY_SEARCH_PATHS} from '../safety/read-only-searches.js';
 
 import {DEFAULT_ACCOUNT_MANAGER_HOST, DEFAULT_ODS_HOST} from '../defaults.js';
 import {DEFAULT_CIP_HOST, DEFAULT_CIP_STAGING_HOST} from '../clients/cip.js';
@@ -200,6 +201,10 @@ function methodRules(level: OpenShellAccessLevel, webdav: boolean, path = '/**')
   if (level !== 'READ_ONLY') methods.push(...WRITE_METHODS);
   if (level === 'NONE') methods.push('DELETE');
   const rules = methods.map((method) => ({allow: {method, path}}));
+  // Safety Mode allows POST to known searches under READ_ONLY; mirror that here.
+  if (level === 'READ_ONLY' && path === '/**') {
+    rules.push(...READ_ONLY_SEARCH_PATHS.map((search) => ({allow: {method: 'POST', path: search}})));
+  }
   if (webdav) {
     const webdavMethods = [...WEBDAV_READ_METHODS];
     if (level !== 'READ_ONLY') webdavMethods.push(...WEBDAV_WRITE_METHODS);

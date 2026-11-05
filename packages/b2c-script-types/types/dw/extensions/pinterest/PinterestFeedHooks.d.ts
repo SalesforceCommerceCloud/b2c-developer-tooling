@@ -43,12 +43,12 @@ declare interface PinterestFeedHooks {
      * Called after default transformation of given Demandware product to Pinterest availability as part of the
      * availability feed export.
      */
-    transformAvailability(product: Product<any>, pinterestAvailability: PinterestAvailability): Status;
+    transformAvailability(product: Product, pinterestAvailability: PinterestAvailability): Status;
     /**
      * Called after default transformation of given Demandware product to Pinterest product as part of the catalog feed
      * export.
      */
-    transformProduct(product: Product<any>, pinterestProduct: PinterestProduct): Status;
+    transformProduct(product: Product, pinterestProduct: PinterestProduct): Status;
 }
 
 export = PinterestFeedHooks;

@@ -46,7 +46,7 @@ jobs, and sandbox management.
 | ----------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
 | `NONE`      | No level-based restrictions; explicit rules still apply.       | Confirm or block only the operations you select with rules. |
 | `NO_DELETE` | Blocks DELETE; POST, PUT, and PATCH remain allowed.            | Allow writes while blocking DELETE requests.               |
-| `READ_ONLY` | Blocks POST, PUT, PATCH, and DELETE.                           | Inspect data, then allow or approve selected changes.      |
+| `READ_ONLY` | Blocks POST, PUT, PATCH, and DELETE, except known searches.    | Inspect data, then allow or approve selected changes.      |
 
 For "ask before changes, block deletes," start with the
 [shared SCAPI approval example](#global-scapi-confirmation). It uses `READ_ONLY`
@@ -54,8 +54,9 @@ with rules for the changes you want to review.
 
 The method names describe API requests: GET usually reads data, PUT and PATCH
 change it, POST can start tasks or run searches, and DELETE usually removes data.
-Safety Mode checks these methods, so a POST search also needs an
-[exception under `READ_ONLY`](#allow-a-search-without-enabling-other-writes).
+Safety Mode checks these methods. `READ_ONLY` allows POST to
+[known search endpoints](#read-only-searches); other POST requests that only read
+need an [exception](#allow-a-search-without-enabling-other-writes).
 Likewise, `NO_DELETE` does not block data removal performed through another method.
 
 ::: details Existing configurations using NO_UPDATE
@@ -106,9 +107,9 @@ your approval before selected changes. Add the
 with both plugin and manual installation.
 
 With `READ_ONLY`, [SCAPI Code Mode](../mcp/toolsets.md#scapi-code-mode) can inspect
-products, catalogs, and other data through GET requests, while requests to create,
-update, or delete records are blocked. A POST-based search needs an explicit
-exception, as shown below.
+products, catalogs, and other data through GET requests and
+[known searches](#read-only-searches), while requests to create, update, or delete
+records are blocked.
 
 <ExamplePrompt>
 
@@ -178,9 +179,16 @@ Rules are checked in order. **The first matching rule wins.**
 An `allow` rule does not override an earlier matching `block`. If no rule matches,
 the safety level determines the result.
 
-### Allow a search without enabling other writes
+### Searches under READ_ONLY {#read-only-searches}
 
-For job investigation through SCAPI code mode, add this policy to the instance:
+Many B2C APIs search with POST even though a search changes nothing. `READ_ONLY`
+allows POST to a fixed list of checked search endpoints, for example SCAPI
+`/product/products/v1/organizations/*/product-search` and
+`/operation/jobs/v1/organizations/*/job-execution-search`, and OCAPI Data API
+`product_search` and `job_execution_search`. A search that isn't on the list stays
+blocked.
+
+Rules are checked first, so you can still block a listed search:
 
 ```json
 {
@@ -189,17 +197,37 @@ For job investigation through SCAPI code mode, add this policy to the instance:
     "rules": [
       {
         "method": "POST",
-        "path": "/operation/jobs/v1/organizations/*/job-execution-search",
-        "action": "allow"
+        "path": "/s/*/dw/data/*/customer_lists/*/customer_search",
+        "action": "block"
       }
     ]
   }
 }
 ```
 
-This allows searching job history while keeping job starts and other POST
-requests blocked. When adding an exception, use the request path shown in the
-error message.
+### Allow a search without enabling other writes
+
+Some reads use POST but aren't on the search list. For example, the SCAPI
+Pricing APIs search promotions with a POST to the same path that creates them.
+Add a rule for the exact path shown in the error message:
+
+```json
+{
+  "safety": {
+    "level": "READ_ONLY",
+    "rules": [
+      {
+        "method": "POST",
+        "path": "/pricing/promotions/v1/organizations/*/promotions",
+        "action": "confirm"
+      }
+    ]
+  }
+}
+```
+
+Because this path also creates promotions, `confirm` asks before each request
+instead of allowing all of them. Use `allow` only for paths that never change data.
 
 ### Approve product changes with your assistant {#scapi-code-mode-example}
 

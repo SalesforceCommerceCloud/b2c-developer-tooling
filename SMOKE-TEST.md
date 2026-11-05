@@ -23,7 +23,7 @@ an explicit `--auth-methods implicit` selection uses the retained legacy implici
 
 | Need                                                                                                       | For                                                              |
 | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **A PKCE-capable AM "public client"** (the prod default `a40a7a9b…` qualifies) with redirect `http://localhost:8080` | All happy-path cases (§1–§3)                            |
+| **A PKCE-capable AM "public client"** (the prod default `3496b7e8…` qualifies) with redirect `http://localhost:8080` | All happy-path cases (§1–§3)                            |
 | **A second, implicit-only AM client** (an old registration, also with `localhost:8080` redirect)          | Fallback positive cases (§4, §7) — see caveat below             |
 | **Client-credentials client id + secret** (with an AM role, e.g. _User Administrator_)                      | Old client-credentials cases (§9, §10, §14, §17, §20)           |
 | **(Optional) JWT client id + cert/key**                                                                     | JWT case (§11)                                                  |
@@ -57,7 +57,7 @@ an explicit `--auth-methods implicit` selection uses the retained legacy implici
 | Read cached user tok  | `./cli auth token --client-id <CLIENT_ID>`                                               |
 | Read cached cc tok    | `./cli auth client token --client-id <ID>`                                               |
 | Clear all sessions    | `./cli auth logout`                                                                      |
-| Prove user auth (AM)  | `./cli am users list` (no flags → default public client `a40a7a9b…` via user/PKCE)        |
+| Prove user auth (AM)  | `./cli am users list` (no flags → default public client `3496b7e8…` via user/PKCE)        |
 | Default client (ODS)  | `./cli sandbox realm list [zzpq]` (no `--client-id` → default public client via user/PKCE) |
 | Default client (SLAS) | `./cli slas client list --tenant-id zzpq_019 --short-code <SC>` (no `--client-id`)        |
 | Prove cc auth (AM)    | `./cli am users list --client-id <ID> --client-secret <SECRET>`                          |
@@ -67,7 +67,7 @@ an explicit `--auth-methods implicit` selection uses the retained legacy implici
 | Instance WebDAV (basic)| `./cli webdav ls --root impex --server <HOST> --username <U> --password <P>`             |
 
 > Default auth-methods chain is `['client-credentials', 'jwt', 'user']`. `am`/`ods`/`slas` commands
-> default the client id to the public client `a40a7a9b…` (so they "just work" with no `--client-id`);
+> default the client id to the public client `3496b7e8…` (so they "just work" with no `--client-id`);
 > base `auth login`/`auth token` and **instance** commands do **not** (they require an explicit client
 > id). `bm whoami` is the one instance command that defaults to `['user']` (but still needs `--client-id`).
 
@@ -169,13 +169,13 @@ logs `[Auth] Hydrated implicit session from store` (implicit now persists/hydrat
 ## §8 — Default public client via user/PKCE (`am users list`, no creds) [OLD]
 
 `./cli am users list` → client-creds and jwt have no creds, so it falls through to user/PKCE with the
-default public client `a40a7a9b…`, opens the browser, and lists AM users. Proves user auth end-to-end
+default public client `3496b7e8…`, opens the browser, and lists AM users. Proves user auth end-to-end
 against a live server.
 
 ## §8a — Default client: list a sandbox realm (ODS) [NEW, critical] {#8a}
 
 The most common default-client use case. `./cli sandbox realm list` (alias `ods realm list`) has **no
-`--client-id`** — `OdsCommand` defaults it to the public client `a40a7a9b…`, so it falls through to
+`--client-id`** — `OdsCommand` defaults it to the public client `3496b7e8…`, so it falls through to
 user/PKCE, opens the browser, and calls the **ODS / Sandbox API**. With no realm arg it discovers your
 realms via ODS `/me` (a real authenticated call); pass a realm to target one:
 
@@ -190,7 +190,7 @@ Sandbox API access on your AM account.
 ## §8b — Default client: list SLAS clients for a tenant (SLAS Admin) [NEW, critical] {#8b}
 
 `./cli slas client list --tenant-id zzpq_019 --short-code <SHORT_CODE>` — again **no `--client-id`**;
-`SlasClientCommand` defaults it to the public client `a40a7a9b…` → user/PKCE browser login, then hits
+`SlasClientCommand` defaults it to the public client `3496b7e8…` → user/PKCE browser login, then hits
 the **SLAS Admin API** (`https://<short-code>.api.commercecloud.salesforce.com/shopper/auth-admin/v1`).
 `--short-code` is required (it forms the admin host); `--client-id` is not.
 

@@ -100,7 +100,7 @@ declare class VariationGroup extends Product<ICustomAttributes.VariationGroup> {
     /**
      * Returns the ProductMaster for this mastered product.
      */
-    readonly masterProduct: Product<any>;
+    readonly masterProduct: Product;
     /**
      * Returns the name of the product variation group.
      * 
@@ -279,7 +279,7 @@ declare class VariationGroup extends Product<ICustomAttributes.VariationGroup> {
     /**
      * Returns the ProductMaster for this mastered product.
      */
-    getMasterProduct(): Product<any>;
+    getMasterProduct(): Product;
     /**
      * Returns the name of the product variation group.
      * 

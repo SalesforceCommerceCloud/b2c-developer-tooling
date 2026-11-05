@@ -215,7 +215,7 @@ declare class ProductLineItem extends LineItem<ICustomAttributes.ProductLineItem
      * cases, the method returns null.
      * @see isCatalogProduct
      */
-    readonly product: Product<any> | null;
+    readonly product: Product | null;
     /**
      * Returns the ID of the related product.
      * 
@@ -525,7 +525,7 @@ declare class ProductLineItem extends LineItem<ICustomAttributes.ProductLineItem
      * cases, the method returns null.
      * @see isCatalogProduct
      */
-    getProduct(): Product<any> | null;
+    getProduct(): Product | null;
     /**
      * Returns the ID of the related product.
      * 
@@ -691,7 +691,7 @@ declare class ProductLineItem extends LineItem<ICustomAttributes.ProductLineItem
      * The primary use is to replace one variation product with another, without having to both create a new line item
      * for the replacement and remove the line item for the replaced product.
      */
-    replaceProduct(newProduct: Product<any>): void;
+    replaceProduct(newProduct: Product): void;
     /**
      * Sets the specified category as the product line item category context.
      */

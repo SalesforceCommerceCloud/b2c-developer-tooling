@@ -33,7 +33,7 @@ declare abstract class SearchRefinements {
      * not provide values for the current search result and can therefore also
      * be used on empty search results.
      */
-    readonly allRefinementDefinitions: Collection<SearchRefinementDefinition<any>>;
+    readonly allRefinementDefinitions: Collection<SearchRefinementDefinition>;
     /**
      * Returns a sorted list of refinement definitions that are appropriate for
      * the deepest common category (or deepest common folder) of the search
@@ -43,7 +43,7 @@ declare abstract class SearchRefinements {
      * The method also filters out refinement definitions that do not provide
      * any values for the current search result.
      */
-    readonly refinementDefinitions: Collection<SearchRefinementDefinition<any>>;
+    readonly refinementDefinitions: Collection<SearchRefinementDefinition>;
     /**
      * Returns a sorted list of refinement definitions that are appropriate for
      * the deepest common category (or deepest common folder) of the search
@@ -55,7 +55,7 @@ declare abstract class SearchRefinements {
      * not provide values for the current search result and can therefore also
      * be used on empty search results.
      */
-    getAllRefinementDefinitions(): Collection<SearchRefinementDefinition<any>>;
+    getAllRefinementDefinitions(): Collection<SearchRefinementDefinition>;
     /**
      * Returns a sorted collection of refinement values for the given refinement
      * attribute. The returned collection includes all refinement values for
@@ -103,7 +103,7 @@ declare abstract class SearchRefinements {
      * The method also filters out refinement definitions that do not provide
      * any values for the current search result.
      */
-    getRefinementDefinitions(): Collection<SearchRefinementDefinition<any>>;
+    getRefinementDefinitions(): Collection<SearchRefinementDefinition>;
     /**
      * Returns a collection of refinement values for the given refinement
      * attribute, sorting mode and sorting direction.

@@ -70,6 +70,7 @@ export type HttpClientType =
   | 'scapi-sites'
   | 'scapi-catalogs'
   | 'scapi-experiences'
+  | 'object-definitions'
   | 'scapi'
   | 'storefront-deployments'
   | 'storefront-environments'

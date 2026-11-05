@@ -1,5 +1,29 @@
 # @salesforce/b2c-cli
 
+## 2.12.1
+
+### Patch Changes
+
+- Updated dependencies [[`315118c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/315118c96fff84319bd3eff7f44a3a3d7422876c)]:
+  - @salesforce/b2c-tooling-sdk@2.12.1
+
+## 2.12.0
+
+### Minor Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - `b2c setup ide vscode-types --custom-attributes` generates IntelliSense for your instance's custom attributes, so `product.custom.myAttribute` gets completions, docs, and enum value types. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added `b2c object-types` to inspect and manage system object type attribute definitions and attribute groups (for example, add a custom attribute to Product) without a site import, using the SCAPI Object Definitions API. `object-types export` and `object-types apply` move definitions to and from `system-objecttype-extensions.xml`, so you can snapshot an instance or apply an import set's metadata without an import job. Add `--import` to also set enum values and default values, which the API can't write, with a site import of just those attributes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - New `b2c slas` commands cover the rest of the SLAS Admin API: register and update tenants (`slas tenant`), manage password action templates for passwordless login and password reset (`slas client template`), configure social and third-party identity providers (`slas idp`), and log shoppers out of all sessions or delete their SLAS records for GDPR requests (`slas shopper`). (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - `b2c slas client create` and `update` can now set login endpoint restriction (`--login-restricted`), 6-digit one-time passwords (`--six-digit-otp`), and strict client authentication (`--strict-client-auth`), and `update` can switch a client between private and public (`--private`, `--public`). `create --login-restricted` now takes effect; SLAS ignores the setting when a client is created. `update --secret` on a public client now fails with a hint to add `--private`, instead of reporting a secret that was never set. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`a865d27`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a865d27b2e815385348f8f2234f8efb4c096ed5f), [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a)]:
+  - @salesforce/b2c-tooling-sdk@2.12.0
+
 ## 2.11.0
 
 ### Minor Changes

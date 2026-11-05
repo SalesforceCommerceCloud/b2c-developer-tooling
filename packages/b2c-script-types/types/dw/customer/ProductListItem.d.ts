@@ -49,7 +49,7 @@ declare class ProductListItem extends ExtensibleObject<ICustomAttributes.Product
      * no such product in the system or if the product exists but is not
      * assigned to the site catalog.
      */
-    product: Product<any> | null;
+    product: Product | null;
     /**
      * Returns the ID of the product referenced by this item.
      * This attribute is set when a product is assigned via setProduct().
@@ -121,7 +121,7 @@ declare class ProductListItem extends ExtensibleObject<ICustomAttributes.Product
      * no such product in the system or if the product exists but is not
      * assigned to the site catalog.
      */
-    getProduct(): Product<any> | null;
+    getProduct(): Product | null;
     /**
      * Returns the ID of the product referenced by this item.
      * This attribute is set when a product is assigned via setProduct().
@@ -179,7 +179,7 @@ declare class ProductListItem extends ExtensibleObject<ICustomAttributes.Product
      * If null is specified, then the id is set to null.
      * @deprecated Use dw.customer.ProductList.createProductItem instead.
      */
-    setProduct(product: Product<any>): void;
+    setProduct(product: Product): void;
     /**
      * Store a product option model with this object.  This stores a copy
      * of the specified model, rather than an assocation to the same instance.

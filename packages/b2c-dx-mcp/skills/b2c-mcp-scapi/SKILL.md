@@ -114,6 +114,7 @@ async () => {
 | Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                               | [workflows](references/workflows.md)                                           |
 | Custom API                                                                                                                   | [custom-apis](references/custom-apis.md)                                       |
 | Page Designer pages, page/component types, content assets and folders, content slots                                         | [content](references/content.md)                                               |
+| System object attributes (`c_*` definitions, enum values, attribute groups); add attributes                                  | [object-definitions](references/object-definitions.md)                         |
 | Categories/rules; CORS, timeouts, custom objects                                                                             | [catalogs](references/catalogs.md), [admin-config](references/admin-config.md) |
 | File upload/download ops (e.g. custom sitemap upload)                                                                        | [file-transfer](references/file-transfer.md)                                   |
 | Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing                        | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

@@ -32,6 +32,7 @@ import {registerSafeCommand, registerSafety} from './safety.js';
 import {registerSandboxTree} from './sandbox-tree/index.js';
 import {registerScaffold} from './scaffold/index.js';
 import {registerApiBrowser} from './api-browser/index.js';
+import {registerObjectTypes} from './object-types/index.js';
 import {registerExportTree} from './export-tree/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
@@ -1099,6 +1100,11 @@ async function activateInner(
       registerApiBrowser(context, configProvider, log);
     });
   }
+  if (settings.get<boolean>('features.objectTypesExplorer', true)) {
+    runActivationStep(log, 'Object Types registration', () => {
+      registerObjectTypes(context, configProvider, log);
+    });
+  }
   if (settings.get<boolean>('features.exportExplorer', false)) {
     registerExportTree(context, configProvider, log);
   }
@@ -1114,7 +1120,7 @@ async function activateInner(
   }
   if (settings.get<boolean>('features.scriptTypes', true)) {
     runActivationStep(log, 'Script Types registration', () => {
-      registerScriptTypes(context, cartridgeService, log);
+      registerScriptTypes(context, cartridgeService, configProvider, log);
     });
   }
 

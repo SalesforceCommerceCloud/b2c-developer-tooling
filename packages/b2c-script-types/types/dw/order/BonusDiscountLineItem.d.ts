@@ -74,7 +74,7 @@ declare class BonusDiscountLineItem extends ExtensibleObject<ICustomAttributes.B
      * promotions engine does not touch the value of the product option line
      * items, it is the responsibility of custom code to set option prices.
      */
-    readonly bonusProducts: List<Product<any>>;
+    readonly bonusProducts: List<Product>;
     /**
      * Get the coupon line item associated with this discount.
      */
@@ -111,7 +111,7 @@ declare class BonusDiscountLineItem extends ExtensibleObject<ICustomAttributes.B
      * be returned. If the passed product is not a valid bonus product, this
      * method throws an exception.
      */
-    getBonusProductPrice(product: Product<any>): Money;
+    getBonusProductPrice(product: Product): Money;
     /**
      * Get the list of bonus products which the customer is allowed to choose
      * from for this discount. This list is configured by a merchant entering a
@@ -136,7 +136,7 @@ declare class BonusDiscountLineItem extends ExtensibleObject<ICustomAttributes.B
      * promotions engine does not touch the value of the product option line
      * items, it is the responsibility of custom code to set option prices.
      */
-    getBonusProducts(): List<Product<any>>;
+    getBonusProducts(): List<Product>;
     /**
      * Get the coupon line item associated with this discount.
      */

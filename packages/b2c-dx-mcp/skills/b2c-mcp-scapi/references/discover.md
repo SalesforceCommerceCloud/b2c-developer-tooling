@@ -66,6 +66,8 @@ Snippet names below have the `builtin/` prefix. Describe only the relevant snipp
 | Create or update a Page Designer page         | `experience/experiences/v1`: `createOrUpdatePage`; `page-push` snippet; [content](content.md)                                                               |
 | Content assets, library folders, assignments  | `experience/experiences/v1`: `getContent` / `createOrUpdateContent`, `getSubFolders`; [content](content.md#content-assets-and-folders)                      |
 | Content slot configurations                   | `experience/experiences/v1`: `searchSlotConfigurations`; `slot-configurations-inspect` snippet; [content](content.md#slots)                                 |
+| System object attributes, enum values, groups | `object_types_describe` tool first; `dx/object-definitions/v1`; `object-type-attributes-inspect` snippet; [object definitions](object-definitions.md)       |
+| Add a custom attribute (and group it)         | `attribute-create-and-group` snippet; [object definitions](object-definitions.md)                                                                           |
 | Categories, rules, exclusions                 | `product/catalogs/v1`; `category-rules-run` snippet; [catalogs](catalogs.md)                                                                                |
 | CORS origins for a site                       | `configuration/cors/v1`: replace-all PUT; `cors-preferences-update` snippet; [admin-config](admin-config.md)                                                |
 | SCAPI timeout overrides                       | `configuration/timeouts/v1`: replace-all PUT; [admin-config](admin-config.md)                                                                               |

@@ -246,6 +246,7 @@ describe('SCAPI snippets', () => {
       ['content-types-inspect', {siteId: 'a'}],
       ['page-push', {siteId: 'a', page: {id: 'p', name: 'P', typeId: 'home'}}],
       ['slot-configurations-inspect', {siteId: 'a'}],
+      ['object-type-attributes-inspect', {objectType: 'Product'}],
     ] as const) {
       const result = await runScapiCode({
         input,
@@ -514,13 +515,21 @@ describe('SCAPI snippets', () => {
         throw new Error('Must not authenticate');
       },
     });
+    const startJob = {
+      ...snippet,
+      name: 'user/start-job',
+      effect: 'write' as const,
+      inputSchema: {type: 'object', properties: {}, additionalProperties: false},
+      code: `async () => scapi.request({method: 'POST', path: '/operation/jobs/v1/organizations/' + organizationId + '/jobs/Import/executions', body: {}})`,
+    };
     await rejects(
       () =>
         runScapiCode({
           request,
+          snippets: [startJob],
           organizationId: 'f_ecom_test_001',
-          input: {from: '2026-09-01T00:00:00Z', to: '2026-09-08T00:00:00Z'},
-          code: `async (input) => codemode.run('builtin/failed-job-triage', input)`,
+          input: {},
+          code: `async (input) => codemode.run('user/start-job', input)`,
         }),
       'READ_ONLY',
     );
@@ -555,7 +564,7 @@ describe('SCAPI snippets', () => {
   });
 
   it('loads all built-in sources from the installed SDK data directory', () => {
-    expect(loadBuiltinScapiSnippets()).to.have.length(12);
+    expect(loadBuiltinScapiSnippets()).to.have.length(14);
     for (const item of loadBuiltinScapiSnippets()) expect(item.code).to.include('async (input)');
   });
 

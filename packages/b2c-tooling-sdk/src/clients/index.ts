@@ -483,6 +483,27 @@ export type {
   components as ScapiCatalogsComponents,
 } from './scapi-catalogs.js';
 
+// Object Definitions (dx/object-definitions/v1)
+export {
+  createObjectDefinitionsClient,
+  OBJECT_DEFINITIONS_CASCADE,
+  OBJECT_DEFINITIONS_READ_SCOPE,
+  OBJECT_DEFINITIONS_RW_SCOPE,
+} from './object-definitions.js';
+export type {
+  ObjectDefinitionsClient,
+  ObjectDefinitionsClientConfig,
+  ObjectTypeDefinition,
+  ObjectAttributeDefinition,
+  ObjectAttributeGroup,
+  ObjectAttributeValueDefinition,
+  ObjectAttributeValueType,
+  ObjectDefinitionsSearchRequest,
+  ObjectDefinitionsQuery,
+  paths as ObjectDefinitionsPaths,
+  components as ObjectDefinitionsComponents,
+} from './object-definitions.js';
+
 // SCAPI Storefront family (storefront/*/v1) — the modern MRT backend. One
 // client per API; Deployments now, Environments + Storefronts to follow.
 export {createStorefrontDeploymentsClient, STOREFRONT_DEPLOYMENTS_CASCADE} from './storefront-deployments.js';

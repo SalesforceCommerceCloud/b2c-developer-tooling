@@ -10,7 +10,7 @@ declare class ProductMgr {
     /**
      * Returns the product with the specified id.
      */
-    static getProduct(productID: string): Product<any> | null;
+    static getProduct(productID: string): Product | null;
     /**
      * Returns all products assigned to the current site.
      * 
@@ -23,7 +23,7 @@ declare class ProductMgr {
      * if not all of its elements are being retrieved. This will ensure the proper cleanup of system resources.
      * @see dw.util.SeekableIterator.close
      */
-    static queryAllSiteProducts(): SeekableIterator<Product<any>>;
+    static queryAllSiteProducts(): SeekableIterator<Product>;
     /**
      * Returns all products assigned to the current site.
      * 
@@ -34,7 +34,7 @@ declare class ProductMgr {
      * if not all of its elements are being retrieved. This will ensure the proper cleanup of system resources.
      * @see dw.util.SeekableIterator.close
      */
-    static queryAllSiteProductsSorted(): SeekableIterator<Product<any>>;
+    static queryAllSiteProductsSorted(): SeekableIterator<Product>;
     /**
      * Returns all products assigned to the the specified catalog, where
      * assignment has the same meaning as it does for queryAllSiteProducts().
@@ -43,7 +43,7 @@ declare class ProductMgr {
      * if not all of its elements are being retrieved. This will ensure the proper cleanup of system resources.
      * @see dw.util.SeekableIterator.close
      */
-    static queryProductsInCatalog(catalog: Catalog): SeekableIterator<Product<any>>;
+    static queryProductsInCatalog(catalog: Catalog): SeekableIterator<Product>;
     /**
      * Returns all products assigned to the the specified catalog.
      * Works like queryProductsInCatalog(), but additionally sorts the result
@@ -53,7 +53,7 @@ declare class ProductMgr {
      * if not all of its elements are being retrieved. This will ensure the proper cleanup of system resources.
      * @see dw.util.SeekableIterator.close
      */
-    static queryProductsInCatalogSorted(catalog: Catalog): SeekableIterator<Product<any>>;
+    static queryProductsInCatalogSorted(catalog: Catalog): SeekableIterator<Product>;
 }
 
 export = ProductMgr;

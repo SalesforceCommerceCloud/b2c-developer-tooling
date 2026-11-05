@@ -53,17 +53,17 @@ declare interface CalculateHooks {
      * - extensionPointCalculateTax for tax calculation
      * - extensionPointCalculateShipping for shipping calculation
      */
-    calculate(lineItemCtnr: LineItemCtnr<any>): Status;
+    calculate(lineItemCtnr: LineItemCtnr): Status;
     /**
      * The function is called by extension point extensionPointCalculateShipping. It provides a single
      * place for shipping calculation during the line item container calculation.
      */
-    calculateShipping(lineItemCtnr: LineItemCtnr<any>): Status;
+    calculateShipping(lineItemCtnr: LineItemCtnr): Status;
     /**
      * The function is called by extension point extensionPointCalculateTax. It provides a single place
      * for tax calculation during the line item container calculation.
      */
-    calculateTax(lineItemCtnr: LineItemCtnr<any>): Status;
+    calculateTax(lineItemCtnr: LineItemCtnr): Status;
 }
 
 export = CalculateHooks;

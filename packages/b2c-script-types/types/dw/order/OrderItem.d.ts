@@ -100,7 +100,7 @@ declare class OrderItem {
     /**
      * Returns the line item which is being extended by this instance.
      */
-    readonly lineItem: LineItem<any>;
+    readonly lineItem: LineItem;
     /**
      * Sum of amounts refunded for this item, calculated by iterating over
      * invoice items associated with the item.
@@ -220,7 +220,7 @@ declare class OrderItem {
     /**
      * Returns the line item which is being extended by this instance.
      */
-    getLineItem(): LineItem<any>;
+    getLineItem(): LineItem;
     /**
      * Sum of amounts refunded for this item, calculated by iterating over
      * invoice items associated with the item.

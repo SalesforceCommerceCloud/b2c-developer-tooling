@@ -90,6 +90,18 @@ Explore every SCAPI API your instance exposes and try requests against them in a
 
 </a>
 
+### Object Types
+
+Browse system object types (Product, Order, Customer, and others), their custom and system attributes, and attribute groups in the **B2C-DX: APIs** sidebar. Expand an enum attribute to see its values, copy an attribute's ID (the plain form scripts use, such as `myAttribute`; the tooltip shows the `c_` form used in OCAPI and SCAPI), open its full definition, or export an object type as metadata XML. **Write Custom Attribute Types to Project** in the view toolbar adds the attributes to Script API IntelliSense.
+
+To change a custom attribute, open its definition, edit the JSON, and save. The extension compares your edit with the instance and asks you to confirm before it changes anything. Properties such as the display name, flags, and lengths are updated through the Object Definitions API. Enum values and default values, which that API cannot set, are imported with a site import that runs the site archive import job. That needs the instance hostname and WebDAV and job access. Values you leave out of the list are kept. Remove values in Business Manager. The value type and attribute ID cannot be changed. System attributes open read-only.
+
+Right-click an object type, or its **Custom Attributes** folder, and choose **New Custom Attribute...** to create one. Pick an ID, a value type, and a display name, then confirm. The new definition opens so you can set more properties and save.
+
+To manage the values of a custom enum attribute without editing JSON, right-click it and choose **Add Value...**, or right-click one of its values and choose **Edit Display Value...**, **Set as Default Value**, or **Remove Value...**. Each change asks for confirmation and runs a site import. Display value edits change the default locale and keep other translations. A removed value is no longer offered in Business Manager; objects that already use it keep it stored.
+
+Viewing needs an Account Manager API client with the `sfcc.object-definitions` scope. Showing enum values and making changes need `sfcc.object-definitions.rw`. Nothing is requested until you select **Load Object Types**, and access problems are shown in the view. Hide it with the `b2c-dx.features.objectTypesExplorer` setting.
+
 ### WebDAV Browser
 
 Browse your sandbox's catalogs, libraries, and IMPEX folders right inside your editor. Open remote files like local ones, drag-and-drop to upload, or mount a remote folder as a workspace folder.
