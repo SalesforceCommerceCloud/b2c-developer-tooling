@@ -60,6 +60,8 @@ Find Page Designer pages and components fast, with one-click export (with assets
 
 **Page Designer Types** lists the page and component types available to your site, read live from the instance (regions, attributes and allowed values in the tooltip; click to open the full definition). It uses the configured `siteId` (or the first site-private library) and needs an Account Manager API client with the `sfcc.experiences` scope and client credentials. Without that, the node explains what is missing and the library tree works as before.
 
+**Go to Type Source** (the file icon on a type, or right-click a type, page or component) opens the type's files in your workspace. In a cartridge project, such as SFRA, that's the meta definition JSON, the render script, and the ISML template the script renders. In a Storefront Next project, it also includes the TypeScript file whose `@Component` or `@PageType` decorator defines the type, listed first. When there's more than one file, pick one from the list.
+
 <a :href="libraryImage">
 
 ![Library Explorer](./images/library-explorer.png)

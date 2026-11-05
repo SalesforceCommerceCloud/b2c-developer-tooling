@@ -38,6 +38,10 @@ export class ContentConfigProvider {
     return this.configProvider.getInstance();
   }
 
+  getWorkingDirectory(): string {
+    return this.configProvider.getWorkingDirectory();
+  }
+
   getConfigError(): string | null {
     return this.configProvider.getConfigError();
   }

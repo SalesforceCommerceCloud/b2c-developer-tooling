@@ -1163,6 +1163,12 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.content.goToTypeSource",
+        "title": "Go to Type Source",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.content.revealBlock",
         "title": "Reveal Content Block",
         "icon": "$(references)",
@@ -1852,6 +1858,16 @@
           "group": "3_workspace@1"
         },
         {
+          "command": "b2c-dx.content.goToTypeSource",
+          "when": "view == b2cContentExplorer && viewItem == experienceTypes.type",
+          "group": "inline"
+        },
+        {
+          "command": "b2c-dx.content.goToTypeSource",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(experienceTypes\\.type|page|component)$/",
+          "group": "0_navigation@1"
+        },
+        {
           "command": "b2c-dx.content.export",
           "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@1"
@@ -2406,6 +2422,10 @@
         },
         {
           "command": "b2c-dx.content.openType",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.goToTypeSource",
           "when": "false"
         },
         {
