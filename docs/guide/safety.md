@@ -459,6 +459,10 @@ The CLI and MCP look for `safety.json` in their B2C configuration directory:
 `B2C_CONFIG_DIR` or `XDG_CONFIG_HOME` overrides the base directory, in that order;
 the file is then `<base>/b2c/safety.json`.
 
+Other CLIs built on the toolkit, such as the Storefront Next CLI (`sfnext`), read
+`safety.json` from their own configuration directory when it has one, otherwise
+from the B2C location above.
+
 Use `SFCC_SAFETY_CONFIG` to select an explicit file, including when sharing it
 with the IDE extension. The extension currently needs this explicit path to
 load a separate safety file; an instance's `dw.json` safety settings need no such

@@ -43,6 +43,24 @@ function toList(value: unknown): string[] | undefined {
 }
 
 /**
+ * `--cartridge-ignore-dirs`, falling back to `SFCC_CARTRIDGE_IGNORE_DIRS`.
+ *
+ * Env vars for deploy flags are read here rather than through the flag so every
+ * command that resolves instance config honors them, including CLIs that define
+ * their own copy of the flag. An explicitly empty flag or env value means "ignore nothing".
+ */
+function resolveCartridgeIgnoreDirs(flag: unknown): string[] | undefined {
+  const value = flag ?? process.env.SFCC_CARTRIDGE_IGNORE_DIRS;
+  return value === undefined ? undefined : (toList(value) ?? []);
+}
+
+/** `--max-archive-size`, falling back to `SFCC_MAX_ARCHIVE_SIZE`; empty means unset. */
+function resolveMaxArchiveSize(flag: unknown): string | undefined {
+  const value = flag ?? process.env.SFCC_MAX_ARCHIVE_SIZE;
+  return value === undefined || value === '' ? undefined : String(value);
+}
+
+/**
  * Flag `default` that reads a comma-separated list from an environment variable.
  *
  * Use this instead of `env:` on `multiple: true` flags. oclif does not split
@@ -155,13 +173,8 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
     importSetExclude: toList(flags['import-set-exclude']),
-    // An explicitly empty --cartridge-ignore-dirs means "ignore nothing".
-    cartridgeIgnoreDirs:
-      flags['cartridge-ignore-dirs'] === undefined ? undefined : (toList(flags['cartridge-ignore-dirs']) ?? []),
-    maxArchiveSize:
-      flags['max-archive-size'] === undefined || flags['max-archive-size'] === ''
-        ? undefined
-        : String(flags['max-archive-size']),
+    cartridgeIgnoreDirs: resolveCartridgeIgnoreDirs(flags['cartridge-ignore-dirs']),
+    maxArchiveSize: resolveMaxArchiveSize(flags['max-archive-size']),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,

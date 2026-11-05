@@ -186,7 +186,7 @@ To stop using the global file:
 b2c setup default-config unset
 ```
 
-This setting is shared by the CLI, MCP, and IDE Extension. Use these commands to manage it; you do not need to edit the toolkit's settings file.
+This setting is shared by the CLI, MCP, and IDE Extension, and by other CLIs built on the toolkit, such as the Storefront Next CLI (`sfnext`). Use these commands to manage it; you do not need to edit the toolkit's settings file.
 
 ## Environment Variables
 
