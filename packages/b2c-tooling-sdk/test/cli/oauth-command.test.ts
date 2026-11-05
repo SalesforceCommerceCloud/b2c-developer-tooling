@@ -258,15 +258,15 @@ describe('cli/oauth-command', () => {
     it('uses the built-in client for the Account Manager host', async () => {
       stubParse(command, {
         'client-id': 'env-client',
-        'account-manager-host': 'account-pod5.demandware.net',
+        'account-manager-host': 'account.example.com',
         'default-client': true,
       });
       await command.init();
 
       const strategy = command.testGetOAuthStrategy();
       const pkceConfig = (strategy as unknown as {config: {clientId: string; accountManagerHost: string}}).config;
-      expect(pkceConfig.clientId).to.equal(getDefaultPublicClientId('account-pod5.demandware.net'));
-      expect(pkceConfig.accountManagerHost).to.equal('account-pod5.demandware.net');
+      expect(pkceConfig.clientId).to.equal(getDefaultPublicClientId('account.example.com'));
+      expect(pkceConfig.accountManagerHost).to.equal('account.example.com');
     });
   });
 
