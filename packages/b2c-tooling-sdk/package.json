@@ -45,6 +45,11 @@
       "types": "./dist/esm/instance/index.d.ts",
       "default": "./dist/esm/instance/index.js"
     },
+    "./utils": {
+      "development": "./src/utils/index.ts",
+      "types": "./dist/esm/utils/index.d.ts",
+      "default": "./dist/esm/utils/index.js"
+    },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
       "types": "./dist/esm/operations/code/index.d.ts",

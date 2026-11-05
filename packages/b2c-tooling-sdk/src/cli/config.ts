@@ -158,6 +158,10 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     // An explicitly empty --cartridge-ignore-dirs means "ignore nothing".
     cartridgeIgnoreDirs:
       flags['cartridge-ignore-dirs'] === undefined ? undefined : (toList(flags['cartridge-ignore-dirs']) ?? []),
+    maxArchiveSize:
+      flags['max-archive-size'] === undefined || flags['max-archive-size'] === ''
+        ? undefined
+        : String(flags['max-archive-size']),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
