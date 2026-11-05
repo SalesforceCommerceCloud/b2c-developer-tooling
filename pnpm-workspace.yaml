@@ -48,7 +48,9 @@ minimumReleaseAgeExclude:
     # Renovate security update: node-forge@1.4.1
     node-forge@1.4.1,
     # Renovate security update: qs@6.16.1
-    qs@6.16.1
+    qs@6.16.1,
+    # Renovate security update: minimatch@11.0.1
+    minimatch@11.0.1
   ]
 
 nodeLinker: hoisted
@@ -108,7 +110,7 @@ overrides:
   minimatch@>=3.0.0 <3.1.4: '>=3.1.4 <4'
   minimatch@>=5.0.0 <5.1.8: '>=5.1.8 <6'
   minimatch@>=9.0.0 <9.0.7: '>=9.0.7 <10'
-  minimatch@>=10.0.0 <10.2.3: '>=10.2.3 <11'
+  minimatch@>=10.0.0 <10.2.3: '>=11.0.1 <12'
   path-to-regexp@<0.1.13: '>=0.1.13 <0.2'
   path-to-regexp@>=8.0.0 <8.4.0: '>=8.4.0 <9'
   proxy-addr@>=1.1.0 <2.0.8: '>=2.0.8 <3'
