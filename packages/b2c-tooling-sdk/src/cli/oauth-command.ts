@@ -17,7 +17,7 @@ import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {findAuthSession, isAuthSessionTokenValid, listAuthSessions} from '../auth/session-store.js';
 import {t} from '../i18n/index.js';
-import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
+import {DEFAULT_ACCOUNT_MANAGER_HOST, getDefaultPublicClientId} from '../defaults.js';
 import {normalizeTenantId, toOrganizationId} from '../clients/custom-apis.js';
 
 /**
@@ -219,16 +219,6 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     const accountManagerHost = this.accountManagerHost;
     const requiredScopes = config.scopes ?? [];
 
-    // Only Account Manager, sandbox and WebDAV access work with the built-in client.
-    if (this.useDefaultClient && !this.getDefaultClientId('user')) {
-      throw new Error(
-        t(
-          'error.defaultClientUnsupported',
-          'This command needs an API client; the built-in client used by --default-client has no OCAPI or SCAPI access.',
-        ),
-      );
-    }
-
     const explicitAuthFlags = this.detectExplicitAuthFlags();
     // Only a client ID resolved from user configuration constrains stateful auth.
     // getDefaultClientId() is a stateless fallback and must not prevent an
@@ -321,7 +311,10 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
           break;
 
         case 'user': {
-          const defaultClientId = this.getDefaultClientId('user');
+          // --default-client always means the built-in client for the Account Manager host.
+          const defaultClientId = this.useDefaultClient
+            ? getDefaultPublicClientId(accountManagerHost)
+            : this.getDefaultClientId('user');
           const storedPkceClientId = storedSession?.flow === 'pkce' ? storedSession.clientId : undefined;
           const effectiveClientId = config.clientId ?? storedPkceClientId ?? defaultClientId;
           if (effectiveClientId) {
@@ -449,12 +442,23 @@ export abstract class OAuthCommand<T extends typeof Command> extends BaseCommand
     return Boolean(config.clientId && config.clientSecret);
   }
 
+  /** Error message for OCAPI or SCAPI calls attempted with the built-in client (`--default-client`). */
+  protected defaultClientNoApiAccessMessage(): string {
+    return t(
+      'error.defaultClientNoApiAccess',
+      "This command calls OCAPI or SCAPI, which the built-in client used by --default-client can't access. Run it without --default-client and with an API client configured.",
+    );
+  }
+
   /**
    * Validates that OAuth credentials are configured, errors if not.
    * Only clientId is required (browser flows can be used without clientSecret).
    */
   protected requireOAuthCredentials(): void {
     if (!this.hasOAuthCredentials()) {
+      if (this.useDefaultClient) {
+        this.error(this.defaultClientNoApiAccessMessage(), {code: ERROR_CODE.VALIDATION});
+      }
       this.error(
         t('error.oauthClientIdRequired', 'OAuth client ID required. Provide --client-id or set SFCC_CLIENT_ID.') +
           this.configDocsHint(),
