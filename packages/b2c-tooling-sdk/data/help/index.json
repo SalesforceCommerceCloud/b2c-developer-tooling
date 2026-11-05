@@ -1,9 +1,9 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-20T16:40:44.437Z",
+  "generatedAt": "2026-11-05T20:01:19.449Z",
   "source": {
-    "sha": "dc1b60684d3ac4d5518cfeff400e2012f5cc7060",
-    "committedAt": "2026-10-20T12:24:04-04:00",
+    "sha": "b467ef6ddbc9f60b3fc5de44a1cbec4e02d2458c",
+    "committedAt": "2026-11-05T11:09:58-06:00",
     "ref": "current"
   },
   "entries": [
@@ -658,6 +658,15 @@
       "summary": "Activate the payment methods you want to offer shoppers in your Storefront Reference Architecture (SFRA), Composable Storefront, or Storefront Next site. Offer Checkout, Express Checkout, or both."
     },
     {
+      "id": "help-admin/b2c_add_job_flows_and_steps",
+      "title": "Add Flows and Steps for B2C Commerce Jobs",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_add_job_flows_and_steps.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_add_job_flows_and_steps.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_add_job_flows_and_steps.md",
+      "summary": "B2C Commerce jobs run steps that execute various tasks. A flow controls the sequence in which B2C Commerce executes job steps."
+    },
+    {
       "id": "help-admin/b2c_add_managed_ssl_certificates",
       "title": "Add a Managed SSL Certificate for B2C Commerce",
       "category": "help-admin",
@@ -717,7 +726,7 @@
       "filePath": "help-admin/b2c_adding_hostnames.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_adding_hostnames.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_adding_hostnames.md",
-      "summary": "You can configure subdomains of the same zone on the same Salesforce B2C Commerce instance, or on different instances of different realms of the same retailer."
+      "summary": "You can configure subdomains of the same zone on the same Salesforce B2C Commerce instance, or on different instances of different realms of the same retailer. For example, you can have www.shop.com on the Production instance, test.shop.com on the Development instance, and eu.shop.com on the Production instance of the EU realm."
     },
     {
       "id": "help-admin/b2c_administering_your_organization",
@@ -742,6 +751,7 @@
         "help-admin/b2c_manage_custom_caches_bm",
         "help-admin/b2c_scheduling_instance_backups",
         "help-admin/b2c_connected_comm_salesforce_connection",
+        "help-admin/b2c_disconnect_salesforce_connection",
         "help-admin/unified_shopper_profile_sync",
         "help-admin/b2c_configure_event_types"
       ]
@@ -794,6 +804,24 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_allowlist_faq.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_allowlist_faq.md",
       "summary": "Unauthorized access to B2C Commerce storefront orders happens when an order is accessed through a storefront session using a different customer ID than the one it was created with. This makes it possible for unauthorized users to view the order’s details."
+    },
+    {
+      "id": "help-admin/b2c_am_2026_deployment_schedule",
+      "title": "Account Manager 2026 Deployment Schedule and Release Notes Archive",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_am_2026_deployment_schedule.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_am_2026_deployment_schedule.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_am_2026_deployment_schedule.md",
+      "summary": "The Account Manager Deployment Schedule lists all of the planned release dates for 2026, including links to past release notes."
+    },
+    {
+      "id": "help-admin/b2c_am_2027_deployment_schedule",
+      "title": "Account Manager 2027 Deployment Schedule",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_am_2027_deployment_schedule.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_am_2027_deployment_schedule.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_am_2027_deployment_schedule.md",
+      "summary": "The Account Manager Deployment Schedule lists all of the planned release dates for 2027."
     },
     {
       "id": "help-admin/b2c_analyze_eCDN_traffic",
@@ -1196,6 +1224,24 @@
       "summary": "Upload custom code, also known as cartridges, to an instance using UX Studio, or with a file transfer mechanism such as WebDAV over Transport Layer Security (TLS). It’s important that you secure code uploads. Follow these best practices."
     },
     {
+      "id": "help-admin/b2c_commerce_2026_deployment_schedule",
+      "title": "B2C Commerce 2026 Deployment Schedule",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_commerce_2026_deployment_schedule.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_commerce_2026_deployment_schedule.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_commerce_2026_deployment_schedule.md",
+      "summary": "To uphold our commitment to customer trust and to make sure that our B2C Commerce releases meet our rigorous standards, we deploy the B2C Commerce major releases to customers in four phases. See the Deployment table for information about which instances are included in each major release phase."
+    },
+    {
+      "id": "help-admin/b2c_commerce_2027_deployment_schedule",
+      "title": "B2C Commerce 2027 Deployment Schedule",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_commerce_2027_deployment_schedule.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_commerce_2027_deployment_schedule.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_commerce_2027_deployment_schedule.md",
+      "summary": "To uphold our commitment to customer trust and to make sure that our B2C Commerce releases meet our rigorous standards, we deploy the B2C Commerce major releases to customers in phases. See the Deployment table for information about which instances are included in each major release phase."
+    },
+    {
       "id": "help-admin/b2c_commerce_app_storefront_display",
       "title": "Customize Where Commerce App Components Appear on Your B2C Storefront",
       "category": "help-admin",
@@ -1271,15 +1317,6 @@
         "help-admin/b2c_security_managed_by_salesforce",
         "help-admin/b2c_security_managed_by_customer"
       ]
-    },
-    {
-      "id": "help-admin/b2c_configuration_for_administrators",
-      "title": "Configuration for Administrators",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_configuration_for_administrators.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configuration_for_administrators.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_configuration_for_administrators.md",
-      "summary": "B2C Commerce Log Center administrators can access the Config tab to set log levels and log volumes."
     },
     {
       "id": "help-admin/b2c_configure_alerts_for_your_site",
@@ -1815,6 +1852,15 @@
       "summary": "Monitor conditions and send notifications in B2C Commerce Log Center. Catch behavioral anomalies early, get notified when a log delivery pipeline fails, or create an alert for a specific incident."
     },
     {
+      "id": "help-admin/b2c_create_a_metric_alert",
+      "title": "Create a Metric Alert in Log Center",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_create_a_metric_alert.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_a_metric_alert.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_a_metric_alert.md",
+      "summary": "Notify your team when a supported B2C Commerce metric crosses a warning or critical threshold."
+    },
+    {
       "id": "help-admin/b2c_create_a_microsoft_teams_channel_for_log_center_alerts",
       "title": "Create a Microsoft Teams Channel for Log Center Alerts",
       "category": "help-admin",
@@ -1915,30 +1961,30 @@
     },
     {
       "id": "help-admin/b2c_create_global_parameter_for_jobs",
-      "title": "Create a Job Parameter",
+      "title": "Create or Change a B2C Commerce Job Parameter",
       "category": "help-admin",
       "filePath": "help-admin/b2c_create_global_parameter_for_jobs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_global_parameter_for_jobs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_global_parameter_for_jobs.md",
-      "summary": "Create a parameter to use in different job steps. For example, create a parameter for ReplicationProcessID and set it to the ID of a specific replication process. Then use the parameter in different job steps. If you need to use a different replication process, change the value of the parameter, and B2C Commerce updates all steps that include the parameter. Overwrite the value of a job parameter if you use Open Commerce API (OCAPI) to execute a job."
+      "summary": "A job parameter is a saved value that a B2C Commerce job reuses on more than one step."
     },
     {
       "id": "help-admin/b2c_create_job",
-      "title": "Create a Job in B2C Commerce",
+      "title": "Create and Schedule a B2C Commerce Job",
       "category": "help-admin",
       "filePath": "help-admin/b2c_create_job.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_job.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_job.md",
-      "summary": "When you create a job, you configure at least one flow, and select which steps to execute in each flow. Use out-of-the-box system job steps that don't require any coding. If there isn't a system job step available to do what you want, have a developer create a custom job step. You can also schedule when the job executes, specify resources to lock during job execution, and configure email notifications and error handling."
+      "summary": "Create a B2C Commerce job to execute various tasks, and then choose when it runs."
     },
     {
       "id": "help-admin/b2c_create_job_legacy",
-      "title": "Create a Legacy Job",
+      "title": "Create a Legacy B2C Commerce Job",
       "category": "help-admin",
       "filePath": "help-admin/b2c_create_job_legacy.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_job_legacy.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_create_job_legacy.md",
-      "summary": "Legacy B2C Commerce jobs use pipelines that a developer creates using the UX Studio plug-in to the Eclipse IDE. This functionality is deprecated. We recommend creating jobs using the new job framework."
+      "summary": "Legacy B2C Commerce jobs use pipelines that a developer creates using the UX Studio plug-in to the Eclipse IDE. This functionality is available but is deprecated. Create jobs with the new job framework."
     },
     {
       "id": "help-admin/b2c_creating_a_zone",
@@ -2000,19 +2046,20 @@
     },
     {
       "id": "help-admin/b2c_creating_jobs",
-      "title": "Creating Jobs in B2C Commerce",
+      "title": "Configure B2C Commerce Jobs",
       "category": "help-admin",
       "filePath": "help-admin/b2c_creating_jobs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_creating_jobs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_creating_jobs.md",
-      "summary": "Use Business Manager to create a job. We recommend that you use the new job framework to create jobs, but the legacy, deprecated functionality is also available in Business Manager.",
+      "summary": "Create B2C Commerce jobs with the new job framework. Pipeline jobs from the earlier framework remain in Business Manager.",
       "relatedEntries": [
         "help-admin/b2c_create_job",
-        "help-admin/b2c_create_global_parameter_for_jobs",
-        "help-admin/b2c_modify_global_parameter_for_jobs",
+        "help-admin/b2c_add_job_flows_and_steps",
+        "help-admin/b2c_set_job_exit_status_rules",
+        "help-admin/b2c_set_job_failure_handling",
         "help-admin/b2c_system_resources_per_entity",
-        "help-admin/b2c_working_with_job_steps",
-        "help-admin/b2c_troubleshooting_custom_jobs"
+        "help-admin/b2c_troubleshooting_custom_jobs",
+        "help-admin/b2c_create_global_parameter_for_jobs"
       ]
     },
     {
@@ -2462,6 +2509,15 @@
       "summary": "To disconnect a cross cloud tenant group, clear the tenant group information from the B2C Commerce database."
     },
     {
+      "id": "help-admin/b2c_disconnect_salesforce_connection",
+      "title": "Disconnect Your B2C Commerce Sandbox Instance from Salesforce",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_disconnect_salesforce_connection.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_disconnect_salesforce_connection.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_disconnect_salesforce_connection.md",
+      "summary": "When you refresh a Salesforce sandbox that's connected to your B2C Commerce instance, the sandbox org ID changes, and the connection becomes unavailable. Disconnect the instance from the sandbox in Business Manager to remove the broken connection and related configuration. You can then connect the instance to the refreshed sandbox or to a different sandbox."
+    },
+    {
       "id": "help-admin/b2c_dns_mapping_for_ecdn_zones",
       "title": "DNS Mapping for eCDN Zones in B2C Commerce",
       "category": "help-admin",
@@ -2592,6 +2648,15 @@
       "summary": "Salesforce B2C Commerce includes an embedded content delivery network (eCDN) that accelerates site performance and content delivery. The eCDN serves content from locations close to your shoppers for fast response times, and supports web application firewall (WAF) and HTTP Strict Transport Security (HSTS)."
     },
     {
+      "id": "help-admin/b2c_enable_disable_delete_job",
+      "title": "Enable, Disable, or Delete a Job in B2C Commerce",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_enable_disable_delete_job.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_enable_disable_delete_job.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_enable_disable_delete_job.md",
+      "summary": "Turn a B2C Commerce job schedule on or off, or delete the job. Turning the schedule off stops automatic runs, and you can still run the job manually."
+    },
+    {
       "id": "help-admin/b2c_enable_granular_replication_for_your_site",
       "title": "Enable Granular Replications for Your B2C Commerce Site",
       "category": "help-admin",
@@ -2616,7 +2681,7 @@
       "filePath": "help-admin/b2c_enable_under_attack_mode.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_enable_under_attack_mode.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_enable_under_attack_mode.md",
-      "summary": "Turn on Under Attack Mode from the Configure Zone screen in Business Manager to present a challenge to every visitor to your B2C Commerce storefront during an active DDoS attack. Use it only as a last resort."
+      "summary": "Turn on Under Attack Mode from the Configure Zone screen in Business Manager to present a challenge to every unique visitor to B2C Commerce storefront pages during an active DDoS attack. Use it only as a last resort."
     },
     {
       "id": "help-admin/b2c_encryption_and_cryptography",
@@ -3141,7 +3206,7 @@
       "filePath": "help-admin/b2c_import_export_methods.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_import_export_methods.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_import_export_methods.md",
-      "headings": "Business Manager Site Import/Export • Business Manager Import/Export • Import/Export Pipelets • B2C Commerce Scripts",
+      "headings": "Business Manager Site Import/Export • Business Manager Import/Export • Import/Export Job Steps • B2C Commerce Scripts",
       "summary": "B2C Commerce offers several ways you can add or extract data from your instance database."
     },
     {
@@ -3355,7 +3420,7 @@
       "filePath": "help-admin/b2c_inventory_management_omnichannel_inventory.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_inventory_management_omnichannel_inventory.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_inventory_management_omnichannel_inventory.md",
-      "headings": "Omnichannel Inventory Integration • Location Graph • Inventory Reservations • Considerations and Limitations When Using Omnichannel Inventory • Inventory Modes and Data Synchronization • Converting Existing Storefronts to Use Omnichannel Inventory • Terminology",
+      "headings": "Omnichannel Inventory Integration • Location Graph • Inventory Reservations • Considerations and Limitations When Using Omnichannel Inventory • Inventory Modes and Data Synchronization • Converting Existing Storefronts to Use Omnichannel Inventory • Remove Cached Inventory Data • Terminology",
       "summary": "Integrating with Salesforce Omnichannel Inventory provides more powerful features for handling B2C Commerce inventory data and working with external management systems.",
       "relatedEntries": [
         "help-admin/b2c_omnichannel_inventory_integration_setup_config",
@@ -3390,37 +3455,26 @@
       "filePath": "help-admin/b2c_job_creation_management.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_job_creation_management.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_job_creation_management.md",
-      "summary": "Jobs automate routine tasks or long-running processes, such as importing and exporting data, replicating data or code, or building a search index. Jobs can use preconfigured system steps, or a developer can create custom job steps. Run jobs manually as needed or schedule them to run at a specific time or on a recurring basis.",
+      "summary": "Jobs automate routine tasks or long-running processes, such as importing and exporting data, replicating data or code, or building a search index. Jobs can use ready-made system steps, or a developer can create custom job steps. Run jobs manually as needed or schedule them to run at a specific time or on a recurring basis.",
       "relatedEntries": [
         "help-admin/b2c_job_flows",
         "help-admin/b2c_scope",
         "help-admin/b2c_creating_jobs",
         "help-admin/b2c_run_job_manually",
-        "help-admin/b2c_job_management",
+        "help-admin/b2c_enable_disable_delete_job",
+        "help-admin/b2c_view_job_history",
+        "help-admin/b2c_monitor_job_stats",
         "help-admin/b2c_legacy_jobs"
       ]
     },
     {
       "id": "help-admin/b2c_job_flows",
-      "title": "Job Flows",
+      "title": "B2C Commerce Job Flows",
       "category": "help-admin",
       "filePath": "help-admin/b2c_job_flows.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_job_flows.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_job_flows.md",
       "summary": "A flow controls the sequence in which B2C Commerce executes job steps. Every job must contain at least one flow. Each flow must contain at least one step."
-    },
-    {
-      "id": "help-admin/b2c_job_management",
-      "title": "Managing Jobs",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_job_management.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_job_management.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_job_management.md",
-      "summary": "After you create jobs, use B2C Commerce Business Manager to manage them.",
-      "relatedEntries": [
-        "help-admin/b2c_view_job_history",
-        "help-admin/b2c_monitor_job_stats"
-      ]
     },
     {
       "id": "help-admin/b2c_keyword_search_in_log_center",
@@ -3434,7 +3488,7 @@
     },
     {
       "id": "help-admin/b2c_legacy_configure_proxy_zone_settings",
-      "title": "Configure Proxy Zone Settings",
+      "title": "Copy Legacy Zone Settings to a Proxy Zone",
       "category": "help-admin",
       "filePath": "help-admin/b2c_legacy_configure_proxy_zone_settings.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_configure_proxy_zone_settings.htm&type=5",
@@ -3461,12 +3515,12 @@
     },
     {
       "id": "help-admin/b2c_legacy_jobs",
-      "title": "Legacy Jobs",
+      "title": "Legacy B2C Commerce Jobs",
       "category": "help-admin",
       "filePath": "help-admin/b2c_legacy_jobs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_jobs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_jobs.md",
-      "summary": "We recommend that you use the new job framework to create and manage jobs, but the legacy, deprecated functionality is also available in B2C Commerce Business Manager.",
+      "summary": "A legacy job runs a pipeline and is still available under Jobs (Deprecated). Use the new job framework to create and manage jobs.",
       "relatedEntries": [
         "help-admin/b2c_create_job_legacy"
       ]
@@ -3487,7 +3541,7 @@
       "filePath": "help-admin/b2c_legacy_update_auth_dns.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_legacy_update_auth_dns.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_legacy_update_auth_dns.md",
-      "summary": "Point your B2C Commerce storefront's DNS records at the new proxy zone. Get the DNS CNAME record value from the `getZonesInfo` name property or from Business Manager, and then update the record with your authoritative DNS provider."
+      "summary": "After you migrate a B2C Commerce legacy zone to a proxy zone, point your storefront's DNS records at the new proxy zone. Get the DNS CNAME record value from the `getZonesInfo` name property or from Business Manager, and then update the record with your authoritative DNS provider."
     },
     {
       "id": "help-admin/b2c_limit_order_access_settings",
@@ -3527,7 +3581,7 @@
       "filePath": "help-admin/b2c_log_center.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_log_center.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_log_center.md",
-      "summary": "Log Center is a B2C Commerce application that you can use to view realm logs messages generated from system and custom code. From Log Center, you can access all your tenant realm logs for primary instance groups (PIGs) and secondary instance groups (SIGs). View the Log Center dashboard, search for logs, set up log streaming, and view Control Center audit events. If you have Admin permissions, you can configure log levels and volumes.",
+      "summary": "Log Center is a B2C Commerce application that you can use to view realm logs messages generated from system and custom code. From Log Center, you can access all your tenant realm logs for primary instance groups (PIGs) and secondary instance groups (SIGs). View the Log Center dashboard, search for logs, set up log streaming, and view Control Center audit events.",
       "relatedEntries": [
         "help-admin/b2c_start_log_center",
         "help-admin/b2c_log_center_dashboard",
@@ -3561,6 +3615,7 @@
       "summary": "Monitor custom alerts across all Log Center data sources from a centralized interface. Configure notifications to identify application performance degradations before they affect your users, and route alerts via email, Slack, Microsoft Teams, and PagerDuty to help your teams respond to critical system events.",
       "relatedEntries": [
         "help-admin/b2c_log_center_alert_types_in_b2c_commerce",
+        "help-admin/b2c_metrics_alerting",
         "help-admin/b2c_create_a_log_center_alert",
         "help-admin/b2c_create_a_slack_channel_for_log_center_alerts",
         "help-admin/b2c_create_a_pagerduty_channel_for_log_center_alerts",
@@ -3577,10 +3632,9 @@
       "filePath": "help-admin/b2c_log_center_configuration.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_log_center_configuration.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_log_center_configuration.md",
-      "summary": "Adjust how B2C Commerce Log Center presents results and how administrators control logging. Switch between detailed and compact display views, and use the Config tab to set dynamic log levels, manage per-realm log volumes, and delete loaner-realm logs.",
+      "summary": "Adjust how B2C Commerce Log Center presents results. Switch between detailed and compact display views.",
       "relatedEntries": [
-        "help-admin/b2c_modify_the_log_center_display",
-        "help-admin/b2c_configuration_for_administrators"
+        "help-admin/b2c_modify_the_log_center_display"
       ]
     },
     {
@@ -3633,7 +3687,7 @@
       "filePath": "help-admin/b2c_manage_anomaly_detectors.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_anomaly_detectors.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_anomaly_detectors.md",
-      "headings": "Who Can View, Edit, and Delete Detectors • View Results • Edit and Delete • Considerations • Edit a Detector • Pause or Resume Detection • Delete a Detector • Create a Detector from a Log Search • Salesforce-Managed Detectors • View Detector Alerts • Manage Notification Channels • Availability",
+      "headings": "Who Can View, Edit, and Delete Detectors • View Results • Edit and Delete • Considerations • Edit a Detector • Pause or Resume Detection • Delete a Detector • Create a Detector from a Log Search • Salesforce-Managed Detectors • Login Anomaly Detector • View Detector Alerts • Manage Notification Channels • Availability",
       "summary": "View, edit, pause, resume, and delete anomaly detectors in B2C Commerce Log Center, and create a detector from a log search you already ran. What you can change depends on your Log Center role and the realms you can access."
     },
     {
@@ -3692,8 +3746,7 @@
       "filePath": "help-admin/b2c_manage_ssl_certificates_for_ecdn_zones.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_ssl_certificates_for_ecdn_zones.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_manage_ssl_certificates_for_ecdn_zones.md",
-      "headings": "Certificates in Legacy and Proxy Zones",
-      "summary": "Every embedded CDN (eCDN) zone requires a valid SSL certificate. Proxy zones can use either an eCDN managed certificate that's issued and auto-renewed by Salesforce or a self-managed certificate that you upload and renew yourself in Business Manager before it expires. Legacy (root) zones, for example, brand.com, support only a self-managed certificate. After adding or updating a certificate, map DNS so the hostname's traffic routes to its eCDN zone.",
+      "summary": "Proxy zones require a valid SSL certificate. Use an eCDN-managed certificate that Salesforce issues and renews automatically, or upload a self-managed certificate in Business Manager and renew it before it expires. After you add or update a certificate, map DNS to route hostname traffic to its eCDN zone.",
       "relatedEntries": [
         "help-admin/b2c_dns_mapping_for_ecdn_zones",
         "help-admin/b2c_map_dns_to_ecdn_zone",
@@ -3798,6 +3851,19 @@
       "summary": "These tables map Business Manager Merchant Tools modules to data replication tasks."
     },
     {
+      "id": "help-admin/b2c_metrics_alerting",
+      "title": "Metrics Alerting (Beta)",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_metrics_alerting.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_metrics_alerting.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_metrics_alerting.md",
+      "headings": "Metric Families in the Beta Catalog • Notification Channels",
+      "summary": "Send a notification when a supported B2C Commerce metric crosses a warning or critical threshold. Use Metrics Alerting in Log Center to watch application, sales, API, and storefront health, and route the notification to email, Slack, PagerDuty, or Microsoft Teams.",
+      "relatedEntries": [
+        "help-admin/b2c_create_a_metric_alert"
+      ]
+    },
+    {
       "id": "help-admin/b2c_metrics_dashboard",
       "title": "Metrics Dashboard",
       "category": "help-admin",
@@ -3887,13 +3953,13 @@
     },
     {
       "id": "help-admin/b2c_migrating_proxy_zones",
-      "title": "Proxy Zone Migration Overview",
+      "title": "Legacy Zones and Proxy Zone Migration",
       "category": "help-admin",
       "filePath": "help-admin/b2c_migrating_proxy_zones.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_migrating_proxy_zones.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_migrating_proxy_zones.md",
       "headings": "Migration Steps",
-      "summary": "Migrate legacy zones to proxy zones by using B2C Commerce Business Manager or the CDN-API. Proxy zones give you standard eCDN configuration and the latest security features, and they prevent common hierarchy-assignment issues. Migration is required to move to Hyperforce, which doesn't support legacy zones.",
+      "summary": "Migrate legacy zones to proxy zones by using B2C Commerce Business Manager or the CDN-API. Proxy zones give you standard eCDN configuration and the latest security features, and they prevent common hierarchy-assignment issues.",
       "relatedEntries": [
         "help-admin/b2c_legacy_migrate_to_proxy_zone",
         "help-admin/b2c_legacy_configure_proxy_zone_settings",
@@ -3922,15 +3988,6 @@
       "summary": "In B2C Commerce SiteGenesis, the controllers integrate into Models and Views. All scripts are Common JS modules with defined and documented exports to avoid polluting the global namespace."
     },
     {
-      "id": "help-admin/b2c_modify_global_parameter_for_jobs",
-      "title": "Modify a Job Parameter",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_modify_global_parameter_for_jobs.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_modify_global_parameter_for_jobs.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_modify_global_parameter_for_jobs.md",
-      "summary": "When you modify the value of a job parameter, B2C Commerce updates all steps that include the parameter to the new value."
-    },
-    {
       "id": "help-admin/b2c_modify_the_log_center_display",
       "title": "Modify the Log Center Display",
       "category": "help-admin",
@@ -3941,7 +3998,7 @@
     },
     {
       "id": "help-admin/b2c_monitor_job_stats",
-      "title": "Monitor Job Statistics",
+      "title": "Monitor B2C Commerce Job Statistics",
       "category": "help-admin",
       "filePath": "help-admin/b2c_monitor_job_stats.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_monitor_job_stats.htm&type=5",
@@ -3960,15 +4017,6 @@
         "help-admin/b2c_storefront_network_access",
         "help-admin/b2c_business_manager_network_access"
       ]
-    },
-    {
-      "id": "help-admin/b2c_new_and_changed_in_upcoming_release",
-      "title": "Documentation for the B2C Commerce Preview and GA Releases",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_new_and_changed_in_upcoming_release.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_new_and_changed_in_upcoming_release.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_new_and_changed_in_upcoming_release.md",
-      "summary": "When we release a preview version of B2C Commerce, we update the B2C Commerce Help to reflect new functionality in that preview version. The new functionality isn’t available in production instances for approximately two more weeks, when the preview version of B2C Commerce becomes the GA version."
     },
     {
       "id": "help-admin/b2c_new_business_manager_ui",
@@ -4558,6 +4606,21 @@
       "summary": "When you upgrade to version 26.7, Commerce apps installed on B2C Commerce version 26.6 no longer appear as installed on the Commerce Apps page in Business Manager, even if you didn’t remove them."
     },
     {
+      "id": "help-admin/b2c_releases_deployment_schedules",
+      "title": "B2C Commerce Releases and Deployment Schedules",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_releases_deployment_schedules.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_releases_deployment_schedules.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_releases_deployment_schedules.md",
+      "summary": "Learn when new B2C Commerce functionality appears in Help and in your instances, and where to find release notes and deployment schedules.",
+      "relatedEntries": [
+        "help-admin/b2c_commerce_2027_deployment_schedule",
+        "help-admin/b2c_commerce_2026_deployment_schedule",
+        "help-admin/b2c_am_2027_deployment_schedule",
+        "help-admin/b2c_am_2026_deployment_schedule"
+      ]
+    },
+    {
       "id": "help-admin/b2c_remove_account_association",
       "title": "Remove a Merchant Account from B2C Commerce",
       "category": "help-admin",
@@ -4573,7 +4636,7 @@
       "filePath": "help-admin/b2c_remove_subdomain_from_legacy.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_remove_subdomain_from_legacy.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_remove_subdomain_from_legacy.md",
-      "summary": "After you migrate a subdomain to the proxy zone, remove it from the legacy zone and delete the old certificate so that the legacy certificate no longer shows on your B2C Commerce storefront."
+      "summary": "After you migrate a subdomain to the proxy zone, remove it from the legacy zone and delete the self-managed certificate that you uploaded for that subdomain."
     },
     {
       "id": "help-admin/b2c_removing_outdated_objects",
@@ -4674,7 +4737,7 @@
     },
     {
       "id": "help-admin/b2c_run_job_manually",
-      "title": "Run a Job Manually",
+      "title": "Run a B2C Commerce Job Manually",
       "category": "help-admin",
       "filePath": "help-admin/b2c_run_job_manually.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_run_job_manually.htm&type=5",
@@ -4836,12 +4899,12 @@
     },
     {
       "id": "help-admin/b2c_scope",
-      "title": "Job Flow Scope",
+      "title": "Where a B2C Commerce Job Flow Runs",
       "category": "help-admin",
       "filePath": "help-admin/b2c_scope.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_scope.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_scope.md",
-      "summary": "Each flow has a scope, either the entire organization, all B2C Commerce storefront sites, specific storefront sites, or sites that you pass to the job at execution time using the Open Commerce API (OCAPI) data API. Some job steps, such as CreateSitemap, can execute only in the context of a site. Other job steps, such as ExecuteDataReplication, can execute only in the context of the organization. If you try to assign a job step to a flow that has a scope the step doesn't support, the step shows an error."
+      "summary": "Each job flow has a scope: the organization, all storefront sites, specific storefront sites, or sites passed in when the job runs. Some job steps, such as CreateSitemap, can execute only in the context of a site. Other job steps, such as ExecuteDataReplication, can execute only in the context of the organization. If you try to assign a job step to a flow that has a scope the step doesn't support, the step shows an error."
     },
     {
       "id": "help-admin/b2c_scripts_and_pipelets_for_import_and_export",
@@ -5103,6 +5166,24 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_set_instance_status.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_set_instance_status.md",
       "summary": "Choose whether your B2C Commerce instance processes test or live payments."
+    },
+    {
+      "id": "help-admin/b2c_set_job_exit_status_rules",
+      "title": "Set Exit Status Rules for B2C Commerce Jobs",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_set_job_exit_status_rules.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_set_job_exit_status_rules.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_set_job_exit_status_rules.md",
+      "summary": "A B2C Commerce job runs steps that execute various tasks. Set what job steps do when they finish running."
+    },
+    {
+      "id": "help-admin/b2c_set_job_failure_handling",
+      "title": "Set Failure Handling and Notifications for B2C Commerce Jobs",
+      "category": "help-admin",
+      "filePath": "help-admin/b2c_set_job_failure_handling.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_set_job_failure_handling.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_set_job_failure_handling.md",
+      "summary": "A B2C Commerce job runs steps that execute various tasks. Choose what the job does when it fails, and who receives an email notification of the failure."
     },
     {
       "id": "help-admin/b2c_set_log_streaming_notifications",
@@ -5579,12 +5660,12 @@
     },
     {
       "id": "help-admin/b2c_system_resources_per_entity",
-      "title": "Locking System Resources during Job Execution",
+      "title": "System Resource Locks for B2C Commerce Jobs",
       "category": "help-admin",
       "filePath": "help-admin/b2c_system_resources_per_entity.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_system_resources_per_entity.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_system_resources_per_entity.md",
-      "summary": "When you create a B2C Commerce job, prevent another job from modifying system resources while your job is executing. To know which system resources to assign to the job, know which resources are related to which entity. For example, if your job modifies customers, assign the system resource profile to your job because customers are related to the profile system resource. When your job is executing, another job can't modify the profile system resource and unexpectedly change the outcome of your job. Resource locks are re-entrant locks. In other words, if a job locks a resource, job steps in that job can lock the same resource again. The product index Rebuild task doesn't require any resource locks except itself. However, the product index update task requires resources locks on Product, Catalog and Category."
+      "summary": "When you create a B2C Commerce job, prevent another job from modifying system resources while your job is executing."
     },
     {
       "id": "help-admin/b2c_tax_table_object_import_export",
@@ -5679,12 +5760,13 @@
     },
     {
       "id": "help-admin/b2c_troubleshooting_custom_jobs",
-      "title": "Troubleshooting Custom Jobs for B2C Storefronts",
+      "title": "Job Alerts for B2C Commerce Custom Jobs",
       "category": "help-admin",
       "filePath": "help-admin/b2c_troubleshooting_custom_jobs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_troubleshooting_custom_jobs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_troubleshooting_custom_jobs.md",
-      "summary": "Use this table to resolve custom job alerts in Business Manager."
+      "headings": "B2C Commerce One Order per Transaction • B2C Commerce Order Export Alert",
+      "summary": "Job alerts are Business Manager warnings that a custom job can slow the storefront or export orders out of sync. An alert applies to a job you create, not to one job step."
     },
     {
       "id": "help-admin/b2c_troubleshooting_import_export",
@@ -5963,7 +6045,7 @@
     },
     {
       "id": "help-admin/b2c_view_job_history",
-      "title": "View Job History",
+      "title": "View B2C Commerce Job History",
       "category": "help-admin",
       "filePath": "help-admin/b2c_view_job_history.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_view_job_history.htm&type=5",
@@ -6079,15 +6161,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_wishlist_object_import_export.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_wishlist_object_import_export.md",
       "summary": "There’s no built-in support for importing wish list objects or order status objects. However, you can develop a proprietary XML format and use the B2C Commerce script or a pipelet to update these objects."
-    },
-    {
-      "id": "help-admin/b2c_working_with_job_steps",
-      "title": "Using Job Steps",
-      "category": "help-admin",
-      "filePath": "help-admin/b2c_working_with_job_steps.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_working_with_job_steps.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-admin/b2c_working_with_job_steps.md",
-      "summary": "The B2C Commerce job framework includes some out-of-the-box system steps. When you use system steps in a job flow, no coding is required, although most job steps require that you configure some parameters. If there’s no system step that does what you want to do, have a developer create a custom job step."
     },
     {
       "id": "help-admin/b2c_xml_file_generation_from_within_demandware",
@@ -6490,7 +6563,7 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_acs_introduction.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_acs_introduction.md",
       "headings": "Feature Support Comparison",
-      "summary": "When you turn on Agentic Commerce Search for B2C Commerce, an AI model powers all standard product searches on your storefront. Some native B2C Commerce Search capabilities continue to operate independently and remain unchanged."
+      "summary": "When Agentic Commerce Search for B2C Commerce is on, an AI model powers all standard product searches on your storefront. Some native B2C Commerce Search capabilities continue to operate independently and remain unchanged."
     },
     {
       "id": "help-merchant/b2c_acs_merchandising_rules",
@@ -6789,16 +6862,16 @@
       "filePath": "help-merchant/b2c_aicategorization.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_aicategorization.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_aicategorization.md",
-      "summary": "Get category suggestions for products in your B2C Commerce product list. AI suggests categories based on your current catalog and the product data available."
+      "summary": "Get category suggestions for products in your B2C Commerce product list. AI suggests categories based on your current catalog and the product data available. Category suggestions are available only for base or simple products."
     },
     {
       "id": "help-merchant/b2c_aiproductsearch",
-      "title": "Find Products with the Merchant Agent",
+      "title": "Filter Products with Merchant Agent",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_aiproductsearch.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_aiproductsearch.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_aiproductsearch.md",
-      "summary": "Describe the products that you want to find, and the B2C Merchant Agent converts your request into filters with product attributes, operators, and values. Generate filters for the product list from the Search by ID or name bar or from the Filters pane."
+      "summary": "Describe the products that you want to find, and the B2C Merchant Agent converts your request into filters with product attributes, operators, and values. Generate filters for the product list from the Filters pane."
     },
     {
       "id": "help-merchant/b2c_analytic_reports_gmv",
@@ -6951,7 +7024,7 @@
       "filePath": "help-merchant/b2c_assign_merchant_agent_roles.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_assign_merchant_agent_roles.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_assign_merchant_agent_roles.md",
-      "summary": "In Business Manager, configure user roles and permissions that can access the B2C Merchant Agent features. The feature requires a single permission, **BM_Agentforce_Org**, which is assignable to any role."
+      "summary": "In B2C Commerce Business Manager, configure user roles and permissions that can access the B2C Merchant Agent features. The feature requires a single permission, **BM_Agentforce_Org**, which is assignable to any role."
     },
     {
       "id": "help-merchant/b2c_assign_multiple_products_to_multi_catg_catlg",
@@ -7027,12 +7100,12 @@
     },
     {
       "id": "help-merchant/b2c_assigning_catalogs_to_sites",
-      "title": "Assign a Catalog to a Site",
+      "title": "Assign a B2C Commerce Catalog to a Site",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_assigning_catalogs_to_sites.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_assigning_catalogs_to_sites.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_assigning_catalogs_to_sites.md",
-      "summary": "You assign a catalog to a B2C Commerce site on the Site Assignments tab of the catalog definition editor."
+      "summary": "Assign a catalog to a site. Each site supports only one catalog at a time."
     },
     {
       "id": "help-merchant/b2c_associating_a_store_with_an_inventory_list",
@@ -7080,7 +7153,7 @@
       "filePath": "help-merchant/b2c_batch_processing_catalogs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_batch_processing_catalogs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_batch_processing_catalogs.md",
-      "summary": "To perform large-scale, one-time merchandising operations on many catalogs efficiently, without editing each catalog individually, use batch processing. For example, update or delete category attributes, copy categories, or delete categories."
+      "summary": "Use batch processing to perform large-scale, one-time merchandising operations on multiple catalogs, without editing each catalog individually. For example, update or delete category attributes, copy categories, or delete categories."
     },
     {
       "id": "help-merchant/b2c_batch_processing_products",
@@ -7206,31 +7279,32 @@
     },
     {
       "id": "help-merchant/b2c_catalog_design",
-      "title": "Catalog Design",
+      "title": "B2C Commerce Catalog Design",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_catalog_design.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_catalog_design.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_catalog_design.md",
+      "headings": "Catalog Configuration • Maintain and Deploy Catalogs",
       "summary": "In B2C Commerce Business Manager, you can enter product data manually or you can import the data in an XML file and edit the data. Most customers import product data from their Product Information Management system or other system of record, and then enhance it in Business Manager."
     },
     {
       "id": "help-merchant/b2c_catalog_scenarios",
-      "title": "Catalog Scenarios",
+      "title": "B2C Commerce Catalog Scenarios",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_catalog_scenarios.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_catalog_scenarios.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_catalog_scenarios.md",
       "headings": "Manage Products in a Single Catalog • Manage Products in a Different Category Configuration • Share Products Among Multiple Storefronts • Share Products Between Two Storefronts",
-      "summary": "Here are some common ways you can configure and use B2C Commerce catalogs to merchandise your products."
+      "summary": "These are some common ways that you can configure and use B2C Commerce catalogs to merchandise your products."
     },
     {
       "id": "help-merchant/b2c_catalogs",
-      "title": "Catalogs",
+      "title": "B2C Commerce Catalogs",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_catalogs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_catalogs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_catalogs.md",
-      "summary": "B2C Commerce stores your product data in a catalog. A catalog is a collection of the products that you sell, organized into different categories.",
+      "summary": "B2C Commerce stores your product data in a catalog. A catalog is a collection of the products that you sell, organized into different categories. Every B2C Commerce site needs at least one catalog. Many organizations structure a catalog's categories to match a system of record, such as a Product Information Management (PIM) system.",
       "relatedEntries": [
         "help-merchant/b2c_catalog_design",
         "help-merchant/b2c_manage_catalogs",
@@ -7528,12 +7602,12 @@
     },
     {
       "id": "help-merchant/b2c_commerce_ai_agent_setup",
-      "title": "Guide Your Users Through Commerce Tasks with Commerce Agent Help Chat (Beta)",
+      "title": "Guide Merchants Through Commerce Tasks with Commerce Agent Help Chat (Beta)",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_commerce_ai_agent_setup.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_commerce_ai_agent_setup.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_commerce_ai_agent_setup.md",
-      "summary": "Bring generative AI chat-based help directly into Business Manager using Commerce Agent Help Chat. This agent guides you through commerce tasks and gives you contextual guidance and deep links using the latest help resources."
+      "summary": "Bring generative AI chat-based help directly into B2C Commerce Business Manager using Commerce Agent Help Chat. This agent guides merchants through commerce tasks and gives merchants contextual guidance and deep links using the latest help resources."
     },
     {
       "id": "help-merchant/b2c_commerce_cloud_data_in_tableau",
@@ -7649,7 +7723,7 @@
       "filePath": "help-merchant/b2c_configure_salesforce_sign_on_url.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configure_salesforce_sign_on_url.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_configure_salesforce_sign_on_url.md",
-      "summary": "After you create an Auth Provider, Salesforce generates a single sign-on URL. Add this URL to the identity synchronization setting in Business Manager. These instructions apply whether Account Manager or the Salesforce org is the IdP for B2C Commerce Merchant Agent access."
+      "summary": "After you create an Auth Provider in the Salesforce IdP sandbox org, Salesforce generates a single sign-on URL. Add this URL to the identity synchronization setting in Business Manager. These instructions apply whether Account Manager or the Salesforce org is the IdP for B2C Commerce Merchant Agent access."
     },
     {
       "id": "help-merchant/b2c_configure_searchable_attributes",
@@ -7772,16 +7846,7 @@
       "filePath": "help-merchant/b2c_configuring_variation_attributes_for_image_assignment.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_configuring_variation_attributes_for_image_assignment.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_configuring_variation_attributes_for_image_assignment.md",
-      "summary": "In B2C Commerce, configure catalog image settings only when the settings created with the catalog differ from what you want, or to add a catalog-level variation attribute. Default alt text and title fill in only when an image has none of its own, so you leave them unchanged before you assign images."
-    },
-    {
-      "id": "help-merchant/b2c_connect_commerce_to_salesforce",
-      "title": "Set Up B2C Commerce with a Salesforce Connection",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_connect_commerce_to_salesforce.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_connect_commerce_to_salesforce.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_connect_commerce_to_salesforce.md",
-      "summary": "Set up a trusted data exchange between B2C Commerce and a dedicated Salesforce org for the Merchant Agent to work. Connect your B2C Commerce instance to Salesforce to access agentic and cross-cloud experiences."
+      "summary": "In B2C Commerce, configure catalog image settings only when the settings created with the catalog are not the ones you want or if you want to add a catalog-level variation attribute. Default alt text and title fill in only when an image has none of its own, so you don't have to change them before you assign images."
     },
     {
       "id": "help-merchant/b2c_connect_to_tableau",
@@ -8002,12 +8067,12 @@
     },
     {
       "id": "help-merchant/b2c_create_a_catalog",
-      "title": "Create a Catalog",
+      "title": "Create a B2C Commerce Catalog",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_create_a_catalog.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_create_a_catalog.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_create_a_catalog.md",
-      "summary": "You create a catalog before you can configure categories or product data. Use Business Manager to create and manage your B2C Commerce organization's catalogs."
+      "summary": "Create a catalog before you configure categories or product data."
     },
     {
       "id": "help-merchant/b2c_create_a_category",
@@ -8548,12 +8613,12 @@
     },
     {
       "id": "help-merchant/b2c_creating_recommendations",
-      "title": "Create Explicit Recommendations",
+      "title": "Create Explicit Product Recommendations in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_creating_recommendations.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_creating_recommendations.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_creating_recommendations.md",
-      "summary": "Use the explicit recommendations feature to create and manage explicit recommendations in B2C Commerce."
+      "summary": "In B2C Commerce, create a pairing from a product or category to one or more target products in Business Manager. Shoppers see the recommended products in the storefront."
     },
     {
       "id": "help-merchant/b2c_creating_shipping_promotion_rules_1",
@@ -8611,16 +8676,27 @@
     },
     {
       "id": "help-merchant/b2c_csv_file",
-      "title": "Product Catalog CSV Files",
+      "title": "B2C Commerce Product Catalog CSV Files",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_csv_file.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_csv_file.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_csv_file.md",
-      "headings": "How to Read Your Exported CSV File • Preparing Your CSV for Import • CSV Limitations",
       "summary": "B2C Commerce Business Manager supports importing and exporting your catalogs in XML and CSV format. For an easier to read and edit version, export as a CSV file.",
       "relatedEntries": [
-        "help-merchant/b2c_export_a_catalog_as_csv"
+        "help-merchant/b2c_export_a_catalog_as_csv",
+        "help-merchant/b2c_import_catalog_csv",
+        "help-merchant/b2c_csv_file_technical_details"
       ]
+    },
+    {
+      "id": "help-merchant/b2c_csv_file_technical_details",
+      "title": "B2C Commerce CSV File Technical Details",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_csv_file_technical_details.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_csv_file_technical_details.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_csv_file_technical_details.md",
+      "headings": "CSV File Structure and Column Headers • Special Character Handling in Multi-Value Cells • Empty Cells During Import • Excel and Encoding Considerations • Injection Attack Protection",
+      "summary": "Reference information about CSV file structure, special characters, Excel formatting, and injection protection for B2C Commerce catalogs."
     },
     {
       "id": "help-merchant/b2c_custom_product_attributes",
@@ -9020,13 +9096,22 @@
       "summary": "Use B2C Commerce Business Manager to edit the product details for an individual product."
     },
     {
+      "id": "help-merchant/b2c_edit_sort_delete_explicit_recommendations",
+      "title": "Change Explicit Product Recommendations in B2C Commerce",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_edit_sort_delete_explicit_recommendations.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_edit_sort_delete_explicit_recommendations.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_edit_sort_delete_explicit_recommendations.md",
+      "summary": "In B2C Commerce, edit a pairing, change the order of its targets, or delete it in Business Manager. Shoppers see the pairing until you change it."
+    },
+    {
       "id": "help-merchant/b2c_editing_catalogs",
-      "title": "Edit a Catalog",
+      "title": "Edit a B2C Commerce Catalog",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_editing_catalogs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_editing_catalogs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_editing_catalogs.md",
-      "summary": "Edit an individual B2C Commerce catalog or delete catalogs."
+      "summary": "Edit a catalog's configuration or delete catalogs you no longer need."
     },
     {
       "id": "help-merchant/b2c_einstein_dashboard",
@@ -9062,7 +9147,7 @@
       "filePath": "help-merchant/b2c_enable_einstein_agentforce_for_merchant_agent.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_enable_einstein_agentforce_for_merchant_agent.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_enable_einstein_agentforce_for_merchant_agent.md",
-      "summary": "Enable Einstein and Agentforce features in your Salesforce org to support B2C Commerce Merchant Agent capabilities."
+      "summary": "To use B2C Commerce Merchant Agent features, enable Einstein and Agentforce in your Salesforce org."
     },
     {
       "id": "help-merchant/b2c_enable_search_task",
@@ -9137,25 +9222,26 @@
     },
     {
       "id": "help-merchant/b2c_explicit_recommendations",
-      "title": "Explicit Recommendations",
+      "title": "Explicit Product Recommendations in B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_explicit_recommendations.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_explicit_recommendations.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_explicit_recommendations.md",
-      "summary": "Create explicit relationships between recommendation *sources* and recommendation *targets* in B2C Commerce.",
+      "summary": "In B2C Commerce, explicitly select which products appear together and how the storefront identifies the pairing, which stays until you change it. Link a source, such as a product or a category, to one or more targets, and assign a type such as cross-sell or up-sell.",
       "relatedEntries": [
         "help-merchant/b2c_special_cases_of_recommendations",
-        "help-merchant/b2c_creating_recommendations"
+        "help-merchant/b2c_creating_recommendations",
+        "help-merchant/b2c_edit_sort_delete_explicit_recommendations"
       ]
     },
     {
       "id": "help-merchant/b2c_export_a_catalog_as_csv",
-      "title": "Export Your Catalog as a CSV File",
+      "title": "Export Your B2C Commerce Catalog as a CSV File",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_export_a_catalog_as_csv.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_export_a_catalog_as_csv.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_export_a_catalog_as_csv.md",
-      "summary": "A CSV file provides B2C Commerce merchandisers with an easy to read and edit view of their exported catalogs."
+      "summary": "A CSV file provides B2C Commerce merchandisers with a simpler, spreadsheet-friendly view of their catalog data."
     },
     {
       "id": "help-merchant/b2c_export_customer_snapshots",
@@ -9391,8 +9477,8 @@
       "filePath": "help-merchant/b2c_image_management.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_image_management.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_image_management.md",
-      "headings": "B2C Commerce Image Terms • B2C Commerce Image Limitations • B2C Commerce Image Location and Path • Choose the topic for the job",
-      "summary": "Before you assign product images in B2C Commerce, learn the terms, limits, and catalog location. Then choose the topic for assigning images, catalog settings, view types, swatches, alt text, storage, or a size, crop, or format.",
+      "headings": "Image Management Basics • B2C Commerce Image Limitations • B2C Commerce Image Location and Path • Choose the topic for the job",
+      "summary": "In B2C Commerce, use images on your storefront to enhance the customer buying experience. Use the B2C Commerce Image Management System to assign images to products, product variations, and variation attributes.",
       "relatedEntries": [
         "help-merchant/b2c_managing_images",
         "help-merchant/b2c_understanding_view_types",
@@ -9429,6 +9515,15 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_import_boost_and_bury_rules.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_import_boost_and_bury_rules.md",
       "summary": "Use search import and export to create, update, or replace boost and bury rules in bulk on your B2C Commerce storefront."
+    },
+    {
+      "id": "help-merchant/b2c_import_catalog_csv",
+      "title": "Import Your B2C Commerce Catalog Using a CSV File",
+      "category": "help-merchant",
+      "filePath": "help-merchant/b2c_import_catalog_csv.md",
+      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_import_catalog_csv.htm&type=5",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_import_catalog_csv.md",
+      "summary": "Import a CSV file to update an existing catalog in B2C Commerce Business Manager."
     },
     {
       "id": "help-merchant/b2c_importing_active_data_csv_files",
@@ -9646,12 +9741,12 @@
     },
     {
       "id": "help-merchant/b2c_manage_catalogs",
-      "title": "Manage Catalogs",
+      "title": "Manage B2C Commerce Catalogs",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_manage_catalogs.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_manage_catalogs.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_manage_catalogs.md",
-      "summary": "Use B2C Commerce Business Manager to create, and edit catalogs, and assign catalogs to sites.",
+      "summary": "Use B2C Commerce Business Manager to create catalogs, edit their configuration, and assign them to the sites where you want them to appear. You can assign a catalog to multiple sites, but each site can have only one catalog at a time. If you assign a different catalog to a site, it replaces that site's previous catalog.",
       "relatedEntries": [
         "help-merchant/b2c_create_a_catalog",
         "help-merchant/b2c_editing_catalogs",
@@ -10058,15 +10153,6 @@
       "summary": "Variation Groups in B2C Commerce represent subsets of base products based on attributes like color or size, for example, all blue size-small items. Each variant must be its own product. Groups derive inventory from their SKUs, and function like sets or bundles in categories and promotions."
     },
     {
-      "id": "help-merchant/b2c_merchandise_using_the_merchant_agent",
-      "title": "Merchandising with the B2C Merchant Agent",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_merchandise_using_the_merchant_agent.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_merchandise_using_the_merchant_agent.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_merchandise_using_the_merchant_agent.md",
-      "summary": "After you set up the B2C Merchant Agent, use it to automate merchandising tasks. Instead of manually configuring ranking, sorting, and product categorization, use natural language prompts with the Merchant Agent to automate these tasks."
-    },
-    {
       "id": "help-merchant/b2c_merchandising_your_site",
       "title": "Merchandising Your Site in B2C Commerce",
       "category": "help-merchant",
@@ -10088,13 +10174,12 @@
       "summary": "The Merchant Agent for B2C Commerce is an AI-powered assistant in Business Manager that automates merchandising tasks such as sorting rules, boost-and-bury configurations, and categorization for merchant admins. Merchant admins describe their intent in natural language, and the agent generates configurations that they can review and apply.",
       "relatedEntries": [
         "help-merchant/b2c_merchant_agent_setup",
-        "help-merchant/b2c_merchandise_using_the_merchant_agent",
         "help-merchant/b2c_commerce_ai_agent_setup"
       ]
     },
     {
       "id": "help-merchant/b2c_merchant_agent_license_requirements",
-      "title": "Review Merchant Agent License Requirements",
+      "title": "Merchant Agent License Requirements for B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_merchant_agent_license_requirements.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_merchant_agent_license_requirements.htm&type=5",
@@ -10103,17 +10188,19 @@
     },
     {
       "id": "help-merchant/b2c_merchant_agent_setup",
-      "title": "Merchant Agent Setup for B2C Commerce",
+      "title": "Set Up Merchant Agent for B2C Commerce",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_merchant_agent_setup.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_merchant_agent_setup.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_merchant_agent_setup.md",
-      "headings": "Merchant Agent Setup Checklist",
+      "headings": "What Tasks Do I Complete to Set Up the Merchant Agent? • Which Single Sign-On Option Do I Use?",
       "summary": "To use the Merchant Agent with B2C Commerce and the connected Salesforce org, complete the required setup tasks. The instructions assume that you’re a B2C Commerce admin and Salesforce admin responsible for merchandising in your organization.",
       "relatedEntries": [
         "help-merchant/b2c_merchant_agent_license_requirements",
-        "help-merchant/b2c_connect_commerce_to_salesforce",
-        "help-merchant/b2c_set_up_sso_for_merchant_agent",
+        "help-merchant/b2c_account_manager_idp",
+        "help-merchant/b2c_sso_idp_production_org",
+        "help-merchant/b2c_sso_idp_sandbox_org",
+        "help-merchant/b2c_configure_salesforce_sign_on_url",
         "help-merchant/b2c_enable_einstein_agentforce_for_merchant_agent",
         "help-merchant/b2c_assign_merchant_agent_roles",
         "help-merchant/b2c_test_merchant_agent",
@@ -10493,15 +10580,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_pos_view_unified_data.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_pos_view_unified_data.md",
       "summary": "After you map product fields between B2C Commerce and POS and schedule product feeds, confirm that product data syncs successfully in Point of Sale."
-    },
-    {
-      "id": "help-merchant/b2c_predictive_recommendations",
-      "title": "Product Recommendations",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_predictive_recommendations.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_predictive_recommendations.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_predictive_recommendations.md",
-      "summary": "Use the B2C Commerce Einstein Self Deployment tool to implicitly generate recommendation for products."
     },
     {
       "id": "help-merchant/b2c_predictive_sort",
@@ -11046,9 +11124,8 @@
       "filePath": "help-merchant/b2c_recommendations.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_recommendations.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_recommendations.md",
-      "summary": "Use B2C Commerce to implement recommendations using a variety of approaches.",
+      "summary": "In B2C Commerce, your shoppers see products that relate to what they're browsing or buying. These recommendations come from explicit catalog links or Einstein Product Recommendations.",
       "relatedEntries": [
-        "help-merchant/b2c_predictive_recommendations",
         "help-merchant/b2c_explicit_recommendations"
       ]
     },
@@ -11209,19 +11286,6 @@
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_sales_product_data_subject_areas.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_sales_product_data_subject_areas.md",
       "summary": "Use the B2C Commerce data dimensions and measures to analyze order insights and Product insights."
-    },
-    {
-      "id": "help-merchant/b2c_salesforce_org_idp",
-      "title": "Configure SSO with Salesforce as the IdP",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_salesforce_org_idp.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_salesforce_org_idp.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_salesforce_org_idp.md",
-      "summary": "If you’re using Salesforce as an IdP, configure SSO so a user can access B2C Commerce Merchant Agent capabilities.",
-      "relatedEntries": [
-        "help-merchant/b2c_sso_idp_production_org",
-        "help-merchant/b2c_sso_idp_sandbox_org"
-      ]
     },
     {
       "id": "help-merchant/b2c_sample_extensions",
@@ -11604,20 +11668,6 @@
       "summary": "Set the attribute localizedTaxClassId attribute on the B2C Commerce Business Manager Product Detail page or use the catalog Import and Export process."
     },
     {
-      "id": "help-merchant/b2c_set_up_sso_for_merchant_agent",
-      "title": "Configure Single Sign-On to Enable Merchant Agent Features",
-      "category": "help-merchant",
-      "filePath": "help-merchant/b2c_set_up_sso_for_merchant_agent.md",
-      "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_set_up_sso_for_merchant_agent.htm&type=5",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_set_up_sso_for_merchant_agent.md",
-      "summary": "For the Merchant Agent to work, the agent requires that you configure single sign-on (SSO) between B2C Commerce and Salesforce. Use Account Manager or Salesforce as the Identity Provider (IdP) to establish the trust relationship between the two applications.",
-      "relatedEntries": [
-        "help-merchant/b2c_account_manager_idp",
-        "help-merchant/b2c_salesforce_org_idp",
-        "help-merchant/b2c_configure_salesforce_sign_on_url"
-      ]
-    },
-    {
       "id": "help-merchant/b2c_set_up_user_access",
       "title": "Set Up User Access",
       "category": "help-merchant",
@@ -11822,13 +11872,12 @@
     },
     {
       "id": "help-merchant/b2c_special_cases_of_recommendations",
-      "title": "Special Cases of Explicit Recommendations",
+      "title": "Missing Types for Explicit Product Recommendations",
       "category": "help-merchant",
       "filePath": "help-merchant/b2c_special_cases_of_recommendations.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_special_cases_of_recommendations.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_special_cases_of_recommendations.md",
-      "headings": "Related Links",
-      "summary": "It's important to understand how B2C Commerce behaves in special circumstances."
+      "summary": "In B2C Commerce, Business Manager uses **Recommendation Type** values when you create or filter pairings. If those values are missing, or if a source or target is no longer in the catalog, the pairing still appears."
     },
     {
       "id": "help-merchant/b2c_specify_category_assignment_attributes",
@@ -11846,7 +11895,7 @@
       "filePath": "help-merchant/b2c_sso_idp_production_org.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_sso_idp_production_org.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_sso_idp_production_org.md",
-      "summary": "If the B2C instance connects to a Salesforce production org, configure a login flow for the Merchant Agent work. No Auth Provider setup is required."
+      "summary": "If your B2C Commerce instance connects to a Salesforce production org, configure a login flow so the Merchant Agent can work. No Auth Provider setup is required."
     },
     {
       "id": "help-merchant/b2c_sso_idp_sandbox_org",
@@ -11855,7 +11904,7 @@
       "filePath": "help-merchant/b2c_sso_idp_sandbox_org.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_sso_idp_sandbox_org.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_sso_idp_sandbox_org.md",
-      "summary": "If the B2C instance connects to a Salesforce sandbox org, first configure an External Client App in the production org. Then, configure an Auth Provider in the sandbox org. The Auth Provider uses the External Client App that you set up in the production org."
+      "summary": "If your B2C Commerce instance connects to a Salesforce sandbox org, first configure an External Client App in the production Salesforce org. Then, configure an Auth Provider in the sandbox org. The Auth Provider uses the External Client App that you set up in the production org."
     },
     {
       "id": "help-merchant/b2c_static_mappings",
@@ -12153,7 +12202,7 @@
       "filePath": "help-merchant/b2c_troubleshoot_merchant_agent_setup.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_troubleshoot_merchant_agent_setup.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_troubleshoot_merchant_agent_setup.md",
-      "headings": "Sandbox Refresh Stops the Merchant Agent from Working",
+      "headings": "Why Does the Merchant Agent Stop Working After a Sandbox Refresh?",
       "summary": "If you can't access the B2C Commerce Merchant Agent or create a rule with the agent, review these issues and their solutions."
     },
     {
@@ -12203,7 +12252,7 @@
       "filePath": "help-merchant/b2c_understanding_view_types.md",
       "url": "https://help.salesforce.com/s/articleView?id=cc.b2c_understanding_view_types.htm&type=5",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/help/help-merchant/b2c_understanding_view_types.md",
-      "headings": "Default View Types in B2C Commerce • View Type Rules in B2C Commerce • Image Variants in a View Type • See Also",
+      "headings": "View Type Rules in B2C Commerce • Image Variants in a View Type • See Also",
       "summary": "Use B2C Commerce view types to group product images by usage context, such as large, medium, small, and swatch, and assign different images to each product variation."
     },
     {
