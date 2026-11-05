@@ -82,6 +82,10 @@ class TestBaseCommand extends BaseCommand<typeof TestBaseCommand> {
     return this.getBaseConfigOptions();
   }
 
+  public testFindUserConfigDirectory(filename: string) {
+    return this.findUserConfigDirectory(filename);
+  }
+
   public testCollectPluginAuthSessionStore() {
     return this.collectPluginAuthSessionStore();
   }
@@ -204,6 +208,52 @@ describe('cli/base-command', () => {
       await cmd.init();
 
       expect(cmd.testGetBaseConfigOptions().configPath).to.equal('');
+    });
+  });
+
+  describe('user config directory', () => {
+    let ownDirectory: string;
+    let sharedDirectory: string;
+
+    beforeEach(() => {
+      ownDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-cli-config-'));
+      sharedDirectory = path.join(process.env.B2C_CONFIG_DIR!, 'b2c');
+      fs.mkdirSync(sharedDirectory, {recursive: true});
+      config.configDir = ownDirectory;
+      config.dirname = 'sfnext';
+    });
+
+    afterEach(() => {
+      fs.rmSync(ownDirectory, {recursive: true, force: true});
+    });
+
+    it('falls back to the shared b2c directory for other CLIs', () => {
+      fs.writeFileSync(path.join(sharedDirectory, 'settings.json'), '{}');
+      expect(command.testFindUserConfigDirectory('settings.json')).to.equal(sharedDirectory);
+    });
+
+    it("prefers the CLI's own directory when the file exists there", () => {
+      fs.writeFileSync(path.join(sharedDirectory, 'safety.json'), '{}');
+      fs.writeFileSync(path.join(ownDirectory, 'safety.json'), '{}');
+      expect(command.testFindUserConfigDirectory('safety.json')).to.equal(ownDirectory);
+    });
+
+    it("uses the CLI's own directory when neither has the file", () => {
+      expect(command.testFindUserConfigDirectory('settings.json')).to.equal(ownDirectory);
+    });
+
+    it('never falls back for the b2c CLI', () => {
+      config.dirname = 'b2c';
+      fs.writeFileSync(path.join(sharedDirectory, 'settings.json'), '{}');
+      expect(command.testFindUserConfigDirectory('settings.json')).to.equal(ownDirectory);
+    });
+
+    it('reads defaultConfigPath from the shared settings', async () => {
+      const dwJson = path.join(sharedDirectory, 'dw.json');
+      fs.writeFileSync(path.join(sharedDirectory, 'settings.json'), JSON.stringify({defaultConfigPath: dwJson}));
+      stubParse(command);
+      await command.init();
+      expect(command.testGetBaseConfigOptions().defaultConfigPath).to.equal(dwJson);
     });
   });
 

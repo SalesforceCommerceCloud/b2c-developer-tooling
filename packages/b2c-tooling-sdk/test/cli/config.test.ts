@@ -478,6 +478,26 @@ describe('cli/config', () => {
       expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.be.undefined;
     });
 
+    describe('SFCC_CARTRIDGE_IGNORE_DIRS', () => {
+      beforeEach(() => isolateConfig());
+      afterEach(() => restoreConfig());
+
+      it('is used when --cartridge-ignore-dirs is not passed', () => {
+        process.env.SFCC_CARTRIDGE_IGNORE_DIRS = 'node_modules, build';
+        expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.deep.equal(['node_modules', 'build']);
+      });
+
+      it('treats an empty value as an empty list', () => {
+        process.env.SFCC_CARTRIDGE_IGNORE_DIRS = '';
+        expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.deep.equal([]);
+      });
+
+      it('is overridden by the flag', () => {
+        process.env.SFCC_CARTRIDGE_IGNORE_DIRS = 'build';
+        expect(extractInstanceFlags({'cartridge-ignore-dirs': ['dist']}).cartridgeIgnoreDirs).to.deep.equal(['dist']);
+      });
+    });
+
     it('includes OAuth flags', () => {
       const flags: ParsedFlags = {
         server: 'my-sandbox.demandware.net',

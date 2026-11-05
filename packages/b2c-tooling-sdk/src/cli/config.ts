@@ -43,6 +43,18 @@ function toList(value: unknown): string[] | undefined {
 }
 
 /**
+ * `--cartridge-ignore-dirs`, falling back to `SFCC_CARTRIDGE_IGNORE_DIRS`.
+ *
+ * The env var is read here rather than through the flag so every command that
+ * resolves instance config honors it, including CLIs that define their own copy
+ * of the flag. An explicitly empty flag or env value means "ignore nothing".
+ */
+function resolveCartridgeIgnoreDirs(flag: unknown): string[] | undefined {
+  const value = flag ?? process.env.SFCC_CARTRIDGE_IGNORE_DIRS;
+  return value === undefined ? undefined : (toList(value) ?? []);
+}
+
+/**
  * Flag `default` that reads a comma-separated list from an environment variable.
  *
  * Use this instead of `env:` on `multiple: true` flags. oclif does not split
@@ -155,9 +167,7 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
     importSetExclude: toList(flags['import-set-exclude']),
-    // An explicitly empty --cartridge-ignore-dirs means "ignore nothing".
-    cartridgeIgnoreDirs:
-      flags['cartridge-ignore-dirs'] === undefined ? undefined : (toList(flags['cartridge-ignore-dirs']) ?? []),
+    cartridgeIgnoreDirs: resolveCartridgeIgnoreDirs(flags['cartridge-ignore-dirs']),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
