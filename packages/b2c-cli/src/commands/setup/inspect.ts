@@ -421,6 +421,7 @@ export default class SetupInspect extends BaseCommand<typeof SetupInspect> {
         ['cartridges', config.cartridges],
         ['importSetExclude', config.importSetExclude],
         ['cartridgeIgnoreDirs', config.cartridgeIgnoreDirs],
+        ['maxArchiveSize', config.maxArchiveSize],
         ['contentLibrary', config.contentLibrary],
         ['catalogs', config.catalogs],
         ['libraries', config.libraries],

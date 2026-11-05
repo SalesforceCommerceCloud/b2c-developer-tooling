@@ -15,7 +15,13 @@ import * as path from 'node:path';
 import {WebDavClient} from '../../../src/clients/webdav.js';
 import {createOcapiClient} from '../../../src/clients/ocapi.js';
 import {MockAuthStrategy} from '../../helpers/mock-auth.js';
-import {deleteCartridges, uploadCartridges, findAndDeployCartridges} from '../../../src/operations/code/deploy.js';
+import {
+  deleteCartridges,
+  uploadCartridges,
+  findAndDeployCartridges,
+  UNZIP_WAIT,
+} from '../../../src/operations/code/deploy.js';
+import {HTTPError} from '../../../src/errors/http-error.js';
 import type {CartridgeMapping} from '../../../src/operations/code/cartridges.js';
 import {NetworkError} from '../../../src/errors/network-error.js';
 import type {AuthStrategy} from '../../../src/auth/index.js';
@@ -455,105 +461,243 @@ describe('operations/code/deploy', () => {
       expect(postSignal).to.be.instanceOf(AbortSignal);
     });
 
-    it('should throw clear NetworkError (not bare "fetch failed") on socket drop during unzip', async () => {
-      const cartridgeDir = path.join(tempDir, 'app_test');
-      fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, 'test.js'), 'test');
+    describe('when the unzip request drops', () => {
+      const saved = {...UNZIP_WAIT};
+      beforeEach(() => Object.assign(UNZIP_WAIT, {intervalMs: 1, timeoutMs: 500}));
+      afterEach(() => Object.assign(UNZIP_WAIT, saved));
 
-      const cartridges: CartridgeMapping[] = [{name: 'app_test', src: cartridgeDir, dest: 'app_test'}];
-
-      server.use(
-        http.all(`${WEBDAV_BASE}/*`, ({request}) => {
-          const url = new URL(request.url);
-          if (request.method === 'PUT' && url.pathname.includes('_sync-') && url.pathname.endsWith('.zip')) {
-            return new HttpResponse(null, {status: 201});
+      /**
+       * Drops the first `drops` unzip POSTs, then answers the rest from
+       * `statuses` in order (the last status repeats). Everything else goes to MSW.
+       */
+      function unzipInstance(script: {drops: number; statuses: number[]; posts: number}): any {
+        class ScriptedUnzipAuth implements AuthStrategy {
+          async fetch(url: string, init?: RequestInit): Promise<Response> {
+            if (init?.method === 'POST' && url.includes('_sync-') && url.endsWith('.zip')) {
+              const n = script.posts++;
+              if (n < script.drops) {
+                const cause = Object.assign(new Error('socket hang up'), {code: 'ECONNRESET'});
+                throw Object.assign(new TypeError('fetch failed'), {cause});
+              }
+              const status = script.statuses[Math.min(n - script.drops, script.statuses.length - 1)];
+              return new Response(null, {status});
+            }
+            return fetch(url, init);
           }
-          if (request.method === 'POST' && url.pathname.includes('_sync-') && url.pathname.endsWith('.zip')) {
-            // Simulate socket drop
-            return HttpResponse.error();
-          }
-          return new HttpResponse(null, {status: 404});
-        }),
-      );
 
-      try {
-        await uploadCartridges(mockInstance, cartridges);
-        expect.fail('Should have thrown');
-      } catch (error: any) {
-        expect(error).to.be.instanceOf(NetworkError);
-        expect(error.message).to.not.equal('fetch failed');
-        expect(error.message).to.include('unzip');
-        expect(error.message.length).to.be.greaterThan(50);
-        // Should mention the host and provide context
-        expect(error.host || error.message).to.match(/test\.demandware\.net/);
-        // Should warn the server may still be extracting (not retried automatically)
-        // and point the user at the uploaded archive for manual verification.
-        expect(error.message).to.match(/may still be extracting/i);
-        expect(error.message).to.include('_sync-');
+          async getAuthorizationHeader(): Promise<string> {
+            return 'Bearer test-token';
+          }
+        }
+        return {...mockInstance, webdav: new WebDavClient(TEST_HOST, new ScriptedUnzipAuth())};
       }
+
+      function testCartridge(): CartridgeMapping[] {
+        const cartridgeDir = path.join(tempDir, 'app_test');
+        fs.mkdirSync(cartridgeDir, {recursive: true});
+        fs.writeFileSync(path.join(cartridgeDir, 'test.js'), 'test');
+        return [{name: 'app_test', src: cartridgeDir, dest: 'app_test'}];
+      }
+
+      beforeEach(() => {
+        server.use(
+          http.all(`${WEBDAV_BASE}/*`, ({request}) => {
+            if (request.method === 'PUT') return new HttpResponse(null, {status: 201});
+            if (request.method === 'DELETE') return new HttpResponse(null, {status: 204});
+            return new HttpResponse(null, {status: 404});
+          }),
+        );
+      });
+
+      it('waits while the server reports the unzip as locked, then succeeds', async () => {
+        const script = {drops: 1, statuses: [423, 423, 201], posts: 0};
+
+        await uploadCartridges(unzipInstance(script), testCartridge());
+
+        expect(script.posts).to.equal(4);
+      });
+
+      it('fails immediately when the server cannot extract the archive', async () => {
+        const script = {drops: 1, statuses: [500], posts: 0};
+
+        try {
+          await uploadCartridges(unzipInstance(script), testCartridge());
+          expect.fail('Should have thrown');
+        } catch (error: any) {
+          expect(error.message).to.match(/could not extract the archive/);
+        }
+        expect(script.posts).to.equal(2);
+      });
+
+      it('gives up after repeated drops instead of re-extracting indefinitely', async () => {
+        const script = {drops: 100, statuses: [201], posts: 0};
+
+        try {
+          await uploadCartridges(unzipInstance(script), testCartridge());
+          expect.fail('Should have thrown');
+        } catch (error: any) {
+          expect(error).to.be.instanceOf(NetworkError);
+          expect(error.message).to.match(/may still be extracting/i);
+          expect(error.message).to.include('_sync-');
+        }
+        // The first request plus at most UNZIP_MAX_DROPS (2) more that may each start an extraction.
+        expect(script.posts).to.equal(4);
+      });
+
+      it('gives up when the unzip stays locked past the wait limit', async () => {
+        Object.assign(UNZIP_WAIT, {intervalMs: 5, timeoutMs: 40});
+        const script = {drops: 1, statuses: [423], posts: 0};
+
+        try {
+          await uploadCartridges(unzipInstance(script), testCartridge());
+          expect.fail('Should have thrown');
+        } catch (error: any) {
+          expect(error).to.be.instanceOf(NetworkError);
+          expect(error.message).to.match(/still extracting it after/i);
+        }
+      });
+    });
+  });
+
+  describe('uploadCartridges split archives', () => {
+    function makeCartridge(name: string, files: number, bytesPerFile: number): CartridgeMapping {
+      const dir = path.join(tempDir, name);
+      fs.mkdirSync(path.join(dir, 'cartridge', 'static'), {recursive: true});
+      for (let i = 0; i < files; i++) {
+        // Random bytes in a .png are stored, so archive size is predictable.
+        fs.writeFileSync(
+          path.join(dir, 'cartridge', 'static', `f${i}.png`),
+          Buffer.alloc(bytesPerFile, i + name.length),
+        );
+      }
+      return {name, src: dir, dest: name};
+    }
+
+    function recordingHandlers(record: {puts: {path: string; zip: Buffer}[]; unzips: string[]; deletes: string[]}) {
+      return http.all(`${WEBDAV_BASE}/*`, async ({request}) => {
+        const url = new URL(request.url);
+        if (request.method === 'PUT') {
+          record.puts.push({path: url.pathname, zip: Buffer.from(await request.arrayBuffer())});
+          return new HttpResponse(null, {status: 201});
+        }
+        if (request.method === 'POST') {
+          record.unzips.push(url.pathname);
+          return new HttpResponse(null, {status: 201});
+        }
+        if (request.method === 'DELETE') {
+          record.deletes.push(url.pathname);
+          return new HttpResponse(null, {status: 204});
+        }
+        return new HttpResponse(null, {status: 404});
+      });
+    }
+
+    it('splits cartridges into several archives under the size limit, in order', async () => {
+      const cartridges = [
+        makeCartridge('a_one', 3, 20_000),
+        makeCartridge('b_two', 3, 20_000),
+        makeCartridge('c_three', 3, 20_000),
+      ];
+      const record = {puts: [] as {path: string; zip: Buffer}[], unzips: [] as string[], deletes: [] as string[]};
+      server.use(recordingHandlers(record));
+      const plans: any[] = [];
+
+      await uploadCartridges(mockInstance, cartridges, {maxArchiveBytes: 70_000, onPlan: (p) => plans.push(p)});
+
+      expect(plans).to.have.length(1);
+      expect(plans[0].parts).to.equal(3);
+      expect(record.puts).to.have.length(3);
+      expect(record.unzips).to.deep.equal(record.puts.map((p) => p.path));
+      for (const [i, put] of record.puts.entries()) {
+        expect(put.zip.length).to.be.at.most(70_000);
+        const zip = await JSZip.loadAsync(put.zip);
+        const names = Object.keys(zip.files);
+        // Each archive holds one whole cartridge.
+        expect(names.filter((n) => n.includes('/cartridge/')).every((n) => n.startsWith(`v1/${cartridges[i].dest}/`)))
+          .to.be.true;
+      }
+      // Uploaded archives are deleted.
+      expect(record.deletes.filter((d) => d.endsWith('.zip'))).to.have.length(3);
     });
 
-    it('should NOT retry the unzip on a network drop (avoids concurrent extraction)', async () => {
-      const cartridgeDir = path.join(tempDir, 'app_test');
-      fs.mkdirSync(cartridgeDir, {recursive: true});
-      fs.writeFileSync(path.join(cartridgeDir, 'test.js'), 'test');
+    it('splits a cartridge larger than the limit at file boundaries', async () => {
+      const cartridges = [makeCartridge('big_one', 6, 20_000)];
+      const record = {puts: [] as {path: string; zip: Buffer}[], unzips: [] as string[], deletes: [] as string[]};
+      server.use(recordingHandlers(record));
 
-      const cartridges: CartridgeMapping[] = [{name: 'app_test', src: cartridgeDir, dest: 'app_test'}];
+      await uploadCartridges(mockInstance, cartridges, {maxArchiveBytes: 50_000});
 
-      let postAttempts = 0;
+      expect(record.puts.length).to.be.at.least(3);
+      const files = new Set<string>();
+      for (const put of record.puts) {
+        expect(put.zip.length).to.be.at.most(50_000);
+        const zip = await JSZip.loadAsync(put.zip);
+        for (const n of Object.keys(zip.files)) if (n.includes('/cartridge/')) files.add(n);
+      }
+      expect(files.size).to.equal(6);
+    });
 
-      // Auth that always drops the connection on the unzip POST. A retry-based
-      // implementation would issue multiple POSTs; the safe implementation issues
-      // exactly one and surfaces a clear error.
-      class DropTestAuthStrategy implements AuthStrategy {
+    it('fails before uploading when a single file is larger than the limit', async () => {
+      const cartridges = [makeCartridge('huge', 1, 60_000)];
+      const record = {puts: [] as {path: string; zip: Buffer}[], unzips: [] as string[], deletes: [] as string[]};
+      server.use(recordingHandlers(record));
+
+      try {
+        await uploadCartridges(mockInstance, cartridges, {maxArchiveBytes: 50_000});
+        expect.fail('Should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.include('File too large for a single deploy archive');
+      }
+      expect(record.puts).to.have.length(0);
+    });
+
+    it('retries an upload whose connection drops', async () => {
+      const cartridges = [makeCartridge('a_one', 1, 1000)];
+      let putAttempts = 0;
+      class DropFirstPutAuth implements AuthStrategy {
         async fetch(url: string, init?: RequestInit): Promise<Response> {
-          const headers = new Headers(init?.headers);
-          headers.set('Authorization', 'Bearer test-token');
-
-          if (init?.method === 'POST' && url.includes('_sync-') && url.endsWith('.zip')) {
-            postAttempts++;
-            const cause = Object.assign(new Error('socket hang up'), {code: 'ECONNRESET'});
+          if (init?.method === 'PUT' && ++putAttempts === 1) {
+            const cause = Object.assign(new Error('socket hang up'), {code: 'EPIPE'});
             throw Object.assign(new TypeError('fetch failed'), {cause});
           }
-
-          // All other requests: pass through to MSW
-          return fetch(url, {...init, headers});
+          return fetch(url, init);
         }
 
         async getAuthorizationHeader(): Promise<string> {
           return 'Bearer test-token';
         }
       }
+      const record = {puts: [] as {path: string; zip: Buffer}[], unzips: [] as string[], deletes: [] as string[]};
+      server.use(recordingHandlers(record));
 
-      const dropAuth = new DropTestAuthStrategy();
-      const dropWebdav = new WebDavClient(TEST_HOST, dropAuth);
-      const dropInstance = {
-        ...mockInstance,
-        webdav: dropWebdav,
-      };
+      await uploadCartridges(
+        {...mockInstance, webdav: new WebDavClient(TEST_HOST, new DropFirstPutAuth())},
+        cartridges,
+      );
 
+      expect(putAttempts).to.equal(2);
+      expect(record.puts).to.have.length(1);
+      expect(record.unzips).to.have.length(1);
+    });
+
+    it('explains a 413 for a small archive as a likely stopped sandbox', async () => {
+      const cartridges = [makeCartridge('a_one', 1, 1000)];
       server.use(
-        http.all(`${WEBDAV_BASE}/*`, ({request}) => {
-          const url = new URL(request.url);
-          if (request.method === 'PUT' && url.pathname.includes('_sync-') && url.pathname.endsWith('.zip')) {
-            return new HttpResponse(null, {status: 201});
-          }
-          if (request.method === 'DELETE' && url.pathname.includes('_sync-') && url.pathname.endsWith('.zip')) {
-            return new HttpResponse(null, {status: 204});
-          }
-          return new HttpResponse(null, {status: 404});
-        }),
+        http.all(`${WEBDAV_BASE}/*`, ({request}) =>
+          request.method === 'PUT'
+            ? new HttpResponse('<html><body><h2>Request Entity Too Large</h2></body></html>', {status: 413})
+            : new HttpResponse(null, {status: 404}),
+        ),
       );
 
       try {
-        await uploadCartridges(dropInstance, cartridges);
+        await uploadCartridges(mockInstance, cartridges);
         expect.fail('Should have thrown');
       } catch (error: any) {
-        expect(error).to.be.instanceOf(NetworkError);
+        // A tiny archive rejected with 413 points at a stopped sandbox.
+        expect(error).to.be.instanceOf(HTTPError);
+        expect(error.message).to.match(/sandbox may be stopped/);
       }
-
-      // Exactly one unzip POST — never re-issued.
-      expect(postAttempts).to.equal(1);
     });
   });
 });

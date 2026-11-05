@@ -498,6 +498,29 @@ describe('cli/config', () => {
       });
     });
 
+    describe('SFCC_MAX_ARCHIVE_SIZE', () => {
+      beforeEach(() => isolateConfig());
+      afterEach(() => restoreConfig());
+
+      it('is used when --max-archive-size is not passed', () => {
+        process.env.SFCC_MAX_ARCHIVE_SIZE = '150mb';
+        expect(extractInstanceFlags({}).maxArchiveSize).to.equal('150mb');
+      });
+
+      it('is overridden by the flag and ignored when empty', () => {
+        process.env.SFCC_MAX_ARCHIVE_SIZE = '150mb';
+        expect(extractInstanceFlags({'max-archive-size': '1gb'}).maxArchiveSize).to.equal('1gb');
+        process.env.SFCC_MAX_ARCHIVE_SIZE = '';
+        expect(extractInstanceFlags({}).maxArchiveSize).to.be.undefined;
+      });
+    });
+
+    it('maps --max-archive-size as a string', () => {
+      expect(extractInstanceFlags({'max-archive-size': '150mb'}).maxArchiveSize).to.equal('150mb');
+      expect(extractInstanceFlags({'max-archive-size': 200}).maxArchiveSize).to.equal('200');
+      expect(extractInstanceFlags({}).maxArchiveSize).to.be.undefined;
+    });
+
     it('includes OAuth flags', () => {
       const flags: ParsedFlags = {
         server: 'my-sandbox.demandware.net',

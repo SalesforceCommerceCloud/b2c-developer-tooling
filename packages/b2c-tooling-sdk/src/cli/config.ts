@@ -45,13 +45,19 @@ function toList(value: unknown): string[] | undefined {
 /**
  * `--cartridge-ignore-dirs`, falling back to `SFCC_CARTRIDGE_IGNORE_DIRS`.
  *
- * The env var is read here rather than through the flag so every command that
- * resolves instance config honors it, including CLIs that define their own copy
- * of the flag. An explicitly empty flag or env value means "ignore nothing".
+ * Env vars for deploy flags are read here rather than through the flag so every
+ * command that resolves instance config honors them, including CLIs that define
+ * their own copy of the flag. An explicitly empty flag or env value means "ignore nothing".
  */
 function resolveCartridgeIgnoreDirs(flag: unknown): string[] | undefined {
   const value = flag ?? process.env.SFCC_CARTRIDGE_IGNORE_DIRS;
   return value === undefined ? undefined : (toList(value) ?? []);
+}
+
+/** `--max-archive-size`, falling back to `SFCC_MAX_ARCHIVE_SIZE`; empty means unset. */
+function resolveMaxArchiveSize(flag: unknown): string | undefined {
+  const value = flag ?? process.env.SFCC_MAX_ARCHIVE_SIZE;
+  return value === undefined || value === '' ? undefined : String(value);
 }
 
 /**
@@ -168,6 +174,7 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     password: flags.password as string | undefined,
     importSetExclude: toList(flags['import-set-exclude']),
     cartridgeIgnoreDirs: resolveCartridgeIgnoreDirs(flags['cartridge-ignore-dirs']),
+    maxArchiveSize: resolveMaxArchiveSize(flags['max-archive-size']),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,

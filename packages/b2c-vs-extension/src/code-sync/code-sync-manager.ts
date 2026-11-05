@@ -6,6 +6,7 @@
 import {
   uploadFiles,
   fileToCartridgePath,
+  maxArchiveBytesFromConfig,
   uploadCartridges,
   type CartridgeMapping,
   type FileChange,
@@ -306,6 +307,7 @@ export class CodeSyncManager implements vscode.Disposable {
       async () => {
         await uploadCartridges(instance, [cartridge], {
           ignoreDirs: this.configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+          maxArchiveBytes: maxArchiveBytesFromConfig(this.configProvider.getConfig()?.values.maxArchiveSize),
         });
         this.log(`[Upload] Cartridge "${cartridge.name}" uploaded successfully`);
         vscode.window.showInformationMessage(`B2C DX: Cartridge "${cartridge.name}" uploaded.`);
@@ -348,6 +350,7 @@ export class CodeSyncManager implements vscode.Disposable {
         async () => {
           await uploadCartridges(instance, [cartridge], {
             ignoreDirs: this.configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+            maxArchiveBytes: maxArchiveBytesFromConfig(this.configProvider.getConfig()?.values.maxArchiveSize),
           });
           this.log(`[Upload] Cartridge "${cartridge.name}" uploaded successfully`);
           vscode.window.showInformationMessage(`B2C DX: Cartridge "${cartridge.name}" uploaded.`);

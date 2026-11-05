@@ -300,6 +300,12 @@ describe('config/EnvSource', () => {
       expect(result?.config.cartridgeIgnoreDirs).to.deep.equal(['node_modules', 'build']);
     });
 
+    it('parses SFCC_MAX_ARCHIVE_SIZE as a string', () => {
+      const source = new EnvSource({SFCC_MAX_ARCHIVE_SIZE: '150mb'});
+      const result = source.load({});
+      expect(result?.config.maxArchiveSize).to.equal('150mb');
+    });
+
     it('parses SFCC_OAUTH_SCOPES as comma-separated array', () => {
       const source = new EnvSource({SFCC_OAUTH_SCOPES: 'mail,roles,openid'});
       const result = source.load({});
