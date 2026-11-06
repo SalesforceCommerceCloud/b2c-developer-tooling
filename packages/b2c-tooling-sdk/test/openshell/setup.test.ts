@@ -114,6 +114,16 @@ describe('openshell/setup', () => {
       expect(methods(instance())).to.deep.equal(methods(instance('NONE')));
     });
 
+    it('allows POST to known searches under READ_ONLY', () => {
+      const policies = parsePolicy(buildOpenShellSetup(CONFIG, {accessLevel: 'READ_ONLY'}).policy).network_policies;
+      expect(methods(policies.b2c_instance.endpoints[0], '/s/*/dw/data/*/product_search')).to.deep.equal(['POST']);
+      expect(
+        methods(policies.b2c_scapi.endpoints[0], '/operation/jobs/v1/organizations/*/job-execution-search'),
+      ).to.deep.equal(['POST']);
+      const noDelete = parsePolicy(buildOpenShellSetup(CONFIG, {accessLevel: 'NO_DELETE'}).policy).network_policies;
+      expect(methods(noDelete.b2c_scapi.endpoints[0], '/s/*/dw/data/*/product_search')).to.deep.equal([]);
+    });
+
     it('forwards Safety Mode rules and adds exceptions to the network policy', () => {
       const rules: SafetyRule[] = [
         {job: 'sfcc-site-archive-export', action: 'allow'},

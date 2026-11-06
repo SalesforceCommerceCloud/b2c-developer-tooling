@@ -95,7 +95,7 @@ The server runs with `SFCC_SAFETY_LEVEL=READ_ONLY`, which applies even when the 
 
 The copied configuration contains credentials. `--keep-temp` keeps it in the run's temp directory; delete kept directories when you are done. Never commit a live configuration, and keep instance names, hostnames and other customer data out of case prompts and graders.
 
-Runs get a temporary `HOME`, so a Claude login that depends on settings in your home directory (for example an `apiKeyHelper`) is not visible to them. Export `ANTHROPIC_API_KEY` (or your provider's variables) in the shell before running.
+Runs get a temporary `HOME`, so a Claude login that depends on settings in your home directory (for example an `apiKeyHelper`) is not visible to them. Export `ANTHROPIC_API_KEY` (or your provider's variables) in the shell before running. The same applies to instance auth: cached browser logins are not available, so the configuration needs an API client (`clientId` and `clientSecret`) with access to the tenant and the scopes the case uses.
 
 ## Writing cases
 

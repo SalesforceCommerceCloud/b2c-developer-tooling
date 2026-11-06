@@ -11,13 +11,13 @@ declare class BonusDiscount extends Discount {
      * Returns the bonus products associated with this discount that are in
      * stock, online and assigned to site catalog.
      */
-    readonly bonusProducts: Collection<Product<any>>;
+    readonly bonusProducts: Collection<Product>;
     private constructor();
     /**
      * Returns the bonus products associated with this discount that are in
      * stock, online and assigned to site catalog.
      */
-    getBonusProducts(): Collection<Product<any>>;
+    getBonusProducts(): Collection<Product>;
 }
 
 export = BonusDiscount;

@@ -244,12 +244,29 @@ describe('cli/oauth-command', () => {
       }
     });
 
-    it('fails clearly for commands that need an API client', async () => {
-      stubParse(command, {'client-id': 'env-client', 'default-client': true});
+    it('uses the built-in client in commands without a default client of their own', async () => {
+      stubParse(command, {'client-id': 'env-client', 'client-secret': 'env-secret', 'default-client': true});
       await command.init();
 
       expect(command.testHasOAuthCredentials()).to.be.true;
-      expect(() => command.testGetOAuthStrategy()).to.throw(/no OCAPI or SCAPI access/);
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
+      const pkceConfig = (strategy as unknown as {config: {clientId: string}}).config;
+      expect(pkceConfig.clientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('uses the built-in client for the Account Manager host', async () => {
+      stubParse(command, {
+        'client-id': 'env-client',
+        'account-manager-host': 'account.example.com',
+        'default-client': true,
+      });
+      await command.init();
+
+      const strategy = command.testGetOAuthStrategy();
+      const pkceConfig = (strategy as unknown as {config: {clientId: string; accountManagerHost: string}}).config;
+      expect(pkceConfig.clientId).to.equal(getDefaultPublicClientId('account.example.com'));
+      expect(pkceConfig.accountManagerHost).to.equal('account.example.com');
     });
   });
 

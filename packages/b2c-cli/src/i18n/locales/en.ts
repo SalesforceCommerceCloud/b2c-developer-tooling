@@ -115,6 +115,7 @@ export const en = {
         uploading: 'Uploading archive...',
         unzipping: 'Unzipping on server...',
         cleanup: 'Cleaning up...',
+        splitPlan: 'Uploading {{files}} files in {{parts}} archives of up to {{max}} each (about {{total}} in total)',
         summary: 'Deployed {{count}} cartridge(s) to {{codeVersion}}',
         reloaded: 'Code version reloaded',
         failed: 'Deployment failed: {{message}}',

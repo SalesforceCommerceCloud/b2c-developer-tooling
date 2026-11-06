@@ -64,6 +64,10 @@ function init({ typescript: ts }) {
     // Whether the most recent applyConfig() received an explicit cartridges list.
     // When true, we skip auto-discovery; when false, create() may auto-populate.
     let cartridgesFromHost = false;
+    let extraTypeFiles = [];
+    // Projects created by this plugin instance, so a configuration change can
+    // ask tsserver to rebuild their programs and refresh diagnostics.
+    const projects = new Set();
     // tsserver internally canonicalizes file paths to forward slashes regardless of
     // platform (so containingFile is "C:/proj/..." on Windows). The cartridge roots
     // we receive from the extension come from Node's path.resolve(), which returns
@@ -90,6 +94,13 @@ function init({ typescript: ts }) {
         const c = (config ?? {});
         enabled = c.enabled !== false;
         autoDiscoverEnabled = c.autoDiscover !== false;
+        if (c.extraTypeFiles !== undefined) {
+            extraTypeFiles = Array.isArray(c.extraTypeFiles)
+                ? c.extraTypeFiles
+                    .filter((p) => typeof p === 'string' && p.length > 0)
+                    .map((p) => p.replace(/\\/g, '/'))
+                : [];
+        }
         // Only touch the cartridge list if the host explicitly provided one.
         // This lets onConfigurationChanged() update flags (enabled, autoDiscover)
         // without wiping a previously auto-discovered list.
@@ -430,6 +441,12 @@ function init({ typescript: ts }) {
             if (fileExists(GLOBAL_DTS) && !present.has(normalize(GLOBAL_DTS))) {
                 additions.push(GLOBAL_DTS);
             }
+            for (const file of extraTypeFiles) {
+                if (fileExists(file) && !present.has(normalize(file))) {
+                    additions.push(file);
+                    present.add(normalize(file));
+                }
+            }
             const hasModules = cartridges.some((c) => c.name === 'modules');
             if (hasModules && fileExists(SFRA_SERVER_DTS) && !present.has(normalize(SFRA_SERVER_DTS))) {
                 additions.push(SFRA_SERVER_DTS);
@@ -581,11 +598,27 @@ function init({ typescript: ts }) {
             const result = info.languageService.getImplementationAtPosition(fileName, position);
             return result?.map(remapDefinition);
         };
-        log(`plugin initialized (cartridges=${cartridges.length}, enabled=${enabled})`);
+        projects.add(info.project);
+        log(`plugin initialized (cartridges=${cartridges.length}, extraTypeFiles=${extraTypeFiles.length}, enabled=${enabled})`);
         return proxy;
     }
     function onConfigurationChanged(config) {
         applyConfig(config);
+        // The script file list is computed when a program is built; mark projects
+        // dirty so added or removed type files take effect without a restart.
+        for (const project of projects) {
+            try {
+                if (project.isClosed()) {
+                    projects.delete(project);
+                    continue;
+                }
+                project.markAsDirty?.();
+                project.refreshDiagnostics();
+            }
+            catch {
+                // best-effort
+            }
+        }
     }
     return { create, onConfigurationChanged };
 }

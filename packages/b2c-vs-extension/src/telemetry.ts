@@ -24,6 +24,7 @@ export type FeatureCategory =
   | 'content'
   | 'codeSync'
   | 'apiBrowser'
+  | 'objectTypes'
   | 'debugger'
   | 'scaffold'
   | 'cap'

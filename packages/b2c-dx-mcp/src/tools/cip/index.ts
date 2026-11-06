@@ -34,7 +34,7 @@ const connection = {
 };
 
 function result(data: object, resolution?: ToolResolution): ToolResult {
-  const value = resolution ? attachResolution(jsonResult(data, 0), resolution, 0) : jsonResult(data, 0);
+  const value = resolution ? attachResolution(jsonResult(data), resolution) : jsonResult(data);
   delete value.structuredContent;
   return value;
 }
@@ -110,6 +110,7 @@ export function createCipTools(
   return [
     {
       name: 'cip_discover',
+      searchHint: 'analytics reports tables columns warehouse',
       effect: 'read',
       idempotent: true,
       openWorld: true,
@@ -191,6 +192,7 @@ export function createCipTools(
     },
     {
       name: 'cip_query',
+      searchHint: 'analytics reports sales revenue orders top selling products conversion traffic sql',
       effect: 'read',
       idempotent: true,
       openWorld: true,

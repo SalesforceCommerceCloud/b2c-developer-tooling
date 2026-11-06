@@ -226,7 +226,7 @@ declare interface TaxHooks {
      * `dw.order.ProductLineItem` (getProductID, getTaxClassID), `dw.order.OrderAddress`
      * (getAddress1, getCity, getStateCode).
      */
-    calculate(lineItemCtnr: LineItemCtnr<any>): Status | null;
+    calculate(lineItemCtnr: LineItemCtnr): Status | null;
     /**
      * The function is called by extension point extensionPointAppCancelTax during OrderMgr.failOrder() or
      * OrderMgr.cancelOrder(). It notifies the Commerce App tax provider that the order has been cancelled or has

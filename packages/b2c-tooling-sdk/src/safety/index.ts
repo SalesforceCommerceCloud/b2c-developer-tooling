@@ -32,6 +32,7 @@ export {
 
 // SafetyGuard
 export {SafetyGuard, extractJobIdFromPath} from './safety-guard.js';
+export {READ_ONLY_SEARCH_PATHS, isReadOnlySearch} from './read-only-searches.js';
 
 // Confirmation utility
 export type {ConfirmHandler} from './with-confirmation.js';

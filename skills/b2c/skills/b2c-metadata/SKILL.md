@@ -49,6 +49,8 @@ Metadata is organized in site archives:
 
 Add custom attributes to existing system objects.
 
+> To inspect the attributes on a live instance, or to add or change a custom attribute or attribute group without an import, use `b2c object-types` (see `b2c-cli:b2c-object-types`). Enum values and custom object types still require metadata XML.
+
 ### Basic Structure
 
 ```xml

@@ -69,6 +69,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_CARTRIDGES: 'cartridges',
   SFCC_IMPORT_SET_EXCLUDE: 'importSetExclude',
   SFCC_CARTRIDGE_IGNORE_DIRS: 'cartridgeIgnoreDirs',
+  SFCC_MAX_ARCHIVE_SIZE: 'maxArchiveSize',
   SFCC_CATALOGS: 'catalogs',
   SFCC_LIBRARIES: 'libraries',
   SFCC_ASSET_QUERY: 'assetQuery',

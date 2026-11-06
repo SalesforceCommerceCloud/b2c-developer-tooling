@@ -84,12 +84,12 @@ describe('tools/adapter', () => {
   });
 
   describe('jsonResult', () => {
-    it('should create a JSON result with default indentation', () => {
+    it('should create compact JSON by default', () => {
       const data = {name: 'test', value: 123};
       const result = jsonResult(data);
 
       expect(result).to.deep.equal({
-        content: [{type: 'text', text: JSON.stringify(data, null, 2)}],
+        content: [{type: 'text', text: JSON.stringify(data)}],
       });
     });
 
@@ -107,8 +107,7 @@ describe('tools/adapter', () => {
       const result = jsonResult(data);
       const text = getResultText(result);
 
-      expect(text).to.include('[\n');
-      expect(text).to.include('"a"');
+      expect(text).to.equal('["a","b","c"]');
     });
 
     it('should handle nested objects', () => {

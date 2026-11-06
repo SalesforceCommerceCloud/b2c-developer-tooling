@@ -147,6 +147,7 @@ describe('registry', () => {
         'logs_watch',
         'metrics_get',
         'mrt_logs_watch',
+        'object_types_describe',
         'scapi_custom_apis_get_status',
         'scapi_schemas_list',
       ];

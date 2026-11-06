@@ -106,9 +106,9 @@ for your answer, but your assistant app may. Keep the session connected while
 you decide.
 
 Start with the [product approval example](../guide/safety.md#scapi-code-mode-example)
-or [shared SCAPI policy](../guide/safety.md#global-scapi-confirmation). Some searches
-use POST and need a rule to run under `READ_ONLY`; see the
-[job search example](../guide/safety#allow-a-search-without-enabling-other-writes).
+or [shared SCAPI policy](../guide/safety.md#global-scapi-confirmation). `READ_ONLY`
+allows [known POST searches](../guide/safety#read-only-searches); other POST reads
+need a [rule](../guide/safety#allow-a-search-without-enabling-other-writes).
 
 Use your existing `dw.json`, global safety configuration, or environment variables;
 SCAPI Code Mode needs no separate safety setup. See

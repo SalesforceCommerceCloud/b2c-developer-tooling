@@ -100,7 +100,7 @@ declare class ProductVariationModel {
     /**
      * Returns the master of the product variation.
      */
-    readonly master: Product<any>;
+    readonly master: Product;
     /**
      * Returns a collection of product variation attributes of the variation.
      */
@@ -307,7 +307,7 @@ declare class ProductVariationModel {
     /**
      * Returns the master of the product variation.
      */
-    getMaster(): Product<any>;
+    getMaster(): Product;
     /**
      * Returns the product variation attribute for the specific id,
      * or null if there is no product variation attribute for that id.
@@ -373,7 +373,7 @@ declare class ProductVariationModel {
      * getProductVariationAttributes. If an invalid product or attribute is passed,
      * null is returned. If null is passed for either argument, an exception is thrown.
      */
-    getVariationValue(variantOrVariationGroup: Product<any>, attribute: ProductVariationAttribute): ProductVariationAttributeValue | null;
+    getVariationValue(variantOrVariationGroup: Product, attribute: ProductVariationAttribute): ProductVariationAttributeValue | null;
     /**
      * Returns true if any variant is available with the specified value of the
      * specified variation attribute. Available means that the variant is

@@ -103,7 +103,7 @@ declare class PromotionPlan {
      * If a master product is passed, then this method will return promotions
      * which are relevant for the master itself or at least one of its variants.
      */
-    getProductPromotions(product: Product<any>): Collection<Promotion>;
+    getProductPromotions(product: Product): Collection<Promotion>;
     /**
      * Returns the product promotions for which the specified product is a
      * discounted (and possibly also a qualifying) product. It also returns
@@ -117,7 +117,7 @@ declare class PromotionPlan {
      * for which the master product itself or at least one of its product's
      * variants is a discounted product.
      */
-    getProductPromotionsForDiscountedProduct(product: Product<any>): Collection<Promotion>;
+    getProductPromotionsForDiscountedProduct(product: Product): Collection<Promotion>;
     /**
      * Returns the product promotions for which the specified product is a
      * qualifying but NOT a discounted product.
@@ -130,7 +130,7 @@ declare class PromotionPlan {
      * for which the master product itself or at least one of its product's
      * variants is a qualifying product.
      */
-    getProductPromotionsForQualifyingProduct(product: Product<any>): Collection<Promotion>;
+    getProductPromotionsForQualifyingProduct(product: Product): Collection<Promotion>;
     /**
      * Returns all promotions contained in this plan sorted by exclusivity.
      */
@@ -152,7 +152,7 @@ declare class PromotionPlan {
      * product details page.
      * @deprecated Use getProductPromotions
      */
-    getPromotions(product: Product<any>): Collection<Promotion>;
+    getPromotions(product: Product): Collection<Promotion>;
     /**
      * Returns all shipping promotions contained in this plan.
      */

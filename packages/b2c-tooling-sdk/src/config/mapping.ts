@@ -190,6 +190,7 @@ export function mapDwJsonToNormalizedConfig(json: DwJsonConfig): NormalizedConfi
     cartridges: parseCartridges(json.cartridges),
     importSetExclude: json.importSetExclude,
     cartridgeIgnoreDirs: json.cartridgeIgnoreDirs,
+    maxArchiveSize: json.maxArchiveSize === undefined ? undefined : String(json.maxArchiveSize),
     contentLibrary: json.contentLibrary,
     catalogs: json.catalogs,
     libraries: json.libraries,
@@ -337,6 +338,9 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
   }
   if (config.cartridgeIgnoreDirs !== undefined) {
     result.cartridgeIgnoreDirs = config.cartridgeIgnoreDirs;
+  }
+  if (config.maxArchiveSize !== undefined) {
+    result.maxArchiveSize = config.maxArchiveSize;
   }
   if (config.catalogs !== undefined) {
     result.catalogs = config.catalogs;
@@ -621,6 +625,7 @@ export function mergeConfigsWithProtection(
       cartridges: overrides.cartridges ?? base.cartridges,
       importSetExclude: overrides.importSetExclude ?? base.importSetExclude,
       cartridgeIgnoreDirs: overrides.cartridgeIgnoreDirs ?? base.cartridgeIgnoreDirs,
+      maxArchiveSize: overrides.maxArchiveSize ?? base.maxArchiveSize,
       contentLibrary: overrides.contentLibrary ?? base.contentLibrary,
       catalogs: overrides.catalogs ?? base.catalogs,
       libraries: overrides.libraries ?? base.libraries,

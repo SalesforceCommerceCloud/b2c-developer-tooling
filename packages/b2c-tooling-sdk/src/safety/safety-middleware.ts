@@ -7,6 +7,7 @@
 import {existsSync, readFileSync} from 'node:fs';
 import {join, resolve} from 'node:path';
 import {getLogger} from '../logging/logger.js';
+import {isReadOnlySearch} from './read-only-searches.js';
 import type {SafetyRule} from './types.js';
 import {isValidSafetyAction} from './types.js';
 import type {SafetyEvaluation} from './types.js';
@@ -17,7 +18,7 @@ import type {SafetyEvaluation} from './types.js';
  * - NONE: No safety restrictions (default)
  * - NO_DELETE: Block DELETE operations only
  * - NO_UPDATE: Block DELETE and destructive operations (reset, stop, restart, batch logout)
- * - READ_ONLY: Block all write operations (only GET allowed)
+ * - READ_ONLY: Block all write operations (GET, plus POST to known search endpoints; see READ_ONLY_SEARCH_PATHS)
  */
 export type SafetyLevel = 'NONE' | 'NO_DELETE' | 'NO_UPDATE' | 'READ_ONLY';
 
@@ -138,6 +139,7 @@ export function checkLevelViolation(method: string, path: string, level: SafetyL
     }
 
     case 'READ_ONLY':
+      if (isReadOnlySearch(upperMethod, path)) return undefined;
       if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(upperMethod)) {
         return `Write operation blocked: ${upperMethod} ${path} (READ_ONLY mode prevents all modifications)`;
       }

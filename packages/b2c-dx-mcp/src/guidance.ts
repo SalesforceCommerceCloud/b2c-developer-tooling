@@ -58,8 +58,7 @@ const pageFields = {
 };
 const outputSchema = {
   result: z.discriminatedUnion('kind', [
-    z.object({kind: z.literal('directory'), ...pageFields}),
-    z.object({kind: z.literal('search'), ...pageFields}),
+    z.object({kind: z.enum(['directory', 'search']), ...pageFields}),
     z.object({
       kind: z.literal('read'),
       id: z.string(),
@@ -113,8 +112,9 @@ export function createGuidanceTool(): McpTool {
     idempotent: true,
     openWorld: false,
     title: 'Read B2C Skills',
+    alwaysLoad: true,
     description:
-      'Read skill files: b2c (development), b2c-cli, b2c-ops (operations), storefront-next, mcp (setup/workflows). MCP resource fallback and full catalog. Omit args to list; query to search; collection to filter; id or uri to read.',
+      'Read B2C skills: b2c (development), b2c-cli, b2c-ops (operations), storefront-next, mcp (setup/workflows); fallback for skill:// resources, full catalog. No args lists; query searches; collection filters; id or uri reads.',
     inputSchema,
     outputSchema,
     toolsets: [...TOOLSETS],

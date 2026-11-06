@@ -154,6 +154,11 @@ function validate(schema: JsonSchema, value: unknown, path: string): string | un
   return undefined;
 }
 
+function acceptsString(schema: JsonSchema): boolean {
+  if (Array.isArray(schema.oneOf)) return (schema.oneOf as JsonSchema[]).some(acceptsString);
+  return schema.type === 'string';
+}
+
 function acceptsStringList(schema: JsonSchema): boolean {
   if (Array.isArray(schema.oneOf)) return (schema.oneOf as JsonSchema[]).some(acceptsStringList);
   return schema.type === 'array' && (schema.items as JsonSchema | undefined)?.type === 'string';
@@ -185,6 +190,10 @@ export function parseConfigValue(key: ConfigKey, raw: string): unknown {
           .map((item) => item.trim())
           .filter(Boolean),
       );
+    }
+    // Keys that also allow a string (e.g. `200mb` or `200`) fall back to the raw text.
+    if (acceptsString(key.schema)) {
+      candidates.push(raw);
     }
   }
   let error: string | undefined;

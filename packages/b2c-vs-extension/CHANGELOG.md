@@ -1,5 +1,36 @@
 # Change Log
 
+## 1.9.0
+
+### Minor Changes
+
+- [#849](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/849) [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78) - `code deploy` now handles very large code versions: cartridges are streamed to disk instead of memory and split into archives of up to 200 MiB (set with `--max-archive-size`, `max-archive-size` in `dw.json`, or `SFCC_MAX_ARCHIVE_SIZE`). Dropped uploads are retried, a dropped connection during server-side unzip no longer fails the deploy, and 413 errors explain whether the archive was too large or the sandbox is stopped. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`047f623`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/047f6234c5446c3d6c651f113c1c6e60c6dc8fc8), [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2), [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c), [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c), [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78), [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2)]:
+  - @salesforce/b2c-tooling-sdk@2.13.0
+
+## 1.8.1
+
+### Patch Changes
+
+- Updated dependencies [[`315118c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/315118c96fff84319bd3eff7f44a3a3d7422876c)]:
+  - @salesforce/b2c-tooling-sdk@2.12.1
+
+## 1.8.0
+
+### Minor Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - New **Write Custom Attribute Types to Project** command adds the instance's custom attributes (`product.custom.*`) to Script API IntelliSense, with enum values as literal types. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - New **Object Types** view to browse system object attributes, enum values, and attribute groups, copy attribute IDs, and export metadata XML. Edit and save a custom attribute definition to apply it to the instance after a confirmation, including enum values through a site import, or create one with **New Custom Attribute...**. Add, edit, remove, or set the default enum value from the context menu without editing JSON. The SCAPI sidebar is now **B2C-DX: APIs** and holds both the API Browser and Object Types. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e), [`a865d27`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a865d27b2e815385348f8f2234f8efb4c096ed5f), [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a)]:
+  - @salesforce/b2c-tooling-sdk@2.12.0
+
 ## 1.7.3
 
 ### Patch Changes

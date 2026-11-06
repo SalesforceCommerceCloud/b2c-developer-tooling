@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-03T04:52:23.991Z",
+  "generatedAt": "2026-11-04T18:07:42.253Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -53,7 +53,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/code.md",
-      "headings": "API Backend • Authentication • WebDAV Operations (deploy, download, watch) • Code Version Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • Ignored Directories • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
+      "headings": "API Backend • Authentication • WebDAV Operations (deploy, download, watch) • Code Version Operations (list, activate, delete) • b2c code list • Usage • Flags • Examples • Output • b2c code deploy • Usage • Arguments • Flags • Examples • Cartridge Discovery • Ignored Directories • Large Code Versions • b2c code download • Usage • Arguments • Flags • Examples • Mirror Mode • Notes • b2c code activate • Usage • Arguments • Flags • Examples • Reload vs Activate • b2c code delete • Usage • Arguments • Flags • Examples • Notes • b2c code watch • Usage • Arguments • Flags • Examples • Behavior • Environment Variables",
       "preview": "Commands for deploying, downloading, activating code versions, and watching for file changes on B2C Commerce instances."
     },
     {
@@ -163,6 +163,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.md",
       "headings": "Command Overview • Global MRT Flags • Configuration Sources • Authentication • Getting an API Key • Configuration • MRT Backends • SCAPI-supported commands • Auto-detection criteria • JSON output is backend-specific • Legacy-only flags are ignored on SCAPI • Maintenance (Read-Only) Mode • Organization Commands • b2c mrt org list • b2c mrt org b2c • Project Commands • b2c mrt project list • b2c mrt project create • b2c mrt project get • b2c mrt project update • b2c mrt project delete • Project Member Commands • b2c mrt project member list • b2c mrt project member add • b2c mrt project member get • b2c mrt project member update • b2c mrt project member remove • Project Notification Commands • b2c mrt project notification list • b2c mrt project notification create • b2c mrt project notification get • b2c mrt project notification update • b2c mrt project notification delete • Environment Commands • b2c mrt env list • b2c mrt env create • b2c mrt env get • b2c mrt env update • b2c mrt env delete • b2c mrt env clone • b2c mrt env invalidate • b2c mrt env set-primary • b2c mrt env b2c • Environment Variable Commands • b2c mrt env var list • b2c mrt env var set • b2c mrt env var push • b2c mrt env var delete • URL Redirect Commands • b2c mrt env redirect list • b2c mrt env redirect create • b2c mrt env redirect get • b2c mrt env redirect update • b2c mrt env redirect delete • b2c mrt env redirect clone • Access Control Commands • b2c mrt env access-control list • b2c mrt env access-control create • b2c mrt env access-control get • b2c mrt env access-control delete • Bundle Commands • b2c mrt bundle deploy • b2c mrt bundle upload-v2 • b2c mrt bundle list • b2c mrt bundle history • b2c mrt bundle download • b2c mrt bundle delete • Organization Member Commands • b2c mrt org member list • b2c mrt org member add • b2c mrt org member get • b2c mrt org member update • b2c mrt org member remove • Organization Certificate Commands • b2c mrt org cert list • b2c mrt org cert get • b2c mrt org cert create • b2c mrt org cert delete • b2c mrt org cert restart-validation • Tail Logs • b2c mrt tail-logs • Save Credentials • b2c mrt save-credentials • User Commands • b2c mrt user profile • b2c mrt user api-key • b2c mrt user email-prefs • Common Workflows • Deploy to Production • Set Up a New Environment • Invalidate Cache After Content Update",
       "preview": "Commands for managing Managed Runtime projects, environments, bundles, and deployments."
+    },
+    {
+      "id": "cli-object-types",
+      "title": "Object Types",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/object-types.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/object-types.md",
+      "headings": "What the API Can and Cannot Do • Authentication • Localized Values • Script API IntelliSense • b2c object-types list • b2c object-types get • b2c object-types export • b2c object-types apply • b2c object-types attributes list • b2c object-types attributes get • b2c object-types attributes create • b2c object-types attributes update • b2c object-types attributes delete • b2c object-types groups list • b2c object-types groups get • b2c object-types groups create • b2c object-types groups update • b2c object-types groups delete • b2c object-types groups assign • b2c object-types groups unassign",
+      "preview": "Commands for inspecting and managing system object type attribute definitions and attribute groups."
     },
     {
       "id": "cli-overview",
@@ -377,7 +386,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ide-integration.md",
-      "headings": "Script API IntelliSense • Salesforce B2C Commerce VS Code Extension (recommended) • Legacy `.ds` scripts • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
+      "headings": "Script API IntelliSense • Salesforce B2C Commerce VS Code Extension (recommended) • Custom attributes • Legacy `.ds` scripts • Standalone VS Code, WebStorm, or IntelliJ Ultimate • Neovim, Helix, Zed, Sublime, or other LSP-based editors • Notes • IntelliJ SFCC Plugin • Setup",
       "preview": "Configure IDE tooling like the IntelliJ SFCC plugin to consume resolved B2C CLI configuration, plus enable Script API IntelliSense via TypeScript definitions."
     },
     {
@@ -458,7 +467,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/safety.md",
-      "headings": "Start with an instance policy {#quick-start} • Choose a safety level {#safety-levels} • Use it in your tools • CLI • MCP and AI assistants {#mcp} • IDE extension: VS Code and compatible editors {#ide-extension} • Add rules for specific tasks {#safety-rules} • Allow a search without enabling other writes • Approve product changes with your assistant {#scapi-code-mode-example} • Approve SCAPI changes across instances {#global-scapi-confirmation} • Rule matchers • Require confirmation {#confirmation-mode} • Use different policies per instance {#per-instance-configuration} • Global safety configuration {#global-safety-config} • How settings combine {#configuration-merge} • When an operation is blocked • Environment variables reference",
+      "headings": "Start with an instance policy {#quick-start} • Choose a safety level {#safety-levels} • Use it in your tools • CLI • MCP and AI assistants {#mcp} • IDE extension: VS Code and compatible editors {#ide-extension} • Add rules for specific tasks {#safety-rules} • Searches under READ_ONLY {#read-only-searches} • Allow a search without enabling other writes • Approve product changes with your assistant {#scapi-code-mode-example} • Approve SCAPI changes across instances {#global-scapi-confirmation} • Rule matchers • Require confirmation {#confirmation-mode} • Use different policies per instance {#per-instance-configuration} • Global safety configuration {#global-safety-config} • How settings combine {#configuration-merge} • When an operation is blocked • Environment variables reference",
       "preview": "Choose which B2C Commerce actions are allowed, need approval, or are blocked across the CLI, IDE Extension, and AI assistants."
     },
     {
@@ -575,7 +584,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs {#mrt} • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Instance files {#webdav} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs {#mrt} • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Instance files {#webdav} • Object types {#object-types} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {
@@ -593,7 +602,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.md",
-      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Site Archive Export • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
+      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Site Archive Export • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • Object Types • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
       "preview": "The official Salesforce B2C Commerce IDE Extension for VS Code, Cursor, and other VS Code-compatible editors — code sync, sandbox management, API exploration, and debugging."
     },
     {

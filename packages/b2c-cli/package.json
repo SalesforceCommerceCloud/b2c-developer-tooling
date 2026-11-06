@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-cli",
   "description": "A Salesforce B2C Commerce CLI",
-  "version": "2.11.0",
+  "version": "2.13.0",
   "author": "Charles Lavery",
   "bin": {
     "b2c": "./bin/run.js"
@@ -289,6 +289,17 @@
                 "description": "Read and update a single preference value across sites in a site preference group"
               }
             }
+          }
+        }
+      },
+      "object-types": {
+        "description": "Manage system object type attribute definitions and attribute groups\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/object-types.html",
+        "subtopics": {
+          "attributes": {
+            "description": "List, create, update, and delete attribute definitions"
+          },
+          "groups": {
+            "description": "Manage attribute groups and their assigned attributes"
           }
         }
       },
