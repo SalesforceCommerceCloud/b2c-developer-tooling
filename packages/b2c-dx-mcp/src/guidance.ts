@@ -4,8 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ResourceTemplate, ProtocolError, ProtocolErrorCode} from '@modelcontextprotocol/server';
-import {fileURLToPath} from 'node:url';
-import {GuidanceCatalog, GuidanceError, GUIDANCE_INDEX_URI} from '@salesforce/b2c-tooling-sdk/guidance';
+import {
+  GuidanceError,
+  GUIDANCE_INDEX_URI,
+  loadBundledGuidanceCatalog,
+  type GuidanceCatalog,
+} from '@salesforce/b2c-tooling-sdk/guidance';
 import {z} from 'zod';
 import type {B2CDxMcpServer} from './server.js';
 import {TOOLSETS} from './utils/constants.js';
@@ -78,10 +82,7 @@ const outputSchema = {
 function catalogLoader(collections?: readonly string[]): () => GuidanceCatalog {
   let catalog: GuidanceCatalog | undefined;
   return () => {
-    catalog ??= new GuidanceCatalog(fileURLToPath(new URL('../content/guidance/', import.meta.url)), {
-      allowNonGa: true,
-      collections,
-    });
+    catalog ??= loadBundledGuidanceCatalog({allowNonGa: true, collections});
     return catalog;
   };
 }

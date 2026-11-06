@@ -33,12 +33,25 @@ import {getScapiOrigin} from '../clients/scapi-origin.js';
 
 /** Exact, resolved request awaiting approval. Credentials are never included. */
 export interface ScapiConfirmation {
+  /** Schema operation ID, e.g. `updateProduct`. */
   operationId: string;
   method: string;
+  /** Full request URL without the query string. */
   url: string;
   query: Record<string, unknown>;
   body?: unknown;
+  /** Why safety asked for confirmation. */
   reason: string;
+  /** API ID, `<family>/<name>/<version>`, e.g. `product/products/v1`. */
+  api: string;
+  /** API family, e.g. `product`. */
+  apiFamily: string;
+  /** Schema path template including the API prefix, e.g. `/product/products/v1/organizations/{organizationId}/products/{id}`. */
+  pathTemplate: string;
+  /** Values of the template's path parameters, decoded. */
+  pathParams: Record<string, string>;
+  /** Zero-based position of this request among the requests made with this helper. */
+  requestIndex: number;
 }
 
 export interface ScapiRequestOptions {
@@ -69,7 +82,9 @@ export function createScapiRequest(
   const organizationId = toOrganizationId(options.tenantId);
   const documents = [...options.documents];
   let totalBytes = 0;
+  let requestCount = 0;
   return async (input, signal) => {
+    const requestIndex = requestCount++;
     signal.throwIfAborted();
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Request must be an object.');
     // Detach the request from caller mutations while a confirmation is outstanding.
@@ -182,7 +197,15 @@ export function createScapiRequest(
     const pathname = new URL(url).pathname;
     // Each request owns its guard: an approval must not exempt concurrent requests.
     const guard = new SafetyGuard(options.safety);
-    const safetyOperation = {type: 'http' as const, method, url, path: pathname, jobId: extractJobIdFromPath(pathname)};
+    const safetyOperation = {
+      type: 'http' as const,
+      method,
+      url,
+      path: pathname,
+      jobId: extractJobIdFromPath(pathname),
+      operationId: operation.operationId as string | undefined,
+      api: matched.document.entry.id,
+    };
     const evaluation = guard.evaluate(safetyOperation);
     let approved = false;
     if (evaluation.action === 'confirm' && options.confirm) {
@@ -194,6 +217,11 @@ export function createScapiRequest(
           query: queryValues,
           body: args.body,
           reason: evaluation.reason,
+          api: matched.document.entry.id,
+          apiFamily: matched.document.entry.apiFamily,
+          pathTemplate: matched.template,
+          pathParams: {...matched.parameters},
+          requestIndex,
         }),
         signal,
       );
@@ -314,7 +342,7 @@ export function createScapiRequest(
           await checkApprovedRequest(request);
         },
       },
-      createSafetyMiddleware(guard),
+      createSafetyMiddleware(guard, {operationId: safetyOperation.operationId, api: safetyOperation.api}),
       createAuthMiddleware(auth),
     );
     const result = await client.request(method as HttpMethod, path, {

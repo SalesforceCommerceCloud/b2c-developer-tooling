@@ -15,13 +15,27 @@ import {wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {decodeJWT} from './oauth.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
-import {findAuthSession, saveAuthSession, type AuthSession} from './session-store.js';
+import {
+  deleteAuthSession,
+  findAuthSession,
+  saveAuthSession,
+  type AuthSession,
+  type AuthSessionBackend,
+} from './session-store.js';
+import {AuthRequiredError} from './errors.js';
 import {describeSignIn} from './instance-auth.js';
 
 const DEFAULT_LOCAL_PORT = 8080;
 
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
 const PENDING_AUTH: Map<string, Promise<AccessTokenResponse>> = new Map();
+
+// Strategies with their own session backend get their own token caches, so two hosts (or two
+// profiles) that share a public client ID never see each other's tokens.
+const BACKEND_CACHES = new WeakMap<
+  AuthSessionBackend,
+  {tokens: Map<string, AccessTokenResponse>; pending: Map<string, Promise<AccessTokenResponse>>}
+>();
 
 /**
  * Thrown when the Authorization Code + PKCE flow fails in a way that indicates
@@ -102,6 +116,35 @@ export interface PkceOAuthConfig extends HttpTransportOptions {
   /** Custom browser opener. Receives the authorization URL and a handle to cancel the pending login. */
   openBrowser?: (url: string, login?: BrowserLogin) => Promise<void>;
   /**
+   * Deliver the authorization redirect yourself instead of the SDK's loopback
+   * server. Called with the authorize URL; resolve with the full redirect URL
+   * (`<redirectUri>?code=...&state=...`) once Account Manager redirects, or
+   * reject to cancel. When set, no local listener is opened and `openBrowser`
+   * and `localPort` are ignored. The SDK still checks `state` and performs the
+   * PKCE token exchange.
+   *
+   * Use this in hosts that can intercept the redirect themselves, such as an
+   * Electron `BrowserWindow` watching `will-redirect`. `redirectUri` may be any
+   * URI registered for the client, including an app scheme (`myapp://callback`).
+   */
+  authorize?: (url: string, context: {redirectUri: string}) => Promise<URL | string>;
+  /**
+   * Whether the strategy may start an interactive sign-in. Defaults to `true`.
+   *
+   * When `false`, the strategy uses only the cached or stored session and its
+   * refresh token. If neither yields an access token it throws
+   * {@link AuthRequiredError} instead of opening a browser, so the host decides
+   * when to ask the user to sign in again. Call {@link PkceOAuthStrategy.signIn}
+   * to sign in explicitly.
+   */
+  interactive?: boolean;
+  /**
+   * Session store for this strategy. Defaults to the process-wide backend
+   * (see `setAuthSessionBackend`), which is a JSON file in the CLI data
+   * directory unless a host installs another backend.
+   */
+  sessionBackend?: AuthSessionBackend;
+  /**
    * Persist tokens (access + refresh) to disk between CLI invocations,
    * keyed by clientId. When a refresh token is available it is used to
    * silently obtain a new access token instead of opening the browser.
@@ -138,6 +181,229 @@ function parseOAuthErrorBody(text: string): {error?: string; errorDescription?: 
   }
 }
 
+/** An authorization request built by {@link buildPkceAuthorizeRequest}. */
+export interface PkceAuthorizeRequest {
+  /** Account Manager authorize URL to open. */
+  url: string;
+  /** Opaque `state` value the redirect must echo back. */
+  state: string;
+  /** PKCE code verifier. Secret: keep it in memory and pass it to {@link exchangePkceAuthorizationCode}. */
+  codeVerifier: string;
+  /** Redirect URI sent with the request; the token exchange must use the same value. */
+  redirectUri: string;
+}
+
+/** Options for {@link buildPkceAuthorizeRequest}. */
+export interface PkceAuthorizeRequestOptions {
+  clientId: string;
+  redirectUri: string;
+  accountManagerHost?: string;
+  scopes?: string[];
+}
+
+/**
+ * Build an Account Manager Authorization Code + PKCE request: a fresh S256
+ * challenge, `state`, and the authorize URL. For hosts that drive the browser
+ * step themselves; {@link PkceOAuthStrategy} uses the same helper.
+ */
+export function buildPkceAuthorizeRequest(options: PkceAuthorizeRequestOptions): PkceAuthorizeRequest {
+  const {verifier, challenge} = generatePkcePair();
+  const state = base64url(randomBytes(16));
+  const params = new URLSearchParams({
+    client_id: options.clientId,
+    redirect_uri: options.redirectUri,
+    response_type: 'code',
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    state,
+  });
+  if (options.scopes && options.scopes.length > 0) {
+    params.set('scope', options.scopes.join(' '));
+  }
+  // Verifier is a secret; trace only the derived challenge and state.
+  getLogger().trace({codeChallenge: challenge, codeChallengeMethod: 'S256', state}, '[Auth] Generated PKCE challenge');
+  const host = options.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
+  return {
+    url: `https://${host}/dwsso/oauth2/authorize?${params.toString()}`,
+    state,
+    codeVerifier: verifier,
+    redirectUri: options.redirectUri,
+  };
+}
+
+/**
+ * Read the authorization code from an Account Manager redirect.
+ *
+ * Checks that the redirect targets `request.redirectUri` and echoes
+ * `request.state`, and turns an OAuth `error` parameter into an error
+ * ({@link PkceGrantUnsupportedError} when the client can't use the code grant).
+ *
+ * @returns The authorization code
+ */
+export function readPkceAuthorizationResponse(
+  redirect: URL | string,
+  request: Pick<PkceAuthorizeRequest, 'redirectUri' | 'state'>,
+): string {
+  const url = typeof redirect === 'string' ? new URL(redirect) : redirect;
+  const expected = new URL(request.redirectUri);
+  // Compare scheme, host and path: `origin` is "null" for custom schemes (myapp://callback).
+  if (url.protocol !== expected.protocol || url.host !== expected.host || url.pathname !== expected.pathname) {
+    throw new Error('OAuth redirect does not match the registered redirect URI — aborting');
+  }
+  const error = url.searchParams.get('error');
+  if (error) {
+    const message = `OAuth error: ${url.searchParams.get('error_description') ?? error}`;
+    throw isPkceGrantUnsupportedError(error)
+      ? new PkceGrantUnsupportedError(message, 'authorize', error)
+      : new Error(message);
+  }
+  const states = url.searchParams.getAll('state');
+  if (states.length !== 1 || states[0] !== request.state) {
+    throw new Error('OAuth state mismatch — aborting');
+  }
+  const code = url.searchParams.get('code');
+  if (!code) throw new Error('OAuth redirect did not include an authorization code');
+  return code;
+}
+
+/** Tokens returned by {@link exchangePkceAuthorizationCode}. */
+export interface PkceTokenSet extends AccessTokenResponse {
+  /** Refresh token, when the client is registered for one. Secret. */
+  refreshToken?: string;
+}
+
+/** Options for {@link exchangePkceAuthorizationCode}. */
+export interface PkceCodeExchangeOptions extends HttpTransportOptions {
+  clientId: string;
+  redirectUri: string;
+  code: string;
+  codeVerifier: string;
+  accountManagerHost?: string;
+  /** Scopes to report when the response doesn't list them. */
+  scopes?: string[];
+}
+
+/**
+ * Exchange an authorization code and PKCE verifier for tokens at Account
+ * Manager's token endpoint. Never logs the code, verifier or tokens.
+ *
+ * @throws PkceGrantUnsupportedError when the client can't use the code grant
+ */
+export async function exchangePkceAuthorizationCode(options: PkceCodeExchangeOptions): Promise<PkceTokenSet> {
+  const logger = getLogger();
+  const host = options.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
+  const tokenUrl = `https://${host}/dwsso/oauth2/access_token`;
+  const tokenBody = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: options.code,
+    redirect_uri: options.redirectUri,
+    client_id: options.clientId,
+    code_verifier: options.codeVerifier,
+  });
+
+  logger.debug({method: 'POST', url: tokenUrl}, '[Auth REQ] POST /dwsso/oauth2/access_token (authorization_code)');
+  // Redact the single-use code and PKCE verifier from the traced body.
+  logger.trace(
+    {
+      method: 'POST',
+      url: tokenUrl,
+      body: {grant_type: 'authorization_code', redirect_uri: options.redirectUri, client_id: options.clientId},
+    },
+    '[Auth REQ BODY] POST /dwsso/oauth2/access_token',
+  );
+
+  let tokenRes: Response;
+  try {
+    tokenRes = await getApiFetch(options)(tokenUrl, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: tokenBody.toString(),
+    });
+  } catch (err) {
+    throw wrapNetworkError(err, {operation: 'PKCE token exchange', host: new URL(tokenUrl).host});
+  }
+  const rawText = await tokenRes.text();
+  logger.debug(
+    {url: tokenUrl, status: tokenRes.status},
+    `[Auth RESP] POST /dwsso/oauth2/access_token ${tokenRes.status}`,
+  );
+  if (!tokenRes.ok) {
+    // Distinguish "this client can't do the code grant" (which the implicit
+    // fallback can rescue) from real errors that would fail identically under
+    // implicit — e.g. invalid_scope, invalid_grant. Only the former is typed
+    // as PkceGrantUnsupportedError; everything else is a plain Error so the
+    // fallback wrapper propagates it instead of silently downgrading.
+    const errorBody = parseOAuthErrorBody(rawText);
+    const oauthError = errorBody.error;
+    logger.trace(
+      {url: tokenUrl, status: tokenRes.status, body: errorBody},
+      '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
+    );
+    const detail = errorBody.errorDescription ?? errorBody.error;
+    const message = `PKCE token exchange failed (${tokenRes.status})${detail ? `: ${detail}` : ''}`;
+    if (isPkceGrantUnsupportedError(oauthError)) {
+      throw new PkceGrantUnsupportedError(message, 'token', oauthError);
+    }
+    throw new Error(message);
+  }
+
+  let parsed: {
+    access_token?: unknown;
+    refresh_token?: unknown;
+    expires_in?: unknown;
+    scope?: unknown;
+  };
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    // Do not echo an untrusted response body: a malformed success response
+    // can still contain live token material.
+    throw new Error('PKCE token exchange returned a non-JSON response');
+  }
+
+  if (typeof parsed.access_token !== 'string' || parsed.access_token.length === 0) {
+    throw new Error('PKCE token exchange response did not contain an access token');
+  }
+
+  // Never log the raw token response: it contains both the access token and
+  // the long-lived refresh token, and an opaque string bypasses pino's
+  // field-based redaction. JWT claims are traced below after decoding.
+  logger.trace(
+    {
+      url: tokenUrl,
+      status: tokenRes.status,
+      body: {
+        expires_in: parsed.expires_in,
+        scope: parsed.scope,
+        hasAccessToken: true,
+        hasRefreshToken: typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0,
+      },
+    },
+    '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
+  );
+
+  const expiresIn = typeof parsed.expires_in === 'number' ? parsed.expires_in : 0;
+  const scopes = typeof parsed.scope === 'string' ? parsed.scope.split(' ') : (options.scopes ?? []);
+  const tokens: PkceTokenSet = {
+    accessToken: parsed.access_token,
+    expires: new Date(Date.now() + expiresIn * 1000),
+    scopes,
+  };
+  if (typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0) {
+    tokens.refreshToken = parsed.refresh_token;
+  }
+  logger.trace(
+    {scopes, expires: tokens.expires, hasRefreshToken: !!tokens.refreshToken},
+    '[Auth] PKCE token exchange succeeded',
+  );
+  try {
+    logger.trace({jwt: decodeJWT(parsed.access_token).payload}, '[Auth] PKCE access token JWT payload');
+  } catch {
+    // access token is not a JWT; nothing to trace
+  }
+  return tokens;
+}
+
 /**
  * OAuth 2.0 Authorization Code Flow with PKCE.
  *
@@ -160,6 +426,8 @@ export class PkceOAuthStrategy implements AuthStrategy {
   private persistSession: boolean;
   private _hasHadSuccess = false;
   private _refreshToken: string | null = null;
+  private readonly tokenCache: Map<string, AccessTokenResponse>;
+  private readonly pendingAuth: Map<string, Promise<AccessTokenResponse>>;
   private _sub = '';
   private _hydrated = false;
 
@@ -168,6 +436,18 @@ export class PkceOAuthStrategy implements AuthStrategy {
     this.localPort = config.localPort || parseInt(process.env.SFCC_OAUTH_LOCAL_PORT || '', 10) || DEFAULT_LOCAL_PORT;
     this.redirectUri = config.redirectUri || process.env.SFCC_REDIRECT_URI || `http://localhost:${this.localPort}`;
     this.persistSession = config.persistSession !== false;
+    if (config.sessionBackend) {
+      let caches = BACKEND_CACHES.get(config.sessionBackend);
+      if (!caches) {
+        caches = {tokens: new Map(), pending: new Map()};
+        BACKEND_CACHES.set(config.sessionBackend, caches);
+      }
+      this.tokenCache = caches.tokens;
+      this.pendingAuth = caches.pending;
+    } else {
+      this.tokenCache = ACCESS_TOKEN_CACHE;
+      this.pendingAuth = PENDING_AUTH;
+    }
 
     getLogger().debug(
       {
@@ -193,15 +473,15 @@ export class PkceOAuthStrategy implements AuthStrategy {
     if (!this.persistSession || this._hydrated) return;
     this._hydrated = true;
     try {
-      const stored = findAuthSession(this.config.clientId);
+      const stored = this.findSession();
       if (!stored || stored.flow !== 'pkce') return;
       this._sub = stored.sub ?? '';
       this._refreshToken = stored.refreshToken ?? null;
       if (this.config.forceRefresh && this._refreshToken) {
-        ACCESS_TOKEN_CACHE.delete(this.config.clientId);
-      } else if (!ACCESS_TOKEN_CACHE.has(this.config.clientId) && stored.accessToken) {
+        this.tokenCache.delete(this.config.clientId);
+      } else if (!this.tokenCache.has(this.config.clientId) && stored.accessToken) {
         const expires = stored.expiresAt ? new Date(stored.expiresAt) : new Date(0);
-        ACCESS_TOKEN_CACHE.set(this.config.clientId, {
+        this.tokenCache.set(this.config.clientId, {
           accessToken: stored.accessToken,
           expires,
           scopes: stored.scopes ?? [],
@@ -257,17 +537,80 @@ export class PkceOAuthStrategy implements AuthStrategy {
 
   async getTokenResponse(): Promise<AccessTokenResponse> {
     this.hydrate();
-    const cached = ACCESS_TOKEN_CACHE.get(this.config.clientId);
+    const cached = this.tokenCache.get(this.config.clientId);
     if (cached && this.isCachedTokenUsable(cached)) {
       return cached;
     }
+    const tokenResponse = await this.acquire();
+    this.tokenCache.set(this.config.clientId, tokenResponse);
+    return tokenResponse;
+  }
+
+  /**
+   * The cached access token, if it is still usable, without refreshing or
+   * signing in. Returns `undefined` when a network call or sign-in would be needed.
+   */
+  getCachedTokenResponse(): AccessTokenResponse | undefined {
+    this.hydrate();
+    const cached = this.tokenCache.get(this.config.clientId);
+    return cached && this.isCachedTokenUsable(cached) ? cached : undefined;
+  }
+
+  /**
+   * Run the interactive sign-in now, even when `interactive` is `false` or a
+   * session already exists. Use it from a host's "Sign in" action.
+   */
+  async signIn(): Promise<AccessTokenResponse> {
+    this.tokenCache.delete(this.config.clientId);
+    const tokenResponse = await this.runFlow();
+    this.tokenCache.set(this.config.clientId, tokenResponse);
+    return tokenResponse;
+  }
+
+  /**
+   * Forget this client's session: the cached access token, the refresh token
+   * and the stored session record.
+   */
+  signOut(): void {
+    this.tokenCache.delete(this.config.clientId);
+    this._refreshToken = null;
+    this._sub = '';
+    if (!this.persistSession) return;
+    try {
+      if (this.config.sessionBackend) this.config.sessionBackend.delete(this.config.clientId);
+      else deleteAuthSession(this.config.clientId);
+    } catch (error) {
+      getLogger().debug({err: error}, '[Auth] Failed to delete PKCE session');
+    }
+  }
+
+  /** Refresh silently if possible; otherwise sign in, or fail with {@link AuthRequiredError} when not interactive. */
+  private async acquire(): Promise<AccessTokenResponse> {
+    if (this.config.sessionBackend && this.persistSession) {
+      // The backend is the source of truth: another instance may have signed out or rotated
+      // the refresh token since this one hydrated.
+      const stored = this.findSession();
+      this._refreshToken = stored?.flow === 'pkce' ? (stored.refreshToken ?? null) : null;
+    }
+    const hadRefreshToken = this._refreshToken !== null;
     if (this._refreshToken) {
       const refreshed = await this.tryRefresh();
       if (refreshed) return refreshed;
     }
-    const tokenResponse = await this.runFlow();
-    ACCESS_TOKEN_CACHE.set(this.config.clientId, tokenResponse);
-    return tokenResponse;
+    if (this.config.interactive === false) {
+      throw new AuthRequiredError({
+        clientId: this.config.clientId,
+        accountManagerHost: this.accountManagerHost,
+        reason: hadRefreshToken ? 'refresh-failed' : 'no-session',
+      });
+    }
+    return this.runFlow();
+  }
+
+  private findSession(): AuthSession | null {
+    return this.config.sessionBackend
+      ? this.config.sessionBackend.find(this.config.clientId)
+      : findAuthSession(this.config.clientId);
   }
 
   invalidateToken(): void {
@@ -276,7 +619,7 @@ export class PkceOAuthStrategy implements AuthStrategy {
     // tryRefresh() instead of re-opening the browser. tryRefresh() forgets the
     // refresh token on its own when the exchange genuinely fails (revoked /
     // expired), which is the only case where we fall back to the browser flow.
-    ACCESS_TOKEN_CACHE.delete(this.config.clientId);
+    this.tokenCache.delete(this.config.clientId);
   }
 
   private isCachedTokenUsable(cached: AccessTokenResponse): boolean {
@@ -288,34 +631,28 @@ export class PkceOAuthStrategy implements AuthStrategy {
   private async getAccessToken(): Promise<string> {
     this.hydrate();
     const clientId = this.config.clientId;
-    const cached = ACCESS_TOKEN_CACHE.get(clientId);
+    const cached = this.tokenCache.get(clientId);
     if (cached && this.isCachedTokenUsable(cached)) {
       return cached.accessToken;
     }
     if (cached) {
-      ACCESS_TOKEN_CACHE.delete(clientId);
+      this.tokenCache.delete(clientId);
     }
 
-    const pending = PENDING_AUTH.get(clientId);
+    const pending = this.pendingAuth.get(clientId);
     if (pending) {
       const tokenResponse = await pending;
       return tokenResponse.accessToken;
     }
 
-    const authPromise = (async (): Promise<AccessTokenResponse> => {
-      if (this._refreshToken) {
-        const refreshed = await this.tryRefresh();
-        if (refreshed) return refreshed;
-      }
-      return this.runFlow();
-    })();
-    PENDING_AUTH.set(clientId, authPromise);
+    const authPromise = this.acquire();
+    this.pendingAuth.set(clientId, authPromise);
     try {
       const tokenResponse = await authPromise;
-      ACCESS_TOKEN_CACHE.set(clientId, tokenResponse);
+      this.tokenCache.set(clientId, tokenResponse);
       return tokenResponse.accessToken;
     } finally {
-      PENDING_AUTH.delete(clientId);
+      this.pendingAuth.delete(clientId);
     }
   }
 
@@ -464,7 +801,8 @@ export class PkceOAuthStrategy implements AuthStrategy {
       accountManagerHost: this.accountManagerHost,
     };
     try {
-      saveAuthSession(record);
+      if (this.config.sessionBackend) this.config.sessionBackend.save(record);
+      else saveAuthSession(record);
     } catch (error) {
       getLogger().debug({err: error}, '[Auth] Failed to persist PKCE session');
     }
@@ -476,144 +814,45 @@ export class PkceOAuthStrategy implements AuthStrategy {
       {clientId: this.config.clientId, scopes: this.config.scopes, redirectUri: this.redirectUri},
       '[Auth] Starting Authorization Code + PKCE flow',
     );
-    const {verifier, challenge} = generatePkcePair();
-    const state = base64url(randomBytes(16));
-    // Verifier is a secret; trace only the derived challenge and state.
-    logger.trace({codeChallenge: challenge, codeChallengeMethod: 'S256', state}, '[Auth] Generated PKCE challenge');
-
-    const params = new URLSearchParams({
-      client_id: this.config.clientId,
-      redirect_uri: this.redirectUri,
-      response_type: 'code',
-      code_challenge: challenge,
-      code_challenge_method: 'S256',
-      state,
-    });
-    if (this.config.scopes && this.config.scopes.length > 0) {
-      params.set('scope', this.config.scopes.join(' '));
-    }
-
-    const authorizeUrl = `https://${this.accountManagerHost}/dwsso/oauth2/authorize?${params.toString()}`;
-
-    logger.info({url: authorizeUrl}, `Login URL: ${authorizeUrl}`);
-    logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
-
-    const code = await this.waitForAuthCode(state, async (login) => {
-      if (this.config.openBrowser) {
-        await this.config.openBrowser(authorizeUrl, login);
-      } else {
-        await openUrlInBrowser(authorizeUrl);
-      }
-    });
-    logger.debug({codePrefix: code.slice(0, 8)}, '[Auth] Got authorization code, exchanging for token');
-
-    const tokenUrl = `https://${this.accountManagerHost}/dwsso/oauth2/access_token`;
-    const tokenBody = new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: this.redirectUri,
-      client_id: this.config.clientId,
-      code_verifier: verifier,
+    const request = buildPkceAuthorizeRequest({
+      clientId: this.config.clientId,
+      redirectUri: this.redirectUri,
+      accountManagerHost: this.accountManagerHost,
+      scopes: this.config.scopes,
     });
 
-    logger.debug({method: 'POST', url: tokenUrl}, '[Auth REQ] POST /dwsso/oauth2/access_token (authorization_code)');
-    // Redact the single-use code and PKCE verifier from the traced body.
-    logger.trace(
-      {
-        method: 'POST',
-        url: tokenUrl,
-        body: {grant_type: 'authorization_code', redirect_uri: this.redirectUri, client_id: this.config.clientId},
-      },
-      '[Auth REQ BODY] POST /dwsso/oauth2/access_token',
-    );
-
-    let tokenRes: Response;
-    try {
-      tokenRes = await getApiFetch(this.config)(tokenUrl, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: tokenBody.toString(),
+    let code: string;
+    if (this.config.authorize) {
+      logger.debug('[Auth] Delivering the authorization redirect through the host authorize hook');
+      const redirect = await this.config.authorize(request.url, {redirectUri: this.redirectUri});
+      code = readPkceAuthorizationResponse(redirect, request);
+    } else {
+      logger.info({url: request.url}, `Login URL: ${request.url}`);
+      logger.info('If the URL does not open automatically, copy/paste it into a browser on this machine.');
+      code = await this.waitForAuthCode(request.state, async (login) => {
+        if (this.config.openBrowser) {
+          await this.config.openBrowser(request.url, login);
+        } else {
+          await openUrlInBrowser(request.url);
+        }
       });
-    } catch (err) {
-      throw wrapNetworkError(err, {operation: 'PKCE token exchange', host: new URL(tokenUrl).host});
     }
-    const rawText = await tokenRes.text();
-    logger.debug(
-      {url: tokenUrl, status: tokenRes.status},
-      `[Auth RESP] POST /dwsso/oauth2/access_token ${tokenRes.status}`,
-    );
-    if (!tokenRes.ok) {
-      // Distinguish "this client can't do the code grant" (which the implicit
-      // fallback can rescue) from real errors that would fail identically under
-      // implicit — e.g. invalid_scope, invalid_grant. Only the former is typed
-      // as PkceGrantUnsupportedError; everything else is a plain Error so the
-      // fallback wrapper propagates it instead of silently downgrading.
-      const errorBody = parseOAuthErrorBody(rawText);
-      const oauthError = errorBody.error;
-      logger.trace(
-        {url: tokenUrl, status: tokenRes.status, body: errorBody},
-        '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
-      );
-      const detail = errorBody.errorDescription ?? errorBody.error;
-      const message = `PKCE token exchange failed (${tokenRes.status})${detail ? `: ${detail}` : ''}`;
-      if (isPkceGrantUnsupportedError(oauthError)) {
-        throw new PkceGrantUnsupportedError(message, 'token', oauthError);
-      }
-      throw new Error(message);
-    }
+    logger.debug('[Auth] Got authorization code, exchanging for token');
 
-    let parsed: {
-      access_token?: unknown;
-      refresh_token?: unknown;
-      expires_in?: unknown;
-      scope?: unknown;
-    };
-    try {
-      parsed = JSON.parse(rawText);
-    } catch {
-      // Do not echo an untrusted response body: a malformed success response
-      // can still contain live token material.
-      throw new Error('PKCE token exchange returned a non-JSON response');
-    }
-
-    if (typeof parsed.access_token !== 'string' || parsed.access_token.length === 0) {
-      throw new Error('PKCE token exchange response did not contain an access token');
-    }
-
-    // Never log the raw token response: it contains both the access token and
-    // the long-lived refresh token, and an opaque string bypasses pino's
-    // field-based redaction. JWT claims are traced below after decoding.
-    logger.trace(
-      {
-        url: tokenUrl,
-        status: tokenRes.status,
-        body: {
-          expires_in: parsed.expires_in,
-          scope: parsed.scope,
-          hasAccessToken: typeof parsed.access_token === 'string' && parsed.access_token.length > 0,
-          hasRefreshToken: typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0,
-        },
-      },
-      '[Auth RESP BODY] POST /dwsso/oauth2/access_token',
-    );
-
-    const expiresIn = typeof parsed.expires_in === 'number' ? parsed.expires_in : 0;
-    const expires = new Date(Date.now() + expiresIn * 1000);
-    const scopes = typeof parsed.scope === 'string' ? parsed.scope.split(' ') : (this.config.scopes ?? []);
+    const tokens = await exchangePkceAuthorizationCode({
+      ...this.config,
+      accountManagerHost: this.accountManagerHost,
+      redirectUri: this.redirectUri,
+      code,
+      codeVerifier: request.codeVerifier,
+    });
     const tokenResponse: AccessTokenResponse = {
-      accessToken: parsed.access_token,
-      expires,
-      scopes,
+      accessToken: tokens.accessToken,
+      expires: tokens.expires,
+      scopes: tokens.scopes,
     };
-
-    if (typeof parsed.refresh_token === 'string' && parsed.refresh_token.length > 0) {
-      this._refreshToken = parsed.refresh_token;
-    }
-    logger.trace({scopes, expires, hasRefreshToken: !!parsed.refresh_token}, '[Auth] PKCE token exchange succeeded');
-    try {
-      logger.trace({jwt: decodeJWT(parsed.access_token).payload}, '[Auth] PKCE access token JWT payload');
-    } catch {
-      // access token is not a JWT; nothing to trace
+    if (tokens.refreshToken) {
+      this._refreshToken = tokens.refreshToken;
     }
     this.persistTokens(tokenResponse);
     logger.info(

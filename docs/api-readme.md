@@ -549,6 +549,49 @@ await client.changeApiClientPassword('api-client-uuid', 'oldPassword', 'newPassw
 await client.deleteApiClient('api-client-uuid');
 ```
 
+### Token Claims: Roles and Tenants
+
+Account Manager user tokens carry the signed-in user's roles and tenant filter when sign-in requests the `roles` and `tenantFilter` scopes (the SDK's default public client grants both). Read them with `readAccountManagerClaims`. It decodes the token without verifying it, so use the result for UI decisions and let the API's response decide.
+
+```typescript
+import {
+  readAccountManagerClaims,
+  isAccountManagerApiClientAdmin,
+  hasAccountManagerTenantRole,
+} from '@salesforce/b2c-tooling-sdk/auth';
+
+const {accessToken} = await auth.getTokenResponse();
+const claims = readAccountManagerClaims(accessToken);
+
+claims.sub; // 'jane@example.com'
+claims.isUser; // true for user sign-in, false for client credentials or JWT bearer
+claims.roles; // ['AM_ACCOUNT_ADMIN', 'ECOM_ADMIN', ...]
+claims.tenantFilter; // {ECOM_ADMIN: ['zzpq_013', 'abcd_prd'], ...}
+claims.tenants; // every tenant in the filter, sorted
+
+isAccountManagerApiClientAdmin(claims); // Account or API Administrator
+hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzpq-013'); // true
+```
+
+### Create a Commerce API Client
+
+`provisionCommerceApiClient` creates an API client with the `SALESFORCE_COMMERCE_API` role for the given tenants, generates its password and returns the client secret once. The caller needs the Account Administrator or API Administrator role. If Account Manager refuses, it throws `NotPermittedError`.
+
+```typescript
+import {createAccountManagerApiClientsClient, provisionCommerceApiClient} from '@salesforce/b2c-tooling-sdk/clients';
+
+const apiClients = createAccountManagerApiClientsClient({hostname: 'account.demandware.com'}, userAuth);
+const {clientId, clientSecret} = await provisionCommerceApiClient(apiClients, {
+  name: 'My App – jane@example.com – 2026-11-06',
+  organizationId: 'my-am-org-id',
+  tenants: claims.tenants,
+  scopes: ['sfcc.products', 'sfcc.catalogs'],
+});
+// Store clientSecret securely; it is never logged and cannot be read again.
+```
+
+A new client can take a short time before its credentials work, so retry the first token request with backoff.
+
 ### Required Permissions
 
 Account Manager operations require:
@@ -556,6 +599,158 @@ Account Manager operations require:
 - Account Manager hostname configuration
 - For browser-based user auth (Authorization Code + PKCE): roles configured on your **user account**
 - For client credentials flow: roles configured on the **API client**
+
+## Embedding the SDK in an App
+
+Desktop and server apps can use the SDK as a library, with no `dw.json`, environment variables or files outside the app's control. The app holds credentials and passes them in as an `AuthStrategy`, and passes safety policy in as a value.
+
+### Account Manager Sign-in Without a Local Server
+
+By default, `PkceOAuthStrategy` opens the system browser and listens on `localhost` for the redirect. An app that can intercept the redirect itself (for example, an Electron `BrowserWindow` watching `will-redirect`) passes `authorize`. The SDK then opens no listener, but still checks `state` and does the PKCE token exchange. `redirectUri` can be any URI registered for the API client, including an app scheme such as `myapp://oauth/callback`; the SDK matches the scheme, host and path of the redirect.
+
+Set `interactive: false` so that, after sign-in, the strategy only refreshes silently. When the refresh token has expired or been revoked, it throws `AuthRequiredError` instead of opening a browser, and the app decides when to ask the user to sign in again. Pass `sessionBackend` to keep tokens in the app's own encrypted storage.
+
+```typescript
+import {
+  PkceOAuthStrategy,
+  isAuthRequiredError,
+  getAccountManagerHostInfo,
+  type AuthSessionBackend,
+} from '@salesforce/b2c-tooling-sdk/auth';
+
+const host = getAccountManagerHostInfo('account.demandware.com')!;
+const sessions: AuthSessionBackend = myEncryptedSessionStore; // find/save/delete/list/clearAll
+
+const auth = new PkceOAuthStrategy({
+  clientId: myClientId,
+  accountManagerHost: host.host,
+  redirectUri: 'http://127.0.0.1:8086/callback', // registered for myClientId
+  scopes: ['openid', 'roles', 'tenantFilter'],
+  interactive: false,
+  sessionBackend: sessions,
+  authorize: (url, {redirectUri}) => openSignInWindowAndWaitForRedirect(url, redirectUri), // resolves with the redirect URL
+});
+
+await auth.signIn(); // from the app's "Sign in" action
+
+try {
+  await client.listApiClients();
+} catch (error) {
+  if (isAuthRequiredError(error)) showSignInPrompt();
+}
+
+auth.signOut(); // clears the cached token, refresh token and stored session
+```
+
+`ACCOUNT_MANAGER_HOSTS` lists the SDK's public client for each Account Manager host, with its registered redirect URIs and default scopes. An app can reuse an SDK client only if it can catch one of that client's registered redirect URIs; otherwise, register a public client for the app. To drive each step yourself, use `buildPkceAuthorizeRequest`, `readPkceAuthorizationResponse` and `exchangePkceAuthorizationCode`.
+
+A session backend implements `find`, `save`, `delete`, `list` and `clearAll`, plus an optional `flush`. A strategy given `sessionBackend` reads and writes only that backend. Sessions contain access and refresh tokens, so encrypt them at rest. `setAuthSessionBackend()` replaces the store process-wide instead.
+
+### SCAPI Code Mode In-process
+
+`createScapiRequest` builds a request helper with the app's auth and safety policy. `runScapiCode` runs a JavaScript program in a disposable Node process, whose `scapi.request()` calls go back to that helper. The worker never receives credentials. It can load only a short list of safe built-in modules (such as `crypto`, `url` and `util`), so it can't open network connections itself, and it refuses to start if Node's permission model is off.
+
+```typescript
+import {createScapiRequest, loadBundledScapiDocuments, runScapiCode} from '@salesforce/b2c-tooling-sdk/scapi';
+
+const documents = loadBundledScapiDocuments({authType: 'admin'});
+const safety = {
+  level: 'READ_ONLY' as const,
+  confirm: true,
+  rules: [
+    {method: 'GET', api: 'product/**', action: 'allow' as const},
+    {readOnlySearch: true, action: 'allow' as const},
+    {operationId: 'updateProduct', action: 'confirm' as const},
+    {path: '**', action: 'block' as const},
+  ],
+};
+
+const request = createScapiRequest({
+  shortCode,
+  tenantId: 'zzpq_013',
+  auth, // AuthStrategy; withAdditionalScopes adds the tenant and operation scopes, invalidateToken runs after a 401
+  documents,
+  safety,
+  // Called for each `confirm` with operationId, api, pathTemplate, pathParams, body and requestIndex.
+  // Resolve to approve; reject to decline.
+  confirm: async (pending, signal) => askUser(pending, signal),
+  onDispatch: () => markMayHaveApplied(),
+});
+
+const result = await runScapiCode({
+  code,
+  input,
+  documents,
+  safety, // hides operations the policy always blocks from spec.paths and spec.search
+  organizationId: 'zzpq_013',
+  request,
+  // Electron: run the app binary as Node
+  worker: {command: process.execPath, env: {ELECTRON_RUN_AS_NODE: '1'}},
+});
+```
+
+`searchScapiOperations(documents, query, {safety})` filters search results with the same policy. A blocked request fails with `SafetyBlockedError` before it is sent.
+
+Discovery decides visibility from each operation's path template, before any parameter values are known. A rule that allows only one value (for example `path: '/product/products/v1/organizations/*/products/p1'`) ahead of a catch-all block still lets the request through, but hides the operation from search and `spec.paths`. Use `operationId` or `api` rules for an allow-list you want programs to see.
+
+To include the tenant's own contracts (custom APIs and `c_*` properties), resolve documents with `resolveScapiDocuments()`. It falls back to the bundled contracts with a warning when the tenant can't be reached, and the cache keeps contracts between calls.
+
+```typescript
+import {ScapiLiveSchemaCache, resolveScapiDocuments, searchScapiOperations} from '@salesforce/b2c-tooling-sdk/scapi';
+
+const cache = new ScapiLiveSchemaCache(); // one per process
+const {documents, source, warnings} = await resolveScapiDocuments({
+  api: 'product',
+  live: {tenant: () => ({client: schemasClient, shortCode: 'abc123', organizationId: 'f_ecom_zzzz_001'}), cache},
+});
+const hits = searchScapiOperations(documents, 'update product');
+```
+
+### Logs and Debugger Sessions for Turn-based Tools
+
+`tailLogs()` and `tailMrtLogs()` deliver entries through callbacks. Tools that read in turns (an agent tool call, a request/response UI) can instead start a buffered watch and poll it. Entries are filtered as they arrive and kept up to a count and byte cap, oldest first out; each poll reports how many were dropped.
+
+```typescript
+import {watchLogs} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {watchMrtLogs} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+
+const watch = await watchLogs(instance, {prefixes: ['error', 'customerror'], level: ['ERROR']});
+const {entries, errors, droppedEntries, truncated} = await watch.poll({timeoutMs: 5000});
+await watch.stop(); // unread entries stay readable
+
+const mrt = await watchMrtLogs({projectSlug: 'my-project', environmentSlug: 'production'}, mrtAuth);
+const {stopped} = await mrt.poll({timeoutMs: 5000}); // true when the stream ended on its own
+```
+
+`DebugSessionManager` tracks the breakpoints it set and can wait for a halt, so a tool can arm a breakpoint and capture the stopped request in one call:
+
+```typescript
+await manager.addBreakpoints([{script_path: '/app_storefront/cartridge/controllers/Cart.js', line_number: 42}]);
+const thread = await manager.waitForHalt(30_000, signal); // null on timeout
+```
+
+### Skills
+
+The SDK ships the same skills the MCP server and `b2c docs skill` serve: the agent plugin collections (`b2c-cli`, `b2c`, `b2c-ops`, `storefront-next`), the MCP workflow skills (`mcp`) and `cap-dev`. Read them offline with `loadBundledGuidanceCatalog()`. URIs match the MCP's `skill://` resources.
+
+```typescript
+import {loadBundledGuidanceCatalog} from '@salesforce/b2c-tooling-sdk/guidance';
+
+const catalog = loadBundledGuidanceCatalog();
+const hits = catalog.read({query: 'deploy cartridges'});
+const scapiSkill = catalog.readResource('skill://mcp/b2c-mcp-scapi/SKILL.md');
+const mcpOnly = loadBundledGuidanceCatalog({collections: ['mcp']});
+```
+
+### Logs
+
+Send SDK logs to the app's own log sink. Fields such as `password`, `client_secret`, `access_token`, `token`, `secret` and `authorization` are redacted, including Basic credentials. SCAPI code-mode requests log their method, path template, status and size at `debug`, never bodies or responses.
+
+```typescript
+import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
+
+configureLogger({level: 'info', json: true, redact: true, destination: myLogStream});
+```
 
 ## Logging
 

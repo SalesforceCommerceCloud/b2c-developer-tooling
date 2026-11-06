@@ -485,3 +485,5 @@ export type {
 // Log tailing operations
 export {createLoggingToken, parseMrtLogLine, getLogsWebSocketUrl, tailMrtLogs} from './tail-logs.js';
 export type {MrtLogEntry, CreateLoggingTokenOptions, TailMrtLogsOptions, TailMrtLogsResult} from './tail-logs.js';
+export {watchMrtLogs} from './watch-logs.js';
+export type {MrtLogWatch, MrtLogWatchInfo, MrtLogWatchPoll, WatchMrtLogsOptions} from './watch-logs.js';

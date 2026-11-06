@@ -121,22 +121,28 @@ and `evals/` are not a runtime filesystem interface.
 
 ## Build and release contract
 
-The MCP `generate:guidance` script copies source Markdown byte-for-byte and emits
-a deterministic manifest with relative provenance, file sizes, and search
-metadata. `build` and `prepack` both run it. Generated prose in
-`packages/b2c-dx-mcp/content/guidance/` is ignored by Git but included in the npm
-tarball. Source errors fail generation before replacing the previous bundle.
+The SDK `generate:guidance` script (`packages/b2c-tooling-sdk/scripts/generate-guidance.ts`)
+copies source Markdown byte-for-byte and emits a deterministic manifest with
+relative provenance, file sizes, and search metadata. The SDK `build`, `pretest`
+and `prepack` run it. Generated prose in `packages/b2c-tooling-sdk/data/guidance/`
+is ignored by Git but included in the SDK npm tarball. Source errors fail
+generation before replacing the previous bundle. The MCP, the CLI
+(`b2c docs skill`, plugin collections only) and SDK hosts all read this one
+bundle through `loadBundledGuidanceCatalog()`; the authored MCP skills and the
+manifest stay in this package.
 
-Run the MCP build after source changes, including before development-mode tests.
+Run the SDK build (or `pnpm --filter @salesforce/b2c-dx-mcp run generate:guidance`,
+which delegates to it) after source changes, including before development-mode tests.
 The distribution test verifies every imported source against the bundle. New
 collections belong in the manifest, not the generator. Native installer APIs
 remain in the SDK `skills` module; runtime catalogs use `guidance`.
 
-Source-skill changes need an agent-plugin changeset. The MCP depends on
+Source-skill changes need an agent-plugin changeset. The SDK depends on
 `@salesforce/b2c-agent-plugins` through `workspace:*`, so every plugin release
-automatically triggers at least an MCP patch release. The private package is
-included through `bundledDependencies`; installation needs no registry copy.
-MCP-specific skills and collection changes still need an MCP changeset. Changes
+automatically triggers an SDK patch release, which cascades to the MCP and CLI.
+The private package is included through `bundledDependencies`; installation
+needs no registry copy. MCP-specific skills and collection changes ship in the
+SDK bundle, so they need an SDK changeset (add the MCP when its behavior changes). Changes
 to SDK APIs/search or the generated tooling documentation index need an SDK
 changeset. List directly changed packages only; dependency bumps cascade through
 Changesets.

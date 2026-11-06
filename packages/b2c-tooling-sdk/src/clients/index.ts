@@ -257,7 +257,18 @@ export {
   createAccountManagerOrgsClient,
   isValidRoleTenantFilter,
   ROLE_TENANT_FILTER_PATTERN,
+  NotPermittedError,
 } from './am-api.js';
+export {
+  API_CLIENT_PASSWORD_MIN_LENGTH,
+  API_CLIENT_PASSWORD_MAX_LENGTH,
+  generateApiClientPassword,
+  normalizeTenantIdForFilter,
+  buildCommerceApiRoleTenantFilter,
+  buildCommerceApiClientRequest,
+  provisionCommerceApiClient,
+} from './am-provisioning.js';
+export type {CommerceApiClientOptions, ProvisionedCommerceApiClient} from './am-provisioning.js';
 export type {
   AccountManagerClient,
   AccountManagerClientConfig,

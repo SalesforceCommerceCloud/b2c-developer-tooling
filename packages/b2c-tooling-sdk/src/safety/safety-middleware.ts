@@ -9,7 +9,7 @@ import {join, resolve} from 'node:path';
 import {getLogger} from '../logging/logger.js';
 import {isReadOnlySearch} from './read-only-searches.js';
 import type {SafetyRule} from './types.js';
-import {isValidSafetyAction} from './types.js';
+import {normalizeSafetyRule} from './types.js';
 import type {SafetyEvaluation} from './types.js';
 
 /**
@@ -215,7 +215,7 @@ export function describeSafetyLevel(level: SafetyLevel): string {
 interface RawSafetyConfig {
   level?: string;
   confirm?: boolean;
-  rules?: Array<{method?: string; path?: string; job?: string; command?: string; action: string}>;
+  rules?: unknown[];
 }
 
 /** Validated safety config fragment (shared by global and per-instance). */
@@ -275,13 +275,14 @@ export function loadGlobalSafetyConfig(
     }
 
     if (raw.rules && Array.isArray(raw.rules)) {
-      result.rules = raw.rules.filter((r) => {
-        if (!isValidSafetyAction(r.action)) {
-          logger.warn({rule: r, file: filePath}, 'Invalid safety rule action in global safety config; skipping rule');
-          return false;
+      result.rules = raw.rules.flatMap((r) => {
+        const rule = normalizeSafetyRule(r);
+        if (!rule) {
+          logger.warn({rule: r, file: filePath}, 'Invalid safety rule in global safety config; skipping rule');
+          return [];
         }
-        return true;
-      }) as SafetyRule[];
+        return [rule];
+      });
     }
 
     logger.trace({filePath, level: result.level, ruleCount: result.rules?.length}, 'Loaded global safety config');

@@ -693,6 +693,7 @@ export function createLoggingMiddleware(config?: string | LoggingMiddlewareConfi
  * Safety middleware using SafetyGuard.
  */
 import type {SafetyGuard} from '../safety/safety-guard.js';
+import type {SafetyOperation} from '../safety/types.js';
 import {extractJobIdFromPath} from '../safety/safety-guard.js';
 
 /**
@@ -707,6 +708,7 @@ import {extractJobIdFromPath} from '../safety/safety-guard.js';
  * {@link withSafetyConfirmation}. Otherwise, both error types propagate as errors.
  *
  * @param guard - The SafetyGuard instance
+ * @param context - Operation identity for `operationId` / `api` rules, when the caller knows it
  * @returns Middleware that evaluates operations against safety rules
  *
  * @example
@@ -716,7 +718,10 @@ import {extractJobIdFromPath} from '../safety/safety-guard.js';
  * client.use(createSafetyMiddleware(guard));
  * ```
  */
-export function createSafetyMiddleware(guard: SafetyGuard): Middleware {
+export function createSafetyMiddleware(
+  guard: SafetyGuard,
+  context?: Pick<SafetyOperation, 'api' | 'operationId'>,
+): Middleware {
   return {
     async onRequest({request}) {
       const path = new URL(request.url, 'http://dummy').pathname;
@@ -726,6 +731,7 @@ export function createSafetyMiddleware(guard: SafetyGuard): Middleware {
         url: request.url,
         path,
         jobId: extractJobIdFromPath(path),
+        ...context,
       });
       return request;
     },
