@@ -95,14 +95,16 @@ describe('SCAPI code mode', function () {
   }
 
   it('exports tokens only when returned and keeps authentication out of discovery', async () => {
-    const auth = async () => ({accessToken: 'test-secret'});
-    expect(await runScapiCode({auth, code: 'async () => auth.accountManager()'})).to.deep.equal({
-      accessToken: 'test-secret',
-    });
+    const auth = async () => ({access_token: 'test-secret'});
+    expect(await runScapiCode({auth, code: 'async () => auth.slas()'})).to.deep.equal({access_token: 'test-secret'});
     expect(await runScapiCode({auth, code: 'async () => { await auth.slas(); return {done: true}; }'})).to.deep.equal({
       done: true,
     });
-    await rejects(() => runScapiCode({code: 'async () => auth.accountManager()'}), 'Use scapi_execute');
+    expect(await runScapiCode({code: 'async () => typeof auth'})).to.equal('undefined');
+  });
+
+  it('never exposes an Account Manager token export', async () => {
+    expect(await runScapiCode({auth: async () => null, code: 'async () => Object.keys(auth)'})).to.deep.equal(['slas']);
   });
 
   it('shares call limits across token exports and managed requests', async () => {
@@ -111,7 +113,7 @@ describe('SCAPI code mode', function () {
         runScapiCode({
           auth: async () => null,
           request: async () => null,
-          code: 'async () => { for (let i = 0; i < 20; i++) await auth.accountManager(); return scapi.request({}); }',
+          code: 'async () => { for (let i = 0; i < 20; i++) await auth.slas(); return scapi.request({}); }',
         }),
       'SCAPI_CALL_LIMIT',
     );
@@ -132,7 +134,7 @@ describe('SCAPI code mode', function () {
               });
               controller.abort();
             }),
-          code: 'async () => auth.accountManager()',
+          code: 'async () => auth.slas()',
         }),
       'SCAPI_EXECUTION_CANCELLED',
     );
@@ -531,7 +533,8 @@ describe('SCAPI code mode', function () {
       }
       expect(message).to.include(`SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}`);
       expect(message).to.include('No request sent');
-      expect(message).to.include('auth.accountManager(');
+      expect(message).to.include('b2c auth token --auth-scope');
+      expect(message).to.include('--auth-scope SALESFORCE_COMMERCE_API:');
     }
     const matches = (await runScapiCode({
       documents: docs.filter(({entry}) => ['site/seo/v1', 'configuration/cors/v1'].includes(entry.id)),

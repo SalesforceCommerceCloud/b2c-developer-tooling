@@ -87,6 +87,7 @@ export interface ScapiCodeOptions {
   documents?: ScapiSchemaDocument[];
   authType?: ScapiAuthType;
   request?: (options: unknown, signal: AbortSignal) => Promise<unknown>;
+  /** SLAS token export behind `auth.slas()`; the program has no `auth` global when omitted. */
   auth?: (operation: string, options: unknown, signal: AbortSignal) => Promise<unknown>;
   /** Tenant (`zzzz_001`) or organization ID (`f_ecom_zzzz_001`); programs always see the `f_ecom_` form. */
   organizationId?: string;
@@ -151,7 +152,7 @@ async function runScapiCodeUnchecked(options: ScapiCodeOptions): Promise<unknown
     }
     const child = spawn(spawnSpec.command, spawnSpec.args, {
       cwd: options.cwd,
-      // Credentials stay in the parent; explicit token helpers return only tokens and metadata.
+      // Credentials stay in the parent; auth.slas() returns only shopper tokens and metadata.
       env: spawnSpec.env,
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       windowsHide: true,
@@ -284,7 +285,7 @@ async function runScapiCodeUnchecked(options: ScapiCodeOptions): Promise<unknown
         organizationId: options.organizationId ? toOrganizationId(options.organizationId) : undefined,
         documents,
         request: undefined,
-        auth: undefined,
+        auth: Boolean(options.auth),
         snippets: undefined,
         signal: undefined,
         onControl: undefined,

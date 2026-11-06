@@ -6,7 +6,6 @@
 
 import {expect} from 'chai';
 import {stub, restore} from 'sinon';
-import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import {loadLocalScapiSchemas} from '@salesforce/b2c-tooling-sdk/scapi';
 import {mkdtempSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -26,30 +25,25 @@ function readJson(result: ToolResult): Record<string, unknown> {
 describe('SCAPI code tools', function () {
   this.timeout(10_000);
 
-  it('exports an AM token without SCAPI config and still validates actual SCAPI requests', async () => {
-    const config = createMockResolvedConfig({clientId: 'export-client', clientSecret: 'private-secret'});
-    const token = stub(OAuthStrategy.prototype, 'getTokenResponse').resolves({
-      accessToken: 'export-token',
-      expires: new Date('2027-01-01'),
-      scopes: ['roles'],
-    });
-    try {
-      const [, execute] = createScapiCodeTools(() => Services.fromResolvedConfig(config));
-      const exported = await execute.handler({skillRead: true, code: 'async () => auth.accountManager()'});
-      expect(exported.isError).not.to.equal(true);
-      expect(readJson(exported).result).to.have.property('accessToken', 'export-token');
-      expect(token.calledOnce).to.equal(true);
-      expect(JSON.stringify(readJson(exported))).not.to.include('private-secret');
-      const missing = await execute.handler({skillRead: true, code: 'async () => scapi.request({})'});
-      expect(missing.isError).to.equal(true);
-      expect(readJson(missing).error).to.include('shortCode and tenantId');
-    } finally {
-      token.restore();
-    }
+  it('never exports Account Manager tokens and offers auth.slas only with SLAS credentials', async () => {
+    const admin = createMockResolvedConfig({clientId: 'export-client', clientSecret: 'private-secret'});
+    const [, adminExecute] = createScapiCodeTools(() => Services.fromResolvedConfig(admin));
+    const withoutSlas = await adminExecute.handler({skillRead: true, code: 'async () => typeof auth'});
+    expect(withoutSlas.isError).not.to.equal(true);
+    expect(readJson(withoutSlas).result).to.equal('undefined');
+    const missing = await adminExecute.handler({skillRead: true, code: 'async () => scapi.request({})'});
+    expect(missing.isError).to.equal(true);
+    expect(readJson(missing).error).to.include('shortCode and tenantId');
+
+    const shopper = createMockResolvedConfig({clientId: 'export-client', slasClientId: 'shopper'});
+    const [, shopperExecute] = createScapiCodeTools(() => Services.fromResolvedConfig(shopper));
+    const withSlas = await shopperExecute.handler({skillRead: true, code: 'async () => Object.keys(auth)'});
+    expect(readJson(withSlas).result).to.deep.equal(['slas']);
   });
 
   it('attaches authentication help to token failures', async () => {
-    const [, execute] = createScapiCodeTools(() => Services.fromResolvedConfig(createMockResolvedConfig({})));
+    const config = createMockResolvedConfig({slasClientId: 'shopper'});
+    const [, execute] = createScapiCodeTools(() => Services.fromResolvedConfig(config));
     const result = await execute.handler({skillRead: true, code: 'async () => auth.slas()'});
     expect(result.isError).to.equal(true);
     expect(readJson(result)).to.have.property('error').that.includes('SCAPI_AUTH_SLAS');
