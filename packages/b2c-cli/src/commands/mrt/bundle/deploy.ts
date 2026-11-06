@@ -15,6 +15,7 @@ import {
   DEFAULT_V2_CONFIG_PATH,
   DEFAULT_V2_MATCH_MODE,
   type MrtEnvironment,
+  type MrtPushResultView,
   type MrtBackendPreference,
   type ScapiMrtConnection,
   type BundleV2MatchMode,
@@ -145,6 +146,16 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     waitForEnv,
     waitForDeploymentScapi,
   };
+
+  /** `--json` result of a local-build push without `--wait`: the backend's native response. */
+  protected pushResultJson(result: MrtPushResultView, _project: string): unknown {
+    return result.raw;
+  }
+
+  /** Environment a local-build push deploys to after uploading (undefined = upload only). */
+  protected pushTarget(): string | undefined {
+    return this.resolvedConfig.values.mrtEnvironment;
+  }
 
   async run(): Promise<unknown> {
     const {bundleId} = this.args;
@@ -289,7 +300,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
    * polled environment (legacy) or completed deployment (SCAPI).
    */
   private async pushLocalBuild(): Promise<unknown> {
-    const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig.values;
+    const {mrtProject: project} = this.resolvedConfig.values;
+    const target = this.pushTarget();
     const {message} = this.flags;
 
     if (!project) {
@@ -399,7 +411,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       if (this.flags.wait) {
         if (!target) {
           this.warn('--wait was specified but no environment was provided. Skipping wait.');
-          return result.raw;
+          return this.pushResultJson(result, project);
         }
         if (result.backend === 'scapi') {
           if (result.deploymentId) {
@@ -413,7 +425,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         return this.waitForDeployment(project, target);
       }
 
-      return result.raw;
+      return this.pushResultJson(result, project);
     } catch (error) {
       if (error instanceof Error) {
         const message = t('commands.mrt.bundle.deploy.pushFailed', 'Push failed: {{message}}', {

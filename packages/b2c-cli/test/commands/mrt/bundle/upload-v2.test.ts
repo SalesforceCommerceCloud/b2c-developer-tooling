@@ -140,13 +140,48 @@ describe('mrt bundle upload-v2 (deprecated alias of deploy --v2)', () => {
     expect(warnStub.callCount).to.equal(1);
   });
 
-  it('deploys when an environment is given, like deploy --v2', async () => {
-    const {command, pushStub} = await initAlias({v2: true, environment: 'staging'});
+  it('stays upload-only: ignores a configured or flagged environment and warns', async () => {
+    const {command, pushStub, warnStub} = await initAlias({v2: true, environment: 'staging'});
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-project', mrtEnvironment: 'staging'}}));
 
     await command.run();
 
-    expect(pushStub.firstCall.args[0].targetSlug).to.equal('staging');
+    expect(pushStub.firstCall.args[0].targetSlug).to.equal(undefined);
+    expect(warnStub.secondCall.args[0]).to.include('upload-only');
+  });
+
+  it('hides the deploy-only wait flags', () => {
+    for (const name of ['poll-interval', 'timeout', 'wait']) {
+      expect((MrtBundleUploadV2.flags as any)[name].hidden, name).to.equal(true);
+    }
+  });
+
+  it('returns the PushV2Result shape for legacy and SCAPI pushes', async () => {
+    const legacy = await initAlias({v2: true});
+    legacy.pushStub.resolves({...pushResult, warnings: ['w'], raw: {...pushResult.raw, matches: {ssrOnly: ['a']}}});
+    expect(await legacy.command.run()).to.deep.equal({
+      bundleId: 456,
+      projectSlug: 'my-project',
+      message: 'Test v2',
+      warnings: ['w'],
+      matches: {ssrOnly: ['a']},
+    });
+
+    const scapi = await initAlias({v2: true});
+    scapi.pushStub.resolves({
+      backend: 'scapi',
+      bundleId: 789,
+      message: 'Test v2',
+      deployed: false,
+      raw: {bundle: {bundleId: 789, matches: {ssrShared: ['b']}}},
+    });
+    expect(await scapi.command.run()).to.deep.equal({
+      bundleId: 789,
+      projectSlug: 'my-project',
+      message: 'Test v2',
+      warnings: [],
+      matches: {ssrShared: ['b']},
+    });
   });
 
   it('rejects a bundle ID and points to deploy', async () => {

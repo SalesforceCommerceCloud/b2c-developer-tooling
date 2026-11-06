@@ -851,7 +851,7 @@ b2c mrt bundle deploy -p my-storefront --mrt-backend legacy --v2 --match-mode ig
 
 ### b2c mrt bundle upload-v2
 
-> **Deprecated:** `b2c mrt bundle upload-v2` is deprecated and prints a warning each run. It is now an alias of `b2c mrt bundle deploy --v2` and behaves identically: it takes the same flags (including `--mrt-backend`, `--environment`, and `--wait`), resolves the SSR configuration the same way, and prints the same output. As with `deploy --v2`, the bundle is also deployed when an environment is provided (`--environment`, `MRT_ENVIRONMENT`, or `mrtEnvironment` in `dw.json`). Use `b2c mrt bundle deploy --v2` directly.
+> **Deprecated:** `b2c mrt bundle upload-v2` is deprecated and prints a warning each run. It now shares `b2c mrt bundle deploy --v2`'s flags (including `--mrt-backend`) and resolves the SSR configuration the same way, but remains **upload only**: it ignores any environment (`--environment`, `MRT_ENVIRONMENT`, or `mrtEnvironment` in `dw.json`), has no `--wait`, and `--json` still returns `{bundleId, projectSlug, message, warnings, matches}`. Use `b2c mrt bundle deploy --v2` directly (add `--environment` to deploy in the same step).
 
 Build and upload a **v2-format** bundle to Managed Runtime.
 
@@ -883,7 +883,7 @@ b2c mrt bundle upload-v2 -p my-storefront --dependencies @./deps.json --cc-overr
 b2c mrt bundle upload-v2 -p my-storefront --cloud-origin https://cloud.mobify.com
 ```
 
-**Flags:** the same as [`b2c mrt bundle deploy`](#b2c-mrt-bundle-deploy) (with `--v2` always on, and no bundle ID argument).
+**Flags:** the same as [`b2c mrt bundle deploy`](#b2c-mrt-bundle-deploy) (with `--v2` always on, no bundle ID argument, and `--wait`/`--poll-interval`/`--timeout` hidden).
 
 ### b2c mrt bundle list
 

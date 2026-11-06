@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {Flags} from '@oclif/core';
+import type {MrtPushResultView, PushV2Result} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import MrtBundleDeploy from './deploy.js';
 
@@ -12,11 +13,12 @@ const DEPRECATION_MESSAGE =
   'Use "b2c mrt bundle deploy --v2" instead (add --environment to deploy in the same step).';
 
 /**
- * Build and upload a v2-format bundle to Managed Runtime.
+ * Build and upload a v2-format bundle to Managed Runtime (upload only).
  *
- * Behaves exactly like `b2c mrt bundle deploy --v2`: it inherits that command's
- * flags, backend routing, config resolution, output and error handling, with
- * `--v2` always on. It is kept only so existing scripts keep working.
+ * Shares `b2c mrt bundle deploy --v2`'s flags, backend routing, config resolution
+ * and error handling, but keeps its released contract until it is removed: it
+ * never deploys (an environment is ignored) and `--json` returns the
+ * {@link PushV2Result} shape (`bundleId`, `projectSlug`, `message`, `warnings`, `matches`).
  *
  * @deprecated Use `b2c mrt bundle deploy --v2`.
  */
@@ -40,12 +42,39 @@ export default class MrtBundleUploadV2 extends MrtBundleDeploy {
 
   static override flags = {
     ...MrtBundleDeploy.flags,
+    // Deploy-only: upload-v2 never deploys, so --wait just warns and is skipped.
+    wait: Flags.boolean({char: 'w', description: 'Not supported (upload only)', default: false, hidden: true}),
+    'poll-interval': Flags.integer({description: 'Not supported (upload only)', default: 30, hidden: true}),
+    timeout: Flags.integer({description: 'Not supported (upload only)', default: 600, hidden: true}),
     v2: Flags.boolean({
       description: 'Always on for this command (it is equivalent to "mrt bundle deploy --v2")',
       default: true,
       hidden: true,
     }),
   };
+
+  protected override pushResultJson(result: MrtPushResultView, project: string): PushV2Result {
+    this.log(
+      t(
+        'commands.mrt.bundle.uploadV2.deployHint',
+        'To deploy this bundle: b2c mrt bundle deploy {{bundleId}} --environment <environment>',
+        {bundleId: String(result.bundleId)},
+      ),
+    );
+    // Legacy raw is the v2 upload response itself; SCAPI nests it under `bundle`.
+    const raw = result.raw as {bundle?: {matches?: Record<string, unknown>}; matches?: Record<string, unknown>};
+    return {
+      bundleId: result.bundleId,
+      projectSlug: project,
+      message: result.message ?? '',
+      warnings: result.warnings ?? [],
+      matches: raw.matches ?? raw.bundle?.matches ?? {},
+    };
+  }
+
+  protected override pushTarget(): undefined {
+    return undefined;
+  }
 
   async run(): Promise<unknown> {
     // Written to stderr, so --json output stays machine-readable. Emitted here rather than via
@@ -56,6 +85,13 @@ export default class MrtBundleUploadV2 extends MrtBundleDeploy {
       this.error(
         'mrt bundle upload-v2 builds and uploads a local build and does not take a bundle ID. ' +
           'To deploy an existing bundle, use: b2c mrt bundle deploy <bundleId> --environment <environment>',
+      );
+    }
+
+    if (this.flags.environment) {
+      this.warn(
+        'mrt bundle upload-v2 is upload-only and ignores --environment. ' +
+          'To upload and deploy in one step, use: b2c mrt bundle deploy --v2 --environment <environment>',
       );
     }
 

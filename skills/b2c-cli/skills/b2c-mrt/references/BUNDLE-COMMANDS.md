@@ -75,7 +75,7 @@ b2c mrt bundle deploy 12345 -p my-storefront -e production --mrt-backend scapi -
 
 ## Bundle Upload (v2)
 
-> **Deprecated:** `b2c mrt bundle upload-v2` prints a deprecation warning and is now an alias of `b2c mrt bundle deploy --v2` — same flags, backend routing, config resolution, and output. Like `deploy --v2`, it also deploys when an environment is provided (`-e`, `MRT_ENVIRONMENT`, or `mrtEnvironment` in `dw.json`). Use `b2c mrt bundle deploy --v2` instead.
+> **Deprecated:** `b2c mrt bundle upload-v2` prints a deprecation warning and shares `b2c mrt bundle deploy --v2`'s flags, backend routing, and config resolution, but stays upload-only (any environment is ignored). Use `b2c mrt bundle deploy --v2` instead.
 
 Build and upload a **v2-format** bundle (`b2c mrt bundle deploy --v2`; add `-e <env>` to deploy in the same step).
 
