@@ -19,6 +19,23 @@ const ssrEntry = isStreaming ? 'streamingHandler' : 'ssr';
 const enableSourceMaps = !process.env.DISABLE_SOURCE_MAPS;
 const format = process.env.MRT_EXPORT_TYPE === 'esm' ? 'esm' : 'cjs';
 
+// MRT only accepts streaming handlers that are ES modules.
+if (isStreaming && format !== 'esm') {
+  throw new Error(`MRT_BUNDLE_TYPE=${bundleType} requires MRT_EXPORT_TYPE=esm: streaming handlers must be ES modules`);
+}
+
+// File extension of the SSR/streaming entry. Defaults to `.mjs` for ESM and `.js`
+// for CJS. ESM can also be emitted as `.js` (MRT_EXTENSION=js), in which case the
+// bundle's package.json must declare "type": "module" so Node parses it as ESM.
+const extension = process.env.MRT_EXTENSION ?? (format === 'esm' ? 'mjs' : 'js');
+if (!['js', 'mjs'].includes(extension)) {
+  throw new Error(`Invalid MRT_EXTENSION "${extension}": expected "js" or "mjs"`);
+}
+if (format === 'cjs' && extension === 'mjs') {
+  throw new Error('MRT_EXTENSION=mjs requires MRT_EXPORT_TYPE=esm: a CJS build cannot be emitted as .mjs');
+}
+const ssrExt = `.${extension}`;
+
 /** esbuild plugin that replaces import.meta.url with a CJS-compatible expression */
 const importMetaUrlCjsPlugin = {
   name: 'import-meta-url-cjs',
@@ -126,7 +143,6 @@ async function build() {
   };
 
   // Build SSR / streaming handler entry
-  const ssrExt = format === 'esm' ? '.mjs' : '.js';
   // In ESM mode, esbuild leaves CJS `require()` calls from bundled deps as a
   // runtime helper that throws "Dynamic require of X is not supported". Bridge
   // it to a real Node CJS require so transitive deps that use require() work.
@@ -164,9 +180,11 @@ async function build() {
   // Create empty loader.js required by MRT
   await fs.writeFile(path.join(buildDir, 'loader.js'), '// This file is intentionally empty\n');
 
-  // Write package.json without "type" field (MRT requires CJS bundles without it)
+  // Write package.json without "type" field (MRT requires CJS bundles without it).
+  // An ESM entry named .js needs "type": "module"; .mjs is always ESM on its own.
   const pkg = JSON.parse(await fs.readFile(path.join(pkgRoot, 'package.json'), 'utf8'));
   delete pkg.type;
+  if (format === 'esm' && extension === 'js') pkg.type = 'module';
   await fs.writeFile(path.join(buildDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 
   console.log(`Total build size: ${formatSize(await dirSize(buildDir))}`);

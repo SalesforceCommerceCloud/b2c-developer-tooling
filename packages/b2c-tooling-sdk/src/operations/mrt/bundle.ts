@@ -692,6 +692,7 @@ export async function createBundleV2(options: CreateBundleV2Options): Promise<Bu
     },
     '[MRT] Creating v2 bundle',
   );
+  logger.debug({ssrOnly, ssrShared, ssrParameters}, '[MRT] SSR patterns');
 
   // Validate SSR patterns. An SSR entry point is mandatory, but ssrShared may
   // legitimately be empty for a pure-SSR app with no shared/static assets, so
