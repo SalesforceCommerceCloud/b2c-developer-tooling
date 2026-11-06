@@ -61,8 +61,6 @@ describe('DebugSessionRegistry', () => {
       expect(entry.clientId).to.equal('client-1');
       expect(entry.manager).to.equal(manager);
       expect(entry.sourceMapper).to.equal(sourceMapper);
-      expect(entry.breakpoints).to.deep.equal([]);
-      expect(entry.haltWaiters).to.deep.equal([]);
     });
 
     it('should reject duplicate hostname:clientId pairs', () => {
@@ -229,40 +227,6 @@ describe('DebugSessionRegistry', () => {
 
       expect((manager.disconnect as sinon.SinonStub).calledOnce).to.be.true;
       expect(registry.getSession(entry.sessionId)).to.be.undefined;
-    });
-
-    it('should reject pending halt waiters', async () => {
-      const entry = registry.registerSession({
-        hostname: 'host',
-        clientId: 'c',
-        manager: createMockManager(),
-        sourceMapper: createMockSourceMapper(),
-        cartridges: [],
-      });
-
-      const waiterPromise = new Promise<string>((resolve, reject) => {
-        const timer = setTimeout(() => resolve('timeout'), 5000);
-        entry.haltWaiters.push({
-          resolve() {
-            clearTimeout(timer);
-            resolve('resolved');
-          },
-          reject(e) {
-            clearTimeout(timer);
-            reject(e);
-          },
-          timer,
-        });
-      });
-
-      await registry.destroySession(entry.sessionId);
-
-      try {
-        await waiterPromise;
-        expect.fail('Should have rejected');
-      } catch (error) {
-        expect((error as Error).message).to.equal('Debug session ended');
-      }
     });
 
     it('should be a no-op for unknown session ID', async () => {

@@ -124,7 +124,8 @@ export interface PkceOAuthConfig extends HttpTransportOptions {
    * PKCE token exchange.
    *
    * Use this in hosts that can intercept the redirect themselves, such as an
-   * Electron `BrowserWindow` watching `will-redirect`.
+   * Electron `BrowserWindow` watching `will-redirect`. `redirectUri` may be any
+   * URI registered for the client, including an app scheme (`myapp://callback`).
    */
   authorize?: (url: string, context: {redirectUri: string}) => Promise<URL | string>;
   /**
@@ -245,7 +246,8 @@ export function readPkceAuthorizationResponse(
 ): string {
   const url = typeof redirect === 'string' ? new URL(redirect) : redirect;
   const expected = new URL(request.redirectUri);
-  if (url.origin !== expected.origin || url.pathname !== expected.pathname) {
+  // Compare scheme, host and path: `origin` is "null" for custom schemes (myapp://callback).
+  if (url.protocol !== expected.protocol || url.host !== expected.host || url.pathname !== expected.pathname) {
     throw new Error('OAuth redirect does not match the registered redirect URI — aborting');
   }
   const error = url.searchParams.get('error');

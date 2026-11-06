@@ -82,6 +82,23 @@ export {extractPrefix, listLogFiles, matchesPrefixFilters, unreadCustomPrefixes}
 // Tail operations
 export {aggregateLogEntries, getRecentLogs, parseLogEntry, splitLines, tailLogs} from './tail.js';
 
+// Buffered watches
+export {watchLogs} from './watch.js';
+export type {LogWatch, LogWatchInfo, LogWatchPoll, WatchLogsOptions} from './watch.js';
+export {
+  DEFAULT_LOG_WATCH_BUFFER_BYTES_CAP,
+  DEFAULT_LOG_WATCH_BUFFER_CAP,
+  DEFAULT_LOG_WATCH_POLL_MAX_ENTRIES,
+} from './watch-buffer.js';
+export type {
+  LogWatchBatch,
+  LogWatchBufferOptions,
+  LogWatchError,
+  LogWatchFilterOptions,
+  LogWatchPollOptions,
+  LogWatchStats,
+} from './watch-buffer.js';
+
 // Path normalization
 export {
   createPathNormalizer,

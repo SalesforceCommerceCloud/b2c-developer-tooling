@@ -77,7 +77,6 @@ export function createDebugSetBreakpointsTool(
         });
 
         const result = await entry.manager.setBreakpoints(bpInputs);
-        entry.breakpoints = result;
 
         return {
           breakpoints: result.map((bp) => ({

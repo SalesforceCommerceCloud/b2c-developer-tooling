@@ -16,6 +16,13 @@ export {
   suggestScapiApis,
 } from './live.js';
 export {isRemoteScapiSchema, loadLocalScapiSchemas, loadScapiSchemaOverrides} from './local.js';
+export {resolveScapiDocuments, ScapiUnknownApiError} from './documents.js';
+export type {
+  ResolveScapiDocumentsOptions,
+  ResolvedScapiDocuments,
+  ScapiLiveSchemaSource,
+  ScapiLiveSchemaTenant,
+} from './documents.js';
 export type {ScapiSchemaOverrideOptions} from './local.js';
 export {
   SCAPI_SCHEMA_EXPANSIONS,

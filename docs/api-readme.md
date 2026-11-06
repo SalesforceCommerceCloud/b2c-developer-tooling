@@ -606,7 +606,7 @@ Desktop and server apps can use the SDK as a library, with no `dw.json`, environ
 
 ### Account Manager Sign-in Without a Local Server
 
-By default, `PkceOAuthStrategy` opens the system browser and listens on `localhost` for the redirect. An app that can intercept the redirect itself (for example, an Electron `BrowserWindow` watching `will-redirect`) passes `authorize`. The SDK then opens no listener, but still checks `state` and does the PKCE token exchange.
+By default, `PkceOAuthStrategy` opens the system browser and listens on `localhost` for the redirect. An app that can intercept the redirect itself (for example, an Electron `BrowserWindow` watching `will-redirect`) passes `authorize`. The SDK then opens no listener, but still checks `state` and does the PKCE token exchange. `redirectUri` can be any URI registered for the API client, including an app scheme such as `myapp://oauth/callback`; the SDK matches the scheme, host and path of the redirect.
 
 Set `interactive: false` so that, after sign-in, the strategy only refreshes silently. When the refresh token has expired or been revoked, it throws `AuthRequiredError` instead of opening a browser, and the app decides when to ask the user to sign in again. Pass `sessionBackend` to keep tokens in the app's own encrypted storage.
 
@@ -692,6 +692,42 @@ const result = await runScapiCode({
 `searchScapiOperations(documents, query, {safety})` filters search results with the same policy. A blocked request fails with `SafetyBlockedError` before it is sent.
 
 Discovery decides visibility from each operation's path template, before any parameter values are known. A rule that allows only one value (for example `path: '/product/products/v1/organizations/*/products/p1'`) ahead of a catch-all block still lets the request through, but hides the operation from search and `spec.paths`. Use `operationId` or `api` rules for an allow-list you want programs to see.
+
+To include the tenant's own contracts (custom APIs and `c_*` properties), resolve documents with `resolveScapiDocuments()`. It falls back to the bundled contracts with a warning when the tenant can't be reached, and the cache keeps contracts between calls.
+
+```typescript
+import {ScapiLiveSchemaCache, resolveScapiDocuments, searchScapiOperations} from '@salesforce/b2c-tooling-sdk/scapi';
+
+const cache = new ScapiLiveSchemaCache(); // one per process
+const {documents, source, warnings} = await resolveScapiDocuments({
+  api: 'product',
+  live: {tenant: () => ({client: schemasClient, shortCode: 'abc123', organizationId: 'f_ecom_zzzz_001'}), cache},
+});
+const hits = searchScapiOperations(documents, 'update product');
+```
+
+### Logs and Debugger Sessions for Turn-based Tools
+
+`tailLogs()` and `tailMrtLogs()` deliver entries through callbacks. Tools that read in turns (an agent tool call, a request/response UI) can instead start a buffered watch and poll it. Entries are filtered as they arrive and kept up to a count and byte cap, oldest first out; each poll reports how many were dropped.
+
+```typescript
+import {watchLogs} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {watchMrtLogs} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+
+const watch = await watchLogs(instance, {prefixes: ['error', 'customerror'], level: ['ERROR']});
+const {entries, errors, droppedEntries, truncated} = await watch.poll({timeoutMs: 5000});
+await watch.stop(); // unread entries stay readable
+
+const mrt = await watchMrtLogs({projectSlug: 'my-project', environmentSlug: 'production'}, mrtAuth);
+const {stopped} = await mrt.poll({timeoutMs: 5000}); // true when the stream ended on its own
+```
+
+`DebugSessionManager` tracks the breakpoints it set and can wait for a halt, so a tool can arm a breakpoint and capture the stopped request in one call:
+
+```typescript
+await manager.addBreakpoints([{script_path: '/app_storefront/cartridge/controllers/Cart.js', line_number: 42}]);
+const thread = await manager.waitForHalt(30_000, signal); // null on timeout
+```
 
 ### Skills
 

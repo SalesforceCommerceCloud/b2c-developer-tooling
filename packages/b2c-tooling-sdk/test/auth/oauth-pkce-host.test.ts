@@ -73,6 +73,18 @@ describe('auth/oauth-pkce host integration', () => {
       );
       expect(() => readPkceAuthorizationResponse(`${REDIRECT}?state=s1`, request)).to.throw('authorization code');
     });
+    it('accepts app-scheme and https redirect URIs, matching scheme, host and path', () => {
+      for (const redirectUri of ['myapp://oauth/callback', 'https://app.example.com/cb']) {
+        const request = {redirectUri, state: 's1'};
+        expect(readPkceAuthorizationResponse(`${redirectUri}?code=abc&state=s1`, request)).to.equal('abc');
+      }
+      const request = {redirectUri: 'myapp://oauth/callback', state: 's1'};
+      for (const wrong of ['otherapp://oauth/callback', 'myapp://evil/callback', 'myapp://oauth/other']) {
+        expect(() => readPkceAuthorizationResponse(`${wrong}?code=abc&state=s1`, request), wrong).to.throw(
+          'does not match',
+        );
+      }
+    });
   });
 
   describe('authorize hook', () => {

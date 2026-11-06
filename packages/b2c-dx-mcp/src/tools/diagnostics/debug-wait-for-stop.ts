@@ -10,7 +10,7 @@ import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import {projectThreadLocation, type MappedLocation} from '@salesforce/b2c-tooling-sdk/operations/debug';
-import {getRegistry, getSessionEntry} from './session-registry.js';
+import {getSessionEntry} from './session-registry.js';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 120_000;
@@ -54,7 +54,7 @@ export function createDebugWaitForStopTool(
         const entry = getSessionEntry(context, args.session_id);
         const timeout = Math.min(args.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
 
-        const thread = await getRegistry(context).waitForHalt(entry, timeout);
+        const thread = await entry.manager.waitForHalt(timeout);
         if (!thread) return {halted: false, timed_out: true};
 
         const location = projectThreadLocation(thread, entry.sourceMapper);

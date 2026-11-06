@@ -67,13 +67,13 @@ describe('clients/am-provisioning', () => {
   describe('buildCommerceApiClientRequest', () => {
     it('builds a SALESFORCE_COMMERCE_API client body', () => {
       const body = buildCommerceApiClientRequest({
-        name: '  Studio – jane – 2026-11-06 ',
+        name: '  Desktop app – jane – 2026-11-06 ',
         organizationId: 'org-1',
         tenants: ['zzpq_013'],
         scopes: ['sfcc.products', 'sfcc.catalogs', 'sfcc.products'],
       });
       expect(body).to.deep.include({
-        name: 'Studio – jane – 2026-11-06',
+        name: 'Desktop app – jane – 2026-11-06',
         organizations: ['org-1'],
         active: true,
         roles: ['SALESFORCE_COMMERCE_API'],
@@ -110,7 +110,7 @@ describe('clients/am-provisioning', () => {
       );
       const client = createAccountManagerApiClientsClient({hostname: TEST_HOST}, new MockAuthStrategy());
       const result = await provisionCommerceApiClient(client, {
-        name: 'Studio',
+        name: 'Desktop app',
         organizationId: 'org-1',
         tenants: ['zzpq_013'],
         scopes: ['sfcc.products'],

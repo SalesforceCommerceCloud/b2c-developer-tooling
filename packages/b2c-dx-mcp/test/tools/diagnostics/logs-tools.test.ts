@@ -384,12 +384,10 @@ describe('tools/diagnostics/logs', () => {
         onEntry = opts.onEntry;
         return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
       });
-      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub, bufferCap: 2});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      // Force eviction by overflowing the buffer cap.
-      const watch = serverContext.logWatches.getWatch(watch_id)!;
-      watch.bufferCap = 2;
+      // Overflow the buffer cap to force eviction.
       onEntry!(makeEntry({message: 'a'}));
       onEntry!(makeEntry({message: 'b'}));
       onEntry!(makeEntry({message: 'c'})); // evicts 'a'
@@ -411,8 +409,11 @@ describe('tools/diagnostics/logs', () => {
       const tailLogsStub = sinon.stub().callsFake(() => {
         serverContext.logWatches.registerWatch({
           hostname: 'test.example.com',
-          prefixes: [],
-          tailResult: {stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()},
+          watch: {
+            poll: sinon.stub(),
+            info: sinon.stub().returns({lastActivityAt: Date.now()}),
+            stop: sinon.stub().resolves(),
+          } as never,
         });
         return Promise.resolve({stop: racedStop, files: [], entries: [], done: Promise.resolve()});
       });
