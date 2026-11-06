@@ -147,9 +147,10 @@ describe('SCAPI host integration', function () {
       'node:_http_client',
     ]) {
       it(`blocks require('${module}') and process.getBuiltinModule('${module}')`, async () => {
-        await rejects(() => runScapiCode({code: `async () => require(${JSON.stringify(module)})`}), module);
+        // Module names travel as program input, so the program source is a fixed literal.
+        await rejects(() => runScapiCode({code: 'async (name) => require(name)', input: module}), module);
         await rejects(
-          () => runScapiCode({code: `async () => process.getBuiltinModule(${JSON.stringify(module)})`}),
+          () => runScapiCode({code: 'async (name) => process.getBuiltinModule(name)', input: module}),
           module,
         );
       });
@@ -176,9 +177,10 @@ describe('SCAPI host integration', function () {
 
     it('blocks dynamic import() of networking modules', async () => {
       for (const module of ['node:net', 'http', '_http_client']) {
-        await rejects(() => runScapiCode({code: `async () => import(${JSON.stringify(module)})`}), module);
+        await rejects(() => runScapiCode({code: 'async (name) => import(name)', input: module}), module);
+        // import() from code compiled at runtime, outside the program's own module scope.
         await rejects(
-          () => runScapiCode({code: `async () => Function('return import(${JSON.stringify(module)})')()`}),
+          () => runScapiCode({code: "async (name) => Function('n', 'return import(n)')(name)", input: module}),
           module,
         );
       }
@@ -187,7 +189,7 @@ describe('SCAPI host integration', function () {
     it('denies built-ins outside the allow-list and refuses new module hooks', async () => {
       for (const module of ['module', 'fs', 'vm', 'os', 'child_process', 'worker_threads']) {
         await rejects(
-          () => runScapiCode({code: `async () => require(${JSON.stringify(module)})`}),
+          () => runScapiCode({code: 'async (name) => require(name)', input: module}),
           'SCAPI_RUNTIME_RESTRICTED',
         );
       }
@@ -224,15 +226,16 @@ describe('SCAPI host integration', function () {
 
     it('cannot reach a local HTTP server, while scapi.request still works', async () => {
       hits = 0;
+      // The port travels as program input, so each program source is a fixed literal.
       const attempts = [
-        `new Promise((r, j) => { const q = new (require('_http_client').ClientRequest)('http://127.0.0.1:${port}/'); q.on('response', r); q.on('error', j); q.end(); })`,
-        `import('node:net').then((net) => new Promise((r, j) => { const s = net.connect(${port}, '127.0.0.1'); s.on('connect', r); s.on('error', j); }))`,
-        `require('http').get('http://127.0.0.1:${port}/')`,
-        `new Promise((r, j) => { const s = require('net').connect(${port}, '127.0.0.1'); s.on('connect', r); s.on('error', j); })`,
-        `fetch('http://127.0.0.1:${port}/')`,
+        "async (port) => new Promise((r, j) => { const q = new (require('_http_client').ClientRequest)(`http://127.0.0.1:${port}/`); q.on('response', r); q.on('error', j); q.end(); })",
+        "async (port) => import('node:net').then((net) => new Promise((r, j) => { const s = net.connect(port, '127.0.0.1'); s.on('connect', r); s.on('error', j); }))",
+        "async (port) => require('http').get(`http://127.0.0.1:${port}/`)",
+        "async (port) => new Promise((r, j) => { const s = require('net').connect(port, '127.0.0.1'); s.on('connect', r); s.on('error', j); })",
+        'async (port) => fetch(`http://127.0.0.1:${port}/`)',
       ];
-      for (const attempt of attempts) {
-        await rejects(() => runScapiCode({code: `async () => ${attempt}`}), 'SCAPI_');
+      for (const code of attempts) {
+        await rejects(() => runScapiCode({code, input: port}), 'SCAPI_');
       }
       expect(hits).to.equal(0);
       const result = await runScapiCode({
