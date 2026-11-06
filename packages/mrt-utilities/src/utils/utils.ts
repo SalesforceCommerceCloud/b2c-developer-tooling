@@ -45,3 +45,26 @@ export const logMRTError = (namespace: string, err: unknown, context?: Record<st
     }),
   );
 };
+
+/**
+ * Log an internal MRT event (non-error).
+ *
+ * Companion to {@link logMRTError} for structured operational events that are NOT errors —
+ * e.g. circuit-breaker state transitions, including recovery. Uses the same searchable
+ * `__MRT__<namespace>` key but emits at info level so recovery events don't trip
+ * error-based alerting.
+ *
+ * @param namespace Namespace for the event (e.g. data_store) to facilitate searching
+ * @param message Short, low-cardinality event message
+ * @param context Optional context to include in the log
+ */
+export const logMRTEvent = (namespace: string, message: string, context?: Record<string, unknown>) => {
+  console.info(
+    JSON.stringify({
+      [`__MRT__${namespace}`]: 'event',
+      type: 'MRT_internal',
+      message,
+      ...context,
+    }),
+  );
+};
