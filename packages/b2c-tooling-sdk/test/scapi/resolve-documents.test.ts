@@ -12,6 +12,7 @@ import {
   loadScapiSchemas,
   resolveScapiDocuments,
   type ApiDocument,
+  type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
 
 const contract: ApiDocument = {
@@ -44,7 +45,7 @@ async function rejection(promise: Promise<unknown>): Promise<Error> {
 describe('resolveScapiDocuments', () => {
   it('returns bundled contracts filtered by api, with local contracts replacing them', async () => {
     const product = loadScapiSchemas().find((document) => document.entry.id === 'product/products/v1')!;
-    const local = {...product, entry: {...product.entry, origin: 'local'}};
+    const local: ScapiSchemaDocument = {...product, entry: {...product.entry, origin: 'local'}};
     const resolved = await resolveScapiDocuments({api: 'product/products', local: [local]});
     expect(resolved.source).to.equal('bundled');
     expect(resolved.documents.map((document) => document.entry.id)).to.deep.equal(['product/products/v1']);

@@ -409,7 +409,9 @@ describe('SCAPI host integration', function () {
         rules: [{job: 'sfcc-site-archive-export', action: 'allow'}],
       });
       const jobs = visible.find((d) => d.entry.id === 'operation/jobs/v1')!;
-      const executions = Object.entries(jobs.schema.paths).find(([p]) => p.endsWith('/jobs/{jobId}/executions'));
+      const executions = (Object.entries(jobs.schema.paths) as [string, Record<string, unknown>][]).find(([p]) =>
+        p.endsWith('/jobs/{jobId}/executions'),
+      );
       expect(executions?.[1].post).to.not.equal(undefined);
     });
   });
