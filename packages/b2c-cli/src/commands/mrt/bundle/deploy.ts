@@ -15,12 +15,15 @@ import {
   DEFAULT_V2_CONFIG_PATH,
   DEFAULT_V2_MATCH_MODE,
   type MrtEnvironment,
+  type MrtPushResultView,
   type MrtBackendPreference,
   type ScapiMrtConnection,
   type BundleV2MatchMode,
+  type BundleV2Metadata,
 } from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import {t, withDocs} from '../../../i18n/index.js';
 import {
+  parseDependencies,
   parseGlobPatterns,
   parseSsrParams,
   isMrtAuthError,
@@ -65,6 +68,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     '<%= config.bin %> <%= command.id %> --project my-storefront --ssr-param SSRProxyPath=/api',
     '<%= config.bin %> <%= command.id %> --project my-storefront --mrt-backend scapi --root-dir bld --match-mode ignore_missing',
     '<%= config.bin %> <%= command.id %> --project my-storefront --mrt-backend legacy --v2 --match-mode ignore_missing',
+    '<%= config.bin %> <%= command.id %> --project my-storefront --v2 --dependencies @./deps.json --cc-override plugin-a',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging',
     '<%= config.bin %> <%= command.id %> 12345 --project my-storefront --environment staging --wait',
     '<%= config.bin %> <%= command.id %> 12345 -p my-storefront -e staging --mrt-backend scapi --wait',
@@ -102,6 +106,14 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       description: `How ssr-only/ssr-shared patterns that match no files are handled (v2 uploads only; default: ${DEFAULT_V2_MATCH_MODE})`,
       options: ['strict', 'ignore_missing'],
     }),
+    dependencies: Flags.string({
+      description: 'Bundle dependencies as inline JSON or a @path to a JSON file (v2 uploads only)',
+    }),
+    'cc-override': Flags.string({
+      description: 'Commerce Cloud override identifier (can be specified multiple times, v2 uploads only)',
+      multiple: true,
+      default: [],
+    }),
     'node-version': Flags.string({
       char: 'n',
       description: `Node.js version for SSR runtime (default: ${DEFAULT_SSR_PARAMETERS.SSRFunctionNodeVersion}, only for local builds)`,
@@ -134,6 +146,16 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     waitForEnv,
     waitForDeploymentScapi,
   };
+
+  /** `--json` result of a local-build push without `--wait`: the backend's native response. */
+  protected pushResultJson(result: MrtPushResultView, _project: string): unknown {
+    return result.raw;
+  }
+
+  /** Environment a local-build push deploys to after uploading (undefined = upload only). */
+  protected pushTarget(): string | undefined {
+    return this.resolvedConfig.values.mrtEnvironment;
+  }
 
   async run(): Promise<unknown> {
     const {bundleId} = this.args;
@@ -278,7 +300,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
    * polled environment (legacy) or completed deployment (SCAPI).
    */
   private async pushLocalBuild(): Promise<unknown> {
-    const {mrtProject: project, mrtEnvironment: target} = this.resolvedConfig.values;
+    const {mrtProject: project} = this.resolvedConfig.values;
+    const target = this.pushTarget();
     const {message} = this.flags;
 
     if (!project) {
@@ -301,7 +324,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       ssrParameters.SSRFunctionNodeVersion = this.flags['node-version'];
     }
 
-    // v2 archive layout flags — only meaningful for a v2 upload (SCAPI always,
+    // v2 archive layout/metadata flags — only meaningful for a v2 upload (SCAPI always,
     // or legacy with --v2). Left undefined here so createBundleV2 supplies the
     // DEFAULT_V2_* values; the legacy v1 upload ignores them. Track which were
     // explicitly set so we can warn if the push runs on legacy v1.
@@ -313,6 +336,8 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     if (rootDir !== undefined) v2LayoutFlagsUsed.push('--root-dir');
     if (configPath !== undefined) v2LayoutFlagsUsed.push('--config-path');
     if (matchMode !== undefined) v2LayoutFlagsUsed.push('--match-mode');
+    if (this.flags.dependencies !== undefined) v2LayoutFlagsUsed.push('--dependencies');
+    if (this.flags['cc-override'].length > 0) v2LayoutFlagsUsed.push('--cc-override');
 
     this.log(t('commands.mrt.bundle.deploy.pushing', 'Pushing bundle to {{project}}...', {project}));
 
@@ -325,6 +350,17 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
     }
 
     try {
+      // Bundle metadata (v2 uploads only). parseDependencies reads and parses a file for
+      // `--dependencies @file`, so keep it inside the try to surface a friendly error
+      // instead of a raw ENOENT/SyntaxError.
+      const bundleMetadata: BundleV2Metadata = {};
+      if (this.flags.dependencies) {
+        bundleMetadata.dependencies = parseDependencies(this.flags.dependencies);
+      }
+      if (this.flags['cc-override'].length > 0) {
+        bundleMetadata.ccOverrides = this.flags['cc-override'];
+      }
+
       const result = await this.operations.pushMrtBundle({
         preference,
         scapiConnection,
@@ -340,12 +376,13 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         rootDir,
         configPath,
         matchMode,
+        bundleMetadata: Object.keys(bundleMetadata).length > 0 ? bundleMetadata : undefined,
         v2,
         origin: this.resolvedConfig.values.mrtOrigin,
         onResolve: (backend) => this.logger.debug({backend}, '[MRT] Pushing local build via backend'),
       });
 
-      // --root-dir/--config-path/--match-mode only affect a v2 upload. If the
+      // --root-dir/--config-path/--match-mode/--dependencies/--cc-override only affect a v2 upload. If the
       // legacy backend served this push as v1 (no --v2 — explicit `legacy`, or
       // `auto` resolving/falling back to legacy), warn that they had no effect.
       if (result.backend === 'legacy' && !v2 && v2LayoutFlagsUsed.length > 0) {
@@ -374,7 +411,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
       if (this.flags.wait) {
         if (!target) {
           this.warn('--wait was specified but no environment was provided. Skipping wait.');
-          return result.raw;
+          return this.pushResultJson(result, project);
         }
         if (result.backend === 'scapi') {
           if (result.deploymentId) {
@@ -388,7 +425,7 @@ export default class MrtBundleDeploy extends MrtCommand<typeof MrtBundleDeploy> 
         return this.waitForDeployment(project, target);
       }
 
-      return result.raw;
+      return this.pushResultJson(result, project);
     } catch (error) {
       if (error instanceof Error) {
         const message = t('commands.mrt.bundle.deploy.pushFailed', 'Push failed: {{message}}', {
