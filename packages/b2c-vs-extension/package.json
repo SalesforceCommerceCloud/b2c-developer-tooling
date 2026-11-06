@@ -52,6 +52,18 @@
       {
         "fileMatch": "dw.json",
         "url": "./resources/schemas/dw.schema.json"
+      },
+      {
+        "fileMatch": "**/cartridge/experience/components/**/*.json",
+        "url": "./resources/schemas/content/componenttype.json"
+      },
+      {
+        "fileMatch": "**/cartridge/experience/pages/**/*.json",
+        "url": "./resources/schemas/content/pagetype.json"
+      },
+      {
+        "fileMatch": "**/cartridge/experience/aspects/**/*.json",
+        "url": "./resources/schemas/content/aspecttype.json"
       }
     ],
     "typescriptServerPlugins": [
@@ -163,6 +175,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable the Content Libraries browser."
+        },
+        "b2c-dx.storefrontNext.metadataDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "In Storefront Next projects, warn on save when a `@Component` or `@PageType` source no longer matches its generated Page Designer metadata, with a Quick Fix that regenerates it. Runs the project's own generator from `@salesforce/storefront-next-dev`."
         },
         "b2c-dx.content.saveWithExperiencesApi": {
           "type": "boolean",
@@ -1163,6 +1180,17 @@
         "category": "B2C DX"
       },
       {
+        "command": "b2c-dx.storefrontNext.regenerateMetadata",
+        "title": "Regenerate Page Designer Metadata for This File",
+        "category": "B2C DX"
+      },
+      {
+        "command": "b2c-dx.content.openInPageDesigner",
+        "title": "Open in Page Designer",
+        "icon": "$(link-external)",
+        "category": "B2C DX"
+      },
+      {
         "command": "b2c-dx.content.goToTypeSource",
         "title": "Go to Type Source",
         "icon": "$(go-to-file)",
@@ -1868,6 +1896,11 @@
           "group": "0_navigation@1"
         },
         {
+          "command": "b2c-dx.content.openInPageDesigner",
+          "when": "view == b2cContentExplorer && viewItem =~ /^(page|component)$/",
+          "group": "0_navigation@2"
+        },
+        {
           "command": "b2c-dx.content.export",
           "when": "view == b2cContentExplorer && viewItem =~ /^(page|content|component|fragment)$/",
           "group": "1_export@1"
@@ -2427,6 +2460,14 @@
         {
           "command": "b2c-dx.content.goToTypeSource",
           "when": "false"
+        },
+        {
+          "command": "b2c-dx.content.openInPageDesigner",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.storefrontNext.regenerateMetadata",
+          "when": "b2c-dx.isStorefrontNext && resourceLangId =~ /^typescript(react)?$/"
         },
         {
           "command": "b2c-dx.content.export",

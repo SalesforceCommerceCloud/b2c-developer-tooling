@@ -26,6 +26,7 @@ import {setStorefrontNextWorkspace} from './project-type.js';
 import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
+import {registerStorefrontNext} from './sfnext/index.js';
 import {registerLogs} from './logs/index.js';
 import {registerJobs} from './jobs/index.js';
 import {getPluginAuthSessionBackend, initializePlugins} from './plugins.js';
@@ -1071,6 +1072,9 @@ async function activateInner(
       registerWebDavTree(context, configProvider);
     });
   }
+  runActivationStep(log, 'Storefront Next metadata diagnostics', () => {
+    registerStorefrontNext(context, log);
+  });
   if (settings.get<boolean>('features.contentLibraries', true)) {
     runActivationStep(log, 'Content Libraries registration', () => {
       registerContentTree(context, configProvider);

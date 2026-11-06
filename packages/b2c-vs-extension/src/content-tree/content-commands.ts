@@ -13,6 +13,7 @@ import type {ContentConfigProvider} from './content-config.js';
 import type {ContentFileSystemProvider} from './content-fs-provider.js';
 import {ContentTreeItem, type ContentTreeDataProvider, type ContentTreeElement} from './content-tree-provider.js';
 import {ExperienceTypesNode} from './experience-types.js';
+import {owningPageId, pageDesignerUrl} from './page-designer-link.js';
 import {findTypeSources, type TypeKind} from './type-sources.js';
 import {openJobLog} from '../job-log-viewer.js';
 import {isStorefrontNextWorkspace} from '../project-type.js';
@@ -376,7 +377,36 @@ export function registerContentCommands(
     },
   );
 
+  // Opens a page (or a component's page) in the Business Manager Page Designer editor.
+  const openInPageDesigner = registerSafeCommand(
+    'b2c-dx.content.openInPageDesigner',
+    async (node?: ContentTreeItem) => {
+      const pageId = node instanceof ContentTreeItem ? owningPageId(node.libraryNode) : undefined;
+      if (!pageId) {
+        vscode.window.showWarningMessage('Select a page or a component on a page.');
+        return;
+      }
+      const hostname = configProvider.getInstance()?.config.hostname;
+      if (!hostname) {
+        vscode.window.showWarningMessage('No instance is configured. Set a hostname in dw.json or B2C DX settings.');
+        return;
+      }
+      // A site-private library's ID is its site; a shared library needs the
+      // site whose cartridge path renders the page.
+      let siteId = node!.isSiteLibrary ? node!.libraryId : configProvider.getSiteId();
+      siteId ??= await vscode.window.showInputBox({
+        title: 'Open in Page Designer',
+        prompt: `Site to open page ${pageId} in`,
+        placeHolder: 'RefArch',
+        ignoreFocusOut: true,
+      });
+      if (!siteId) return;
+      await vscode.env.openExternal(vscode.Uri.parse(pageDesignerUrl(hostname, siteId, pageId), true));
+    },
+  );
+
   return [
+    openInPageDesigner,
     goToTypeSource,
     openType,
     refresh,
