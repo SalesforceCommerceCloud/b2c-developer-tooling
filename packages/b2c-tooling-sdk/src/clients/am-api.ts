@@ -836,7 +836,10 @@ export async function createApiClient(
     const errorMessage = fieldHint
       ? `${first?.message ?? err.error?.message ?? 'Bad Request'} (${fieldHint})`
       : (first?.message ?? err.error?.message);
-    throw new Error(errorMessage || `Failed to create API client: ${JSON.stringify(result.error)}`);
+    const message = errorMessage || `Failed to create API client: ${JSON.stringify(result.error)}`;
+    const status = result.response?.status;
+    if (status === 401 || status === 403) throw new NotPermittedError(message, status);
+    throw new Error(message);
   }
 
   if (!result.data) {
@@ -844,6 +847,22 @@ export async function createApiClient(
   }
 
   return result.data;
+}
+
+/**
+ * Thrown when Account Manager refuses an operation because the caller lacks the
+ * required role (HTTP 401 or 403), for example creating an API client without
+ * the Account Administrator or API Administrator role.
+ */
+export class NotPermittedError extends Error {
+  /** HTTP status Account Manager returned. */
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'NotPermittedError';
+    this.status = status;
+  }
 }
 
 /**

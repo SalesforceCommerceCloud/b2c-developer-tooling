@@ -44,7 +44,6 @@
   "files": [
     "bin",
     "dist",
-    "content",
     "oclif.manifest.json",
     "!dist/**/*.map",
     "!dist/**/*.test.*",
@@ -75,7 +74,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run generate:guidance && shx rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "shx rm -rf dist && tsc -p tsconfig.build.json",
     "clean": "shx rm -rf dist",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -85,7 +84,7 @@
     "preinspect": "pnpm run build",
     "inspect": "mcp-inspector node bin/run.js --toolsets all",
     "inspect:dev": "mcp-inspector node --conditions development bin/dev.js --toolsets all",
-    "pretest": "pnpm run generate:guidance && tsc --noEmit -p test",
+    "pretest": "tsc --noEmit -p test",
     "test": "c8 mocha --forbid-only --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci:win": "c8 --check-coverage=false mocha --forbid-only --reporter json --reporter-option output=test-results.json --ignore \"test/e2e/**\" \"test/**/*.test.ts\"",
@@ -94,16 +93,15 @@
     "test:e2e:ci": "mocha --forbid-only --reporter json --reporter-option output=test-results-e2e.json \"test/e2e/**/*.test.ts\"",
     "coverage": "c8 report",
     "posttest": "pnpm run lint",
-    "prepack": "pnpm run generate:guidance && node scripts/prepare-sdk-bundle.mjs && oclif manifest",
+    "prepack": "node scripts/prepare-sdk-bundle.mjs && oclif manifest",
     "postpack": "shx rm -f oclif.manifest.json",
-    "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
+    "generate:guidance": "pnpm --filter @salesforce/b2c-tooling-sdk run generate:guidance",
     "sync:cap-dev-skills": "node scripts/sync-cap-dev-skills.mjs",
     "prepare:guidance-test": "node scripts/prepare-guidance-test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
     "@oclif/core": "catalog:",
-    "@salesforce/b2c-agent-plugins": "workspace:*",
     "@salesforce/b2c-tooling-sdk": "workspace:*",
     "glob": "catalog:",
     "postcss": "8.5.30",
@@ -112,8 +110,7 @@
     "zod": "4.6.7"
   },
   "bundledDependencies": [
-    "@modelcontextprotocol/server",
-    "@salesforce/b2c-agent-plugins"
+    "@modelcontextprotocol/server"
   ],
   "devDependencies": {
     "@eslint/compat": "catalog:",

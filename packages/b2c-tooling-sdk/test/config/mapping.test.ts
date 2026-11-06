@@ -380,4 +380,33 @@ describe('config/mapping', () => {
       );
     });
   });
+
+  describe('safety rules', () => {
+    const rules = [
+      {method: 'DELETE', api: 'product/**', action: 'allow'},
+      {operationId: 'updateProduct', action: 'confirm'},
+      {readOnlySearch: true, action: 'allow'},
+      {path: '**', action: 'block'},
+    ];
+
+    it('round-trips code-mode matchers through dw.json without widening a rule', () => {
+      const normalized = mapDwJsonToNormalizedConfig({safety: {level: 'READ_ONLY', rules}});
+      expect(normalized.safety?.rules).to.deep.equal(rules);
+      expect(mapNormalizedConfigToDwJson(normalized).safety?.rules).to.deep.equal(rules);
+    });
+
+    it('drops rules with a mistyped matcher instead of matching more', () => {
+      const normalized = mapDwJsonToNormalizedConfig({
+        safety: {
+          rules: [
+            {readOnlySearch: 'true', action: 'allow'},
+            {api: 42, method: 'DELETE', action: 'allow'},
+            {method: 'GET', action: 'nope'},
+            {method: 'GET', action: 'allow'},
+          ] as never,
+        },
+      });
+      expect(normalized.safety?.rules).to.deep.equal([{method: 'GET', action: 'allow'}]);
+    });
+  });
 });

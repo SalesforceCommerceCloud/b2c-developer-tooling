@@ -540,9 +540,12 @@ export {
   DEFAULT_ODS_HOST,
   DEFAULT_PUBLIC_CLIENT_ID,
   LEGACY_IMPLICIT_PUBLIC_CLIENT_ID,
+  ACCOUNT_MANAGER_HOSTS,
+  getAccountManagerHostInfo,
   getDefaultPublicClientId,
   getLegacyImplicitPublicClientId,
 } from './defaults.js';
+export type {AccountManagerHostInfo} from './defaults.js';
 
 // Version info
 export {SDK_NAME, SDK_VERSION, SDK_USER_AGENT} from './version.js';

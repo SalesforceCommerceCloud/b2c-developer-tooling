@@ -4,7 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/** Plain Node JavaScript, packaged with the SDK. This is local execution, not a security sandbox. */
+/**
+ * Plain Node JavaScript, packaged with the SDK. Runs under `--permission` with no credentials in its
+ * environment, and denies every built-in module outside a short allow-list, so programs can't open
+ * network connections directly. It is not a general-purpose sandbox: CPU, memory and output are
+ * limited by the host.
+ */
 export const SCAPI_WORKER_SOURCE = String.raw`
 const send = process.send.bind(process);
 const pending = new Map();
@@ -12,9 +17,60 @@ let sequence = 0;
 function directNetwork() {
   throw new Error('SCAPI_DIRECT_NETWORK_DISABLED: Use scapi.request() in code mode. For direct HTTP calls, export a token and use a client outside code mode; SDK safety does not govern those calls.');
 }
-// Prevent accidental use of ambient networking; this is not a hostile-code sandbox.
-for (const name of ['fetch', 'WebSocket']) {
+// Network access goes only through scapi.request(), which the host authenticates and governs.
+for (const name of ['fetch', 'WebSocket', 'EventSource']) {
   Object.defineProperty(globalThis, name, {value: directNetwork, writable: false, configurable: false});
+}
+// Fail closed if the permission model is off (for example a custom worker command that ignores
+// --permission): the module guard below assumes subprocesses, workers and file writes are denied.
+if (!process.permission || ['child', 'worker', 'fs.write', 'inspector'].some(scope => process.permission.has(scope))) {
+  process.send({type: 'error', error: 'SCAPI_WORKER_UNRESTRICTED: the code-mode worker must run with --permission; check the worker command.'});
+  process.exit(1);
+}
+// Node has no network permission yet, so program code may load only these built-in modules.
+// Every other built-in (http, net, dns, tls, _http_client, fs, module, ...) is denied, through
+// require(), import() and process.getBuiltinModule() alike.
+const ALLOWED_BUILTINS = new Set(['assert', 'buffer', 'crypto', 'events', 'path', 'querystring', 'stream', 'string_decoder', 'timers', 'url', 'util', 'zlib']);
+const NETWORK_BUILTINS = new Set(['http', 'https', 'http2', 'net', 'tls', 'dgram', 'dns', 'undici']);
+function builtinName(request) {
+  const name = String(request);
+  return (name.startsWith('node:') ? name.slice(5) : name).split('/')[0];
+}
+function moduleDenied(request) {
+  const name = builtinName(request);
+  const network = NETWORK_BUILTINS.has(name) || name.startsWith('_http') || name.startsWith('_tls') || name.startsWith('_stream_wrap');
+  const error = new Error(network
+    ? 'SCAPI_DIRECT_NETWORK_DISABLED: ' + String(request) + ' is not available in code mode. Use scapi.request() for SCAPI calls.'
+    : String(request) + ' is not available in code mode.');
+  if (!network) error.code = 'ERR_ACCESS_DENIED';
+  throw error;
+}
+{
+  const Module = require('module');
+  if (typeof Module.registerHooks !== 'function') {
+    process.send({type: 'error', error: 'SCAPI_WORKER_UNSUPPORTED: code mode needs Node.js 22.15 or later (module.registerHooks).'});
+    process.exit(1);
+  }
+  const denied = (request) => Module.isBuiltin(String(request)) && !ALLOWED_BUILTINS.has(builtinName(request));
+  // Resolve hooks cover require(), createRequire() and dynamic import().
+  Module.registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (denied(specifier)) moduleDenied(specifier);
+      // Only built-ins and nothing on disk: --permission denies file reads, and code mode has no packages.
+      return nextResolve(specifier, context);
+    },
+  });
+  const lock = (target, name, value) => Object.defineProperty(target, name, {value, writable: false, configurable: false});
+  // A later hook could short-circuit resolution past the guard; allow no more hooks.
+  lock(Module, 'registerHooks', () => moduleDenied('module.registerHooks'));
+  const load = Module._load;
+  lock(Module, '_load', function (request, ...rest) { return denied(request) ? moduleDenied(request) : load.call(this, request, ...rest); });
+  const getBuiltinModule = process.getBuiltinModule;
+  if (typeof getBuiltinModule === 'function') {
+    lock(process, 'getBuiltinModule', (request) => denied(request) ? moduleDenied(request) : getBuiltinModule.call(process, request));
+  }
+  // Internal bindings expose raw sockets (tcp_wrap, udp_wrap, cares_wrap); code mode needs none.
+  for (const name of ['binding', '_linkedBinding', 'dlopen']) lock(process, name, () => moduleDenied('process.' + name));
 }
 process.on('disconnect', () => process.exit(0));
 process.on('message', async message => {

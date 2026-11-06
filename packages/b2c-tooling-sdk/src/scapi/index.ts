@@ -26,6 +26,7 @@ export {
   scapiSchemaExpandFor,
   findBundledScapiSchema,
   listBundledScapiSchemas,
+  loadBundledScapiDocuments,
   fetchScapiSchemaWithFallback,
   listScapiSchemasWithFallback,
 } from './schema-source.js';
@@ -43,9 +44,10 @@ export {ScapiShopperSessions} from './shopper.js';
 export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';
 export {runScapiCode} from './runtime.js';
 export {createScapiOperationSearch, scapiFullPath, searchScapiOperations} from './search.js';
-export type {ScapiOperationMatch, ScapiOperationSearchOptions} from './search.js';
+export type {ScapiOperationMatch, ScapiOperationSearchOptions, ScapiOperationIndexOptions} from './search.js';
+export {filterScapiDocumentsBySafety, isScapiOperationBlocked} from './safety-filter.js';
 export {createScapiAuth} from './auth-primitives.js';
-export type {ScapiCodeOptions, ScapiRuntimeControl} from './runtime.js';
+export type {ScapiCodeOptions, ScapiRuntimeControl, ScapiWorkerCommand} from './runtime.js';
 export {
   loadBuiltinScapiSnippets,
   loadScapiSnippets,

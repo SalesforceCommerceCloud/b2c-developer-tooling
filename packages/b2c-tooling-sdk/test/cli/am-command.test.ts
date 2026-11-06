@@ -398,6 +398,44 @@ describe('cli/am-command', () => {
       expect(errorMessage).to.include('--user-auth');
     });
 
+    it('names the roles in the current client token', async () => {
+      await setupCommandWithStrategy(command, 'client-credentials');
+      const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+      const token = `${encode({alg: 'none'})}.${encode({roles: ['AM_API_ADMIN', 'CUSTOM_ROLE']})}.sig`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const strategy = (command as any)._authStrategy as OAuthStrategy;
+      sinon.stub(strategy, 'getTokenResponse').resolves({accessToken: token, expires: futureDate(30), scopes: []});
+      const errorStub = sinon.stub(command, 'error').throws(new Error('exit'));
+
+      try {
+        await command.testCatch(new Error('operation forbidden'));
+      } catch {
+        // Expected
+      }
+
+      const errorMessage = errorStub.firstCall.args[0] as string;
+      expect(errorMessage).to.include(
+        'Your current token has these roles: API Administrator (AM_API_ADMIN), CUSTOM_ROLE.',
+      );
+    });
+
+    it('does not start a sign-in to describe roles for user auth', async () => {
+      await setupCommandWithStrategy(command, 'implicit');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const strategy = (command as any)._authStrategy as ImplicitOAuthStrategy;
+      const tokenStub = sinon.stub(strategy, 'getTokenResponse').rejects(new Error('must not be called'));
+      const errorStub = sinon.stub(command, 'error').throws(new Error('exit'));
+
+      try {
+        await command.testCatch(new Error('operation forbidden'));
+      } catch {
+        // Expected
+      }
+
+      expect(tokenStub.called).to.equal(false);
+      expect(errorStub.firstCall.args[0] as string).to.not.include('Your current token');
+    });
+
     it('should pass through non-auth errors unchanged', async () => {
       await setupCommandWithStrategy(command, 'client-credentials');
 

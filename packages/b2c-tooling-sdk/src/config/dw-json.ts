@@ -166,6 +166,9 @@ export interface DwJsonConfig {
       path?: string;
       job?: string;
       command?: string;
+      operationId?: string;
+      api?: string;
+      readOnlySearch?: boolean;
       action: string;
     }>;
   };
