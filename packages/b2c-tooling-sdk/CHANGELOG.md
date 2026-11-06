@@ -1,5 +1,23 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.13.0
+
+### Minor Changes
+
+- [#849](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/849) [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78) - `code deploy` now handles very large code versions: cartridges are streamed to disk instead of memory and split into archives of up to 200 MiB (set with `--max-archive-size`, `max-archive-size` in `dw.json`, or `SFCC_MAX_ARCHIVE_SIZE`). Dropped uploads are retried, a dropped connection during server-side unzip no longer fails the deploy, and 413 errors explain whether the archive was too large or the sandbox is stopped. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#853](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/853) [`047f623`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/047f6234c5446c3d6c651f113c1c6e60c6dc8fc8) - Fixed `b2c auth token --default-client` failing with "This command needs an API client". It now returns a token for your account from the built-in client. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#852](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/852) [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2) - `SFCC_CARTRIDGE_IGNORE_DIRS` and `SFCC_MAX_ARCHIVE_SIZE` now apply to `b2c code deploy`, `sfnext deploy-cartridge`, and MCP cartridge deploys. Previously both were ignored and the defaults were used. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#850](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/850) [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c) - Refreshed the Developer Center guides and Salesforce Help content behind `b2c docs search`/`read` and the MCP docs tools. Search descriptions for guides and Help knowledge articles are now drawn from the whole page, so details far down a page, such as Managed Runtime bundle limits and allowed content types, are findable. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#850](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/850) [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c) - Docs search now treats "limits", "limitations", "constraints", and "quotas" as synonyms, so queries such as "MRT size limits" find pages whose Constraints sections hold the answer. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#852](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/852) [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2) - CLIs built on the SDK, such as `sfnext`, now use the global `dw.json` set with `b2c setup default-config` and the global `safety.json`. A file in the CLI's own configuration directory still takes precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 2.12.1
 
 ### Patch Changes
