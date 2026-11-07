@@ -3,4 +3,4 @@
 '@salesforce/b2c-cli': minor
 ---
 
-Add a `b2c:log-redaction` plugin hook and `globalLogRedactorRegistry` so plugins and apps that embed the SDK can remove more from log output, such as secrets nested deeply or tokens inside messages. `redactLogValue()` and `deepLogRedactor` provide ready-made rules. Logs are unchanged unless a redactor is registered.
+Plugins can redact more from CLI log output, such as deeply nested secrets or tokens inside messages, with the new `b2c:log-redaction` hook. Logs are unchanged unless a plugin uses it.

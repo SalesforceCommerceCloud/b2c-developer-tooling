@@ -4,4 +4,4 @@
 '@salesforce/b2c-agent-plugins': patch
 ---
 
-Import site archive XML without a terminal or local archive folder. The new MCP tool `site_archive_import` (and SDK `importSiteArchiveFiles()`) validates files given as text against the bundled schemas, uploads nothing if one fails, then zips them and runs the site import job. Use it for data SCAPI cannot write yet, such as promotion discount rules; the SCAPI skill now explains how to create a promotion end to end.
+New MCP tool `site_archive_import` imports site archive XML without a terminal: it validates the files first and imports nothing if one is invalid. Use it for data the Commerce API can't write yet, such as promotion discount rules; the SCAPI skill now walks through creating a promotion end to end.

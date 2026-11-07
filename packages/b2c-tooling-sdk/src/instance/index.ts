@@ -234,7 +234,9 @@ export class B2CInstance {
   /**
    * Whether an API client is available for OCAPI and SCAPI calls (configured
    * OAuth credentials or a caller-provided OAuth strategy). Without one, only
-   * WebDAV can be used, with Basic auth or a browser login.
+   * WebDAV can be used, with Basic auth or a browser login. A `scapiStrategy`
+   * alone counts but covers SCAPI only; set `apiBackend: 'scapi'` so
+   * operations don't fall back to OCAPI.
    */
   get hasOAuthCredentials(): boolean {
     return Boolean(this.options.oauthStrategy || this.options.scapiStrategy || this.auth.oauth);

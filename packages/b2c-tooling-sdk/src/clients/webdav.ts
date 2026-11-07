@@ -495,12 +495,6 @@ export class WebDavClient {
   }
 
   /**
-   * Checks if a path exists.
-   *
-   * @param path - Path to check
-   * @returns true if exists, false otherwise
-   */
-  /**
    * Reads a byte range of a text file, decoding only complete UTF-8
    * characters. Continue with the returned `nextOffset`. `path` should come
    * from {@link normalizeWebDavPath}.
@@ -522,9 +516,16 @@ export class WebDavClient {
         Range: tail ? `bytes=-${maxBytes}` : `bytes=${offset}-${offset + maxBytes - 1}`,
       },
     });
+    // Same error as the other methods (HTTPError, with the user-auth hint on 403); 416 is a valid end-of-file answer.
+    if (!response.ok && response.status !== 416) throw await this.failure('GET', path, response);
     return readWebDavTextRange(response, tail ? undefined : offset, maxBytes);
   }
-
+  /**
+   * Checks if a path exists.
+   *
+   * @param path - Path to check
+   * @returns true if exists, false otherwise
+   */
   async exists(path: string, options: WebDavRequestOptions = {}): Promise<boolean> {
     const response = await this.request(path, {method: 'HEAD', signal: options.signal});
     return response.ok;

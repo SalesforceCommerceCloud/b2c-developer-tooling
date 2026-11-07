@@ -12,6 +12,7 @@ import {
   WebDavClient,
   WebDavReadError,
 } from '@salesforce/b2c-tooling-sdk/clients';
+import {HTTPError} from '@salesforce/b2c-tooling-sdk/errors';
 import {MockAuthStrategy} from '../helpers/mock-auth.js';
 
 const HOST = 'my-sandbox.example.com';
@@ -56,6 +57,17 @@ describe('clients/webdav-paths', () => {
       const result = await client.getTextRange('Logs/error.log', {tail: true, maxBytes: 7});
       expect(range).to.equal('bytes=-7');
       expect(result).to.deep.equal({content: ' line\n', size: bytes.length, offset: 3, bytesRead: 7, nextOffset: null});
+    });
+
+    it('throws HTTPError for a refused read, like the other methods', async () => {
+      server.use(http.get(`${BASE}/Logs/missing.log`, () => new HttpResponse('nope', {status: 404})));
+      const client = new WebDavClient(HOST, new MockAuthStrategy());
+      const error = await client.getTextRange('Logs/missing.log', {maxBytes: 10}).then(
+        () => undefined,
+        (error_: unknown) => error_,
+      );
+      expect(error).to.be.instanceOf(HTTPError);
+      expect((error as HTTPError).response.status).to.equal(404);
     });
 
     it('reports a server that ignores the range', async () => {
