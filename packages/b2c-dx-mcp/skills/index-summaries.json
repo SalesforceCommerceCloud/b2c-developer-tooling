@@ -89,5 +89,6 @@
   "mcp/b2c-mcp-config": "MCP configuration, authentication, and access grants for setup or wrong-target issues.",
   "mcp/b2c-mcp-debugger": "MCP debugger workflow: breakpoint capture, request triggering, inspection, and cleanup.",
   "mcp/b2c-mcp-scapi": "Read before scapi_search or scapi_execute: SCAPI contracts, requests, and Safety Mode.",
-  "mcp/b2c-mcp-server": "MCP setup and index: toolset selection, which tool to use, and the skill catalog."
+  "mcp/b2c-mcp-server": "MCP setup and index: toolset selection, which tool to use, and the skill catalog.",
+  "mcp/b2c-mcp-site-import": "Read before site_archive_import: import XML for data SCAPI cannot write, e.g. discount rules."
 }

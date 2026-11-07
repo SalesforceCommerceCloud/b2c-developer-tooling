@@ -97,12 +97,14 @@ resource entrypoints concise; link broader skills by exact ID.
 | B2C configuration                | Optional resource: shared sources, project/instance selection, masked inspection, and setup troubleshooting.       |
 | Debugger                         | Optional resource: bounded capture, external triggers, side effects, cleanup.                                      |
 | SCAPI code mode                  | Required acknowledgment: discovery, authentication, execution limits, and mutation semantics.                      |
+| Site archive import              | Required acknowledgment: when to import instead of SCAPI, archive layout, merge semantics, and verification.       |
 | Log watches                      | Keep existing skills; add a resource only if real use exposes lifecycle mistakes not covered by tool descriptions. |
 | Configuration inspection         | Direct tool; no prerequisite skill or acknowledgment.                                                              |
 | Platform development, CLI skills | Discover through the index or tool search; read through the resource template or tool.                             |
 
 Resource featuring and required acknowledgment are independent. SCAPI code-mode
-tools require `skillRead: true` after a resource or tool read of `mcp/b2c-mcp-scapi`.
+tools require `skillRead: true` after a resource or tool read of `mcp/b2c-mcp-scapi`;
+`site_archive_import` requires it after a read of `mcp/b2c-mcp-site-import`.
 Other tools remain ungated. A gate belongs to a specific tool and names
 one skill; resource and tool reads satisfy the same requirement. General skills
 linked for extra detail are not automatically prerequisites.

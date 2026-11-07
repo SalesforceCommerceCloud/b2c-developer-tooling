@@ -67,7 +67,7 @@ const groups = [
     annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true},
   },
   {
-    names: ['cartridge_deploy', 'scapi_execute'],
+    names: ['cartridge_deploy', 'scapi_execute', 'site_archive_import'],
     annotations: {readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true},
   },
 ];

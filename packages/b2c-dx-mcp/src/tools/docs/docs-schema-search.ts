@@ -30,7 +30,7 @@ export function createDocsSchemaSearchTool(loadServices: () => Promise<Services>
       idempotent: true,
       openWorld: false,
       description:
-        'Search bundled B2C Commerce (SFCC/Demandware) XSD schemas by ID. ' +
+        'Search bundled B2C Commerce (SFCC/Demandware) XSD schemas for site import/export XML by ID. ' +
         'Returns matching IDs and scores; use docs_schema_read for content, validate_xml_schema to check XML.',
       toolsets: [...TOOLSETS],
       inputSchema: {

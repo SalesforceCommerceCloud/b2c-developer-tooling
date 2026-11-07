@@ -61,7 +61,7 @@ Snippet names below have the `builtin/` prefix. Describe only the relevant snipp
 | Site status, catalog, ordered cartridge path  | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                                                                            |
 | Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                                                                        |
 | Basic product + optional category assignment  | `create-product` snippet; [products](products.md)                                                                                                           |
-| Campaign assignments and promotion details    | `campaign-promotions` snippet; [promotions](promotions.md)                                                                                                  |
+| Campaign assignments and promotion details; create a promotion | `campaign-promotions` snippet; [promotions](promotions.md)                                                                                                  |
 | System object attributes, enum values, groups | `object_types_describe` tool first; `dx/object-definitions/v1`; `object-type-attributes-inspect` snippet; [object definitions](object-definitions.md)       |
 | Add a custom attribute (and group it)         | `attribute-create-and-group` snippet; [object definitions](object-definitions.md)                                                                           |
 | Categories, rules, exclusions                 | `product/catalogs/v1`; `category-rules-run` snippet; [catalogs](catalogs.md)                                                                                |
