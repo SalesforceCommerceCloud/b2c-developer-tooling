@@ -118,7 +118,15 @@
  * @module clients
  */
 export {WebDavClient} from './webdav.js';
-export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
+export type {PropfindEntry, WebDavClientOptions, WebDavRequestOptions} from './webdav.js';
+export {
+  normalizeWebDavPath,
+  readWebDavResponse,
+  readWebDavTextRange,
+  WEBDAV_ROOTS,
+  WebDavReadError,
+} from './webdav-paths.js';
+export type {WebDavReadErrorCode, WebDavRootKey, WebDavTextRange, WebDavTextRangeOptions} from './webdav-paths.js';
 export {describeWebDavUserAccessFailure, getWebDavRootPermission} from './webdav-access-hint.js';
 
 export {

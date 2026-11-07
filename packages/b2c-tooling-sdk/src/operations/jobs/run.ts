@@ -82,6 +82,11 @@ export interface WaitForJobOptions {
   onPoll?: (info: WaitForJobPollInfo) => void;
   /** Custom sleep function for testing. */
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * Stops waiting when aborted: the poll sleep ends and in-flight status
+   * requests are cancelled. The job itself keeps running on the instance.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -188,9 +193,11 @@ export async function getJobExecution(
   instance: B2CInstance,
   jobId: string,
   executionId: string,
+  options: {signal?: AbortSignal} = {},
 ): Promise<JobExecution> {
   const {data, error} = await instance.ocapi.GET('/jobs/{job_id}/executions/{id}', {
     params: {path: {job_id: jobId, id: executionId}},
+    signal: options.signal,
   });
 
   if (error || !data) {
@@ -234,9 +241,9 @@ export async function waitForJob(
   executionId: string,
   options: WaitForJobOptions = {},
 ): Promise<JobExecution> {
-  const {pollIntervalSeconds = 3, timeoutSeconds = 0, onPoll} = options;
+  const {pollIntervalSeconds = 3, timeoutSeconds = 0, onPoll, signal} = options;
 
-  const sleepFn = options.sleep ?? defaultSleep;
+  const sleepFn = pollSleep(options.sleep, signal);
   const startTime = Date.now();
   const pollIntervalMs = pollIntervalSeconds * 1000;
   const timeoutMs = timeoutSeconds * 1000;
@@ -250,7 +257,7 @@ export async function waitForJob(
       throw new Error(`Timeout waiting for job ${jobId} execution ${executionId}`);
     }
 
-    const execution = await getJobExecution(instance, jobId, executionId);
+    const execution = await getJobExecution(instance, jobId, executionId, {signal});
     const currentStatus = execution.execution_status ?? 'unknown';
 
     onPoll?.({jobId, executionId, elapsedSeconds, status: currentStatus});
@@ -486,8 +493,29 @@ export async function getJobLog(instance: B2CInstance, execution: JobExecution):
   return new TextDecoder().decode(content);
 }
 
-async function defaultSleep(ms: number): Promise<void> {
-  await new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+/**
+ * Sleep between polls that ends early, rejecting with the abort reason, when
+ * `signal` aborts. A custom `sleep` (tests) is used as is, with the signal
+ * checked before and after. @internal
+ */
+export function pollSleep(sleep: ((ms: number) => Promise<void>) | undefined, signal?: AbortSignal) {
+  return async (ms: number): Promise<void> => {
+    signal?.throwIfAborted();
+    if (sleep) {
+      await sleep(ms);
+    } else {
+      await new Promise<void>((resolve, reject) => {
+        const onAbort = () => {
+          clearTimeout(timer);
+          reject(signal!.reason);
+        };
+        const timer = setTimeout(() => {
+          signal?.removeEventListener('abort', onAbort);
+          resolve();
+        }, ms);
+        signal?.addEventListener('abort', onAbort, {once: true});
+      });
+    }
+    signal?.throwIfAborted();
+  };
 }

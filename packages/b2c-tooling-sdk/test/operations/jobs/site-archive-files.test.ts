@@ -115,6 +115,53 @@ describe('operations/jobs/site-archive-files', () => {
     expect(calls.deleted).to.have.length(1);
   });
 
+  it('stops waiting for the job when the signal aborts, without deleting the archive', async () => {
+    const calls = mockImport();
+    const controller = new AbortController();
+    server.use(
+      http.get(`${OCAPI_BASE}/jobs/sfcc-site-archive-import/executions/exec-1`, () =>
+        HttpResponse.json({id: 'exec-1', execution_status: 'running'}),
+      ),
+    );
+    const error = await importSiteArchiveFiles(
+      instance,
+      [{path: 'sites/RefArch/promotions.xml', content: PROMOTIONS}],
+      {
+        signal: controller.signal,
+        waitOptions: {
+          pollIntervalSeconds: 1,
+          sleep: async () => {
+            if (calls.bodies.length > 0) controller.abort(new Error('stopped by user'));
+          },
+        },
+      },
+    ).then(
+      () => undefined,
+      (error_: Error) => error_,
+    );
+    expect(error?.message).to.equal('stopped by user');
+    expect(calls.uploads).to.have.length(1);
+    expect(calls.deleted).to.have.length(0);
+  });
+
+  it('does nothing when the signal is already aborted', async () => {
+    const calls = mockImport();
+    const controller = new AbortController();
+    controller.abort(new Error('already stopped'));
+    const error = await importSiteArchiveFiles(
+      instance,
+      [{path: 'sites/RefArch/promotions.xml', content: PROMOTIONS}],
+      {
+        signal: controller.signal,
+      },
+    ).then(
+      () => undefined,
+      (error_: Error) => error_,
+    );
+    expect(error?.message).to.equal('already stopped');
+    expect(calls.uploads).to.have.length(0);
+  });
+
   it('uploads nothing when a file fails validation', async () => {
     const result = await importSiteArchiveFiles(instance, [{path: 'sites/RefArch/promotions.xml', content: INVALID}]);
     expect(result.outcome).to.equal('invalid');

@@ -17,6 +17,7 @@ import {
   formatEntry,
   setupPathNormalizer,
   parseSinceTime,
+  InvalidTimeError,
   filterBySince,
   filterByLevel,
   filterBySearch,
@@ -102,7 +103,13 @@ export default class LogsGet extends InstanceCommand<typeof LogsGet> {
     // Parse --since if provided
     let sinceDate: Date | undefined;
     if (this.flags.since) {
-      sinceDate = parseSinceTime(this.flags.since);
+      try {
+        sinceDate = parseSinceTime(this.flags.since);
+      } catch (error) {
+        if (error instanceof InvalidTimeError)
+          throw new TypeError(InvalidTimeError.describe(error.value, '--since'), {cause: error});
+        throw error;
+      }
     }
 
     if (!this.jsonEnabled()) {

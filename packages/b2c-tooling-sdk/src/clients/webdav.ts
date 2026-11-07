@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+/** Per-request options for {@link WebDavClient} methods. */
+export interface WebDavRequestOptions {
+  /** Cancels the request. */
+  signal?: AbortSignal;
+}
+
 /**
  * WebDAV client for B2C Commerce file operations.
  *
@@ -18,6 +24,7 @@ import {HTTPError} from '../errors/http-error.js';
 import {classifyNetworkError, NetworkError, wrapNetworkError} from '../errors/network-error.js';
 import {getLogger} from '../logging/logger.js';
 import {globalMiddlewareRegistry, type MiddlewareRegistry, type UnifiedMiddleware} from './middleware-registry.js';
+import {readWebDavTextRange, type WebDavTextRange, type WebDavTextRangeOptions} from './webdav-paths.js';
 
 /**
  * Methods retried once when the server resets the connection. These are safe to
@@ -309,14 +316,14 @@ export class WebDavClient {
    * @example
    * await client.mkcol('Cartridges/v1');
    */
-  async mkcol(path: string): Promise<void> {
+  async mkcol(path: string, options: WebDavRequestOptions = {}): Promise<void> {
     let response: Response;
     try {
-      response = await this.request(path, {method: 'MKCOL'});
+      response = await this.request(path, {method: 'MKCOL', signal: options.signal});
     } catch (error) {
       // Safe to retry here: if the reset request did create the collection, the retry gets 405.
       if (!(error instanceof NetworkError && error.kind === 'connection-reset')) throw error;
-      response = await this.request(path, {method: 'MKCOL'});
+      response = await this.request(path, {method: 'MKCOL', signal: options.signal});
     }
 
     // 201 = created, 405 = already exists (acceptable)
@@ -335,13 +342,18 @@ export class WebDavClient {
    * @example
    * await client.put('Cartridges/v1/app.zip', zipBuffer, 'application/zip');
    */
-  async put(path: string, content: Buffer | Blob | string, contentType?: string): Promise<void> {
+  async put(
+    path: string,
+    content: Buffer | Blob | string,
+    contentType?: string,
+    options: WebDavRequestOptions = {},
+  ): Promise<void> {
     const headers: Record<string, string> = {};
     if (contentType) {
       headers['Content-Type'] = contentType;
     }
 
-    const response = await this.request(path, {method: 'PUT', headers, body: content});
+    const response = await this.request(path, {method: 'PUT', headers, body: content, signal: options.signal});
 
     if (!response.ok) {
       const hints: Record<number, string> = {
@@ -360,8 +372,8 @@ export class WebDavClient {
    * @example
    * const content = await client.get('Cartridges/v1/app.zip');
    */
-  async get(path: string): Promise<ArrayBuffer> {
-    const response = await this.request(path, {method: 'GET'});
+  async get(path: string, options: WebDavRequestOptions = {}): Promise<ArrayBuffer> {
+    const response = await this.request(path, {method: 'GET', signal: options.signal});
 
     if (!response.ok) {
       throw await this.failure('GET', path, response);
@@ -379,8 +391,8 @@ export class WebDavClient {
    * @example
    * await client.delete('Cartridges/v1/old-cartridge');
    */
-  async delete(path: string): Promise<void> {
-    const response = await this.request(path, {method: 'DELETE'});
+  async delete(path: string, options: WebDavRequestOptions = {}): Promise<void> {
+    const response = await this.request(path, {method: 'DELETE', signal: options.signal});
 
     if (!response.ok) {
       throw await this.failure('DELETE', path, response);
@@ -400,9 +412,14 @@ export class WebDavClient {
    *   console.log(entry.displayName, entry.isCollection);
    * }
    */
-  async propfind(path: string, depth: '0' | '1' | 'infinity' = '1'): Promise<PropfindEntry[]> {
+  async propfind(
+    path: string,
+    depth: '0' | '1' | 'infinity' = '1',
+    options: WebDavRequestOptions = {},
+  ): Promise<PropfindEntry[]> {
     const response = await this.request(path, {
       method: 'PROPFIND',
+      signal: options.signal,
       headers: {
         Depth: depth,
         'Content-Type': 'application/xml',
@@ -483,8 +500,33 @@ export class WebDavClient {
    * @param path - Path to check
    * @returns true if exists, false otherwise
    */
-  async exists(path: string): Promise<boolean> {
-    const response = await this.request(path, {method: 'HEAD'});
+  /**
+   * Reads a byte range of a text file, decoding only complete UTF-8
+   * characters. Continue with the returned `nextOffset`. `path` should come
+   * from {@link normalizeWebDavPath}.
+   *
+   * @example
+   * ```typescript
+   * const recent = await instance.webdav.getTextRange('Logs/error-blade1.log', {tail: true, maxBytes: 8000});
+   * ```
+   */
+  async getTextRange(path: string, options: WebDavTextRangeOptions): Promise<WebDavTextRange> {
+    const {tail = false, offset = 0, maxBytes, signal} = options;
+    const response = await this.request(path, {
+      method: 'GET',
+      redirect: 'error',
+      signal,
+      headers: {
+        // Byte ranges must refer to the stored bytes, not a compressed transfer.
+        'Accept-Encoding': 'identity',
+        Range: tail ? `bytes=-${maxBytes}` : `bytes=${offset}-${offset + maxBytes - 1}`,
+      },
+    });
+    return readWebDavTextRange(response, tail ? undefined : offset, maxBytes);
+  }
+
+  async exists(path: string, options: WebDavRequestOptions = {}): Promise<boolean> {
+    const response = await this.request(path, {method: 'HEAD', signal: options.signal});
     return response.ok;
   }
 

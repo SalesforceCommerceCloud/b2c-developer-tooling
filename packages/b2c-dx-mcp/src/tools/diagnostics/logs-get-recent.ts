@@ -12,6 +12,7 @@ import {
   getRecentLogs,
   listLogFiles,
   parseSinceTime,
+  InvalidTimeError,
   unreadCustomPrefixes,
   type GetRecentLogsOptions,
   type ListLogsOptions,
@@ -115,7 +116,12 @@ export function createLogsGetRecentTool(
 
         let sinceDate: Date | undefined;
         if (args.since) {
-          sinceDate = parseSinceTime(args.since);
+          try {
+            sinceDate = parseSinceTime(args.since);
+          } catch (error) {
+            if (error instanceof InvalidTimeError) throw new TypeError(InvalidTimeError.describe(error.value, 'since'));
+            throw error;
+          }
         }
 
         const needsClientFilter = Boolean(sinceDate || args.level?.length || args.search);

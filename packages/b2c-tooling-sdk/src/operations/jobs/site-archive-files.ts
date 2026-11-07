@@ -38,6 +38,11 @@ export interface ImportSiteArchiveFilesOptions {
   /** Keep the zip on the instance after the import. Default `false`. */
   keepArchive?: boolean;
   waitOptions?: WaitForJobOptions;
+  /**
+   * Cancels the upload, the job start and the wait (throws the abort reason).
+   * A job that already started keeps running on the instance.
+   */
+  signal?: AbortSignal;
 }
 
 /** Validation outcome for one file. `skip` means no bundled schema applies; the file is still imported. */
@@ -149,6 +154,7 @@ export async function importSiteArchiveFiles(
   options: ImportSiteArchiveFilesOptions = {},
 ): Promise<ImportSiteArchiveFilesResult> {
   checkSiteArchiveFiles(files);
+  options.signal?.throwIfAborted();
   const archiveName = options.archiveName ?? `import-${Date.now()}`;
   if (!SEGMENT.test(archiveName))
     throw new SiteArchiveFilesError('archiveName may contain only letters, digits, ".", "_" and "-".');
@@ -175,6 +181,7 @@ export async function importSiteArchiveFiles(
       archiveName,
       keepArchive: options.keepArchive,
       waitOptions: options.waitOptions,
+      signal: options.signal,
     });
     return {outcome: 'imported', files: checks, archiveName, execution: summarize(execution)};
   } catch (error) {

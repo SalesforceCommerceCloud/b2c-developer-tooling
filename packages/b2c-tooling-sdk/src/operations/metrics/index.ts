@@ -42,7 +42,7 @@
  * ## Authentication
  *
  * Requires OAuth client-credentials with the `sfcc.metrics` admin scope. The
- * {@link createMetricsClient} factory attaches this scope plus the tenant scope
+ * `createMetricsClient` factory attaches this scope plus the tenant scope
  * automatically.
  *
  * @module operations/metrics

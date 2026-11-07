@@ -117,4 +117,5 @@ export {
   parseLogTimestamp,
   parseRelativeTime,
   parseSinceTime,
+  InvalidTimeError,
 } from './filter.js';

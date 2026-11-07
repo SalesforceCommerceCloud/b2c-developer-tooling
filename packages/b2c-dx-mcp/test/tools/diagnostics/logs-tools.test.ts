@@ -197,11 +197,11 @@ describe('tools/diagnostics/logs', () => {
       expect(json).to.not.have.property('unreadCustomLogs');
     });
 
-    it('errors on invalid --since', async () => {
+    it('errors on invalid since', async () => {
       const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: sinon.stub().resolves([])});
       const result = await tool.handler({since: 'nonsense'});
       expect(result.isError).to.be.true;
-      expect(getResultText(result)).to.include('Invalid --since value');
+      expect(getResultText(result)).to.include('Invalid since value: "nonsense"');
     });
   });
 

@@ -40,6 +40,17 @@ The SDK is organized into focused submodules that can be imported individually:
 ├── /operations/bm-users # Business Manager users
 ├── /operations/orgs     # Account Manager organizations
 ├── /operations/sites    # Storefront site info and cartridge paths
+├── /operations/catalogs # Catalogs and categories (SCAPI first)
+├── /operations/object-types # System object attribute definitions and groups
+├── /operations/metrics  # Metrics API (observability)
+├── /operations/mtls     # mTLS code upload certificates
+│
+├── /scapi               # SCAPI contracts, discovery and code mode
+├── /guidance            # Bundled skills (same content as the MCP skill:// resources)
+├── /xml-validation      # Validate import/export XML against bundled XSDs
+├── /openshell           # Run the tooling in an OpenShell sandbox
+├── /compat              # Transitional OCAPI/SCAPI backend selection
+├── /utils               # Small shared helpers
 │
 ├── /test-utils         # Testing utilities and helpers
 ├── /telemetry          # Telemetry and analytics
@@ -604,6 +615,36 @@ Account Manager operations require:
 
 Desktop and server apps can use the SDK as a library, with no `dw.json`, environment variables or files outside the app's control. The app holds credentials and passes them in as an `AuthStrategy`, and passes safety policy in as a value.
 
+### Use the App's Credentials with Instance Operations
+
+SDK operations take a `B2CInstance`. When the app owns credentials, give the instance its strategies directly instead of an `auth` config. `scapiStrategy` is used for SCAPI with the configured `shortCode` and `tenantId`. It must be able to request `sfcc.*` scopes per call, as `OAuthStrategy` and `JwtOAuthStrategy` can. `webdavStrategy` is used for WebDAV whatever else is configured.
+
+```typescript
+import {B2CInstance} from '@salesforce/b2c-tooling-sdk/instance';
+import {OAuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
+
+const instance = new B2CInstance(
+  {hostname: 'my-sandbox.example.com', shortCode: 'abc123', tenantId: 'zzzz_001', apiBackend: 'scapi'},
+  {},
+  {
+    scapiStrategy: () => new OAuthStrategy({clientId, clientSecret}),
+    webdavStrategy: () => userWebDavAuth, // e.g. the signed-in user's PkceOAuthStrategy
+  },
+);
+```
+
+A failed client credentials token request throws `AccountManagerTokenError` with `status` and `oauthError` (for example `invalid_client`). Tokens are cached per client and secret, so a changed secret gets a new token.
+
+### Cancellation
+
+Pass `signal` to stop long operations when the user cancels: `importSiteArchiveFiles`, `siteArchiveImport` and `waitForJob` (through `waitOptions.signal` too), `getRecentLogs`, `listLogFiles`, and each `WebDavClient` method. The poll sleep ends at once and in-flight requests are aborted. A job that already started keeps running on the instance.
+
+```typescript
+const controller = new AbortController();
+stopButton.onclick = () => controller.abort();
+const result = await importSiteArchiveFiles(instance, files, {signal: controller.signal});
+```
+
 ### Account Manager Sign-in Without a Local Server
 
 By default, `PkceOAuthStrategy` opens the system browser and listens on `localhost` for the redirect. An app that can intercept the redirect itself (for example, an Electron `BrowserWindow` watching `will-redirect`) passes `authorize`. The SDK then opens no listener, but still checks `state` and does the PKCE token exchange. `redirectUri` can be any URI registered for the API client, including an app scheme such as `myapp://oauth/callback`; the SDK matches the scheme, host and path of the redirect.
@@ -722,6 +763,17 @@ const mrt = await watchMrtLogs({projectSlug: 'my-project', environmentSlug: 'pro
 const {stopped} = await mrt.poll({timeoutMs: 5000}); // true when the stream ended on its own
 ```
 
+`WebDavClient.getTextRange()` reads part of a text file, such as the end of a log, without downloading all of it. It decodes only complete UTF-8 characters and returns `nextOffset` to continue from. `normalizeWebDavPath()` turns user or server paths (including `/Sites/LOGS/...` from a job execution) into a checked path under one of the `WEBDAV_ROOTS`; a bad path or range throws `WebDavReadError` with a `code`.
+
+```typescript
+import {normalizeWebDavPath} from '@salesforce/b2c-tooling-sdk/clients';
+
+const path = normalizeWebDavPath(execution.log_file_path);
+const {content, nextOffset} = await instance.webdav.getTextRange(path, {tail: true, maxBytes: 8000});
+```
+
+`parseSinceTime()` throws `InvalidTimeError` for a value it can't read; its message names no option, and `InvalidTimeError.describe(value, 'since')` adds your input's name.
+
 `DebugSessionManager` tracks the breakpoints it set and can wait for a halt, so a tool can arm a breakpoint and capture the stopped request in one call:
 
 ```typescript
@@ -751,6 +803,17 @@ import {configureLogger} from '@salesforce/b2c-tooling-sdk/logging';
 
 configureLogger({level: 'info', json: true, redact: true, destination: myLogStream});
 ```
+
+The built-in redaction covers those keys at the top level and one level down. To redact secret-named keys at any depth, and tokens or form secrets inside messages, register `deepLogRedactor`. Use `redactLogValue()` on entries the app logs itself so both follow the same rules.
+
+```typescript
+import {deepLogRedactor, globalLogRedactorRegistry, redactLogValue} from '@salesforce/b2c-tooling-sdk/logging';
+
+globalLogRedactorRegistry.register(deepLogRedactor);
+appLog.info(redactLogValue({request, response}));
+```
+
+SCAPI code-mode failures throw `ScapiCodeError` with a `code` such as `SCAPI_SAFETY_BLOCKED` or `SCAPI_EXECUTION_TIMEOUT`.
 
 ## Logging
 

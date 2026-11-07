@@ -14,7 +14,7 @@
  *
  * ### From configuration (recommended)
  *
- * Use {@link resolveConfig} to load configuration from dw.json and create an instance:
+ * Use `resolveConfig()` from `@salesforce/b2c-tooling-sdk/config` to load configuration from dw.json and create an instance:
  *
  * ```typescript
  * import { resolveConfig } from '@salesforce/b2c-tooling-sdk/config';
@@ -84,6 +84,24 @@ export interface B2CInstanceOptions {
    * excludes `user`.
    */
   webdavFallbackStrategy?: AuthStrategy | (() => AuthStrategy);
+  /**
+   * Strategy (or lazy factory) for SCAPI, for hosts that own credentials.
+   * When set, {@link B2CInstance.scapiClientConfig} uses it with the configured
+   * `shortCode` and `tenantId` instead of deriving one from `auth.oauth`.
+   * The strategy must be able to request `sfcc.*` scopes per call
+   * (client credentials or JWT, as returned by `OAuthStrategy`).
+   */
+  scapiStrategy?: AuthStrategy | (() => AuthStrategy);
+  /**
+   * Strategy (or lazy factory) for WebDAV, used whatever else is configured
+   * (Basic auth, OAuth, `webdavFallbackStrategy`).
+   * {@link B2CInstance.webdavUsesUserAuth} reflects it.
+   */
+  webdavStrategy?: AuthStrategy | (() => AuthStrategy);
+}
+
+function resolveStrategy(strategy: AuthStrategy | (() => AuthStrategy)): AuthStrategy {
+  return typeof strategy === 'function' ? strategy() : strategy;
 }
 
 /**
@@ -143,6 +161,7 @@ export class B2CInstance {
   private _webdavAuth?: AuthStrategy;
   private _ocapi?: OcapiClient;
   private _oauthStrategy?: AuthStrategy;
+  private _scapiStrategy?: AuthStrategy;
 
   /**
    * Creates a new B2CInstance.
@@ -184,7 +203,7 @@ export class B2CInstance {
    *
    * Returns `undefined` unless **all** of the following hold:
    *   1. `shortCode` and `tenantId` are configured, and
-   *   2. the configured OAuth flow is stateless and scope-flexible —
+   *   2. a `scapiStrategy` option was given, or the configured OAuth flow is stateless and scope-flexible —
    *      client-credentials (clientId + clientSecret) or JWT Bearer
    *      (clientId + cert/key).
    *
@@ -218,7 +237,7 @@ export class B2CInstance {
    * WebDAV can be used, with Basic auth or a browser login.
    */
   get hasOAuthCredentials(): boolean {
-    return Boolean(this.options.oauthStrategy || this.auth.oauth);
+    return Boolean(this.options.oauthStrategy || this.options.scapiStrategy || this.auth.oauth);
   }
 
   /**
@@ -286,6 +305,8 @@ export class B2CInstance {
    * Uses authMethods to determine priority, defaulting to basic then OAuth methods.
    */
   private getWebDavAuthStrategy(): AuthStrategy {
+    if (this.options.webdavStrategy) return resolveStrategy(this.options.webdavStrategy);
+
     // For WebDAV, default priority is basic first, then OAuth methods
     const webdavMethods = this.auth.authMethods || (['basic', 'client-credentials', 'user'] as AuthMethod[]);
 
@@ -300,7 +321,7 @@ export class B2CInstance {
     // Client Permissions entry is needed for the client.
     const fallback = this.options.webdavFallbackStrategy;
     if (!this.auth.oauth && fallback && webdavMethods.includes('user')) {
-      return typeof fallback === 'function' ? fallback() : fallback;
+      return resolveStrategy(fallback);
     }
 
     // Otherwise try OAuth methods
@@ -387,6 +408,7 @@ export class B2CInstance {
    * basic-only configs.
    */
   private buildScapiAuthStrategy(): AuthStrategy | undefined {
+    if (this.options.scapiStrategy) return (this._scapiStrategy ??= resolveStrategy(this.options.scapiStrategy));
     return this.auth.oauth ? resolveSystemOAuthStrategy(this.auth.oauth, this.auth.authMethods) : undefined;
   }
 
