@@ -5,7 +5,11 @@ calling; this page covers behavior the contract does not state.
 
 ## Find
 
-- Catalogs: `searchCatalogs`. Categories across catalogs: `searchCategories` (`levels` controls subtree depth;
+- Catalogs: `getCatalogs` (paged) or `searchCatalogs`. There is no master flag: a master catalog owns
+  products (`ownedProductCount > 0`), a storefront catalog only has them assigned. A site's storefront catalog
+  is `siteCatalogId` on `getSiteById`; confirm with the user instead of guessing from names.
+- Sites: `getSites` returns only `id` unless you pass `select: '(**)'`; `getSiteById` returns the full site.
+- Categories across catalogs: `searchCategories` (`levels` controls subtree depth;
   large values are slow). Within one catalog: `searchCategoriesInCatalog` or paged `getCategoriesFromCatalog`.
 - Products in a category: `searchProductsAssignedToCategory`. Hits embed the whole product, including every
   assigned category; project to IDs.
@@ -15,6 +19,7 @@ calling; this page covers behavior the contract does not state.
 ## Categories and assignments
 
 - `createCategoryInCatalog` is a PUT on `{categoryId}`; it overwrites an existing category. GET first.
+- `assignProductToCategory` requires a request body even with nothing to set; send `{}`.
 - `assignProductToCategory` / `unassignProductFromCategory` act on one product. For bulk, sequence calls
   (4 parallel, 20 per execution) and report what remains.
 - Deleting a category does not delete products. Unassign or let rules move them first if that matters.

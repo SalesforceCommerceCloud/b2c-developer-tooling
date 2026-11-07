@@ -144,6 +144,9 @@ export type {
   AuthSessionStoreHookOptions,
   AuthSessionStoreHookResult,
   AuthSessionStoreHook,
+  LogRedactionHookOptions,
+  LogRedactionHookResult,
+  LogRedactionHook,
   // B2C lifecycle hook types
   B2COperationType,
   B2COperationContext,

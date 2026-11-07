@@ -50,6 +50,7 @@ export type {ScapiLiveSchemaCacheOptions, ScapiLiveSchemaLoadOptions, ScapiLiveS
 export {ScapiShopperSessions} from './shopper.js';
 export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';
 export {runScapiCode} from './runtime.js';
+export {ScapiCodeError, scapiErrorCode} from './errors.js';
 export {createScapiOperationSearch, scapiFullPath, searchScapiOperations} from './search.js';
 export type {ScapiOperationMatch, ScapiOperationSearchOptions, ScapiOperationIndexOptions} from './search.js';
 export {filterScapiDocumentsBySafety, isScapiOperationBlocked} from './safety-filter.js';

@@ -19,10 +19,13 @@ import type {
   AuthMiddlewareHookResult,
   AuthSessionStoreHookOptions,
   AuthSessionStoreHookResult,
+  LogRedactionHookOptions,
+  LogRedactionHookResult,
 } from './hooks.js';
 import {byPluginName} from './hooks.js';
 import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
+import {globalLogRedactorRegistry} from '../logging/redaction.js';
 import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import {
   getSafetyLevel,
@@ -383,6 +386,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // The middleware reads this.safetyGuard lazily via closure, so it picks up
     // the full config after initializeSafetyGuard() runs.
     this.registerSafetyMiddleware();
+
+    // Collect log redactors first so later plugin hooks and requests are redacted too
+    await this.collectPluginLogRedactors();
 
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
@@ -832,6 +838,32 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Log warnings for hook failures (don't break the CLI)
     for (const failure of hookResult.failures) {
       this.logger?.warn(`Plugin ${failure.plugin.name} b2c:auth-middleware hook failed: ${failure.error.message}`);
+    }
+  }
+
+  /**
+   * Collects log redactors from plugins via the `b2c:log-redaction` hook and
+   * registers them with the global log redactor registry.
+   */
+  protected async collectPluginLogRedactors(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
+    const hookOptions: LogRedactionHookOptions = {
+      flags: this.flags as Record<string, unknown>,
+    };
+
+    const hookResult = await this.config.runHook('b2c:log-redaction', hookOptions);
+
+    for (const success of byPluginName(hookResult.successes)) {
+      const result = success.result as LogRedactionHookResult | undefined;
+      for (const redactor of result?.redactors ?? []) {
+        globalLogRedactorRegistry.register(redactor);
+        this.logger?.debug(`Registered log redactor: ${redactor.name}`);
+      }
+    }
+
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:log-redaction hook failed: ${failure.error.message}`);
     }
   }
 

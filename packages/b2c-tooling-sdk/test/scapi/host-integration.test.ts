@@ -86,6 +86,19 @@ describe('SCAPI host integration', function () {
       }
     });
 
+    it('runs the worker as Node inside Electron main without host options', () => {
+      const previous = process.env.ELECTRON_RUN_AS_NODE;
+      try {
+        delete process.env.ELECTRON_RUN_AS_NODE;
+        const spec = resolveScapiWorkerSpawn(undefined, {node: '22.0.0', electron: '38.0.0'});
+        expect(spec.command).to.equal(process.execPath);
+        expect(spec.env.ELECTRON_RUN_AS_NODE).to.equal('1');
+        expect(resolveScapiWorkerSpawn(undefined, {node: '22.0.0'}).env).to.not.have.property('ELECTRON_RUN_AS_NODE');
+      } finally {
+        if (previous !== undefined) process.env.ELECTRON_RUN_AS_NODE = previous;
+      }
+    });
+
     it('prepends host args and merges host env', () => {
       const spec = resolveScapiWorkerSpawn({
         command: '/opt/app/App',

@@ -119,6 +119,28 @@ describe('auth/oauth-pkce host integration', () => {
       strategy.signOut();
     });
 
+    it('keeps the socket error as cause when the loopback port is busy', async () => {
+      const blocker: Server = createServer();
+      await new Promise<void>((resolve) => blocker.listen(0, resolve));
+      const {port} = blocker.address() as {port: number};
+      const strategy = new PkceOAuthStrategy({
+        clientId: 'busy-port',
+        localPort: port,
+        persistSession: false,
+        async openBrowser() {},
+      });
+
+      const error = await strategy
+        .signIn()
+        .then(
+          () => undefined,
+          (error_: Error) => error_,
+        )
+        .finally(() => blocker.close());
+      expect(error?.message).to.include('is in use');
+      expect((error?.cause as NodeJS.ErrnoException | undefined)?.code).to.equal('EADDRINUSE');
+    });
+
     it('rejects a redirect with a mismatched state and never exchanges the code', async () => {
       let fetched = false;
       globalThis.fetch = async () => {

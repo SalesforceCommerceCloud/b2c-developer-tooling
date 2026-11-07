@@ -108,7 +108,7 @@ export type {
   PkceCodeExchangeOptions,
   PkceTokenSet,
 } from './oauth-pkce.js';
-export {AuthRequiredError, isAuthRequiredError} from './errors.js';
+export {AccountManagerTokenError, AuthRequiredError, isAuthRequiredError} from './errors.js';
 
 // Account Manager hosts and the SDK's public client on each
 export {ACCOUNT_MANAGER_HOSTS, getAccountManagerHostInfo, getDefaultPublicClientId} from '../defaults.js';

@@ -13,15 +13,15 @@ import {createScapiOperationSearch, type ScapiOperationSearchOptions} from './se
 import {createScapiSnippetResolver, loadBuiltinScapiSnippets, type ScapiSnippet} from './snippets.js';
 import type {SafetyConfig} from '../safety/index.js';
 import {filterScapiDocumentsBySafety} from './safety-filter.js';
+import {toScapiCodeError} from './errors.js';
 import {toOrganizationId} from '../clients/custom-apis.js';
 
 /**
  * How to start the code-mode worker. Defaults to `process.execPath` with no extra arguments.
  *
- * In Electron, `process.execPath` is the app binary. A process already running as Node
- * (`ELECTRON_RUN_AS_NODE=1`, such as an MCP server started by an Electron app) passes that
- * setting to its worker automatically. From Electron's main process, pass
- * `{command: process.execPath, env: {ELECTRON_RUN_AS_NODE: '1'}}`.
+ * In Electron, `process.execPath` is the app binary. The SDK detects Electron (including
+ * its main process and a process already running with `ELECTRON_RUN_AS_NODE=1`) and starts
+ * the worker with `ELECTRON_RUN_AS_NODE=1`, so no option is needed.
  */
 export interface ScapiWorkerCommand {
   /** Executable to start. */
@@ -38,7 +38,10 @@ export interface ScapiWorkerCommand {
 const CREDENTIAL_ENV_NAME = /pass(word|wd)?|secret|token|auth|credential|api[-_]?key|private[-_]?key|cookie|session/i;
 
 /** Build the worker's argv and environment. Exported for tests. @internal */
-export function resolveScapiWorkerSpawn(worker?: ScapiWorkerCommand): {
+export function resolveScapiWorkerSpawn(
+  worker?: ScapiWorkerCommand,
+  versions: Partial<Record<string, string>> = process.versions,
+): {
   command: string;
   args: string[];
   env: Record<string, string | undefined>;
@@ -48,9 +51,9 @@ export function resolveScapiWorkerSpawn(worker?: ScapiWorkerCommand): {
     SYSTEMROOT: process.env.SYSTEMROOT,
     TEMP: process.env.TEMP,
   };
-  // Inside Electron running as Node, process.execPath is the app binary; without this the
-  // worker would start the app instead of running the worker script.
-  if (process.env.ELECTRON_RUN_AS_NODE === '1') env.ELECTRON_RUN_AS_NODE = '1';
+  // Inside Electron (main, utility or a process already running as Node), process.execPath is
+  // the app binary; without this the worker would start the app instead of running the script.
+  if (versions.electron || process.env.ELECTRON_RUN_AS_NODE === '1') env.ELECTRON_RUN_AS_NODE = '1';
   for (const [name, value] of Object.entries(worker?.env ?? {})) {
     if (CREDENTIAL_ENV_NAME.test(name))
       throw new Error(`SCAPI worker environment must not carry credentials; remove ${name}.`);
@@ -85,6 +88,7 @@ export interface ScapiCodeOptions {
   authType?: ScapiAuthType;
   request?: (options: unknown, signal: AbortSignal) => Promise<unknown>;
   auth?: (operation: string, options: unknown, signal: AbortSignal) => Promise<unknown>;
+  /** Tenant (`zzzz_001`) or organization ID (`f_ecom_zzzz_001`); programs always see the `f_ecom_` form. */
   organizationId?: string;
   siteId?: string;
   cwd?: string;
@@ -110,6 +114,14 @@ export interface ScapiCodeOptions {
 
 /** Execute one JavaScript async function in a disposable Node process. */
 export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> {
+  try {
+    return await runScapiCodeUnchecked(options);
+  } catch (error) {
+    throw toScapiCodeError(error);
+  }
+}
+
+async function runScapiCodeUnchecked(options: ScapiCodeOptions): Promise<unknown> {
   const timeoutMs = Math.min(options.timeoutMs ?? 30_000, 60_000);
   if (!options.code.trim() || Buffer.byteLength(options.code) > 32_768)
     throw new Error('Code must contain 1-32768 bytes.');
@@ -268,6 +280,8 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
       {
         type: 'run',
         ...options,
+        // Programs build paths from this; match the f_ecom_ form the request check uses.
+        organizationId: options.organizationId ? toOrganizationId(options.organizationId) : undefined,
         documents,
         request: undefined,
         auth: undefined,

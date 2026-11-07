@@ -40,3 +40,26 @@ export class AuthRequiredError extends Error {
 export function isAuthRequiredError(error: unknown): error is AuthRequiredError {
   return error instanceof AuthRequiredError || (error instanceof Error && error.name === 'AuthRequiredError');
 }
+
+/**
+ * Thrown when Account Manager rejects a client credentials token request.
+ * The message is the same as before (`Failed to get access token: <status> ...`).
+ */
+export class AccountManagerTokenError extends Error {
+  /** HTTP status from the token endpoint. */
+  readonly status: number;
+  /** OAuth `error` code from the response body (`invalid_client`, `invalid_scope`, ...), when present. */
+  readonly oauthError?: string;
+
+  constructor(message: string, status: number, body: string) {
+    super(message);
+    this.name = 'AccountManagerTokenError';
+    this.status = status;
+    try {
+      const parsed = JSON.parse(body) as {error?: unknown};
+      if (typeof parsed.error === 'string') this.oauthError = parsed.error;
+    } catch {
+      // Not JSON; leave oauthError unset.
+    }
+  }
+}

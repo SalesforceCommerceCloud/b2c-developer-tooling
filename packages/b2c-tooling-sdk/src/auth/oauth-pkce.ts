@@ -952,7 +952,8 @@ export class PkceOAuthStrategy implements AuthStrategy {
             : '';
         if (!settled) {
           settled = true;
-          reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`));
+          // `cause` keeps the socket error so hosts can branch on `cause.code` (`EADDRINUSE`).
+          reject(new Error(`Failed to start OAuth redirect server: ${err.message}.${hint}`, {cause: err}));
         }
       });
     });

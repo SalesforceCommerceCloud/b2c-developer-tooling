@@ -73,6 +73,14 @@
  * Redacted fields: `password`, `secret`, `token`, `client_secret`, `access_token`,
  * `refresh_token`, `api_key`, `authorization`
  *
+ * ## Custom Redaction
+ *
+ * Register a {@link LogRedactor} with {@link globalLogRedactorRegistry} to
+ * rewrite entries before they are written (CLI plugins use the
+ * `b2c:log-redaction` hook). {@link deepLogRedactor} applies
+ * {@link redactLogValue}: secret keys at any depth, and tokens or secrets
+ * inside strings. Nothing is registered by default.
+ *
  * ## Global Logger
  *
  * For CLI applications, use the global logger pattern:
@@ -120,3 +128,5 @@
 
 export type {Logger, LoggerOptions, LogLevel, LogContext, LogDestination} from './types.js';
 export {createLogger, configureLogger, getLogger, resetLogger, createSilentLogger} from './logger.js';
+export {deepLogRedactor, globalLogRedactorRegistry, LogRedactorRegistry, redactLogValue} from './redaction.js';
+export type {LogEntry, LogRedactor} from './redaction.js';

@@ -15,6 +15,7 @@ import {globalMiddlewareRegistry, type MiddlewareRegistry} from '../clients/midd
 import {SafetyGuard, extractJobIdFromPath, type SafetyConfig} from '../safety/index.js';
 import {getLogger} from '../logging/logger.js';
 import {findScapiOperation, resolveScapiReference, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
+import {toScapiCodeError} from './errors.js';
 import {createLiveScapiDocument} from './live.js';
 import {isFullScapiExpand} from './schema-source.js';
 import type {ScapiShopperAuth} from './shopper.js';
@@ -83,7 +84,7 @@ export function createScapiRequest(
   const documents = [...options.documents];
   let totalBytes = 0;
   let requestCount = 0;
-  return async (input, signal) => {
+  const request = async (input: unknown, signal: AbortSignal): Promise<unknown> => {
     const requestIndex = requestCount++;
     signal.throwIfAborted();
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Request must be an object.');
@@ -395,5 +396,12 @@ export function createScapiRequest(
       }
     }
     return {status: result.response.status, ok: result.response.ok, data, ...(diagnostic ? {diagnostic} : {})};
+  };
+  return async (input, signal) => {
+    try {
+      return await request(input, signal);
+    } catch (error) {
+      throw toScapiCodeError(error);
+    }
   };
 }

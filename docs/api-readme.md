@@ -684,10 +684,10 @@ const result = await runScapiCode({
   safety, // hides operations the policy always blocks from spec.paths and spec.search
   organizationId: 'zzzz_001',
   request,
-  // Electron: run the app binary as Node
-  worker: {command: process.execPath, env: {ELECTRON_RUN_AS_NODE: '1'}},
 });
 ```
+
+In Electron, the worker runs the app binary as Node (`ELECTRON_RUN_AS_NODE=1`) without extra options. Pass `worker` only to start a different executable.
 
 `searchScapiOperations(documents, query, {safety})` filters search results with the same policy. A blocked request fails with `SafetyBlockedError` before it is sent.
 

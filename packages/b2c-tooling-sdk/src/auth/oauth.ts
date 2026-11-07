@@ -11,6 +11,8 @@ import {getLogger} from '../logging/logger.js';
 import {DEFAULT_ACCOUNT_MANAGER_HOST} from '../defaults.js';
 import {globalAuthMiddlewareRegistry, applyAuthRequestMiddleware, applyAuthResponseMiddleware} from './middleware.js';
 import {applyClientCredentials, type ClientAuthMethod} from './client-credentials.js';
+import {AccountManagerTokenError} from './errors.js';
+import {createHash} from 'node:crypto';
 
 // Module-level token cache to support multiple instances with same clientId
 const ACCESS_TOKEN_CACHE: Map<string, AccessTokenResponse> = new Map();
@@ -172,6 +174,7 @@ export function invalidateCachedTokensForIdentity(identityPrefix: string): void 
 export class OAuthStrategy implements AuthStrategy {
   private accountManagerHost: string;
   private _hasHadSuccess = false;
+  private cacheIdentity: string;
   private cacheKey: string;
   private identityPrefix: string;
 
@@ -182,13 +185,15 @@ export class OAuthStrategy implements AuthStrategy {
    */
   constructor(private config: OAuthConfig) {
     this.accountManagerHost = config.accountManagerHost || DEFAULT_ACCOUNT_MANAGER_HOST;
+    // Cache by a fingerprint of the secret too, so a replaced secret never reuses the old token.
+    this.cacheIdentity = `${config.clientId}#${createHash('sha256').update(config.clientSecret).digest('hex').slice(0, 16)}`;
     this.cacheKey = getOAuthCacheKey(
-      this.config.clientId,
+      this.cacheIdentity,
       'client-credentials',
       this.accountManagerHost,
       this.config.scopes,
     );
-    this.identityPrefix = `${this.accountManagerHost}:${this.config.clientId}:client-credentials:`;
+    this.identityPrefix = `${this.accountManagerHost}:${this.cacheIdentity}:client-credentials:`;
   }
 
   /** See {@link AuthStrategy.selfSignedApi}. @internal */
@@ -237,8 +242,9 @@ export class OAuthStrategy implements AuthStrategy {
     return res;
   }
 
-  async getAuthorizationHeader(): Promise<string> {
-    const token = await this.getAccessToken();
+  /** @param signal - Abandons the wait for a new token; a shared refresh other callers wait on continues. */
+  async getAuthorizationHeader(signal?: AbortSignal): Promise<string> {
+    const token = signal ? (await this.getTokenResponse(signal)).accessToken : await this.getAccessToken();
     return `Bearer ${token}`;
   }
 
@@ -387,7 +393,7 @@ export class OAuthStrategy implements AuthStrategy {
    * resolution. Caches under a key derived from the requested scopes.
    */
   private refreshTokenForScopes(scopes: string[] | undefined): Promise<AccessTokenResponse> {
-    const cacheKey = getOAuthCacheKey(this.config.clientId, 'client-credentials', this.accountManagerHost, scopes);
+    const cacheKey = getOAuthCacheKey(this.cacheIdentity, 'client-credentials', this.accountManagerHost, scopes);
     const existing = PENDING_TOKEN_REQUESTS.get(cacheKey);
     if (existing) {
       getLogger().debug('[OAuthStrategy] Joining in-flight token request');
@@ -489,7 +495,11 @@ export class OAuthStrategy implements AuthStrategy {
     if (!response.ok) {
       const errorText = await response.text();
       logger.trace({method, url, headers: responseHeaders, body: errorText}, `[Auth RESP BODY] ${method} ${url}`);
-      throw new Error(`Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new AccountManagerTokenError(
+        `Failed to get access token: ${response.status} ${response.statusText} - ${errorText}`,
+        response.status,
+        errorText,
+      );
     }
 
     const data = (await response.json()) as {
