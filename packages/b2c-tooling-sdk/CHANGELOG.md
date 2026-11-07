@@ -1,5 +1,24 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.14.0
+
+### Minor Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - Plugins can redact more from CLI log output, such as deeply nested secrets or tokens inside messages, with the new `b2c:log-redaction` hook. Logs are unchanged unless a plugin uses it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - SCAPI code mode is more locked down: programs can no longer open network connections themselves, and Safety Mode rules can match SCAPI operations by `operationId` or API, so you can allow-list exactly what an assistant may call. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - Apps can now embed the SDK and build their own B2C tools on it: Account Manager sign-in without a local redirect server, app-owned credentials and session storage, cancellable operations, and the same skills and tool building blocks the MCP server uses. See "Embedding the SDK in an App" in the API reference. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - New MCP tool `site_archive_import` imports site archive XML without a terminal: it validates the files first and imports nothing if one is invalid. Use it for data the Commerce API can't write yet, such as promotion discount rules; the SCAPI skill now walks through creating a promotion end to end. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - `b2c am` permission errors now list the roles in your current token, so it's clear which Account Manager role you're missing. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d)]:
+  - @salesforce/b2c-agent-plugins@1.15.1
+
 ## 2.13.0
 
 ### Minor Changes

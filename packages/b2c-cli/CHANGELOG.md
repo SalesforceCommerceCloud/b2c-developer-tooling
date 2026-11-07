@@ -1,5 +1,16 @@
 # @salesforce/b2c-cli
 
+## 2.14.0
+
+### Minor Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - Plugins can redact more from CLI log output, such as deeply nested secrets or tokens inside messages, with the new `b2c:log-redaction` hook. Logs are unchanged unless a plugin uses it. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d)]:
+  - @salesforce/b2c-tooling-sdk@2.14.0
+
 ## 2.13.0
 
 ### Minor Changes
