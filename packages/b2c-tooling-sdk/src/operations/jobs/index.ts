@@ -69,6 +69,21 @@ export {
   siteArchiveExportToPath,
 } from './site-archive.js';
 
+// Site archive files supplied as text (validate, zip, import)
+export {
+  importSiteArchiveFiles,
+  checkSiteArchiveFiles,
+  SiteArchiveFilesError,
+  SITE_ARCHIVE_FILES_MAX,
+  SITE_ARCHIVE_FILES_MAX_BYTES,
+} from './site-archive-files.js';
+export type {
+  SiteArchiveFile,
+  SiteArchiveFileCheck,
+  ImportSiteArchiveFilesOptions,
+  ImportSiteArchiveFilesResult,
+} from './site-archive-files.js';
+
 // Ordered, idempotent import sets
 export {discoverImportSet, siteArchiveImportSet, ImportSetStateError} from './import-set.js';
 

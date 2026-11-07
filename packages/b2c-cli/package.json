@@ -57,7 +57,6 @@
   },
   "files": [
     "./bin",
-    "./content",
     "./dist",
     "./oclif.manifest.json"
   ],
@@ -409,7 +408,7 @@
   },
   "repository": "SalesforceCommerceCloud/b2c-developer-tooling",
   "scripts": {
-    "build": "pnpm run generate:guidance && shx rm -rf dist && tsc -p tsconfig.build.json && shx mkdir -p dist/script-types/node_modules/@salesforce/b2c-script-types && shx cp -r ../b2c-script-types/types dist/script-types/node_modules/@salesforce/b2c-script-types/types && shx cp -r ../b2c-script-types/plugin dist/script-types/node_modules/@salesforce/b2c-script-types/plugin && shx cp ../b2c-script-types/package.json dist/script-types/node_modules/@salesforce/b2c-script-types/package.json",
+    "build": "shx rm -rf dist && tsc -p tsconfig.build.json && shx mkdir -p dist/script-types/node_modules/@salesforce/b2c-script-types && shx cp -r ../b2c-script-types/types dist/script-types/node_modules/@salesforce/b2c-script-types/types && shx cp -r ../b2c-script-types/plugin dist/script-types/node_modules/@salesforce/b2c-script-types/plugin && shx cp ../b2c-script-types/package.json dist/script-types/node_modules/@salesforce/b2c-script-types/package.json",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
     "typecheck:agent": "tsc --noEmit -p test --pretty false",
@@ -418,8 +417,7 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "pnpm run lint",
     "prepack": "oclif manifest --no-jit && oclif readme",
-    "generate:guidance": "tsx --conditions=development scripts/generate-guidance.ts",
-    "pretest": "pnpm run generate:guidance && tsc --noEmit -p test",
+    "pretest": "tsc --noEmit -p test",
     "test": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" \"test/**/*.test.ts\"",
     "test:ci": "c8 env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",
     "test:ci:win": "c8 --check-coverage=false env OCLIF_TEST_ROOT=. mocha --forbid-only --exclude \"test/functional/e2e/**\" --reporter json --reporter-option output=test-results.json \"test/**/*.test.ts\"",

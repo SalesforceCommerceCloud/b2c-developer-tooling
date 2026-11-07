@@ -240,6 +240,13 @@ from the machine running the MCP server.
 | `webdav_get_to_file` | Download a whole file, including binary archives, to a new local file.   |
 | `webdav_put`         | Upload text or a local file; replace existing files only when requested. |
 
+`site_archive_import` (`SCAPI` toolset) imports site archive XML given as text,
+for data with no SCAPI write such as promotion discount rules. It validates every
+file against the bundled schemas, uploads nothing if one fails, then zips the files
+and runs the `sfcc-site-archive-import` job. Imports merge into existing data. It
+requires reading `skill://mcp/b2c-mcp-site-import/SKILL.md` first (`skillRead: true`)
+and the same job permissions as `b2c job import`.
+
 With only a hostname configured, the first call asks you to
 [sign in](../guide/authentication#webdav-access) with your Account Manager account,
 and your Business Manager roles decide what you can access. This also applies to logs

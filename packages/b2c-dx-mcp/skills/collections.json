@@ -7,6 +7,7 @@
     "mcp/b2c-mcp-config",
     "mcp/b2c-mcp-scapi",
     "mcp/b2c-mcp-cip",
+    "mcp/b2c-mcp-site-import",
     "mcp/b2c-mcp-claude-artifacts"
   ],
   "collections": [

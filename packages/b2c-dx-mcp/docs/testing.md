@@ -66,7 +66,7 @@ For source iteration, configure Node with arguments `--conditions`, `development
 and the absolute path to `packages/b2c-dx-mcp/bin/dev.js`. Launch Codex in your
 test project; no separate package installation is needed. Restart MCP after
 source edits. After skill edits, run
-`pnpm --filter @salesforce/b2c-dx-mcp run generate:guidance` before restarting.
+`pnpm --filter @salesforce/b2c-tooling-sdk run generate:guidance` before restarting.
 Use the tarball preparation to assess release packaging.
 
 ## Operations runbook checkpoint

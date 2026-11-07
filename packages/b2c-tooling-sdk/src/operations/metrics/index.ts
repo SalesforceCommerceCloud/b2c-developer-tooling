@@ -42,7 +42,7 @@
  * ## Authentication
  *
  * Requires OAuth client-credentials with the `sfcc.metrics` admin scope. The
- * {@link createMetricsClient} factory attaches this scope plus the tenant scope
+ * `createMetricsClient` factory attaches this scope plus the tenant scope
  * automatically.
  *
  * @module operations/metrics
@@ -706,7 +706,53 @@ export async function getMetricsByCategory(
   }
 }
 
-// Client-side dimension/tag extraction for series (interim until the API
-// exposes structured tags server-side). See ./tags.ts.
+/**
+ * Per-series statistics returned instead of data points when `summarize` is set.
+ * Statistics cover the returned points only; intervals without a point are
+ * absent from the API (not zero) and are not counted.
+ */
+export interface MetricSeriesSummary {
+  points: number;
+  sum?: number;
+  min?: number;
+  max?: number;
+  avg?: number;
+  /** ISO timestamp of the maximum value. */
+  maxAt?: string;
+  firstAt?: string;
+  lastAt?: string;
+}
+
+const round = (n: number): number => Math.round(n * 1000) / 1000;
+
+/**
+ * Summarizes a series' data points. Placeholder series (no data) yield `{points: 0}`.
+ */
+export function summarizeSeriesData(data: Array<{timestamp: number; value: number}>): MetricSeriesSummary {
+  if (data.length === 0) return {points: 0};
+  let sum = 0;
+  let min = data[0];
+  let max = data[0];
+  let first = data[0];
+  let last = data[0];
+  for (const point of data) {
+    sum += point.value;
+    if (point.value < min.value) min = point;
+    if (point.value > max.value) max = point;
+    if (point.timestamp < first.timestamp) first = point;
+    if (point.timestamp > last.timestamp) last = point;
+  }
+  return {
+    points: data.length,
+    sum: round(sum),
+    min: round(min.value),
+    max: round(max.value),
+    avg: round(sum / data.length),
+    maxAt: new Date(max.timestamp).toISOString(),
+    firstAt: new Date(first.timestamp).toISOString(),
+    lastAt: new Date(last.timestamp).toISOString(),
+  };
+}
+
 export {parseSeriesTags, enrichMetricsTags} from './tags.js';
 export type {MetricSeriesTags, MetricsTagContext, MetricsTaggedResponse} from './tags.js';

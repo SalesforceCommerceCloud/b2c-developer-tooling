@@ -394,7 +394,7 @@ describe('SCAPI snippets', () => {
   it('passes intermediate values between nested snippets using the current target', async () => {
     const paths: string[] = [];
     const result = await runScapiCode({
-      organizationId: 'current-org',
+      organizationId: 'f_ecom_zzzz_001',
       snippets: [
         snippet,
         {
@@ -415,7 +415,7 @@ describe('SCAPI snippets', () => {
     });
     expect(result).to.have.property('ok', true);
     expect(paths).to.deep.equal(
-      ['first', 'second'].map((id) => `/product/products/v1/organizations/current-org/products/${id}`),
+      ['first', 'second'].map((id) => `/product/products/v1/organizations/f_ecom_zzzz_001/products/${id}`),
     );
   });
 

@@ -16,7 +16,7 @@ import {createUserAuthStrategy} from '../auth/oauth-pkce-fallback.js';
 import {getDefaultPublicClientId} from '../defaults.js';
 import {B2CInstance, type InstanceConfig} from '../instance/index.js';
 import {parseSafetyLevelString} from '../safety/safety-middleware.js';
-import {isValidSafetyAction} from '../safety/types.js';
+import {normalizeSafetyRule} from '../safety/types.js';
 import type {SafetyRule} from '../safety/types.js';
 import type {DwJsonConfig} from './dw-json.js';
 import type {CreateB2CInstanceOptions, LibraryEntry, NormalizedConfig, ConfigWarning} from './types.js';
@@ -232,14 +232,8 @@ function mapDwJsonSafety(safety: DwJsonConfig['safety']): NormalizedConfig['safe
 
   const level = parseSafetyLevelString(safety.level);
   const rules: SafetyRule[] | undefined = safety.rules
-    ?.filter((r) => isValidSafetyAction(r.action))
-    .map((r) => ({
-      method: r.method,
-      path: r.path,
-      job: r.job,
-      command: r.command,
-      action: r.action as SafetyRule['action'],
-    }));
+    ?.map((r) => normalizeSafetyRule(r))
+    .filter((r): r is SafetyRule => r !== undefined);
 
   // Only return if there's at least one meaningful field
   if (level === undefined && safety.confirm === undefined && (!rules || rules.length === 0)) {
@@ -400,13 +394,8 @@ export function mapNormalizedConfigToDwJson(config: Partial<NormalizedConfig>, n
     result.safety = {
       level: config.safety.level,
       confirm: config.safety.confirm,
-      rules: config.safety.rules?.map((r) => ({
-        method: r.method,
-        path: r.path,
-        job: r.job,
-        command: r.command,
-        action: r.action,
-      })),
+      // Keep every matcher: dropping one (say `api`) would widen what the rule matches.
+      rules: config.safety.rules?.map((r) => normalizeSafetyRule(r)).filter((r) => r !== undefined),
     };
   }
 

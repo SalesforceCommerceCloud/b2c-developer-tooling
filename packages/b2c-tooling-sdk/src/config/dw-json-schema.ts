@@ -227,6 +227,15 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
             path: {type: 'string', description: 'URL path glob (e.g. `/jobs/*/executions`).'},
             job: {type: 'string', description: 'Job ID glob.'},
             command: {type: 'string', description: 'CLI command ID glob (e.g. `sandbox:*`, `ecdn:cache:purge`).'},
+            operationId: {type: 'string', description: 'SCAPI operation ID glob (e.g. `getProduct`); code mode only.'},
+            api: {
+              type: 'string',
+              description: 'SCAPI API ID glob (e.g. `product/products/v1`, `product/**`); code mode only.',
+            },
+            readOnlySearch: {
+              type: 'boolean',
+              description: 'Match the search POSTs that READ_ONLY treats as reads.',
+            },
             action: {type: 'string', enum: ['allow', 'block', 'confirm'], description: 'Action when the rule matches.'},
           },
         },

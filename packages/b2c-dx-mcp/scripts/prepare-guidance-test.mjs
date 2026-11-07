@@ -38,13 +38,15 @@ function pnpm(args, cwd = repoRoot, environment = {}) {
   }
 }
 
+const sdkRoot = join(repoRoot, 'packages/b2c-tooling-sdk');
+pnpm(['--filter', '@salesforce/b2c-tooling-sdk', 'run', 'generate:guidance']);
 pnpm(['--filter', '@salesforce/b2c-tooling-sdk', 'run', 'build:esm']);
 pnpm(['--filter', '@salesforce/b2c-dx-mcp', 'run', 'build']);
-const bundleManifest = readFileSync(join(packageRoot, 'content/guidance/index.json'));
+const bundleManifest = readFileSync(join(sdkRoot, 'data/guidance/index.json'));
 pnpm(['--filter', '@salesforce/b2c-tooling-sdk', 'pack', '--pack-destination', artifacts]);
 pnpm(['--filter', '@salesforce/b2c-dx-mcp', 'pack', '--pack-destination', artifacts]);
 assert.deepEqual(
-  readFileSync(join(packageRoot, 'content/guidance/index.json')),
+  readFileSync(join(sdkRoot, 'data/guidance/index.json')),
   bundleManifest,
   'Build and prepack must generate identical manifests',
 );
@@ -79,20 +81,24 @@ pnpm(['install', '--prefer-offline', '--ignore-scripts'], testRoot);
 
 const installedMcp = join(testRoot, 'node_modules/@salesforce/b2c-dx-mcp');
 const pluginsPackage = JSON.parse(readFileSync(join(repoRoot, 'skills/package.json'), 'utf8'));
-const bundledPlugins = join(installedMcp, 'node_modules/@salesforce/b2c-agent-plugins');
+const installedSdk = join(testRoot, 'node_modules/@salesforce/b2c-tooling-sdk');
+const bundledPlugins = join(installedSdk, 'node_modules/@salesforce/b2c-agent-plugins');
 assert.deepEqual(JSON.parse(readFileSync(join(bundledPlugins, 'package.json'), 'utf8')), pluginsPackage);
 const runJs = join(installedMcp, 'bin/run.js');
 const bundledServer = join(installedMcp, 'node_modules/@modelcontextprotocol/server');
-assert.equal(JSON.parse(readFileSync(join(bundledServer, 'package.json'), 'utf8')).version, '2.0.0');
+assert.equal(
+  JSON.parse(readFileSync(join(bundledServer, 'package.json'), 'utf8')).version,
+  JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')).dependencies['@modelcontextprotocol/server'],
+);
 // Exercise cancellation from the installed artifact, including the bundled SDK fix for request ID 0.
 pnpm(['exec', 'mocha', '--reporter', 'min', 'test/e2e/scapi-cancellation.test.ts'], packageRoot, {
   B2C_MCP_TEST_RUN_JS: runJs,
 });
-const manifest = JSON.parse(readFileSync(join(installedMcp, 'content/guidance/index.json'), 'utf8'));
+const manifest = JSON.parse(readFileSync(join(installedSdk, 'data/guidance/index.json'), 'utf8'));
 assert.deepEqual(manifest, JSON.parse(bundleManifest));
 for (const entry of manifest.entries) {
   for (const file of entry.files) {
-    const bytes = readFileSync(join(installedMcp, 'content/guidance', entry.id, file.path));
+    const bytes = readFileSync(join(installedSdk, 'data/guidance', entry.id, file.path));
     assert.deepEqual(bytes, readFileSync(join(repoRoot, dirname(entry.source), file.path)));
     if (entry.source.startsWith('skills/')) {
       assert.deepEqual(
@@ -204,13 +210,11 @@ try {
   assert.ok(snippet.code.includes('async (input)'));
   assert.deepEqual(snippet.inputSchema.required, ['productId', 'catalogId']);
   const resources = await request('resources/list');
-  assert.deepEqual(resources.resources.map((resource) => resource.name).sort(), [
-    'mcp/b2c-mcp-config',
-    'mcp/b2c-mcp-debugger',
-    'mcp/b2c-mcp-scapi',
-    'mcp/b2c-mcp-server',
-    'skill-index',
-  ]);
+  const {featuredResources} = JSON.parse(readFileSync(join(packageRoot, 'skills/collections.json'), 'utf8'));
+  assert.deepEqual(
+    resources.resources.map((resource) => resource.name).sort(),
+    [...featuredResources.map((id) => id.split('/')[1]), 'skill-index'].sort(),
+  );
   for (const resource of resources.resources) {
     assert.ok(discovered.instructions.includes(resource.uri));
   }
@@ -230,7 +234,7 @@ try {
   const read = await guidance({id: 'mcp/b2c-mcp-server'});
   const native = await request('resources/read', {uri: read.uri});
   assert.equal(read.content, native.contents[0].text);
-  const project = join(testRoot, 'context-project');
+  const project = join(workspace, 'context-project');
   mkdirSync(project);
   writeFileSync(join(project, 'package.json'), JSON.stringify({dependencies: {'@salesforce/pwa-kit-react-sdk': '1'}}));
   const docs = await request('tools/call', {

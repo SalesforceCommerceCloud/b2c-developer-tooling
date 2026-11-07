@@ -214,7 +214,11 @@ describe('tools/diagnostics/mrt-logs', () => {
         serverContext.mrtLogWatches.registerWatch({
           project: 'my-storefront',
           environment: 'staging',
-          tailResult: {stop: sinon.stub(), done: Promise.resolve()},
+          watch: {
+            poll: sinon.stub(),
+            info: sinon.stub().returns({lastActivityAt: Date.now()}),
+            stop: sinon.stub().resolves(),
+          } as never,
         });
         return Promise.resolve({stop: racedStop, done: Promise.resolve()});
       });
@@ -338,11 +342,10 @@ describe('tools/diagnostics/mrt-logs', () => {
       const startTool = createMrtLogsWatchTool(loadServices, serverContext, {
         tailMrtLogs: tailStub,
         getProfile: noProfile,
+        bufferCap: 2,
       });
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      const watch = serverContext.mrtLogWatches.getWatch(watch_id)!;
-      watch.bufferCap = 2;
       onEntry!(makeEntry({message: 'a'}));
       onEntry!(makeEntry({message: 'b'}));
       onEntry!(makeEntry({message: 'c'})); // evicts 'a'

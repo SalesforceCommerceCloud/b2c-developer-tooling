@@ -78,7 +78,7 @@ export interface AuthStrategy {
    * built from the strategy inherit it.
    * @internal
    */
-  readonly selfSignedApi?: boolean;
+  readonly selfSignedApi?: boolean | undefined;
 }
 
 /**

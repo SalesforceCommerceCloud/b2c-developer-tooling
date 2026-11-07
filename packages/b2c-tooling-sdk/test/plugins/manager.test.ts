@@ -15,6 +15,7 @@ import {
   resetAuthSessionStoreForTesting,
 } from '@salesforce/b2c-tooling-sdk/auth';
 import {globalConfigSourceRegistry} from '@salesforce/b2c-tooling-sdk/config';
+import {globalLogRedactorRegistry} from '@salesforce/b2c-tooling-sdk/logging';
 
 describe('plugins/manager', () => {
   let tempDir: string;
@@ -277,6 +278,25 @@ describe('plugins/manager', () => {
     // The host decides whether to install it
     expect(getAuthSessionBackend()).to.not.equal(manager.getAuthSessionBackend());
     resetAuthSessionStoreForTesting();
+  });
+
+  it('collects log redactors and registers them on applyMiddleware', async () => {
+    globalLogRedactorRegistry.clear();
+    setupPlugin(tempDir, 'redact-plugin', {'b2c:log-redaction': './hooks/redact.mjs'});
+    const hooksDir = path.join(tempDir, 'node_modules', 'redact-plugin', 'hooks');
+    fs.mkdirSync(hooksDir, {recursive: true});
+    fs.writeFileSync(
+      path.join(hooksDir, 'redact.mjs'),
+      `export default async function() { return { redactors: [{ name: 'test-redactor', redact: (e) => e }] }; }`,
+    );
+
+    const manager = new B2CPluginManager({discoveryOptions: {dataDir: tempDir}});
+    await manager.initialize();
+    expect(globalLogRedactorRegistry.size).to.equal(0);
+    manager.applyMiddleware();
+
+    expect(globalLogRedactorRegistry.getRedactorNames()).to.deep.equal(['test-redactor']);
+    globalLogRedactorRegistry.clear();
   });
 
   it('handles hook invocation errors gracefully', async () => {

@@ -11,6 +11,68 @@ import {SCAPI_WORKER_SOURCE} from './worker-source.js';
 import {describeScapiSchemas, type ScapiAuthType} from './authentication.js';
 import {createScapiOperationSearch, type ScapiOperationSearchOptions} from './search.js';
 import {createScapiSnippetResolver, loadBuiltinScapiSnippets, type ScapiSnippet} from './snippets.js';
+import type {SafetyConfig} from '../safety/index.js';
+import {filterScapiDocumentsBySafety} from './safety-filter.js';
+import {toScapiCodeError} from './errors.js';
+import {toOrganizationId} from '../clients/custom-apis.js';
+
+/**
+ * How to start the code-mode worker. Defaults to `process.execPath` with no extra arguments.
+ *
+ * In Electron, `process.execPath` is the app binary. The SDK detects Electron (including
+ * its main process and a process already running with `ELECTRON_RUN_AS_NODE=1`) and starts
+ * the worker with `ELECTRON_RUN_AS_NODE=1`, so no option is needed.
+ */
+export interface ScapiWorkerCommand {
+  /** Executable to start. */
+  command: string;
+  /** Arguments placed before the SDK's own flags (`--permission`, `--eval <worker>`, …). */
+  args?: string[];
+  /**
+   * Extra environment variables, merged over the minimal worker environment
+   * (`PATH`, `SYSTEMROOT`, `TEMP`). Names that look like credentials are rejected.
+   */
+  env?: Record<string, string>;
+}
+
+const CREDENTIAL_ENV_NAME = /pass(word|wd)?|secret|token|auth|credential|api[-_]?key|private[-_]?key|cookie|session/i;
+
+/** Build the worker's argv and environment. Exported for tests. @internal */
+export function resolveScapiWorkerSpawn(
+  worker?: ScapiWorkerCommand,
+  versions: Partial<Record<string, string>> = process.versions,
+): {
+  command: string;
+  args: string[];
+  env: Record<string, string | undefined>;
+} {
+  const env: Record<string, string | undefined> = {
+    PATH: process.env.PATH,
+    SYSTEMROOT: process.env.SYSTEMROOT,
+    TEMP: process.env.TEMP,
+  };
+  // Inside Electron (main, utility or a process already running as Node), process.execPath is
+  // the app binary; without this the worker would start the app instead of running the script.
+  if (versions.electron || process.env.ELECTRON_RUN_AS_NODE === '1') env.ELECTRON_RUN_AS_NODE = '1';
+  for (const [name, value] of Object.entries(worker?.env ?? {})) {
+    if (CREDENTIAL_ENV_NAME.test(name))
+      throw new Error(`SCAPI worker environment must not carry credentials; remove ${name}.`);
+    if (typeof value !== 'string') throw new Error(`SCAPI worker environment value for ${name} must be a string.`);
+    env[name] = value;
+  }
+  return {
+    command: worker?.command ?? process.execPath,
+    args: [
+      ...(worker?.args ?? []),
+      '--permission',
+      '--max-old-space-size=128',
+      '--input-type=commonjs',
+      '--eval',
+      SCAPI_WORKER_SOURCE,
+    ],
+    env,
+  };
+}
 
 /** Host-only controls for an execution retained while awaiting user input. */
 export interface ScapiRuntimeControl {
@@ -26,6 +88,7 @@ export interface ScapiCodeOptions {
   authType?: ScapiAuthType;
   request?: (options: unknown, signal: AbortSignal) => Promise<unknown>;
   auth?: (operation: string, options: unknown, signal: AbortSignal) => Promise<unknown>;
+  /** Tenant (`zzzz_001`) or organization ID (`f_ecom_zzzz_001`); programs always see the `f_ecom_` form. */
   organizationId?: string;
   siteId?: string;
   cwd?: string;
@@ -39,35 +102,60 @@ export interface ScapiCodeOptions {
   detail?: 'outline' | 'full';
   /** The host owns cancellation and cleanup while paused; approval may wait indefinitely. Never exposed to the child. */
   onControl?: (control: ScapiRuntimeControl) => void;
+  /** How to start the worker process. See {@link ScapiWorkerCommand}. */
+  worker?: ScapiWorkerCommand;
+  /**
+   * Hide operations this safety policy always blocks from `spec.paths` and
+   * `spec.search`, so programs only see what they can call. Pass the same
+   * config given to `createScapiRequest`, which still enforces it.
+   */
+  safety?: SafetyConfig;
 }
 
 /** Execute one JavaScript async function in a disposable Node process. */
 export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> {
+  try {
+    return await runScapiCodeUnchecked(options);
+  } catch (error) {
+    throw toScapiCodeError(error);
+  }
+}
+
+async function runScapiCodeUnchecked(options: ScapiCodeOptions): Promise<unknown> {
   const timeoutMs = Math.min(options.timeoutMs ?? 30_000, 60_000);
   if (!options.code.trim() || Buffer.byteLength(options.code) > 32_768)
     throw new Error('Code must contain 1-32768 bytes.');
   if (options.signal?.aborted) throw new Error('SCAPI_EXECUTION_CANCELLED');
-  const documents = describeScapiSchemas(options.documents ?? [], options.authType);
+  const documents = filterScapiDocumentsBySafety(
+    describeScapiSchemas(options.documents ?? [], options.authType),
+    options.safety,
+    options.organizationId ? toOrganizationId(options.organizationId) : undefined,
+  );
   const resolveSnippet = createScapiSnippetResolver(options.snippets ?? loadBuiltinScapiSnippets());
   // Built on first spec.search so runs that only filter spec.paths pay nothing.
   let searchOperations: ReturnType<typeof createScapiOperationSearch> | undefined;
+  if (options.safety && options.documents?.length && !documents.length)
+    throw new Error('SCAPI_SAFETY_BLOCKED: the safety policy blocks every operation in these schemas.');
   if (options.authType && !documents.length)
     throw new Error(
       `No ${options.authType} operations match this search. Omit authType to inspect all authentication requirements.`,
     );
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
-    const child = spawn(
-      process.execPath,
-      ['--permission', '--max-old-space-size=128', '--input-type=commonjs', '--eval', SCAPI_WORKER_SOURCE],
-      {
-        cwd: options.cwd,
-        // Credentials stay in the parent; explicit token helpers return only tokens and metadata.
-        env: {PATH: process.env.PATH, SYSTEMROOT: process.env.SYSTEMROOT, TEMP: process.env.TEMP},
-        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-        windowsHide: true,
-      },
-    );
+    let spawnSpec: ReturnType<typeof resolveScapiWorkerSpawn>;
+    try {
+      spawnSpec = resolveScapiWorkerSpawn(options.worker);
+    } catch (error) {
+      reject(error);
+      return;
+    }
+    const child = spawn(spawnSpec.command, spawnSpec.args, {
+      cwd: options.cwd,
+      // Credentials stay in the parent; explicit token helpers return only tokens and metadata.
+      env: spawnSpec.env,
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+      windowsHide: true,
+    });
     let settled = false;
     let outputBytes = 0;
     let calls = 0;
@@ -192,12 +280,16 @@ export async function runScapiCode(options: ScapiCodeOptions): Promise<unknown> 
       {
         type: 'run',
         ...options,
+        // Programs build paths from this; match the f_ecom_ form the request check uses.
+        organizationId: options.organizationId ? toOrganizationId(options.organizationId) : undefined,
         documents,
         request: undefined,
         auth: undefined,
         snippets: undefined,
         signal: undefined,
         onControl: undefined,
+        worker: undefined,
+        safety: undefined,
         maxOutputBytes: Math.min(options.maxOutputBytes ?? 24_000, 65_536),
       },
       (error) => {

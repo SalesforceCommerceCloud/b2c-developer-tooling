@@ -363,6 +363,28 @@ matches the part of the URL after the hostname, without query parameters.
   }
   ```
 
+- **SCAPI operations in code mode:** Match the schema operation ID or API ID of
+  requests that SCAPI code mode makes (the MCP `scapi_execute` tool, or SDK
+  `createScapiRequest`). `api` is `<family>/<name>/<version>`; use `product/**`
+  for a whole API family. These matchers don't match other HTTP requests:
+
+  ```json
+  {
+    "operationId": "updateProduct",
+    "action": "confirm"
+  }
+  ```
+
+- **Searches:** `"readOnlySearch": true` matches the [searches `READ_ONLY` allows](#read-only-searches).
+  Put it ahead of a catch-all `block` rule so searches keep working:
+
+  ```json
+  {
+    "readOnlySearch": true,
+    "action": "allow"
+  }
+  ```
+
 - **CLI commands:** Use colons between command words. For example, ask before deploying:
 
   ```json
@@ -382,7 +404,29 @@ matches the part of the URL after the hostname, without query parameters.
   ```
 
 Patterns support wildcards: `*` matches within a path segment; `**` can span
-multiple segments.
+multiple segments. `job` and `command` rules match on that field alone; in any
+other rule, every matcher you set must match.
+
+### Allow only some APIs {#allow-list}
+
+To expose only some APIs, allow them and end with a rule that blocks the rest.
+With code mode, this policy allows Products API reads and catalog and product
+searches, asks before product updates, and blocks everything else:
+
+```json
+{
+  "safety": {
+    "level": "READ_ONLY",
+    "confirm": true,
+    "rules": [
+      {"method": "GET", "api": "product/products/*", "action": "allow"},
+      {"readOnlySearch": true, "api": "product/**", "action": "allow"},
+      {"operationId": "updateProduct", "action": "confirm"},
+      {"path": "**", "action": "block"}
+    ]
+  }
+}
+```
 
 ## Require confirmation {#confirmation-mode}
 

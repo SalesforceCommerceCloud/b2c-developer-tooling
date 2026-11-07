@@ -399,6 +399,15 @@ describe('SCAPI code mode', function () {
     expect(puts).to.equal(1);
   });
 
+  it('gives programs the f_ecom_ organization ID when the host passes the tenant form', async () => {
+    const code = `async () => organizationId`;
+    expect(await runScapiCode({code, organizationId: 'test_001'})).to.equal('f_ecom_test_001');
+    expect(await runScapiCode({code, organizationId: 'f_ecom_test_001'})).to.equal('f_ecom_test_001');
+    server.use(http.get(endpoint, () => HttpResponse.json({id: 'p1'})));
+    const read = `async () => (await scapi.request({method: 'GET', path: '/product/products/v1/organizations/' + encodeURIComponent(organizationId) + '/products/p1'})).status`;
+    expect(await runScapiCode({code: read, organizationId: 'test_001', request: request()})).to.equal(200);
+  });
+
   it('applies the selected safety policy before authentication or writes', async () => {
     let writes = 0;
     server.use(

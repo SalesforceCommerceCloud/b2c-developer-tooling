@@ -118,7 +118,15 @@
  * @module clients
  */
 export {WebDavClient} from './webdav.js';
-export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
+export type {PropfindEntry, WebDavClientOptions, WebDavRequestOptions} from './webdav.js';
+export {
+  normalizeWebDavPath,
+  readWebDavResponse,
+  readWebDavTextRange,
+  WEBDAV_ROOTS,
+  WebDavReadError,
+} from './webdav-paths.js';
+export type {WebDavReadErrorCode, WebDavRootKey, WebDavTextRange, WebDavTextRangeOptions} from './webdav-paths.js';
 export {describeWebDavUserAccessFailure, getWebDavRootPermission} from './webdav-access-hint.js';
 
 export {
@@ -257,7 +265,18 @@ export {
   createAccountManagerOrgsClient,
   isValidRoleTenantFilter,
   ROLE_TENANT_FILTER_PATTERN,
+  NotPermittedError,
 } from './am-api.js';
+export {
+  API_CLIENT_PASSWORD_MIN_LENGTH,
+  API_CLIENT_PASSWORD_MAX_LENGTH,
+  generateApiClientPassword,
+  normalizeTenantIdForFilter,
+  buildCommerceApiRoleTenantFilter,
+  buildCommerceApiClientRequest,
+  provisionCommerceApiClient,
+} from './am-provisioning.js';
+export type {CommerceApiClientOptions, ProvisionedCommerceApiClient} from './am-provisioning.js';
 export type {
   AccountManagerClient,
   AccountManagerClientConfig,

@@ -493,6 +493,31 @@ describe('safety/safety-guard', () => {
       fs.rmSync(tmpDir, {recursive: true});
     });
 
+    it('keeps code-mode matchers and skips mistyped rules from safety.json', async () => {
+      const {loadGlobalSafetyConfig} = await import('@salesforce/b2c-tooling-sdk');
+      const fs = await import('node:fs');
+      const os = await import('node:os');
+      const path = await import('node:path');
+
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'safety-test-'));
+      fs.writeFileSync(
+        path.join(tmpDir, 'safety.json'),
+        JSON.stringify({
+          rules: [
+            {operationId: 'updateProduct', api: 'product/**', action: 'confirm'},
+            {readOnlySearch: 'true', action: 'allow'},
+            {readOnlySearch: true, action: 'allow'},
+          ],
+        }),
+      );
+
+      expect(loadGlobalSafetyConfig(tmpDir)?.rules).to.deep.equal([
+        {operationId: 'updateProduct', api: 'product/**', action: 'confirm'},
+        {readOnlySearch: true, action: 'allow'},
+      ]);
+      fs.rmSync(tmpDir, {recursive: true});
+    });
+
     it('loads from SFCC_SAFETY_CONFIG env var', async () => {
       const {loadGlobalSafetyConfig} = await import('@salesforce/b2c-tooling-sdk');
       const fs = await import('node:fs');
