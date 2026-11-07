@@ -69,7 +69,11 @@ function codeResult(
   return result;
 }
 function failure(error: unknown, resolution?: ToolResolution): ToolResult {
-  const message = error instanceof Error ? error.message : String(error);
+  // Name the tool input the agent should set instead of the SDK's generic wording.
+  const message = (error instanceof Error ? error.message : String(error)).replace(
+    'use live schemas for tenant',
+    'use schemas:"live" for tenant',
+  );
   return {
     ...codeResult(
       {

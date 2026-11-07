@@ -211,7 +211,7 @@ export function getAccountManagerRoleTenants(
 /**
  * Whether the claims grant a role on a tenant, according to `tenantFilter`.
  * Tenant IDs are compared case-insensitively, with `-` treated as `_`
- * (`zzpq-013` matches `zzpq_013`); the `f_ecom_` prefix is ignored.
+ * (`zzzz-001` matches `zzzz_001`); the `f_ecom_` prefix is ignored.
  */
 export function hasAccountManagerTenantRole(
   claims: Pick<AccountManagerClaims, 'tenantFilter'>,

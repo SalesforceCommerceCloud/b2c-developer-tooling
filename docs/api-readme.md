@@ -566,11 +566,11 @@ const claims = readAccountManagerClaims(accessToken);
 claims.sub; // 'jane@example.com'
 claims.isUser; // true for user sign-in, false for client credentials or JWT bearer
 claims.roles; // ['AM_ACCOUNT_ADMIN', 'ECOM_ADMIN', ...]
-claims.tenantFilter; // {ECOM_ADMIN: ['zzpq_013', 'abcd_prd'], ...}
+claims.tenantFilter; // {ECOM_ADMIN: ['zzzz_001', 'abcd_prd'], ...}
 claims.tenants; // every tenant in the filter, sorted
 
 isAccountManagerApiClientAdmin(claims); // Account or API Administrator
-hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzpq-013'); // true
+hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzzz-001'); // true
 ```
 
 ### Create a Commerce API Client
@@ -667,7 +667,7 @@ const safety = {
 
 const request = createScapiRequest({
   shortCode,
-  tenantId: 'zzpq_013',
+  tenantId: 'zzzz_001',
   auth, // AuthStrategy; withAdditionalScopes adds the tenant and operation scopes, invalidateToken runs after a 401
   documents,
   safety,
@@ -682,7 +682,7 @@ const result = await runScapiCode({
   input,
   documents,
   safety, // hides operations the policy always blocks from spec.paths and spec.search
-  organizationId: 'zzpq_013',
+  organizationId: 'zzzz_001',
   request,
   // Electron: run the app binary as Node
   worker: {command: process.execPath, env: {ELECTRON_RUN_AS_NODE: '1'}},

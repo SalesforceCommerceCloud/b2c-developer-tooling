@@ -42,7 +42,6 @@ function createLogsWatchStartTool(
   serverContext?: ServerContext,
   injections?: LogsWatchStartInjections,
 ): McpTool {
-  const watchLogsFn = watchLogs;
   return createToolAdapter<StartInput, StartOutput>(
     {
       name: 'logs_watch',
@@ -86,7 +85,7 @@ function createLogsWatchStartTool(
               `Stop it with logs_watch(action: stop) first, or poll the existing watch.`,
           );
         }
-        const watch = await watchLogsFn(context.b2cInstance!, {
+        const watch = await watchLogs(context.b2cInstance!, {
           prefixes: args.prefixes ?? DEFAULT_PREFIXES,
           pollInterval: args.poll_interval_ms ?? 3000,
           lastEntries: args.last_entries ?? 0,

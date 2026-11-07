@@ -62,7 +62,7 @@ export function generateApiClientPassword(length = 40): string {
 
 /**
  * Normalize a tenant ID for use in an API client role tenant filter:
- * `f_ecom_zzpq_013` and `zzpq-013` both become `zzpq_013`.
+ * `f_ecom_zzzz_001` and `zzzz-001` both become `zzzz_001`.
  */
 export function normalizeTenantIdForFilter(tenantId: string): string {
   return tenantId
@@ -74,7 +74,7 @@ export function normalizeTenantIdForFilter(tenantId: string): string {
 
 /**
  * Build the role tenant filter for a `SALESFORCE_COMMERCE_API` client scoped to
- * `tenants`, e.g. `SALESFORCE_COMMERCE_API:zzpq_013,zzpq_014`.
+ * `tenants`, e.g. `SALESFORCE_COMMERCE_API:zzzz_001,zzzz_002`.
  *
  * @throws Error when `tenants` is empty or the result doesn't match `ROLE_TENANT_FILTER_PATTERN`
  */
@@ -94,7 +94,7 @@ export interface CommerceApiClientOptions {
   name: string;
   /** Account Manager organization ID the client belongs to. */
   organizationId: string;
-  /** Tenants the client may access through SCAPI (e.g. `zzpq_013` or `f_ecom_zzpq_013`). */
+  /** Tenants the client may access through SCAPI (e.g. `zzzz_001` or `f_ecom_zzzz_001`). */
   tenants: readonly string[];
   /**
    * OAuth scopes the client may request (e.g. `sfcc.products`, `sfcc.catalogs`).
@@ -103,7 +103,7 @@ export interface CommerceApiClientOptions {
   scopes: readonly string[];
   /** Optional description shown in Account Manager. */
   description?: string;
-  /** How the client authenticates at the token endpoint. Default `client_secret_post`. */
+  /** How the client authenticates at the token endpoint. Default `client_secret_basic` (Account Manager does not support `client_secret_post`). */
   tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post';
   /** Client password (secret). Default: {@link generateApiClientPassword}. */
   password?: string;
@@ -137,7 +137,7 @@ export function buildCommerceApiClientRequest(options: CommerceApiClientOptions)
     roleTenantFilter: buildCommerceApiRoleTenantFilter(options.tenants),
     scopes,
     defaultScopes: scopes,
-    tokenEndpointAuthMethod: options.tokenEndpointAuthMethod ?? 'client_secret_post',
+    tokenEndpointAuthMethod: options.tokenEndpointAuthMethod ?? 'client_secret_basic',
   };
   const description = options.description?.trim();
   if (description) body.description = description;
@@ -173,7 +173,7 @@ export interface ProvisionedCommerceApiClient {
  * const {clientId, clientSecret} = await provisionCommerceApiClient(apiClients, {
  *   name: 'My App – jane@example.com – 2026-11-06',
  *   organizationId,
- *   tenants: ['zzpq_013'],
+ *   tenants: ['zzzz_001'],
  *   scopes: ['sfcc.products', 'sfcc.catalogs'],
  * });
  * ```

@@ -79,7 +79,7 @@ export class ScapiUnknownApiError extends Error {
  * const cache = new ScapiLiveSchemaCache();
  * const {documents, warnings} = await resolveScapiDocuments({
  *   api: 'product',
- *   live: {client: schemasClient, shortCode: 'abc123', organizationId: 'f_ecom_zzzz_001', cache},
+ *   live: {tenant: {client: schemasClient, shortCode: 'abc123', organizationId: 'f_ecom_zzzz_001'}, cache},
  * });
  * const hits = searchScapiOperations(documents, 'update product');
  * ```

@@ -53,8 +53,8 @@ describe('clients/am-provisioning', () => {
 
   describe('buildCommerceApiRoleTenantFilter', () => {
     it('normalizes and de-duplicates tenants', () => {
-      const filter = buildCommerceApiRoleTenantFilter(['f_ecom_zzpq_013', 'ZZPQ-013', 'abcd_prd']);
-      expect(filter).to.equal('SALESFORCE_COMMERCE_API:zzpq_013,abcd_prd');
+      const filter = buildCommerceApiRoleTenantFilter(['f_ecom_zzzz_001', 'ZZZZ-001', 'abcd_prd']);
+      expect(filter).to.equal('SALESFORCE_COMMERCE_API:zzzz_001,abcd_prd');
       expect(ROLE_TENANT_FILTER_PATTERN.test(filter)).to.equal(true);
     });
 
@@ -69,7 +69,7 @@ describe('clients/am-provisioning', () => {
       const body = buildCommerceApiClientRequest({
         name: '  Desktop app – jane – 2026-11-06 ',
         organizationId: 'org-1',
-        tenants: ['zzpq_013'],
+        tenants: ['zzzz_001'],
         scopes: ['sfcc.products', 'sfcc.catalogs', 'sfcc.products'],
       });
       expect(body).to.deep.include({
@@ -77,16 +77,16 @@ describe('clients/am-provisioning', () => {
         organizations: ['org-1'],
         active: true,
         roles: ['SALESFORCE_COMMERCE_API'],
-        roleTenantFilter: 'SALESFORCE_COMMERCE_API:zzpq_013',
+        roleTenantFilter: 'SALESFORCE_COMMERCE_API:zzzz_001',
         scopes: ['sfcc.products', 'sfcc.catalogs'],
         defaultScopes: ['sfcc.products', 'sfcc.catalogs'],
-        tokenEndpointAuthMethod: 'client_secret_post',
+        tokenEndpointAuthMethod: 'client_secret_basic',
       });
       expect(body.password).to.have.length(40);
     });
 
     it('validates name, organization and password', () => {
-      const base = {name: 'x', organizationId: 'o', tenants: ['zzpq_013'], scopes: []};
+      const base = {name: 'x', organizationId: 'o', tenants: ['zzzz_001'], scopes: []};
       expect(() => buildCommerceApiClientRequest({...base, name: ' '})).to.throw('name is required');
       expect(() => buildCommerceApiClientRequest({...base, organizationId: ''})).to.throw('Organization ID');
       expect(() => buildCommerceApiClientRequest({...base, password: 'short'})).to.throw('12-128');
@@ -112,7 +112,7 @@ describe('clients/am-provisioning', () => {
       const result = await provisionCommerceApiClient(client, {
         name: 'Desktop app',
         organizationId: 'org-1',
-        tenants: ['zzpq_013'],
+        tenants: ['zzzz_001'],
         scopes: ['sfcc.products'],
       });
 
@@ -120,8 +120,8 @@ describe('clients/am-provisioning', () => {
       expect(result.clientSecret).to.equal(received!.password);
       expect(received).to.deep.include({
         roles: ['SALESFORCE_COMMERCE_API'],
-        roleTenantFilter: 'SALESFORCE_COMMERCE_API:zzpq_013',
-        tokenEndpointAuthMethod: 'client_secret_post',
+        roleTenantFilter: 'SALESFORCE_COMMERCE_API:zzzz_001',
+        tokenEndpointAuthMethod: 'client_secret_basic',
       });
       expect(lines.length).to.be.greaterThan(0);
       expect(lines.join('\n')).to.not.include(result.clientSecret);
@@ -135,7 +135,7 @@ describe('clients/am-provisioning', () => {
       );
       const client = createAccountManagerApiClientsClient({hostname: TEST_HOST}, new MockAuthStrategy());
       try {
-        await provisionCommerceApiClient(client, {name: 'x', organizationId: 'o', tenants: ['zzpq_013'], scopes: []});
+        await provisionCommerceApiClient(client, {name: 'x', organizationId: 'o', tenants: ['zzzz_001'], scopes: []});
         expect.fail('expected NotPermittedError');
       } catch (error) {
         expect(error).to.be.instanceOf(NotPermittedError);

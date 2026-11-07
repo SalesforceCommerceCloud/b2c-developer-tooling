@@ -134,6 +134,12 @@ describe('SCAPI code mode over stdio', function () {
       expect(parsed.result.auth).to.include({executable: true});
       expect(parsed.result.auth.types).to.deep.equal(['admin']);
       expect(resource.contents[0].text).to.include('scapi_execute');
+      const unknown = (await client.call('tools/call', {
+        name: 'scapi_search',
+        arguments: {skillRead: true, api: 'no-such-api', code: 'async () => 1'},
+      })) as {isError?: boolean; content: {text: string}[]};
+      expect(unknown.isError).to.equal(true);
+      expect(unknown.content[0].text).to.include(String.raw`use schemas:\"live\" for tenant`);
     } finally {
       await client.stop();
     }

@@ -121,7 +121,8 @@ export class DebugSessionManager {
    */
   async setBreakpoints(breakpoints: BreakpointInput[]): Promise<SdapiBreakpoint[]> {
     await this.client.deleteBreakpoints();
-    this.currentBreakpoints = breakpoints.length === 0 ? [] : await this.client.setBreakpoints(breakpoints);
+    this.currentBreakpoints = [];
+    if (breakpoints.length > 0) this.currentBreakpoints = await this.client.setBreakpoints(breakpoints);
     return this.getBreakpoints();
   }
 
@@ -154,10 +155,11 @@ export class DebugSessionManager {
   /**
    * Wait for a thread to halt. Resolves at once with an already halted thread,
    * otherwise with the next thread to halt, or `null` after `timeoutMs`.
-   * Rejects when the session disconnects, the debugger is disabled, or `signal` aborts.
+   * Rejects when the session is not connected or disconnects, the debugger is disabled, or `signal` aborts.
    */
   async waitForHalt(timeoutMs: number, signal?: AbortSignal): Promise<null | SdapiScriptThread> {
     signal?.throwIfAborted();
+    if (!this.connected) throw new Error('Debug session is not connected');
     const halted = this.getKnownThreads().find((thread) => thread.status === 'halted');
     if (halted) return halted;
     return new Promise((resolve, reject) => {

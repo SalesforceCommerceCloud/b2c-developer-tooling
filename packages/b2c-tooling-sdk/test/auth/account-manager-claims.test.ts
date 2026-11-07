@@ -31,7 +31,7 @@ const userPayload = {
   scope: ['mail', 'externalId', 'openid', 'roles', 'tenantFilter'],
   roles: ['AM_ACCOUNT_ADMIN', 'ECOM_ADMIN', 'CCDX_SBX_USER', 'SLAS_ORGANIZATION_ADMIN'],
   tenantFilter:
-    'CCDX_SBX_USER:zzpq_013,zzpq_014;ECOM_ADMIN:zzpq_013,abcd_prd,abcd_stg;SLAS_ORGANIZATION_ADMIN:zzpq_013',
+    'CCDX_SBX_USER:zzzz_001,zzzz_002;ECOM_ADMIN:zzzz_001,abcd_prd,abcd_stg;SLAS_ORGANIZATION_ADMIN:zzzz_001',
 };
 
 describe('auth/account-manager-claims', () => {
@@ -47,11 +47,11 @@ describe('auth/account-manager-claims', () => {
       expect(claims.scopes).to.include.members(['roles', 'tenantFilter']);
       expect(claims.roles).to.deep.equal(userPayload.roles);
       expect(claims.tenantFilter).to.deep.equal({
-        CCDX_SBX_USER: ['zzpq_013', 'zzpq_014'],
-        ECOM_ADMIN: ['zzpq_013', 'abcd_prd', 'abcd_stg'],
-        SLAS_ORGANIZATION_ADMIN: ['zzpq_013'],
+        CCDX_SBX_USER: ['zzzz_001', 'zzzz_002'],
+        ECOM_ADMIN: ['zzzz_001', 'abcd_prd', 'abcd_stg'],
+        SLAS_ORGANIZATION_ADMIN: ['zzzz_001'],
       });
-      expect(claims.tenants).to.deep.equal(['abcd_prd', 'abcd_stg', 'zzpq_013', 'zzpq_014']);
+      expect(claims.tenants).to.deep.equal(['abcd_prd', 'abcd_stg', 'zzzz_001', 'zzzz_002']);
     });
 
     it('marks client-credentials tokens as not a user and tolerates missing claims', () => {
@@ -119,12 +119,12 @@ describe('auth/account-manager-claims', () => {
     });
 
     it('checks a role on a tenant, normalizing tenant IDs', () => {
-      expect(getAccountManagerRoleTenants(claims, 'ECOM_ADMIN')).to.deep.equal(['zzpq_013', 'abcd_prd', 'abcd_stg']);
+      expect(getAccountManagerRoleTenants(claims, 'ECOM_ADMIN')).to.deep.equal(['zzzz_001', 'abcd_prd', 'abcd_stg']);
       expect(getAccountManagerRoleTenants(claims, 'AM_ACCOUNT_ADMIN')).to.deep.equal([]);
-      expect(hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzpq-013')).to.equal(true);
+      expect(hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzzz-001')).to.equal(true);
       expect(hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'f_ecom_ABCD_PRD')).to.equal(true);
-      expect(hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzpq_014')).to.equal(false);
-      expect(hasAccountManagerTenantRole(claims, 'CCDX_SBX_USER', 'zzpq_014')).to.equal(true);
+      expect(hasAccountManagerTenantRole(claims, 'ECOM_ADMIN', 'zzzz_002')).to.equal(false);
+      expect(hasAccountManagerTenantRole(claims, 'CCDX_SBX_USER', 'zzzz_002')).to.equal(true);
     });
 
     it('maps role enum names to display names', () => {

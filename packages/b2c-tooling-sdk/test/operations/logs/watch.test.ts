@@ -28,12 +28,21 @@ const file = (name: string): LogFile => ({
 
 function fakeTail() {
   let callbacks: TailLogsOptions = {};
-  const result: TailLogsResult = {stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()};
+  let end!: (error?: Error) => void;
+  const done = new Promise<void>((resolve, reject) => {
+    end = (error) => (error ? reject(error) : resolve());
+  });
+  const result: TailLogsResult = {
+    stop: sinon.stub().callsFake(async () => end()),
+    files: [],
+    entries: [],
+    done,
+  };
   const tail = sinon.stub().callsFake(async (_instance: B2CInstance, options: TailLogsOptions) => {
     callbacks = options;
     return result;
   });
-  return {tail, result, emit: () => callbacks};
+  return {tail, result, emit: () => callbacks, end: (error?: Error) => end(error)};
 }
 
 describe('operations/logs/watch', () => {
@@ -115,6 +124,19 @@ describe('operations/logs/watch', () => {
     expect((result.stop as sinon.SinonStub).calledOnce).to.equal(true);
     emit().onEntry!(entry('after stop'));
     expect((await watch.poll()).entries.map((e) => e.message)).to.deep.equal(['unread']);
+  });
+
+  it('reports stopped when the tail ends on its own', async () => {
+    const {tail, emit, end} = fakeTail();
+    const watch = await watchLogs(instance, {tail});
+    const waiting = watch.poll({timeoutMs: 5000});
+    emit().onError!(new Error('fatal'));
+    end(new Error('fatal'));
+    const first = await waiting;
+    const second = await watch.poll({timeoutMs: 5000});
+    expect(first.errors.length + second.errors.length).to.equal(1);
+    expect(second.stopped).to.equal(true);
+    expect(watch.info().stopped).to.equal(true);
   });
 });
 

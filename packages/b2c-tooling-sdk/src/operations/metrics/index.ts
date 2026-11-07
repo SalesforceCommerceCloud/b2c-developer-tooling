@@ -706,8 +706,6 @@ export async function getMetricsByCategory(
   }
 }
 
-// Client-side dimension/tag extraction for series (interim until the API
-// exposes structured tags server-side). See ./tags.ts.
 /**
  * Per-series statistics returned instead of data points when `summarize` is set.
  * Statistics cover the returned points only; intervals without a point are

@@ -97,6 +97,11 @@ export async function watchLogs(instance: B2CInstance, options: WatchLogsOptions
       buffer.notify();
     },
   });
+  // A tail that ends on its own (fatal poll error) stops the watch.
+  tail.done.then(
+    () => buffer.stop(),
+    () => buffer.stop(),
+  );
   let stopping: Promise<void> | undefined;
   return {
     prefixes,

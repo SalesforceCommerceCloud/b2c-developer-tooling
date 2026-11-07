@@ -225,6 +225,14 @@ describe('operations/debug/debug-session', () => {
       }
       expect((error as Error).message).to.equal('cancelled');
       await session.disconnect();
+
+      error = undefined;
+      try {
+        await session.waitForHalt(5000);
+      } catch (caught) {
+        error = caught;
+      }
+      expect((error as Error).message).to.equal('Debug session is not connected');
     });
   });
 
