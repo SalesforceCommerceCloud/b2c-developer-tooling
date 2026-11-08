@@ -100,6 +100,7 @@ async () => {
 | Need                                                                                                                | Read                                                                           |
 | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Pick API for a task (jobs, code versions, sites, products, promotions); live/custom schemas; `c_*` fields; `expand` | [discover](references/discover.md)                                             |
+| Create a promotion, campaign or coupon; promotion discount rules                                                    | [promotions](references/promotions.md)                                         |
 | Compose multi-call program, verify, paging, limits                                                                  | [compose-verify](references/compose-verify.md)                                 |
 | Approval, cancel, `input_required`                                                                                  | [confirmation](references/confirmation.md)                                     |
 | Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
