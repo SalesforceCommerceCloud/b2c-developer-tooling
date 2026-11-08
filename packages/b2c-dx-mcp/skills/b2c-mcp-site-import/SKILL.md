@@ -46,5 +46,6 @@ what SCAPI lacks.
    returns, ask the user to check Business Manager, or with a terminal export the
    data unit (`b2c job export`). A finished job alone does not prove the data changed.
 
-Imports are writes. Confirm the target instance and site with the user, keep new
-records disabled until verified, and enable them only as the task requires.
+Imports are writes. Confirm the target instance and site with the user. Import
+records with the enabled state the user asked for, enabled by default; dates and
+schedules control when shoppers see them.

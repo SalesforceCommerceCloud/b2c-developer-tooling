@@ -24,7 +24,7 @@ Scopes: `sfcc.promotions.rw` covers both the Promotions and Campaigns APIs.
 Pass the configured `siteId` as a query parameter on every call.
 
 1. Create the promotion: `createPromotion`, `PUT …/promotions/{id}`, with `name`,
-   `enabled` and `promotionClass` (`product`, `order` or `shipping`). Read it back.
+   `enabled: true` and `promotionClass` (`product`, `order` or `shipping`). Read it back.
 2. Create the campaign if needed: `createCampaign`, `PUT …/campaigns/{campaignId}`.
    Omitted `startDate`/`endDate` get defaults; read back and set them explicitly
    when the schedule matters.
@@ -33,7 +33,9 @@ Pass the configured `siteId` as a query parameter on every call.
    optional. The body has no `enabled` field.
 4. Add the discount rule (what is discounted and by how much). See below.
 
-Keep new promotions and campaigns disabled until the rule is in place and verified.
+Create promotions, campaigns and coupons enabled unless the user asks for them
+disabled. The campaign's `startDate`/`endDate` and the assignment's `schedule`
+decide when shoppers see a promotion; set them when the user gives dates or times.
 
 ### Discount rules
 
@@ -83,4 +85,3 @@ The discount-rule GET also returns 404, so no API reads the rule back yet. Ask t
 user to check it in Business Manager (Merchant Tools > Online Marketing >
 Promotions), or, with a terminal, export `campaigns_and_promotions` with
 `b2c job export`.
-Then enable the promotion, campaign and assignment as the task requires.
