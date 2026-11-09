@@ -15,7 +15,7 @@ const send = process.send.bind(process);
 const pending = new Map();
 let sequence = 0;
 function directNetwork() {
-  throw new Error('SCAPI_DIRECT_NETWORK_DISABLED: Use scapi.request() in code mode. For direct HTTP calls, export a token and use a client outside code mode; SDK safety does not govern those calls.');
+  throw new Error('SCAPI_DIRECT_NETWORK_DISABLED: Use scapi.request() in code mode. For direct HTTP calls, use a client outside code mode with a token from b2c auth token; SDK safety does not govern those calls.');
 }
 // Network access goes only through scapi.request(), which the host authenticates and governs.
 for (const name of ['fetch', 'WebSocket', 'EventSource']) {
@@ -150,7 +150,8 @@ process.on('message', async message => {
     pending.set(id, {resolve, reject});
     send({type:'auth', id, operation, options});
   });
-  const auth = {accountManager: options => authCall('accountManager', options), slas: options => authCall('slas', options)};
+  // Present only when the host can export SLAS tokens.
+  const auth = message.auth ? {slas: options => authCall('slas', options)} : undefined;
   const snippetCall = (operation, name, input) => new Promise((resolve, reject) => {
     const id = ++sequence;
     pending.set(id, {resolve, reject});

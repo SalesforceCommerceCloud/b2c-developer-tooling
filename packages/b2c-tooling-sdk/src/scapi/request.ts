@@ -131,7 +131,7 @@ export function createScapiRequest(
     const transferLimit = unsupportedScapiTransfer(matched.document, operation);
     if (transferLimit)
       throw new Error(
-        `SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}. ${transferLimit} No request sent. Run the JSON steps (submit, status, delete) here; transfer the file with an external HTTP client, using a token from auth.accountManager(${JSON.stringify({scopes: selected.scopes, scapi: true})}) if needed.`,
+        `SCAPI_TRANSFER_UNSUPPORTED: ${operation.operationId}. ${transferLimit} No request sent. Run the JSON steps (submit, status, delete) here; transfer the file with an external HTTP client, using a token from b2c auth token${[...selected.scopes, buildTenantScope(options.tenantId)].map((scope) => ` --auth-scope ${scope}`).join('')} if needed.`,
       );
     const query = args.query === undefined ? {} : args.query;
     if (!query || typeof query !== 'object' || Array.isArray(query)) throw new Error('query must be an object.');

@@ -329,14 +329,17 @@ export function createScapiCodeTools(
               });
               return managedRequest(options, signal);
             };
-            const auth = createScapiAuth(config.values, resolution?.projectDirectory?.path);
+            // auth.slas() exists only with SLAS credentials; Account Manager tokens are never exported to code.
+            const auth = config.values.slasClientId ? createScapiAuth(config.values) : undefined;
             try {
               const result = await runScapiCode({
                 code: input.code!,
                 documents,
                 request: (options, signal) => execution.runCall('request', options, () => request(options, signal)),
-                auth: (operation, options, signal) =>
-                  execution.runCall('auth', undefined, () => auth(operation, options, signal)),
+                auth: auth
+                  ? (operation, options, signal) =>
+                      execution.runCall('auth', undefined, () => auth(operation, options, signal))
+                  : undefined,
                 organizationId: tenantId ? toOrganizationId(tenantId) : undefined,
                 siteId,
                 cwd: resolution?.projectDirectory?.path,
