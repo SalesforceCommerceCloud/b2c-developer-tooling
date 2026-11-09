@@ -7,7 +7,11 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {DebugSessionManager, type DebugSessionConfig} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {
+  DebugSessionManager,
+  resolveDebugIntervals,
+  type DebugSessionConfig,
+} from '@salesforce/b2c-tooling-sdk/operations/debug';
 
 const TEST_HOST = 'test.demandware.net';
 const BASE_URL = `https://${TEST_HOST}/s/-/dw/debugger/v2_0`;
@@ -252,6 +256,34 @@ describe('operations/debug/debug-session', () => {
 
       server.use(http.delete(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})));
       await session.disconnect();
+    });
+  });
+
+  describe('resolveDebugIntervals', () => {
+    it('uses defaults when nothing is configured', () => {
+      expect(resolveDebugIntervals({}, {})).to.deep.equal({pollInterval: 500, keepaliveInterval: 15_000});
+    });
+
+    it('reads SFCC_DEBUG_* environment variables', () => {
+      const env = {SFCC_DEBUG_POLL_INTERVAL: '2000', SFCC_DEBUG_KEEPALIVE_INTERVAL: '20000'};
+      expect(resolveDebugIntervals({}, env)).to.deep.equal({pollInterval: 2000, keepaliveInterval: 20_000});
+    });
+
+    it('prefers explicit config over environment variables', () => {
+      const env = {SFCC_DEBUG_POLL_INTERVAL: '2000', SFCC_DEBUG_KEEPALIVE_INTERVAL: '20000'};
+      expect(resolveDebugIntervals({pollInterval: 750, keepaliveInterval: 5000}, env)).to.deep.equal({
+        pollInterval: 750,
+        keepaliveInterval: 5000,
+      });
+    });
+
+    it('clamps to minimums and ignores non-numeric values', () => {
+      expect(resolveDebugIntervals({pollInterval: 1, keepaliveInterval: 10}, {})).to.deep.equal({
+        pollInterval: 100,
+        keepaliveInterval: 1000,
+      });
+      const env = {SFCC_DEBUG_POLL_INTERVAL: 'fast', SFCC_DEBUG_KEEPALIVE_INTERVAL: ''};
+      expect(resolveDebugIntervals({}, env)).to.deep.equal({pollInterval: 500, keepaliveInterval: 15_000});
     });
   });
 });

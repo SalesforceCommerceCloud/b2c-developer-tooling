@@ -219,6 +219,33 @@ describe('operations/debug/dap-adapter (integration)', () => {
     });
   });
 
+  describe('launch interval overrides', () => {
+    it('launch pollInterval overrides the pre-configured interval', async () => {
+      let threadPolls = 0;
+      server.use(
+        http.get(`${BASE_URL}/threads`, () => {
+          threadPolls++;
+          return HttpResponse.json({_v: '2.0', script_threads: []});
+        }),
+        ...sdapiHandlers(),
+      );
+
+      const adapter = new B2CScriptDebugAdapter(makeConfig()); // pre-config polls every 100s
+      const client = createDAPClient(adapter);
+      await client.send('initialize', {adapterID: 'b2c-script', pathFormat: 'path'});
+      const initialized = client.waitForEvent('initialized');
+      try {
+        await client.send('launch', {pollInterval: 100});
+        await initialized;
+        await new Promise((resolve) => setTimeout(resolve, 350));
+        expect(threadPolls).to.be.greaterThan(0);
+      } finally {
+        await client.send('disconnect', {});
+        client.dispose();
+      }
+    });
+  });
+
   describe('b2c/sessionCookie custom request', () => {
     it('returns the dwsid cookie established on connect', async () => {
       server.use(
