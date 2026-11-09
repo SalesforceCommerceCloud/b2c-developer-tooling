@@ -87,6 +87,7 @@ describe('mrt bundle deploy', () => {
           'ssr-shared': 'static/**/*',
           'node-version': '20.x',
           'ssr-param': ['SSRProxyPath=/api', 'Foo=bar'],
+          'cc-override': [],
           message: 'Test push',
           wait: false,
         },
@@ -132,7 +133,14 @@ describe('mrt bundle deploy', () => {
 
       stubParse(
         command,
-        {project: 'my-project', environment: 'staging', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false},
+        {
+          project: 'my-project',
+          environment: 'staging',
+          'mrt-backend': 'scapi',
+          'ssr-param': [],
+          'cc-override': [],
+          wait: false,
+        },
         {},
       );
       await command.init();
@@ -172,7 +180,11 @@ describe('mrt bundle deploy', () => {
     it('uploads only (no environment) via SCAPI and returns the raw upload response', async () => {
       const command = createCommand();
 
-      stubParse(command, {project: 'my-project', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false}, {});
+      stubParse(
+        command,
+        {project: 'my-project', 'mrt-backend': 'scapi', 'ssr-param': [], 'cc-override': [], wait: false},
+        {},
+      );
       await command.init();
 
       stubCommonAuth(command);
@@ -208,7 +220,14 @@ describe('mrt bundle deploy', () => {
 
       stubParse(
         command,
-        {project: 'my-project', environment: 'staging', 'build-dir': 'dist', 'ssr-param': [], wait: false},
+        {
+          project: 'my-project',
+          environment: 'staging',
+          'build-dir': 'dist',
+          'ssr-param': [],
+          'cc-override': [],
+          wait: false,
+        },
         {},
       );
       await command.init();
@@ -249,6 +268,7 @@ describe('mrt bundle deploy', () => {
           'config-path': '.mrt/config.json',
           'match-mode': 'ignore_missing',
           'ssr-param': [],
+          'cc-override': [],
           wait: false,
         },
         {},
@@ -295,6 +315,7 @@ describe('mrt bundle deploy', () => {
           'root-dir': 'bld',
           'match-mode': 'ignore_missing',
           'ssr-param': [],
+          'cc-override': [],
           wait: false,
         },
         {},
@@ -339,6 +360,7 @@ describe('mrt bundle deploy', () => {
           'root-dir': 'bld',
           'match-mode': 'ignore_missing',
           'ssr-param': [],
+          'cc-override': [],
           wait: false,
         },
         {},
@@ -379,7 +401,14 @@ describe('mrt bundle deploy', () => {
 
       stubParse(
         command,
-        {project: 'my-project', environment: 'staging', 'build-dir': 'dist', 'ssr-param': [], wait: false},
+        {
+          project: 'my-project',
+          environment: 'staging',
+          'build-dir': 'dist',
+          'ssr-param': [],
+          'cc-override': [],
+          wait: false,
+        },
         {},
       );
       await command.init();
@@ -410,7 +439,7 @@ describe('mrt bundle deploy', () => {
     it('throws error when ssr-param has invalid format', async () => {
       const command = createCommand();
 
-      stubParse(command, {project: 'my-project', 'ssr-param': ['INVALID']}, {});
+      stubParse(command, {project: 'my-project', 'ssr-param': ['INVALID'], 'cc-override': []}, {});
       await command.init();
 
       stubCommonAuth(command);
@@ -714,6 +743,7 @@ describe('mrt bundle deploy', () => {
           'ssr-only': 'ssr.js',
           'ssr-shared': 'static/**/*',
           'ssr-param': [],
+          'cc-override': [],
         },
         {},
       );
@@ -765,6 +795,7 @@ describe('mrt bundle deploy', () => {
           timeout: 600,
           'build-dir': 'build',
           'ssr-param': [],
+          'cc-override': [],
         },
         {},
       );
@@ -823,6 +854,7 @@ describe('mrt bundle deploy', () => {
           'ssr-only': 'ssr.js',
           'ssr-shared': 'static/**/*',
           'ssr-param': [],
+          'cc-override': [],
         },
         {},
       );
@@ -911,7 +943,11 @@ describe('mrt bundle deploy', () => {
   describe('403 error guidance', () => {
     it('shows project list suggestion when push fails with 403', async () => {
       const command = createCommand();
-      stubParse(command, {project: 'wrong-project', 'build-dir': 'build', 'ssr-param': [], wait: false}, {});
+      stubParse(
+        command,
+        {project: 'wrong-project', 'build-dir': 'build', 'ssr-param': [], 'cc-override': [], wait: false},
+        {},
+      );
       await command.init();
       stubCommonAuth(command);
       stubBackendContext(command);
@@ -1001,7 +1037,14 @@ describe('mrt bundle deploy', () => {
       const command = createCommand();
       stubParse(
         command,
-        {project: 'my-project', environment: 'staging', 'mrt-backend': 'scapi', 'ssr-param': [], wait: false},
+        {
+          project: 'my-project',
+          environment: 'staging',
+          'mrt-backend': 'scapi',
+          'ssr-param': [],
+          'cc-override': [],
+          wait: false,
+        },
         {},
       );
       await command.init();
@@ -1033,7 +1076,11 @@ describe('mrt bundle deploy', () => {
 
     it('does not show suggestion when push fails with non-403 error', async () => {
       const command = createCommand();
-      stubParse(command, {project: 'my-project', 'build-dir': 'build', 'ssr-param': [], wait: false}, {});
+      stubParse(
+        command,
+        {project: 'my-project', 'build-dir': 'build', 'ssr-param': [], 'cc-override': [], wait: false},
+        {},
+      );
       await command.init();
       stubCommonAuth(command);
       stubBackendContext(command);

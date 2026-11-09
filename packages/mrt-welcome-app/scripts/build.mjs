@@ -61,6 +61,13 @@ function formatSize(bytes) {
   return `${bytes} B`;
 }
 
+/** Writes the MRT v2 bundle config to `build/.mrt/config.json`. */
+async function writeMrtConfig(config) {
+  const configDir = path.join(buildDir, '.mrt');
+  await fs.mkdir(configDir, {recursive: true});
+  await fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(config, null, 2) + '\n');
+}
+
 async function build() {
   await fs.rm(buildDir, {recursive: true, force: true});
   await fs.mkdir(buildDir, {recursive: true});
@@ -108,6 +115,13 @@ async function build() {
   const pkg = JSON.parse(await fs.readFile(path.join(pkgRoot, 'package.json'), 'utf8'));
   delete pkg.type;
   await fs.writeFile(path.join(buildDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+
+  // Write the MRT bundle config (read by `b2c mrt bundle deploy --v2` from the build directory)
+  await writeMrtConfig({
+    ssrOnly: ['ssr.js', 'loader.js', 'package.json', 'views/layout.html'],
+    ssrShared: [],
+    ssrParameters: {SSRFunctionNodeVersion: '24.x'},
+  });
 
   console.log('Build complete');
 }
