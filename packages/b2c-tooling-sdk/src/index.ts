@@ -85,6 +85,8 @@ export {
   normalizeTenantId,
   tenantIdFromSandboxHostname,
   sandboxHostnameFromTenantId,
+  isDefaultDomainHostname,
+  sandboxHostnameFromDefaultDomain,
   buildTenantScope,
   getApiErrorMessage,
   isOcapiDeprecatedFault,

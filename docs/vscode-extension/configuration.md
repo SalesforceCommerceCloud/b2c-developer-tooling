@@ -34,7 +34,7 @@ The extension's instance picker combines instances from the primary and global f
 
 ### Code sync with only a server
 
-Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any URL on the instance, such as a Business Manager link. The extension saves the hostname to `dw.json`.
+Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any Business Manager URL on the instance. The extension saves the hostname to `dw.json`. Use the Business Manager host, not a storefront link: storefront hostnames, including the Default Domain (`*.my.commercecloud.salesforce.com`), are subject to eCDN rate limits and firewall rules, and on On-Demand Sandboxes they don't serve WebDAV.
 
 The first upload asks you to sign in with your Account Manager account, and your Business Manager roles decide what you can upload. Code sync uploads to the instance's active code version. To upload to a different version, run **B2C DX - Code Sync: Select Code Version for Uploads**.
 

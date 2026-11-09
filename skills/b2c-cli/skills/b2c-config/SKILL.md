@@ -121,6 +121,7 @@ Most commands that interact with a B2C Commerce instance require authentication.
 - **Basic auth:** Configure `username` and `password` for WebDAV operations.
 - **Stateful sessions:** Use `b2c auth login` to stay signed in; later commands reuse the saved session when no other client is configured. Client credentials need no session (each command gets a token); `b2c auth client` exists for `sfcc-ci client:auth` compatibility.
 - **Just a server:** code upload, logs, and `webdav` commands need only the hostname; the user signs in with their Account Manager account in the browser when asked.
+- **Which hostname:** always the Business Manager host (for example `abcd-001.dx.commercecloud.salesforce.com` on a sandbox), never a storefront or Default Domain host (`*.my.commercecloud.salesforce.com`). Storefront hosts sit behind eCDN rate limits and firewall rules meant for shoppers, and on sandboxes the `.my` host serves only the storefront. If a user offers a storefront URL, ask for their Business Manager URL instead.
 - **Check what's in use:** `b2c setup inspect` shows how the instance authenticates; `b2c auth status` shows who is signed in.
 
 ### `--user-auth` Flag
