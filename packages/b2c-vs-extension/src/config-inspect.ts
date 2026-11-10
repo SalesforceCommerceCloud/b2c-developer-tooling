@@ -14,6 +14,8 @@ export interface InspectRow {
   source: string;
   location?: string;
   sensitive: boolean;
+  /** Why this value is likely wrong, such as a storefront host configured as `hostname`. */
+  warning?: string;
 }
 
 /** A value a source supplied that was not used, and why. */
@@ -71,6 +73,15 @@ export function buildConfigInspection(
   const status = describeInstanceStatus(config, options);
   const {sources, values} = config;
 
+  // Field-level warnings are shown on the row as well as in the Selection card.
+  const fieldWarnings = new Map<string, string>();
+  for (const warning of config.warnings) {
+    if (warning.code === 'STOREFRONT_HOSTNAME' && typeof warning.details?.field === 'string') {
+      const suggestion = typeof warning.details.suggestion === 'string' ? ` (${warning.details.suggestion})` : '';
+      fieldWarnings.set(warning.details.field, `Storefront host: use the Business Manager hostname${suggestion}`);
+    }
+  }
+
   const rows: InspectRow[] = [];
   for (const [field, value] of Object.entries(values)) {
     if (value === undefined || field === 'workingDirectory') continue;
@@ -82,6 +93,7 @@ export function buildConfigInspection(
       source: supplier ? sourceLabel(supplier) : 'extension',
       location: supplier?.location,
       sensitive,
+      ...(fieldWarnings.has(field) ? {warning: fieldWarnings.get(field)} : {}),
     });
   }
 

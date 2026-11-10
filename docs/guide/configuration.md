@@ -44,6 +44,10 @@ This example supports Admin APIs and WebDAV on a sandbox:
 
 Use your instance's short code and an existing code version. `tenant-id` accepts both the tenant form (`abcd_001`) and organization form (`f_ecom_abcd_001`). Staging and production tenants typically use `abcd_stg` and `abcd_prd`.
 
+::: tip Use the Business Manager hostname
+Set `hostname` to the host you sign in to Business Manager with, such as `abcd-001.dx.commercecloud.salesforce.com` for an On-Demand Sandbox. Don't use a storefront hostname, including the Salesforce-managed Default Domain (`*.my.commercecloud.salesforce.com`). Storefront hostnames are served through eCDN zones whose rate limits and firewall rules (and, on production, a Block All rule) are meant for shopper traffic and can throttle or block CLI, WebDAV, and API requests. On On-Demand Sandboxes, the Default Domain serves only the storefront; Business Manager, WebDAV, code upload, and jobs stay on the `.dx` host. `b2c setup inspect`, the MCP `config_inspect` tool, and the VS Code **Resolved Config** panel warn when `hostname` or `webdav-hostname` is a Default Domain host, and suggest the `.dx` host for sandboxes. See [Default Domain on On-Demand Sandboxes](https://help.salesforce.com/s/articleView?id=cc.b2c_default_domain_ods.htm&type=5).
+:::
+
 ::: tip Only uploading code or reading logs?
 `hostname` is the only required field for code upload, files, and logs: you sign in with your Account Manager account when asked. Add the other fields as you need the tasks in [Choose Your Connection](#choose-your-connection).
 :::
@@ -297,18 +301,18 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 
 ### Instance and Site
 
-| Field / environment variable              | Purpose                                                                                     |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `hostname`<br>`SFCC_SERVER`               | Instance hostname, without a URL path. Also accepts `server` in JSON.                       |
-| `webdav-hostname`<br>`SFCC_WEBDAV_SERVER` | Separate WebDAV hostname. JSON aliases: `webdav-server`, `secureHostname`, `secure-server`. |
-| `code-version`<br>`SFCC_CODE_VERSION`     | Default code version for operations that accept one.                                        |
-| `short-code`<br>`SFCC_SHORTCODE`          | SCAPI short code. JSON also accepts `scapi-shortcode`.                                      |
-| `tenant-id`<br>`SFCC_TENANT_ID`           | Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`.                         |
-| `site-id`<br>`SFCC_SITE_ID`               | Default site/channel ID for supported site and shopper operations.                          |
-| `name`                                    | Connection name for instance selection.                                                     |
-| `active`                                  | Boolean: use this entry as the default.                                                     |
-| `configs`                                 | Root-level array of named instance entries.                                                 |
-| `api-backend`<br>`SFCC_API_BACKEND`       | `auto` (default), `scapi`, or `ocapi`, for operations supporting both backends.             |
+| Field / environment variable              | Purpose                                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hostname`<br>`SFCC_SERVER`               | Business Manager hostname, without a URL path; not a storefront or Default Domain (`*.my.commercecloud.salesforce.com`) host. Also accepts `server` in JSON. |
+| `webdav-hostname`<br>`SFCC_WEBDAV_SERVER` | Separate WebDAV hostname. JSON aliases: `webdav-server`, `secureHostname`, `secure-server`.                                                                  |
+| `code-version`<br>`SFCC_CODE_VERSION`     | Default code version for operations that accept one.                                                                                                         |
+| `short-code`<br>`SFCC_SHORTCODE`          | SCAPI short code. JSON also accepts `scapi-shortcode`.                                                                                                       |
+| `tenant-id`<br>`SFCC_TENANT_ID`           | Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`.                                                                                          |
+| `site-id`<br>`SFCC_SITE_ID`               | Default site/channel ID for supported site and shopper operations.                                                                                           |
+| `name`                                    | Connection name for instance selection.                                                                                                                      |
+| `active`                                  | Boolean: use this entry as the default.                                                                                                                      |
+| `configs`                                 | Root-level array of named instance entries.                                                                                                                  |
+| `api-backend`<br>`SFCC_API_BACKEND`       | `auto` (default), `scapi`, or `ocapi`, for operations supporting both backends.                                                                              |
 
 `auto` uses SCAPI when the required coordinates and supported authentication are available, with OCAPI fallback for supported rejection cases. Otherwise it selects OCAPI directly. See [API backend selection](/cli/code#api-backend) and [OCAPI access](./authentication#ocapi-configuration).
 
