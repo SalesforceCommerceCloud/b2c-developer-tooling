@@ -1,5 +1,18 @@
 # Change Log
 
+## 1.10.0
+
+### Minor Changes
+
+- [#858](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/858) [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454) - Configure how often the Script Debugger polls for breakpoint hits and sends keepalives with `SFCC_DEBUG_POLL_INTERVAL` and `SFCC_DEBUG_KEEPALIVE_INTERVAL` (CLI, MCP, and VS Code), the `b2c-dx.debugger.pollInterval` and `b2c-dx.debugger.keepaliveInterval` VS Code settings, or `pollInterval`/`keepaliveInterval` in a `b2c-script` launch configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57), [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4), [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1)]:
+  - @salesforce/b2c-tooling-sdk@2.15.0
+
 ## 1.9.1
 
 ### Patch Changes

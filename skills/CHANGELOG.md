@@ -1,5 +1,15 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.15.2
+
+### Patch Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - Update the `b2c-mrt` skill to prefer `b2c mrt bundle deploy --v2` over the deprecated `upload-v2` (now built on it), document `deploy --dependencies`/`--cc-override`, and note that `--ssr-only`/`--ssr-shared` have no defaults. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30) - SCAPI code mode no longer exports Account Manager tokens: `auth.accountManager()` is removed. Use `b2c auth token` when an external client needs an Admin token. `auth.slas()` is now available only when a SLAS client is configured. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.15.1
 
 ### Patch Changes

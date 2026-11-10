@@ -1,5 +1,20 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.15.0
+
+### Minor Changes
+
+- [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30) - SCAPI code mode no longer exports Account Manager tokens: `auth.accountManager()` is removed. Use `b2c auth token` when an external client needs an Admin token. `auth.slas()` is now available only when a SLAS client is configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#856](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/856) [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4) - The promotion and site import skills now create promotions, campaigns and coupons enabled unless the user asks otherwise, and point to campaign dates and assignment schedules to control when shoppers see them. Agents no longer create records disabled and then ask for a second approval to enable them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#860](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/860) [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1) - The SCAPI skill links promotion, campaign and coupon creation to its promotions reference, so agents create those records through SCAPI and import only the discount rule. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57), [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4), [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1)]:
+  - @salesforce/b2c-tooling-sdk@2.15.0
+
 ## 3.14.0
 
 ### Minor Changes
