@@ -212,6 +212,18 @@
           ],
           "description": "Log verbosity level for the B2C DX output channel."
         },
+        "b2c-dx.debugger.pollInterval": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Milliseconds between script debugger thread polls, which detect breakpoint hits and step completion. 0 uses the SFCC_DEBUG_POLL_INTERVAL environment variable or the default (500). Values below 100 are raised to 100."
+        },
+        "b2c-dx.debugger.keepaliveInterval": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Milliseconds between script debugger keepalive resets, which stop halted threads timing out after 60 seconds. 0 uses the SFCC_DEBUG_KEEPALIVE_INTERVAL environment variable or the default (15000). Keep this well below 60000."
+        },
         "b2c-dx.sandbox.pollingInterval": {
           "type": "number",
           "default": 10,
@@ -531,6 +543,16 @@
               "cartridgePath": {
                 "type": "string",
                 "description": "Path to cartridges directory (auto-detected from workspace by default)"
+              },
+              "pollInterval": {
+                "type": "number",
+                "minimum": 100,
+                "description": "Milliseconds between thread status polls (overrides the b2c-dx.debugger.pollInterval setting)"
+              },
+              "keepaliveInterval": {
+                "type": "number",
+                "minimum": 1000,
+                "description": "Milliseconds between keepalive resets that stop halted threads timing out after 60s (overrides the b2c-dx.debugger.keepaliveInterval setting)"
               }
             }
           }

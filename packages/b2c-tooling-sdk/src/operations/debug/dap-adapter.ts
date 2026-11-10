@@ -58,6 +58,10 @@ function decodeFrameId(frameId: number): {threadId: number; frameIndex: number} 
  */
 const PRIMITIVE_TYPES = new Set(['string', 'number', 'boolean', 'undefined', 'null', 'String', 'Number', 'Boolean']);
 
+function positiveNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 /**
  * Launch request arguments (received via launch.json or CLI config).
  */
@@ -612,7 +616,14 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
   // -----------------------------------------------------------------------
 
   private resolveConfig(args: LaunchRequestArguments): DebugSessionConfig {
-    if (this.preConfig) return this.preConfig;
+    if (this.preConfig) {
+      // Launch arguments (launch.json) override the pre-configured intervals.
+      return {
+        ...this.preConfig,
+        pollInterval: positiveNumber(args.pollInterval) ?? this.preConfig.pollInterval,
+        keepaliveInterval: positiveNumber(args.keepaliveInterval) ?? this.preConfig.keepaliveInterval,
+      };
+    }
 
     const hostname = args.hostname;
     const username = args.username;
@@ -629,8 +640,8 @@ export class B2CScriptDebugAdapter extends LoggingDebugSession {
       password,
       clientId: args.clientId,
       cartridgeRoots: [],
-      pollInterval: args.pollInterval,
-      keepaliveInterval: args.keepaliveInterval,
+      pollInterval: positiveNumber(args.pollInterval),
+      keepaliveInterval: positiveNumber(args.keepaliveInterval),
     };
   }
 

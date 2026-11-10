@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-07T19:30:19.044Z",
+  "generatedAt": "2026-11-09T17:36:45.376Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -485,7 +485,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/script-debugger.md",
-      "headings": "Requirements • Choosing an interface • Debug with your assistant • See Also",
+      "headings": "Requirements • Choosing an interface • Polling intervals • Debug with your assistant • See Also",
       "preview": "Debug server-side B2C Commerce scripts (controllers, hooks, jobs, custom APIs) with the Script Debugger — via the VS Code extension, the CLI DAP debug adapter, or the MCP diagnostics tools."
     },
     {

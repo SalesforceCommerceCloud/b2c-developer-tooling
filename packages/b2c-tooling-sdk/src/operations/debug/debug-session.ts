@@ -24,6 +24,67 @@ import type {
 
 const DEFAULT_POLL_INTERVAL = 500;
 const DEFAULT_KEEPALIVE_INTERVAL = 15_000;
+const MIN_POLL_INTERVAL = 100;
+const MIN_KEEPALIVE_INTERVAL = 1000;
+/** The server resumes a halted thread after 60s without a reset. */
+const HALT_TIMEOUT = 60_000;
+
+/** Environment variable overriding the thread polling interval (ms). */
+export const DEBUG_POLL_INTERVAL_ENV = 'SFCC_DEBUG_POLL_INTERVAL';
+/** Environment variable overriding the keepalive/reset interval (ms). */
+export const DEBUG_KEEPALIVE_INTERVAL_ENV = 'SFCC_DEBUG_KEEPALIVE_INTERVAL';
+
+/**
+ * Resolve the effective poll and keepalive intervals in milliseconds.
+ *
+ * Precedence: explicit config value, then the `SFCC_DEBUG_POLL_INTERVAL` /
+ * `SFCC_DEBUG_KEEPALIVE_INTERVAL` environment variables, then the defaults
+ * (500ms / 15000ms). Values below the minimum (100ms poll, 1000ms keepalive)
+ * are raised to the minimum; non-numeric values fall back to the default.
+ */
+export function resolveDebugIntervals(
+  config: Pick<DebugSessionConfig, 'keepaliveInterval' | 'pollInterval'> = {},
+  env: NodeJS.ProcessEnv = process.env,
+): {keepaliveInterval: number; pollInterval: number} {
+  return {
+    pollInterval: resolveInterval(
+      config.pollInterval,
+      env[DEBUG_POLL_INTERVAL_ENV],
+      DEBUG_POLL_INTERVAL_ENV,
+      DEFAULT_POLL_INTERVAL,
+      MIN_POLL_INTERVAL,
+    ),
+    keepaliveInterval: resolveInterval(
+      config.keepaliveInterval,
+      env[DEBUG_KEEPALIVE_INTERVAL_ENV],
+      DEBUG_KEEPALIVE_INTERVAL_ENV,
+      DEFAULT_KEEPALIVE_INTERVAL,
+      MIN_KEEPALIVE_INTERVAL,
+    ),
+  };
+}
+
+function resolveInterval(
+  configured: number | undefined,
+  envValue: string | undefined,
+  envName: string,
+  fallback: number,
+  minimum: number,
+): number {
+  let value: number | undefined;
+  if (typeof configured === 'number' && Number.isFinite(configured)) {
+    value = configured;
+  } else if (envValue !== undefined && envValue.trim() !== '') {
+    const parsed = Number(envValue);
+    if (Number.isFinite(parsed)) {
+      value = parsed;
+    } else {
+      getLogger().warn(`Ignoring ${envName}=${envValue}: expected a number of milliseconds`);
+    }
+  }
+  if (value === undefined) return fallback;
+  return Math.max(minimum, Math.round(value));
+}
 
 export class DebugSessionManager {
   readonly client: SdapiClient;
@@ -32,6 +93,7 @@ export class DebugSessionManager {
   private readonly logger = getLogger();
 
   private pollTimer?: ReturnType<typeof setInterval>;
+  private pollInFlight = false;
   private keepaliveTimer?: ReturnType<typeof setInterval>;
 
   /** Last known thread states keyed by thread id */
@@ -69,15 +131,27 @@ export class DebugSessionManager {
     this.connected = true;
 
     try {
+      const {keepaliveInterval, pollInterval} = resolveDebugIntervals(this.config);
+      if (keepaliveInterval >= HALT_TIMEOUT) {
+        this.logger.warn(
+          `Debugger keepalive interval ${keepaliveInterval}ms is not below the 60s halt timeout; halted threads may resume on their own`,
+        );
+      }
+
       // Start keepalive timer
-      const keepaliveInterval = this.config.keepaliveInterval ?? DEFAULT_KEEPALIVE_INTERVAL;
       this.keepaliveTimer = setInterval(() => void this.keepalive(), keepaliveInterval);
 
-      // Start thread poller
-      const pollInterval = this.config.pollInterval ?? DEFAULT_POLL_INTERVAL;
-      this.pollTimer = setInterval(() => void this.pollThreads(), pollInterval);
+      // Start thread poller. Skips a tick while the previous request is still
+      // in flight so slow responses don't stack up concurrent requests.
+      this.pollTimer = setInterval(() => {
+        if (this.pollInFlight) return;
+        this.pollInFlight = true;
+        void this.pollThreads().finally(() => {
+          this.pollInFlight = false;
+        });
+      }, pollInterval);
 
-      this.logger.debug('Script debugger connected');
+      this.logger.debug({keepaliveInterval, pollInterval}, 'Script debugger connected');
 
       this.callbacks.onConnected?.(this.config.hostname);
     } catch (err) {

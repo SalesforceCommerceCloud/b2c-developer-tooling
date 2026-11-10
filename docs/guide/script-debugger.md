@@ -26,6 +26,18 @@ They all share the same workflow: connect a session, set breakpoints (by local f
 
 > **Rare PIG-only troubleshooting:** If a breakpoint is never hit after confirming the request exercises the expected code and the source mapping is correct, the request may be reaching a different app server on a multi-app-server Production Instance Group. In that case, use **Copy Debugger Session ID (dwsid)** in VS Code or the MCP session's `session_cookie`, then send the triggering request with `Cookie: dwsid=<value>` (or `sfdc_dwsid: <value>` for a headless request). Sandboxes are single-app-server and never need this.
 
+## Polling intervals
+
+The debugger polls the instance for halted threads every 500 ms and sends a keepalive reset every 15 seconds so a halted thread isn't resumed by the server's 60-second halt timeout. To reduce request volume, or to react faster, change the intervals (in milliseconds):
+
+| Interface                                                             | Poll interval                  | Keepalive interval                  |
+| --------------------------------------------------------------------- | ------------------------------ | ----------------------------------- |
+| Environment (CLI, MCP, VS Code)                                       | `SFCC_DEBUG_POLL_INTERVAL`     | `SFCC_DEBUG_KEEPALIVE_INTERVAL`     |
+| VS Code settings                                                      | `b2c-dx.debugger.pollInterval` | `b2c-dx.debugger.keepaliveInterval` |
+| `launch.json` (`b2c-script`, or another DAP client using `b2c debug`) | `pollInterval`                 | `keepaliveInterval`                 |
+
+Launch configuration values take priority over VS Code settings, which take priority over the environment variables. The poll interval has a 100 ms minimum and the keepalive a 1000 ms minimum; keep the keepalive well below 60000. A longer poll interval delays breakpoint and step notifications by up to that interval.
+
 ## Debug with your assistant
 
 With the [B2C MCP](/mcp/#setup), your assistant can investigate live cartridge
