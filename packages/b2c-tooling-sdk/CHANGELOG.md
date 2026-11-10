@@ -1,5 +1,28 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.15.0
+
+### Minor Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#858](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/858) [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454) - Configure how often the Script Debugger polls for breakpoint hits and sends keepalives with `SFCC_DEBUG_POLL_INTERVAL` and `SFCC_DEBUG_KEEPALIVE_INTERVAL` (CLI, MCP, and VS Code), the `b2c-dx.debugger.pollInterval` and `b2c-dx.debugger.keepaliveInterval` VS Code settings, or `pollInterval`/`keepaliveInterval` in a `b2c-script` launch configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30) - SCAPI code mode no longer exports Account Manager tokens: `auth.accountManager()` is removed. Use `b2c auth token` when an external client needs an Admin token. `auth.slas()` is now available only when a SLAS client is configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - `b2c mrt bundle deploy`/`save` and `createBundle`/`createBundleV2` no longer guess default `ssrOnly`/`ssrShared` patterns (which produced `Files not found in bundle archive: ssr.js, ssr.mjs` for streaming builds). Both lists must now come from the build's `.mrt/config.json` (now also read for v1 uploads), `config.server.*`, or `--ssr-only`/`--ssr-shared` (`--ssr-shared '[]'` for none); otherwise the command fails with an error naming the missing list. The `DEFAULT_SSR_ONLY`/`DEFAULT_SSR_SHARED` exports are removed. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+### Patch Changes
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - Deprecate `b2c mrt bundle upload-v2`: it now prints a warning and shares `b2c mrt bundle deploy --v2`'s flags, `--mrt-backend` routing and config resolution, while staying upload-only (an environment is ignored) and keeping its `--json` result shape. `b2c mrt bundle deploy` gains `--dependencies` and `--cc-override` for v2 uploads, so nothing from `upload-v2` is lost — switch scripts to `b2c mrt bundle deploy --v2`. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- [#856](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/856) [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4) - The promotion and site import skills now create promotions, campaigns and coupons enabled unless the user asks otherwise, and point to campaign dates and assignment schedules to control when shoppers see them. Agents no longer create records disabled and then ask for a second approval to enable them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#860](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/860) [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1) - The SCAPI skill links promotion, campaign and coupon creation to its promotions reference, so agents create those records through SCAPI and import only the discount rule. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30)]:
+  - @salesforce/b2c-agent-plugins@1.15.2
+
 ## 2.14.0
 
 ### Minor Changes
