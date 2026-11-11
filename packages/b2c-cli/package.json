@@ -179,6 +179,9 @@
       "mrt:project:notification": {
         "description": "Configure email notifications for deployment events (start, success, failure)\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
       },
+      "mrt:project:manage-access": {
+        "description": "View which surface manages a project's storefront and its SCAPI / legacy MRT API access\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-manage-access-commands"
+      },
       "mrt:storefront": {
         "description": "Alias for 'mrt project' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-commands"
       },
@@ -187,6 +190,9 @@
       },
       "mrt:storefront:notification": {
         "description": "Alias for 'mrt project notification' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-notification-commands"
+      },
+      "mrt:storefront:manage-access": {
+        "description": "Alias for 'mrt project manage-access' commands.\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#project-manage-access-commands"
       },
       "mrt:env:access-control": {
         "description": "Configure access control headers for environment security\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#access-control-commands"

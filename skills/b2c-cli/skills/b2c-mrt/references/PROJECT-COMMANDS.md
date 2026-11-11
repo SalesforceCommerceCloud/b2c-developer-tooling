@@ -180,3 +180,14 @@ b2c mrt project notification update abc-123 -p my-storefront --recipient new-tea
 b2c mrt project notification delete abc-123 --project my-storefront
 b2c mrt project notification delete abc-123 -p my-storefront --force
 ```
+
+## Manage Access
+
+### Get Manage Access State
+
+Shows where the storefront is managed (`ui`: `mrt` = Runtime Admin, `b2c` = Business Manager), whether the SCAPI MRT Admin API is available (`scapi`), and whether direct MRT API access is allowed (`legacy-mrt-api`), plus each environment's connected B2C instance.
+
+```bash
+b2c mrt project manage-access get -p my-storefront
+b2c mrt project manage-access get -p my-storefront --json
+```
