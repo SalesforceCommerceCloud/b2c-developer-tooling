@@ -260,11 +260,29 @@ b2c mrt project update my-storefront --site RefArch --site OtherSite --mrt-backe
 
 Delete an MRT project (storefront). Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`). Over SCAPI, deletion returns `202 Accepted` and completes asynchronously.
 
+By default, the storefront **and** every downstream resource — Managed Runtime environments and deployments, the Account Manager / SLAS client, and eCDN routing — are deleted. Pass the matching `--no-delete-*` flag to preserve a downstream resource (the storefront record itself is always removed). The preserved resources are reported under the `preserved` block of `--json`.
+
+**Scope:** granular opt-outs are honored only by the SCAPI backend. When the resolved backend is legacy, any `--no-delete-*` flag is ignored and a warning is emitted — the legacy MRT API only supports full teardown.
+
 ```bash
 b2c mrt project delete my-storefront
 b2c mrt project delete --project my-storefront --force
 b2c mrt project delete my-storefront --mrt-backend scapi --force
+# Preserve MRT envs/deployments; delete everything else
+b2c mrt project delete my-storefront --mrt-backend scapi --no-delete-mrt-env
+# Preserve AM/SLAS and eCDN; delete only the storefront + MRT env
+b2c mrt project delete my-storefront --mrt-backend scapi --no-delete-am-slas-clients --no-delete-ecdn-routing
 ```
+
+**Flags:**
+
+| Flag                              | Default | Effect                                                                                     |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
+| `--[no-]delete-mrt-env`           | `true`  | Delete the project's MRT environments and deployments. Pass `--no-...` to preserve.         |
+| `--[no-]delete-am-slas-clients`   | `true`  | Delete the project's Account Manager and SLAS clients. Pass `--no-...` to preserve.          |
+| `--[no-]delete-ecdn-routing`      | `true`  | Delete the project's eCDN routing. Pass `--no-...` to preserve.                              |
+
+Preserved resources are orphaned (the storefront record is gone but the resource remains). Clean them up manually via the appropriate `b2c` commands if they are no longer needed.
 
 ---
 

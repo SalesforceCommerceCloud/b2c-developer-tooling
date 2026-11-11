@@ -497,6 +497,43 @@ describe('operations/mrt/project', () => {
         expect((error as {status?: number}).status).to.equal(404);
       }
     });
+
+    it('omits all delete* query params when flags are left at default (true)', async () => {
+      let seenQuery: URLSearchParams | undefined;
+      server.use(
+        http.delete(SCAPI_STOREFRONT, ({request}) => {
+          seenQuery = new URL(request.url).searchParams;
+          return HttpResponse.json(scapiStorefront({setupStatus: 'delete_in_progress'}), {status: 202});
+        }),
+      );
+
+      await deleteStorefrontScapi(scapiConn(), {storefrontId: STOREFRONT_ID});
+
+      expect(seenQuery?.has('deleteMrtEnv')).to.equal(false);
+      expect(seenQuery?.has('deleteAmSlasClients')).to.equal(false);
+      expect(seenQuery?.has('deleteEcdnRouting')).to.equal(false);
+    });
+
+    it('forwards only the opt-out flags that are explicitly false', async () => {
+      let seenQuery: URLSearchParams | undefined;
+      server.use(
+        http.delete(SCAPI_STOREFRONT, ({request}) => {
+          seenQuery = new URL(request.url).searchParams;
+          return HttpResponse.json(scapiStorefront({setupStatus: 'delete_in_progress'}), {status: 202});
+        }),
+      );
+
+      await deleteStorefrontScapi(scapiConn(), {
+        storefrontId: STOREFRONT_ID,
+        deleteMrtEnv: false,
+        deleteAmSlasClients: true,
+        deleteEcdnRouting: false,
+      });
+
+      expect(seenQuery?.get('deleteMrtEnv')).to.equal('false');
+      expect(seenQuery?.has('deleteAmSlasClients')).to.equal(false);
+      expect(seenQuery?.get('deleteEcdnRouting')).to.equal('false');
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -855,6 +892,53 @@ describe('operations/mrt/project', () => {
 
       expect(result.backend).to.equal('legacy');
       expect(called).to.equal(true);
+    });
+
+    it('forwards delete* opt-out flags to the SCAPI backend as query params', async () => {
+      let seenQuery: URLSearchParams | undefined;
+      server.use(
+        http.delete(SCAPI_STOREFRONT, ({request}) => {
+          seenQuery = new URL(request.url).searchParams;
+          return HttpResponse.json(scapiStorefront({setupStatus: 'delete_in_progress'}), {status: 202});
+        }),
+      );
+
+      await deleteProjectWithBackend({
+        preference: 'scapi',
+        scapiConnection: scapiConn(),
+        projectSlug: STOREFRONT_ID,
+        deleteMrtEnv: false,
+        deleteEcdnRouting: false,
+      });
+
+      expect(seenQuery?.get('deleteMrtEnv')).to.equal('false');
+      expect(seenQuery?.has('deleteAmSlasClients')).to.equal(false);
+      expect(seenQuery?.get('deleteEcdnRouting')).to.equal('false');
+    });
+
+    it('silently ignores opt-out flags when backend resolves to legacy', async () => {
+      let seenUrl: URL | undefined;
+      server.use(
+        http.delete(LEGACY_PROJECT, ({request}) => {
+          seenUrl = new URL(request.url);
+          return new HttpResponse(null, {status: 204});
+        }),
+      );
+
+      const result = await deleteProjectWithBackend({
+        preference: 'legacy',
+        legacyAuth: new MockAuthStrategy(),
+        projectSlug: STOREFRONT_ID,
+        deleteMrtEnv: false,
+        deleteAmSlasClients: false,
+        deleteEcdnRouting: false,
+      });
+
+      expect(result.backend).to.equal('legacy');
+      // Legacy delete endpoint takes no granular-delete query params.
+      expect(seenUrl?.searchParams.has('deleteMrtEnv')).to.equal(false);
+      expect(seenUrl?.searchParams.has('deleteAmSlasClients')).to.equal(false);
+      expect(seenUrl?.searchParams.has('deleteEcdnRouting')).to.equal(false);
     });
   });
 

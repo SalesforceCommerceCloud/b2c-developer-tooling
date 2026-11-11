@@ -43,10 +43,17 @@ describe('mrt project delete', () => {
     } as any);
   }
 
+  const DEFAULT_FLAGS = {
+    force: true,
+    'delete-mrt-env': true,
+    'delete-am-slas-clients': true,
+    'delete-ecdn-routing': true,
+  };
+
   it('calls command.error when project is missing', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true}, {});
+    stubParse(command, DEFAULT_FLAGS, {});
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -65,7 +72,16 @@ describe('mrt project delete', () => {
   it('deletes via the backend wrapper when --force skips the prompt', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true}, {slug: 'my-storefront'});
+    stubParse(
+      command,
+      {
+        force: true,
+        'delete-mrt-env': true,
+        'delete-am-slas-clients': true,
+        'delete-ecdn-routing': true,
+      },
+      {slug: 'my-storefront'},
+    );
     await command.init();
 
     sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
@@ -86,14 +102,126 @@ describe('mrt project delete', () => {
     expect(input.preference).to.equal('auto');
     expect(input.projectSlug).to.equal('my-storefront');
     expect(input.origin).to.equal('https://example.com');
+    // Defaults → no opt-out flags forwarded on the wire.
+    expect(input.deleteMrtEnv).to.equal(undefined);
+    expect(input.deleteAmSlasClients).to.equal(undefined);
+    expect(input.deleteEcdnRouting).to.equal(undefined);
     // The backend is kept out of the --json payload; result shape stays stable.
-    expect(result).to.deep.equal({slug: 'my-storefront', deleted: true});
+    expect(result).to.deep.equal({
+      slug: 'my-storefront',
+      deleted: true,
+      preserved: {mrtEnv: false, amSlasClients: false, ecdnRouting: false},
+    });
+  });
+
+  it('forwards delete* opt-outs as false and surfaces them under preserved', async () => {
+    const command = createCommand();
+
+    stubParse(
+      command,
+      {
+        force: true,
+        'mrt-backend': 'scapi',
+        'delete-mrt-env': false,
+        'delete-am-slas-clients': true,
+        'delete-ecdn-routing': false,
+      },
+      {slug: 'my-storefront'},
+    );
+    await command.init();
+
+    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
+    stubBackendContext(command, {
+      preference: 'scapi',
+      scapiConnection: {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}},
+      legacyAuth: undefined,
+    });
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront', mrtBackend: 'scapi'}}));
+
+    const delStub = sinon.stub().resolves({backend: 'scapi', raw: {}});
+    command.operations = {...command.operations, deleteProjectWithBackend: delStub};
+
+    const result = await command.run();
+
+    const [input] = delStub.firstCall.args;
+    expect(input.deleteMrtEnv).to.equal(false);
+    expect(input.deleteAmSlasClients).to.equal(undefined);
+    expect(input.deleteEcdnRouting).to.equal(false);
+    expect(result.preserved).to.deep.equal({mrtEnv: true, amSlasClients: false, ecdnRouting: true});
+  });
+
+  it('warns when backend resolves to legacy and any opt-out flag was passed', async () => {
+    const command = createCommand();
+
+    stubParse(
+      command,
+      {
+        force: true,
+        'delete-mrt-env': false,
+        'delete-am-slas-clients': false,
+        'delete-ecdn-routing': true,
+      },
+      {slug: 'my-storefront'},
+    );
+    await command.init();
+
+    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
+    stubBackendContext(command, {preference: 'legacy'});
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront'}}));
+    const warnStub = sinon.stub(command, 'warn').returns(void 0 as any);
+
+    const delStub = sinon.stub().resolves({backend: 'legacy', raw: undefined});
+    command.operations = {...command.operations, deleteProjectWithBackend: delStub};
+
+    await command.run();
+
+    expect(warnStub.calledOnce).to.equal(true);
+    const [message] = warnStub.firstCall.args as [string];
+    expect(message).to.include('--no-delete-mrt-env');
+    expect(message).to.include('--no-delete-am-slas-clients');
+    expect(message).to.not.include('--no-delete-ecdn-routing');
+    expect(message).to.include('--mrt-backend scapi');
+  });
+
+  it('does not warn when backend resolves to legacy and no opt-out flag was passed', async () => {
+    const command = createCommand();
+
+    stubParse(command, DEFAULT_FLAGS, {slug: 'my-storefront'});
+    await command.init();
+
+    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
+    stubBackendContext(command, {preference: 'legacy'});
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront'}}));
+    const warnStub = sinon.stub(command, 'warn').returns(void 0 as any);
+
+    const delStub = sinon.stub().resolves({backend: 'legacy', raw: undefined});
+    command.operations = {...command.operations, deleteProjectWithBackend: delStub};
+
+    await command.run();
+
+    expect(warnStub.called).to.equal(false);
   });
 
   it('routes to the SCAPI backend when preference is scapi', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true, 'mrt-backend': 'scapi'}, {slug: 'my-storefront'});
+    stubParse(
+      command,
+      {
+        force: true,
+        'mrt-backend': 'scapi',
+        'delete-mrt-env': true,
+        'delete-am-slas-clients': true,
+        'delete-ecdn-routing': true,
+      },
+      {slug: 'my-storefront'},
+    );
     await command.init();
 
     const scapiConnection = {shortCode: 'kv7kzm78', tenantId: 'zzxy_prd', auth: {}};
@@ -116,7 +244,7 @@ describe('mrt project delete', () => {
   it('blocks deletion in safe mode via assertDestructiveOperationAllowed', async () => {
     const command = createCommand();
 
-    stubParse(command, {force: true}, {slug: 'my-storefront'});
+    stubParse(command, DEFAULT_FLAGS, {slug: 'my-storefront'});
     await command.init();
 
     const assertStub = sinon.stub(command, 'assertDestructiveOperationAllowed').throws(new Error('safe mode'));
