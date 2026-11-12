@@ -92,8 +92,6 @@ b2c mrt project delete my-storefront --mrt-backend scapi \
 | `--[no-]delete-am-slas-clients` | `true` | AM and SLAS clients are preserved |
 | `--[no-]delete-ecdn-routing` | `true` | eCDN routing is preserved |
 
-The `--json` output includes a `preserved` block reflecting which resources were kept.
-
 ## Member Management
 
 > `member` commands are legacy-only; they do not support `--mrt-backend scapi`.

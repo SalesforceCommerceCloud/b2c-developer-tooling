@@ -260,7 +260,7 @@ b2c mrt project update my-storefront --site RefArch --site OtherSite --mrt-backe
 
 Delete an MRT project (storefront). Provide the project slug as a positional argument **or** via `--project` / `--storefront` (`-p` / `-s`). Over SCAPI, deletion returns `202 Accepted` and completes asynchronously.
 
-By default, the storefront **and** every downstream resource — Managed Runtime environments and deployments, the Account Manager / SLAS client, and eCDN routing — are deleted. Pass the matching `--no-delete-*` flag to preserve a downstream resource (the storefront record itself is always removed). The preserved resources are reported under the `preserved` block of `--json`.
+By default, the storefront **and** every downstream resource — Managed Runtime environments and deployments, the Account Manager / SLAS client, and eCDN routing — are deleted. Pass the matching `--no-delete-*` flag to preserve a downstream resource (the storefront record itself is always removed).
 
 **Scope:** granular opt-outs are honored only by the SCAPI backend. When the resolved backend is legacy, any `--no-delete-*` flag is ignored and a warning is emitted — the legacy MRT API only supports full teardown.
 

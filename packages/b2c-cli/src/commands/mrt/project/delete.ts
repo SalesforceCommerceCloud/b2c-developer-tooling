@@ -9,22 +9,9 @@ import {deleteProjectWithBackend} from '@salesforce/b2c-tooling-sdk/operations/m
 import {t, withDocs} from '../../../i18n/index.js';
 import {confirm} from '../../../prompts.js';
 
-/**
- * Delete result for JSON output.
- */
 interface DeleteResult {
   slug: string;
   deleted: boolean;
-  /**
-   * Which downstream resources will be preserved (SCAPI backend only). All
-   * `false` means a full teardown — the historical default. A flag flips to
-   * `true` here when the user passed its `--no-delete-*` form.
-   */
-  preserved: {
-    mrtEnv: boolean;
-    amSlasClients: boolean;
-    ecdnRouting: boolean;
-  };
 }
 
 /**
@@ -101,19 +88,15 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
       'delete-ecdn-routing': deleteEcdnRouting,
     } = this.flags;
 
-    const preserved = {
-      mrtEnv: !deleteMrtEnv,
-      amSlasClients: !deleteAmSlasClients,
-      ecdnRouting: !deleteEcdnRouting,
-    };
-
     // Confirm deletion unless --force is specified
     if (!force && !this.jsonEnabled()) {
-      const confirmed = await confirm(this.buildConfirmPrompt(slug, preserved));
+      const confirmed = await confirm(
+        t('commands.mrt.project.delete.confirm', 'Are you sure you want to delete project "{{slug}}"?', {slug}),
+      );
 
       if (!confirmed) {
         this.log(t('commands.mrt.project.delete.cancelled', 'Deletion cancelled.'));
-        return {slug, deleted: false, preserved};
+        return {slug, deleted: false};
       }
     }
 
@@ -124,7 +107,7 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
     // The resolved backend is surfaced via `onResolve` (debug log) only — it is
     // deliberately kept out of the `--json` payload so the legacy `--json`
     // output stays byte-identical and matches the rest of the MRT commands.
-    const {backend} = await this.operations.deleteProjectWithBackend({
+    await this.operations.deleteProjectWithBackend({
       preference,
       scapiConnection,
       legacyAuth,
@@ -137,51 +120,35 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
       deleteEcdnRouting: deleteEcdnRouting ? undefined : false,
       origin: this.resolvedConfig.values.mrtOrigin,
       onFallback: (reason) => this.warn(reason),
-      onResolve: (resolved) => this.logger.debug({backend: resolved}, '[MRT] Deleting project via backend'),
+      // Warn before the HTTP DELETE fires so the user learns their opt-outs
+      // were dropped even if the call itself fails server-side.
+      onResolve: (resolved) => {
+        this.logger.debug({backend: resolved}, '[MRT] Deleting project via backend');
+        if (resolved !== 'legacy') {
+          return;
+        }
+        const ignored: string[] = [];
+        if (!deleteMrtEnv) {
+          ignored.push('--no-delete-mrt-env');
+        }
+        if (!deleteAmSlasClients) {
+          ignored.push('--no-delete-am-slas-clients');
+        }
+        if (!deleteEcdnRouting) {
+          ignored.push('--no-delete-ecdn-routing');
+        }
+        if (ignored.length > 0) {
+          this.warn(`The legacy MRT backend does not support granular-delete opt-outs; ignored ${ignored.join(', ')}.`);
+        }
+      },
     });
-
-    if (backend === 'legacy') {
-      const ignored: string[] = [];
-      if (!deleteMrtEnv) {
-        ignored.push('--no-delete-mrt-env');
-      }
-      if (!deleteAmSlasClients) {
-        ignored.push('--no-delete-am-slas-clients');
-      }
-      if (!deleteEcdnRouting) {
-        ignored.push('--no-delete-ecdn-routing');
-      }
-      if (ignored.length > 0) {
-        this.warn(
-          `The legacy MRT backend does not support granular-delete opt-outs; ignored ${ignored.join(', ')}. ` +
-            `All downstream resources were torn down. Use --mrt-backend scapi to preserve selected resources.`,
-        );
-      }
-    }
 
     this.log(t('commands.mrt.project.delete.success', 'Project "{{slug}}" deleted successfully.', {slug}));
 
-    return {slug, deleted: true, preserved};
+    return {slug, deleted: true};
   }
 
   protected override supportsScapiMrt(): boolean {
     return true;
-  }
-
-  private buildConfirmPrompt(slug: string, preserved: {mrtEnv: boolean; amSlasClients: boolean; ecdnRouting: boolean}) {
-    const anyPreserved = preserved.mrtEnv || preserved.amSlasClients || preserved.ecdnRouting;
-    const base = t('commands.mrt.project.delete.confirm', 'Are you sure you want to delete project "{{slug}}"?', {
-      slug,
-    });
-    if (!anyPreserved) {
-      return base;
-    }
-    const rows = [
-      `  - Storefront record       [delete]`,
-      `  - MRT env + deployments   [${preserved.mrtEnv ? 'preserve' : 'delete'}]`,
-      `  - AM/SLAS clients         [${preserved.amSlasClients ? 'preserve' : 'delete'}]`,
-      `  - eCDN routing            [${preserved.ecdnRouting ? 'preserve' : 'delete'}]`,
-    ].join('\n');
-    return `${base}\nThe following will happen:\n${rows}`;
   }
 }

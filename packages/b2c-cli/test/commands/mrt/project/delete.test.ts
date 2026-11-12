@@ -106,15 +106,10 @@ describe('mrt project delete', () => {
     expect(input.deleteMrtEnv).to.equal(undefined);
     expect(input.deleteAmSlasClients).to.equal(undefined);
     expect(input.deleteEcdnRouting).to.equal(undefined);
-    // The backend is kept out of the --json payload; result shape stays stable.
-    expect(result).to.deep.equal({
-      slug: 'my-storefront',
-      deleted: true,
-      preserved: {mrtEnv: false, amSlasClients: false, ecdnRouting: false},
-    });
+    expect(result).to.deep.equal({slug: 'my-storefront', deleted: true});
   });
 
-  it('forwards delete* opt-outs as false and surfaces them under preserved', async () => {
+  it('forwards delete* opt-outs as false to the SDK', async () => {
     const command = createCommand();
 
     stubParse(
@@ -143,13 +138,12 @@ describe('mrt project delete', () => {
     const delStub = sinon.stub().resolves({backend: 'scapi', raw: {}});
     command.operations = {...command.operations, deleteProjectWithBackend: delStub};
 
-    const result = await command.run();
+    await command.run();
 
     const [input] = delStub.firstCall.args;
     expect(input.deleteMrtEnv).to.equal(false);
     expect(input.deleteAmSlasClients).to.equal(undefined);
     expect(input.deleteEcdnRouting).to.equal(false);
-    expect(result.preserved).to.deep.equal({mrtEnv: true, amSlasClients: false, ecdnRouting: true});
   });
 
   it('warns when backend resolves to legacy and any opt-out flag was passed', async () => {
@@ -174,7 +168,10 @@ describe('mrt project delete', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront'}}));
     const warnStub = sinon.stub(command, 'warn').returns(void 0 as any);
 
-    const delStub = sinon.stub().resolves({backend: 'legacy', raw: undefined});
+    const delStub = sinon.stub().callsFake(async (opts: any) => {
+      opts.onResolve?.('legacy');
+      return {backend: 'legacy', raw: undefined};
+    });
     command.operations = {...command.operations, deleteProjectWithBackend: delStub};
 
     await command.run();
@@ -184,7 +181,47 @@ describe('mrt project delete', () => {
     expect(message).to.include('--no-delete-mrt-env');
     expect(message).to.include('--no-delete-am-slas-clients');
     expect(message).to.not.include('--no-delete-ecdn-routing');
-    expect(message).to.include('--mrt-backend scapi');
+  });
+
+  it('warns even when the SDK delete throws after onResolve fires', async () => {
+    const command = createCommand();
+
+    stubParse(
+      command,
+      {
+        force: true,
+        'delete-mrt-env': false,
+        'delete-am-slas-clients': true,
+        'delete-ecdn-routing': true,
+      },
+      {slug: 'my-storefront'},
+    );
+    await command.init();
+
+    sinon.stub(command, 'assertDestructiveOperationAllowed').returns(void 0);
+    stubBackendContext(command, {preference: 'legacy'});
+    sinon.stub(command, 'jsonEnabled').returns(false);
+    sinon.stub(command, 'log').returns(void 0);
+    sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront'}}));
+    const warnStub = sinon.stub(command, 'warn').returns(void 0 as any);
+
+    const delStub = sinon.stub().callsFake(async (opts: any) => {
+      opts.onResolve?.('legacy');
+      throw new Error('Failed to delete project: 403 Forbidden');
+    });
+    command.operations = {...command.operations, deleteProjectWithBackend: delStub};
+
+    let caught: unknown;
+    try {
+      await command.run();
+    } catch (error) {
+      caught = error;
+    }
+    expect((caught as Error | undefined)?.message).to.match(/Failed to delete project/);
+
+    expect(warnStub.calledOnce).to.equal(true);
+    const [message] = warnStub.firstCall.args as [string];
+    expect(message).to.include('--no-delete-mrt-env');
   });
 
   it('does not warn when backend resolves to legacy and no opt-out flag was passed', async () => {
@@ -200,7 +237,10 @@ describe('mrt project delete', () => {
     sinon.stub(command, 'resolvedConfig').get(() => ({values: {mrtProject: 'my-storefront'}}));
     const warnStub = sinon.stub(command, 'warn').returns(void 0 as any);
 
-    const delStub = sinon.stub().resolves({backend: 'legacy', raw: undefined});
+    const delStub = sinon.stub().callsFake(async (opts: any) => {
+      opts.onResolve?.('legacy');
+      return {backend: 'legacy', raw: undefined};
+    });
     command.operations = {...command.operations, deleteProjectWithBackend: delStub};
 
     await command.run();
