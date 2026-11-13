@@ -542,8 +542,15 @@ export function createExpressResponse(
   /**
    * Writes a chunk to the appropriate stream (compression stream if enabled, otherwise httpResponseStream)
    *
+   * Returns whether the chunk was accepted, NOT the stream's backpressure signal.
+   * A backpressured write (write() returning false) has still buffered the chunk,
+   * and the compression -> HttpResponseStream pipe drains it on its own. React Router
+   * 7.16+ treats a falsy res.write() as a cue to await 'drain' on res before sending
+   * the next chunk; the MRT response stream does not surface drain on res, so
+   * reporting backpressure here would stall the response until it times out.
+   *
    * @param chunk - The data chunk to write
-   * @returns true if the chunk was written successfully, false otherwise
+   * @returns true if the chunk was accepted, false if it could not be written
    */
   const writeChunk = (chunk?: string | Buffer | Uint8Array): boolean => {
     // Don't write null, undefined
@@ -554,7 +561,7 @@ export function createExpressResponse(
     try {
       if (shouldCompress && compressionStream && compressionStream.writable) {
         // Write to compression stream, which will compress and pipe to httpResponseStream
-        const accepted = compressionStream.write(chunk);
+        compressionStream.write(chunk);
         if (brotliChunkingEnabled && selectedEncoding === 'br' && typeof compressionStream.flush === 'function') {
           uncompressedBytesSinceBrotliFlush += typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.byteLength;
 
@@ -563,20 +570,24 @@ export function createExpressResponse(
             uncompressedBytesSinceBrotliFlush = 0;
           }
         }
-        return accepted;
       } else if (httpResponseStream && httpResponseStream.writable) {
         // No compression, write directly to httpResponseStream
-        return httpResponseStream.write(chunk);
+        httpResponseStream.write(chunk);
+      } else {
+        return false;
       }
-      return false;
+      return true;
     } catch (error) {
       console.error('Error writing chunk:', error);
       return false;
     }
   };
 
-  const isCompressionEnabled = (contentTypeStr: string | undefined): boolean => {
+  const isCompressionEnabled = (contentTypeStr: string | undefined, contentEncoding?: string): boolean => {
     const enabled = compressionConfig?.enabled ?? true;
+    // A route that already declared its own Content-Encoding (`identity` to opt out of
+    // runtime compression, or a pre-compressed body like `gzip`) must not be re-encoded.
+    if (contentEncoding) return false;
     return !!(selectedEncoding && selectedEncoding !== 'identity' && isCompressible(contentTypeStr) && enabled);
   };
 
@@ -588,6 +599,13 @@ export function createExpressResponse(
       return String(contentType);
     }
     return contentType;
+  };
+
+  const getContentEncoding = (response: ExpressResponse): string | undefined => {
+    const value = response.getHeader('content-encoding');
+    if (Array.isArray(value)) return value.join(',');
+    if (typeof value === 'number') return String(value);
+    return value;
   };
 
   /**
@@ -624,8 +642,9 @@ export function createExpressResponse(
     }
 
     const contentType = getContentType(response);
+    const existingContentEncoding = getContentEncoding(response);
 
-    if (isCompressionEnabled(contentType)) {
+    if (isCompressionEnabled(contentType, existingContentEncoding)) {
       headers['content-encoding'] = selectedEncoding;
       response.setHeader('Content-Encoding', selectedEncoding);
     }
@@ -661,7 +680,7 @@ export function createExpressResponse(
     // Set up compression stream if compression is enabled
     // The compression stream pipes to httpResponseStream, which pipes to responseStream
     // 'identity' means no encoding, so we should not initialize compression for it
-    if (isCompressionEnabled(contentType)) {
+    if (isCompressionEnabled(contentType, existingContentEncoding)) {
       initializeCompression();
     }
 
@@ -871,22 +890,18 @@ export function createExpressResponse(
 
     initializeResponse(this);
 
-    // Chunks can be falsy ('', 0, etc.) but not null or undefined
-    if (!isNullOrUndefined(chunk)) {
-      const result = writeChunk(chunk);
-      if (!result) {
-        // Backpressure - wait for drain event before ending
-        const streamToWait = compressionStream || httpResponseStream;
-        if (streamToWait) {
-          streamToWait.once('drain', () => {
-            endStream(this);
-          });
-        } else {
-          endStream(this);
-        }
-        return this;
-      }
-    }
+    // MRT requires at least one write to the body stream before it ends, even for
+    // responses with no body (3xx redirects, 204, body-less 2xx/4xx/5xx). Without it
+    // the stream terminates abnormally and MRT returns its own 502 regardless of the
+    // application's status code.
+    //
+    // Known limitation: for a body-less response with a compressible Content-Type and
+    // a negotiated encoding, this empty write goes through the compression stream, so
+    // the response carries a few bytes of compression framing.
+    //
+    // Chunks can be falsy ('', 0, etc.) but not null or undefined. writeChunk buffers
+    // into the compression -> HttpResponseStream pipe, which drains on its own.
+    writeChunk(isNullOrUndefined(chunk) ? Buffer.alloc(0) : chunk);
 
     // End the stream(s) and emit finish event
     endStream(this);
