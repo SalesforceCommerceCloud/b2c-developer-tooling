@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.16.0
+
+### Minor Changes
+
+- [#823](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/823) [`3355af1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3355af1dee4b8ec4dc9ab68378d42eea5912d0ee) - Add the `sfnext-site-audit` skill to the `storefront-next` plugin. It runs a pre-launch audit of a deployed Storefront Next storefront with the `sfnext audit` commands (in `@salesforce/storefront-next-dev` 1.5.0 and later): it measures the home, category and product pages, checks performance, SEO, security and best-practice rules against the evidence and the project source, and shows a launch-readiness report in a local dashboard. The `sfnext-overview` router and the `sfnext-deployment` pre-launch checklist point to it. (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
 ## 1.15.2
 
 ### Patch Changes
