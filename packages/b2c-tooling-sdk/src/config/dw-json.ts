@@ -97,6 +97,8 @@ export interface DwJsonConfig {
   importSetExclude?: string[];
   /** Directory names skipped at any depth when archiving cartridges for deploy */
   cartridgeIgnoreDirs?: string[];
+  /** Per-archive size limit for code deploy (e.g. `200mb`; a number is MiB) */
+  maxArchiveSize?: string | number;
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
   /** Catalog IDs for WebDAV browsing */
@@ -164,6 +166,9 @@ export interface DwJsonConfig {
       path?: string;
       job?: string;
       command?: string;
+      operationId?: string;
+      api?: string;
+      readOnlySearch?: boolean;
       action: string;
     }>;
   };

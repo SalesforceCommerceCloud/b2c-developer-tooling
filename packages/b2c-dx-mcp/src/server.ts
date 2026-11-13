@@ -82,6 +82,39 @@ export interface B2CDxMcpServerOptions extends ServerOptions {
  *
  * @augments {McpServer}
  */
+/** Drop JSON Schema keys that cost tokens in every tools/list without telling the model anything. */
+function stripSchemaNoise(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map((item) => stripSchemaNoise(item));
+  if (node === null || typeof node !== 'object') return node;
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (key === '$schema') continue;
+    // z.number().int() adds the safe-integer range to every integer field.
+    if ((key === 'minimum' || key === 'maximum') && Math.abs(value as number) === Number.MAX_SAFE_INTEGER) continue;
+    result[key] = stripSchemaNoise(value);
+  }
+  return result;
+}
+
+/** Make the MCP SDK list a schema without `$schema` and default safe-integer bounds; validation is unchanged. */
+export function compactJsonSchema<T extends z.ZodType>(schema: T): T {
+  const standard = schema['~standard'] as StandardJsonSchemaProps;
+  const {jsonSchema} = standard;
+  if (!jsonSchema) return schema;
+  (schema as {'~standard': StandardJsonSchemaProps})['~standard'] = {
+    ...standard,
+    jsonSchema: {
+      input: (options) => stripSchemaNoise(jsonSchema.input(options)) as Record<string, unknown>,
+      output: (options) => stripSchemaNoise(jsonSchema.output(options)) as Record<string, unknown>,
+    },
+  };
+  return schema;
+}
+
+type StandardJsonSchemaProps = z.ZodType['~standard'] & {
+  jsonSchema?: Record<'input' | 'output', (options: {target: string}) => Record<string, unknown>>;
+};
+
 export class B2CDxMcpServer extends McpServer {
   private readonly browserLogins = new BrowserLoginContinuations();
   private readonly cleanup?: () => Promise<void>;
@@ -175,7 +208,10 @@ export class B2CDxMcpServer extends McpServer {
     description: string,
     inputSchema: ZodRawShape,
     handler: (args: Record<string, unknown>, context?: ToolContext) => Promise<CallToolResult>,
-    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {annotations?: ToolAnnotations} = {},
+    metadata: Pick<McpToolConfig, 'outputSchema' | 'title'> & {
+      annotations?: ToolAnnotations;
+      _meta?: Record<string, unknown>;
+    } = {},
   ): void {
     const wrappedHandler = async (args: Record<string, unknown>, context: ServerContext): Promise<CallToolResult> => {
       this.recordRequestClient(context);
@@ -252,9 +288,9 @@ export class B2CDxMcpServer extends McpServer {
       name,
       {
         description,
-        inputSchema: z.object(inputSchema).strict(),
+        inputSchema: compactJsonSchema(z.object(inputSchema).strict()),
         ...metadata,
-        outputSchema: metadata.outputSchema ? z.object(metadata.outputSchema) : undefined,
+        outputSchema: metadata.outputSchema ? compactJsonSchema(z.object(metadata.outputSchema)) : undefined,
       },
       wrappedHandler,
     );

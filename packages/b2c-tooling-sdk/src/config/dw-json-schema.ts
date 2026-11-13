@@ -150,6 +150,11 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
   },
   'auto-upload': {type: 'boolean', description: 'Automatically upload code changes from the VS Code extension.'},
   'content-library': {type: 'string', description: 'Default library for content list/export.'},
+  'max-archive-size': {
+    oneOf: [{type: 'string'}, {type: 'number'}],
+    description:
+      'Per-archive size limit for code deploy, e.g. `200mb` (default `200mb`; bare number is MiB). Larger deploys are split into several archives uploaded into the same code version. Env: `SFCC_MAX_ARCHIVE_SIZE`.',
+  },
   catalogs: {...stringArray, description: 'Catalog IDs for WebDAV browsing. Env: `SFCC_CATALOGS`.'},
   libraries: {
     type: 'array',
@@ -222,6 +227,15 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
             path: {type: 'string', description: 'URL path glob (e.g. `/jobs/*/executions`).'},
             job: {type: 'string', description: 'Job ID glob.'},
             command: {type: 'string', description: 'CLI command ID glob (e.g. `sandbox:*`, `ecdn:cache:purge`).'},
+            operationId: {type: 'string', description: 'SCAPI operation ID glob (e.g. `getProduct`); code mode only.'},
+            api: {
+              type: 'string',
+              description: 'SCAPI API ID glob (e.g. `product/products/v1`, `product/**`); code mode only.',
+            },
+            readOnlySearch: {
+              type: 'boolean',
+              description: 'Match the search POSTs that READ_ONLY treats as reads.',
+            },
             action: {type: 'string', enum: ['allow', 'block', 'confirm'], description: 'Action when the rule matches.'},
           },
         },

@@ -117,12 +117,87 @@ describe('SCAPI snippets', () => {
     }
   });
 
+  it('projects object type attributes from search with enum values and continuation', async () => {
+    type Req = {method: string; path: string; body: {query: {boolQuery: {must: unknown[]}}}};
+    const requests: Req[] = [];
+    const result = (await runScapiCode({
+      input: {objectType: 'Product', custom: true, ids: ['c_color'], limit: 1},
+      code: `async (input) => codemode.run('builtin/object-type-attributes-inspect', input)`,
+      request: async (req) => {
+        requests.push(req as Req);
+        return {
+          ok: true,
+          data: {
+            total: 2,
+            hits: [
+              {
+                id: 'color',
+                effectiveId: 'c_color',
+                valueType: 'enum_of_string',
+                displayName: {default: 'Color'},
+                valueDefinitions: [{value: 'red', displayValue: {default: 'Red'}}],
+              },
+            ],
+          },
+        };
+      },
+    })) as {attributes: object[]; nextOffset?: number};
+    expect(requests[0].method).to.equal('POST');
+    expect(requests[0].path).to.match(/\/system\/object-types\/Product\/attribute-definition-search$/);
+    expect(requests[0].body.query.boolQuery.must).to.deep.equal([
+      {termQuery: {fields: ['system'], operator: 'is', values: [false]}},
+      {termQuery: {fields: ['id'], operator: 'one_of', values: ['color']}},
+    ]);
+    expect(result.attributes[0]).to.deep.equal({
+      id: 'c_color',
+      valueType: 'enum_of_string',
+      displayName: 'Color',
+      values: [{value: 'red', label: 'Red'}],
+    });
+    expect(result.nextOffset).to.equal(1);
+  });
+
+  it('creates, groups, and verifies a custom attribute without replacing existing ones', async () => {
+    const calls: string[] = [];
+    const result = (await runScapiCode({
+      input: {objectType: 'Product', attributeId: 'c_fabric', valueType: 'string', groupId: 'materials'},
+      code: `async (input) => codemode.run('builtin/attribute-create-and-group', input)`,
+      request: async (options) => {
+        const req = options as {method: string; path: string};
+        calls.push(`${req.method} ${req.path.split('/object-types/')[1]}`);
+        if (req.method === 'GET' && calls.length === 1) return {ok: false, status: 404, data: {}};
+        if (req.method === 'GET' && req.path.endsWith('/attribute-groups/materials')) {
+          return {ok: false, status: 404, data: {}};
+        }
+        if (req.method === 'GET') return {ok: true, data: {id: 'fabric', effectiveId: 'c_fabric', valueType: 'string'}};
+        return {ok: true, status: req.method === 'PUT' ? 201 : 200, data: {}};
+      },
+    })) as {state: string; group?: object};
+    expect(calls).to.deep.equal([
+      'GET Product/attribute-definitions/fabric',
+      'PUT Product/attribute-definitions/fabric',
+      'GET Product/attribute-groups/materials',
+      'PUT Product/attribute-groups/materials',
+      'PUT Product/attribute-groups/materials/attribute-definitions/fabric',
+      'GET Product/attribute-definitions/fabric',
+    ]);
+    expect(result).to.deep.include({state: 'verified', group: {id: 'materials', created: true}});
+
+    const existing = await runScapiCode({
+      input: {objectType: 'Product', attributeId: 'fabric', valueType: 'string'},
+      code: `async (input) => codemode.run('builtin/attribute-create-and-group', input)`,
+      request: async () => ({ok: true, data: {id: 'fabric'}}),
+    });
+    expect(existing).to.deep.equal({state: 'exists', id: 'c_fabric', changed: false});
+  });
+
   it('preserves upstream errors from operational snippets', async () => {
     for (const [name, input] of [
       ['job-execution-review', {from: '2026-09-01T00:00:00Z', to: '2026-09-02T00:00:00Z'}],
       ['job-execution-inspect', {jobId: 'a', executionId: 'b'}],
       ['code-version-inspect', {}],
       ['site-cartridge-inspect', {siteId: 'a'}],
+      ['object-type-attributes-inspect', {objectType: 'Product'}],
     ] as const) {
       const result = await runScapiCode({
         input,
@@ -319,7 +394,7 @@ describe('SCAPI snippets', () => {
   it('passes intermediate values between nested snippets using the current target', async () => {
     const paths: string[] = [];
     const result = await runScapiCode({
-      organizationId: 'current-org',
+      organizationId: 'f_ecom_zzzz_001',
       snippets: [
         snippet,
         {
@@ -340,7 +415,7 @@ describe('SCAPI snippets', () => {
     });
     expect(result).to.have.property('ok', true);
     expect(paths).to.deep.equal(
-      ['first', 'second'].map((id) => `/product/products/v1/organizations/current-org/products/${id}`),
+      ['first', 'second'].map((id) => `/product/products/v1/organizations/f_ecom_zzzz_001/products/${id}`),
     );
   });
 
@@ -391,13 +466,21 @@ describe('SCAPI snippets', () => {
         throw new Error('Must not authenticate');
       },
     });
+    const startJob = {
+      ...snippet,
+      name: 'user/start-job',
+      effect: 'write' as const,
+      inputSchema: {type: 'object', properties: {}, additionalProperties: false},
+      code: `async () => scapi.request({method: 'POST', path: '/operation/jobs/v1/organizations/' + organizationId + '/jobs/Import/executions', body: {}})`,
+    };
     await rejects(
       () =>
         runScapiCode({
           request,
+          snippets: [startJob],
           organizationId: 'f_ecom_test_001',
-          input: {from: '2026-09-01T00:00:00Z', to: '2026-09-08T00:00:00Z'},
-          code: `async (input) => codemode.run('builtin/failed-job-triage', input)`,
+          input: {},
+          code: `async (input) => codemode.run('user/start-job', input)`,
         }),
       'READ_ONLY',
     );
@@ -432,7 +515,7 @@ describe('SCAPI snippets', () => {
   });
 
   it('loads all built-in sources from the installed SDK data directory', () => {
-    expect(loadBuiltinScapiSnippets()).to.have.length(9);
+    expect(loadBuiltinScapiSnippets()).to.have.length(11);
     for (const item of loadBuiltinScapiSnippets()) expect(item.code).to.include('async (input)');
   });
 

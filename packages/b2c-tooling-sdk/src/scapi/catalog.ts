@@ -53,6 +53,11 @@ export function loadScapiSchemas(): ScapiSchemaDocument[] {
 
 export const SCAPI_METHODS = ['get', 'head', 'post', 'put', 'patch', 'delete', 'options'] as const;
 
+/** Code-mode paths are prefixed with the API id; custom API contracts omit their organization segment. */
+export function scapiFullPath(document: ScapiSchemaDocument, path: string): string {
+  return `/${document.entry.id}${document.entry.apiFamily === 'custom' ? '/organizations/{organizationId}' : ''}${path}`;
+}
+
 /** Match an actual API path to its schema, ignoring untrusted schema server origins. */
 export function findScapiOperation(documents: ScapiSchemaDocument[], method: string, path: string) {
   for (const document of documents) {

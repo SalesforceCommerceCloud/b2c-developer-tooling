@@ -24,6 +24,8 @@ import {
   DEFAULT_PUBLIC_CLIENT_ID,
   LEGACY_IMPLICIT_PUBLIC_CLIENT_ID,
   getDefaultPublicClientId,
+  getAccountManagerHostInfo,
+  ACCOUNT_MANAGER_HOSTS,
   getLegacyImplicitPublicClientId,
 } from '@salesforce/b2c-tooling-sdk';
 import {isolateConfig, restoreConfig} from '@salesforce/b2c-tooling-sdk/test-utils';
@@ -244,12 +246,29 @@ describe('cli/oauth-command', () => {
       }
     });
 
-    it('fails clearly for commands that need an API client', async () => {
-      stubParse(command, {'client-id': 'env-client', 'default-client': true});
+    it('uses the built-in client in commands without a default client of their own', async () => {
+      stubParse(command, {'client-id': 'env-client', 'client-secret': 'env-secret', 'default-client': true});
       await command.init();
 
       expect(command.testHasOAuthCredentials()).to.be.true;
-      expect(() => command.testGetOAuthStrategy()).to.throw(/no OCAPI or SCAPI access/);
+      const strategy = command.testGetOAuthStrategy();
+      expect(strategy).to.be.instanceOf(PkceWithImplicitFallbackStrategy);
+      const pkceConfig = (strategy as unknown as {config: {clientId: string}}).config;
+      expect(pkceConfig.clientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('uses the built-in client for the Account Manager host', async () => {
+      stubParse(command, {
+        'client-id': 'env-client',
+        'account-manager-host': 'account.example.com',
+        'default-client': true,
+      });
+      await command.init();
+
+      const strategy = command.testGetOAuthStrategy();
+      const pkceConfig = (strategy as unknown as {config: {clientId: string; accountManagerHost: string}}).config;
+      expect(pkceConfig.clientId).to.equal(getDefaultPublicClientId('account.example.com'));
+      expect(pkceConfig.accountManagerHost).to.equal('account.example.com');
     });
   });
 
@@ -481,6 +500,18 @@ describe('cli/oauth-command', () => {
 
     it('returns standard default when host is undefined', () => {
       expect(getDefaultPublicClientId(undefined)).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+    });
+
+    it('reads the client ID from the Account Manager host table', () => {
+      for (const entry of ACCOUNT_MANAGER_HOSTS) {
+        expect(getDefaultPublicClientId(entry.host)).to.equal(entry.publicClientId);
+        expect(getAccountManagerHostInfo(entry.host)).to.equal(entry);
+        expect(entry.redirectUris.length).to.be.greaterThan(0);
+        expect(entry.defaultScopes).to.include.members(['roles', 'tenantFilter']);
+      }
+      expect(getAccountManagerHostInfo()?.publicClientId).to.equal(DEFAULT_PUBLIC_CLIENT_ID);
+      expect(getAccountManagerHostInfo('some-other-host.example.com')).to.equal(undefined);
+      expect(Object.isFrozen(ACCOUNT_MANAGER_HOSTS)).to.equal(true);
     });
 
     it('returns standard default for unknown hosts', () => {

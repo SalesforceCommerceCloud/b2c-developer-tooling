@@ -100,11 +100,13 @@ async () => {
 | Need                                                                                                                | Read                                                                           |
 | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Pick API for a task (jobs, code versions, sites, products, promotions); live/custom schemas; `c_*` fields; `expand` | [discover](references/discover.md)                                             |
+| Create a promotion, campaign or coupon; promotion discount rules                                                    | [promotions](references/promotions.md)                                         |
 | Compose multi-call program, verify, paging, limits                                                                  | [compose-verify](references/compose-verify.md)                                 |
 | Approval, cancel, `input_required`                                                                                  | [confirmation](references/confirmation.md)                                     |
 | Auth, scopes, token export                                                                                          | [authentication](references/authentication.md), [tokens](references/tokens.md) |
 | Snippets (`codemode.search/describe/run`, `builtin/`, `user/`)                                                      | [workflows](references/workflows.md)                                           |
 | Custom API                                                                                                          | [custom-apis](references/custom-apis.md)                                       |
+| System object attributes (`c_*` definitions, enum values, attribute groups); add attributes                         | [object-definitions](references/object-definitions.md)                         |
 | Categories/rules; CORS, timeouts, custom objects                                                                    | [catalogs](references/catalogs.md), [admin-config](references/admin-config.md) |
 | File upload/download ops (e.g. custom sitemap upload)                                                               | [file-transfer](references/file-transfer.md)                                   |
 | Claude artifact, Cowork dashboard, or published page from results; **Connectors needed** when sharing               | [Claude artifacts](skill://mcp/b2c-mcp-claude-artifacts/SKILL.md)              |

@@ -9,15 +9,17 @@ import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
 import type {ScapiSchemaDocument} from '@salesforce/b2c-tooling-sdk/scapi';
 import {DOC_CATEGORIES, resolveEnabledCategories, type DocCategory} from '@salesforce/b2c-tooling-sdk/docs';
 import type {McpTool, Toolset, StartupFlags} from './utils/index.js';
-import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES, toToolAnnotations} from './utils/index.js';
+import {ALL_TOOLSETS, TOOLSETS, VALID_TOOLSET_NAMES, toToolAnnotations, toToolMeta} from './utils/index.js';
 import type {B2CDxMcpServer} from './server.js';
 import type {ServerContext} from './server-context.js';
 import type {ServicesLoader} from './tools/adapter.js';
 import {createCartridgesTools} from './tools/cartridges/index.js';
 import {createDiagnosticsTools} from './tools/diagnostics/index.js';
 import {createDocsTools} from './tools/docs/index.js';
+import {createObjectTypesDescribeTool} from './tools/object-types/index.js';
 import {createScapiTools} from './tools/scapi/index.js';
 import {createWebDavTools} from './tools/webdav/index.js';
+import {createSiteArchiveImportTool} from './tools/impex/index.js';
 import {createCipTools} from './tools/cip/index.js';
 import {createGuidanceTool, registerGuidanceResources} from './guidance.js';
 
@@ -56,10 +58,12 @@ export function createToolRegistry(
   const allTools: McpTool[] = [
     ...createCartridgesTools(loadServices),
     ...createWebDavTools(loadServices),
+    createSiteArchiveImportTool(loadServices),
     ...createCipTools(loadServices),
     ...createDiagnosticsTools(loadServices, serverContext),
     ...createDocsTools(loadServices, {detectedWorkspaces, enabledCategories: enabledDocCategories}),
     ...createScapiTools(loadServices, serverContext?.scapiExecutions, scapiSchemas),
+    createObjectTypesDescribeTool(loadServices),
     createGuidanceTool(),
   ];
 
@@ -198,6 +202,7 @@ async function registerTools(tools: McpTool[], server: B2CDxMcpServer): Promise<
         title: tool.title,
         annotations: toToolAnnotations(tool),
         outputSchema: tool.outputSchema,
+        _meta: toToolMeta(tool),
       },
     );
   }

@@ -179,6 +179,20 @@ import type {ServicesLoader} from '../tools/adapter.js';
  * - Automatic telemetry initialization via `this.telemetry`
  * - `this.config` - package.json metadata and standard config paths
  */
+/** Server instructions sent at initialize; clients show them to the model and Codex also indexes them for tool search. */
+export const SERVER_INSTRUCTIONS =
+  'Salesforce B2C Commerce (SFCC/Demandware) tools. Search for b2c tools whenever a task involves cartridges, code deploys, instance or Managed Runtime logs, script debugging, WebDAV files, Commerce data through SCAPI (products, orders, customers, jobs, sites), B2C docs or XSD schemas, or CIP analytics. ' +
+  'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
+  'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
+  'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
+  'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
+  'Data SCAPI cannot write (e.g. promotion discount rules): site_archive_import; first read skill://mcp/b2c-mcp-site-import/SKILL.md. ' +
+  'New sandbox or realm setup (sample data, storefronts, replication): first read skill://b2c-cli/b2c-setup/SKILL.md. ' +
+  'Production incidents (slow or failing storefront/APIs, external service failures, jobs, orders): first read skill://b2c-ops/b2c-production-triage/SKILL.md. ' +
+  'Missing credentials in config do not mean unauthenticated: instance tools may sign in through Account Manager in the browser; resolution.auth and config_inspect show how. ' +
+  'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; artifacts or dashboards skill://mcp/b2c-mcp-claude-artifacts/SKILL.md; ' +
+  'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).';
+
 export default class McpServerCommand extends BaseCommand<typeof McpServerCommand> {
   static description =
     'Salesforce B2C Commerce Developer Experience MCP Server - Expose B2C Commerce Developer Experience tools to AI assistants';
@@ -473,17 +487,7 @@ export default class McpServerCommand extends BaseCommand<typeof McpServerComman
               'resources/templates/list': {ttlMs: 300_000, cacheScope: 'private'},
               'resources/read': {ttlMs: 300_000, cacheScope: 'private'},
             },
-            instructions:
-              'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
-              'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
-              'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
-              'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +
-              'New sandbox or realm setup (sample data, storefronts, replication): first read skill://b2c-cli/b2c-setup/SKILL.md. ' +
-              'Production incidents (slow or failing storefront/APIs, external service failures, jobs, orders): first read skill://b2c-ops/b2c-production-triage/SKILL.md. ' +
-              'Missing credentials in config do not mean unauthenticated: instance tools may sign in through Account Manager in the browser; resolution.auth and config_inspect show how. ' +
-              'Config, auth and deploy prerequisites skill://mcp/b2c-mcp-config/SKILL.md; debugging skill://mcp/b2c-mcp-debugger/SKILL.md; artifacts or dashboards skill://mcp/b2c-mcp-claude-artifacts/SKILL.md; ' +
-              'skill index, setup and tool choice skill://mcp/b2c-mcp-server/SKILL.md; full catalog skill://index (b2c-ops runbooks for operations and incidents).' +
-              (updateNote ? ` ${updateNote}` : ''),
+            instructions: SERVER_INSTRUCTIONS + (updateNote ? ` ${updateNote}` : ''),
           },
         );
 

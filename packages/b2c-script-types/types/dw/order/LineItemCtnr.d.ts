@@ -200,7 +200,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
     /**
      * Returns all product, shipping, price adjustment, and gift certificate line items of the line item container.
      */
-    readonly allLineItems: Collection<LineItem<any>>;
+    readonly allLineItems: Collection<LineItem>;
     /**
      * Returns all product line items of the container, no matter if they are dependent or independent. This includes
      * option, bundled and bonus line items.
@@ -236,7 +236,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
      * Returns the collection of product line items that are bonus items (where
      * dw.order.ProductLineItem.isBonusProductLineItem is true).
      */
-    readonly bonusLineItems: Collection<Product<any>>;
+    readonly bonusLineItems: Collection<Product>;
     /**
      * Returns the type of the business this order has been placed in.
      * 
@@ -369,7 +369,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
     /**
      * Returns an unsorted collection of the payment instruments in this container.
      */
-    readonly paymentInstruments: Collection<PaymentInstrument<any>>;
+    readonly paymentInstruments: Collection<PaymentInstrument>;
     /**
      * Returns the collection of price adjustments that have been applied to the totals such as promotion on the
      * purchase value (i.e. $10 Off or 10% Off). The price adjustments are sorted by the order in which they were
@@ -472,7 +472,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
      * successful, the operation always creates a new ProductLineItem and never simply increments the quantity of an
      * existing ProductLineItem. An option model can optionally be specified.
      */
-    createBonusProductLineItem(bonusDiscountLineItem: BonusDiscountLineItem, product: Product<any>, optionModel: ProductOptionModel | null, shipment: Shipment): ProductLineItem;
+    createBonusProductLineItem(bonusDiscountLineItem: BonusDiscountLineItem, product: Product, optionModel: ProductOptionModel | null, shipment: Shipment): ProductLineItem;
     /**
      * Creates a new CouponLineItem for this container based on the supplied coupon code.
      * 
@@ -644,7 +644,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
      * 
      * Please note that the product must be assigned to the current site catalog.
      */
-    createProductLineItem(product: Product<any>, optionModel: ProductOptionModel | null, shipment: Shipment): ProductLineItem;
+    createProductLineItem(product: Product, optionModel: ProductOptionModel | null, shipment: Shipment): ProductLineItem;
     /**
      * Creates a standard shipment for the line item container. The specified ID must not yet be in use for another
      * shipment of this line item container.
@@ -717,7 +717,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
     /**
      * Returns all product, shipping, price adjustment, and gift certificate line items of the line item container.
      */
-    getAllLineItems(): Collection<LineItem<any>>;
+    getAllLineItems(): Collection<LineItem>;
     /**
      * Returns all product line items of the container, no matter if they are dependent or independent. This includes
      * option, bundled and bonus line items.
@@ -758,7 +758,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
      * Returns the collection of product line items that are bonus items (where
      * dw.order.ProductLineItem.isBonusProductLineItem is true).
      */
-    getBonusLineItems(): Collection<Product<any>>;
+    getBonusLineItems(): Collection<Product>;
     /**
      * Returns the type of the business this order has been placed in.
      * 
@@ -898,11 +898,11 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
     /**
      * Returns an unsorted collection of the payment instruments in this container.
      */
-    getPaymentInstruments(): Collection<PaymentInstrument<any>>;
+    getPaymentInstruments(): Collection<PaymentInstrument>;
     /**
      * Returns an unsorted collection of PaymentInstrument instances based on the specified payment method ID.
      */
-    getPaymentInstruments(paymentMethodID: string): Collection<PaymentInstrument<any>>;
+    getPaymentInstruments(paymentMethodID: string): Collection<PaymentInstrument>;
     /**
      * Returns the price adjustment associated to the specified promotion ID.
      */
@@ -1049,7 +1049,7 @@ declare class LineItemCtnr<T extends ICustomAttributes.LineItemCtnr = ICustomAtt
     /**
      * Removes the specified Payment Instrument from this container and deletes the Payment Instrument.
      */
-    removePaymentInstrument(pi: PaymentInstrument<any>): void;
+    removePaymentInstrument(pi: PaymentInstrument): void;
     /**
      * Removes the specified price adjustment line item from the line item container.
      */

@@ -10,14 +10,14 @@ For help obtaining credentials and assigning access, see [Authentication](./auth
 
 ## Choose Your Connection
 
-| Task                                                 | What to configure                                                                                                                                                   |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Upload cartridges, browse files, or read logs        | Just `hostname`. You sign in with your Account Manager account the first time. For automation, use an [access key or API client](./authentication#webdav-access) instead. |
-| Activate code versions, run jobs, manage sites or data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.    |
-| Obtain shopper tokens                                | `short-code`, `tenant-id`, `slas-client-id`, and `site-id`. Add `slas-client-secret` for a private SLAS client.                                                     |
-| Work with Managed Runtime                            | An MRT API key and project/environment defaults. Supported SCAPI MRT operations can use Account Manager credentials instead. See [MRT configuration](#mrt-api-key). |
-| Analyze sales, searches, or performance with CIP     | Account Manager `client-id`, `client-secret`, and `tenant-id`, plus [CIP access](./analytics-reports-cip-ccac#authentication-and-access).                           |
-| Manage sandboxes, SLAS clients, or Account Manager   | Nothing; these CLI commands sign you in with your Account Manager account. Your user still needs the appropriate roles and tenant access. |
+| Task                                                   | What to configure                                                                                                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Upload cartridges, browse files, or read logs          | Just `hostname`. You sign in with your Account Manager account the first time. For automation, use an [access key or API client](./authentication#webdav-access) instead. |
+| Activate code versions, run jobs, manage sites or data | Account Manager `client-id` and `client-secret` (or JWT credentials). For SCAPI, add `short-code` and `tenant-id`; instance operations can also need `hostname`.          |
+| Obtain shopper tokens                                  | `short-code`, `tenant-id`, `slas-client-id`, and `site-id`. Add `slas-client-secret` for a private SLAS client.                                                           |
+| Work with Managed Runtime                              | An MRT API key and project/environment defaults. Supported SCAPI MRT operations can use Account Manager credentials instead. See [MRT configuration](#mrt-api-key).       |
+| Analyze sales, searches, or performance with CIP       | Account Manager `client-id`, `client-secret`, and `tenant-id`, plus [CIP access](./analytics-reports-cip-ccac#authentication-and-access).                                 |
+| Manage sandboxes, SLAS clients, or Account Manager     | Nothing; these CLI commands sign you in with your Account Manager account. Your user still needs the appropriate roles and tenant access.                                 |
 
 Account Manager and SLAS clients serve different purposes. `client-id` / `client-secret` are for administrative access; `slas-client-id` / `slas-client-secret` are for shopper authentication. Configuring one does not configure the other.
 
@@ -43,6 +43,10 @@ This example supports Admin APIs and WebDAV on a sandbox:
 ```
 
 Use your instance's short code and an existing code version. `tenant-id` accepts both the tenant form (`abcd_001`) and organization form (`f_ecom_abcd_001`). Staging and production tenants typically use `abcd_stg` and `abcd_prd`.
+
+::: tip Use the Business Manager hostname
+Set `hostname` to the host you sign in to Business Manager with, such as `abcd-001.dx.commercecloud.salesforce.com` for an On-Demand Sandbox. Don't use a storefront hostname, including the Salesforce-managed Default Domain (`*.my.commercecloud.salesforce.com`). Storefront hostnames are served through eCDN zones whose rate limits and firewall rules (and, on production, a Block All rule) are meant for shopper traffic and can throttle or block CLI, WebDAV, and API requests. On On-Demand Sandboxes, the Default Domain serves only the storefront; Business Manager, WebDAV, code upload, and jobs stay on the `.dx` host. `b2c setup inspect`, the MCP `config_inspect` tool, and the VS Code **Resolved Config** panel warn when `hostname` or `webdav-hostname` is a Default Domain host, and suggest the `.dx` host for sandboxes. See [Default Domain on On-Demand Sandboxes](https://help.salesforce.com/s/articleView?id=cc.b2c_default_domain_ods.htm&type=5).
+:::
 
 ::: tip Only uploading code or reading logs?
 `hostname` is the only required field for code upload, files, and logs: you sign in with your Account Manager account when asked. Add the other fields as you need the tasks in [Choose Your Connection](#choose-your-connection).
@@ -186,7 +190,7 @@ To stop using the global file:
 b2c setup default-config unset
 ```
 
-This setting is shared by the CLI, MCP, and IDE Extension. Use these commands to manage it; you do not need to edit the toolkit's settings file.
+This setting is shared by the CLI, MCP, and IDE Extension, and by other CLIs built on the toolkit, such as the Storefront Next CLI (`sfnext`). Use these commands to manage it; you do not need to edit the toolkit's settings file.
 
 ## Environment Variables
 
@@ -297,18 +301,18 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 
 ### Instance and Site
 
-| Field / environment variable              | Purpose                                                                                     |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `hostname`<br>`SFCC_SERVER`               | Instance hostname, without a URL path. Also accepts `server` in JSON.                       |
-| `webdav-hostname`<br>`SFCC_WEBDAV_SERVER` | Separate WebDAV hostname. JSON aliases: `webdav-server`, `secureHostname`, `secure-server`. |
-| `code-version`<br>`SFCC_CODE_VERSION`     | Default code version for operations that accept one.                                        |
-| `short-code`<br>`SFCC_SHORTCODE`          | SCAPI short code. JSON also accepts `scapi-shortcode`.                                      |
-| `tenant-id`<br>`SFCC_TENANT_ID`           | Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`.                         |
-| `site-id`<br>`SFCC_SITE_ID`               | Default site/channel ID for supported site and shopper operations.                          |
-| `name`                                    | Connection name for instance selection.                                                     |
-| `active`                                  | Boolean: use this entry as the default.                                                     |
-| `configs`                                 | Root-level array of named instance entries.                                                 |
-| `api-backend`<br>`SFCC_API_BACKEND`       | `auto` (default), `scapi`, or `ocapi`, for operations supporting both backends.             |
+| Field / environment variable              | Purpose                                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hostname`<br>`SFCC_SERVER`               | Business Manager hostname, without a URL path; not a storefront or Default Domain (`*.my.commercecloud.salesforce.com`) host. Also accepts `server` in JSON. |
+| `webdav-hostname`<br>`SFCC_WEBDAV_SERVER` | Separate WebDAV hostname. JSON aliases: `webdav-server`, `secureHostname`, `secure-server`.                                                                  |
+| `code-version`<br>`SFCC_CODE_VERSION`     | Default code version for operations that accept one.                                                                                                         |
+| `short-code`<br>`SFCC_SHORTCODE`          | SCAPI short code. JSON also accepts `scapi-shortcode`.                                                                                                       |
+| `tenant-id`<br>`SFCC_TENANT_ID`           | Tenant or organization ID, such as `abcd_001` or `f_ecom_abcd_001`.                                                                                          |
+| `site-id`<br>`SFCC_SITE_ID`               | Default site/channel ID for supported site and shopper operations.                                                                                           |
+| `name`                                    | Connection name for instance selection.                                                                                                                      |
+| `active`                                  | Boolean: use this entry as the default.                                                                                                                      |
+| `configs`                                 | Root-level array of named instance entries.                                                                                                                  |
+| `api-backend`<br>`SFCC_API_BACKEND`       | `auto` (default), `scapi`, or `ocapi`, for operations supporting both backends.                                                                              |
 
 `auto` uses SCAPI when the required coordinates and supported authentication are available, with OCAPI fallback for supported rejection cases. Otherwise it selects OCAPI directly. See [API backend selection](/cli/code#api-backend) and [OCAPI access](./authentication#ocapi-configuration).
 
@@ -318,18 +322,18 @@ The schema accepts every supported spelling (kebab-case, camelCase, and legacy a
 <span id="jwt-bearer"></span>
 <span id="user-authentication-browser"></span>
 
-| Field / environment variable                          | Purpose                                                                                                                          |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `client-id`<br>`SFCC_CLIENT_ID`                       | Account Manager API client ID.                                                                                                   |
-| `client-secret`<br>`SFCC_CLIENT_SECRET`               | Account Manager client secret.                                                                                                   |
-| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method).     |
-| `oauth-scopes`<br>`SFCC_OAUTH_SCOPES`                 | Requested OAuth scopes: a JSON string array or comma-separated environment value. Scope grants must be configured on the client. |
-| `jwt-cert-path`<br>`SFCC_JWT_CERT`                    | PEM certificate path for JWT authentication. CLI flag: `--jwt-cert`.                                                             |
-| `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                     |
-| `jwt-passphrase`<br>`SFCC_JWT_PASSPHRASE`             | Passphrase for an encrypted private key.                                                                                         |
-| `auth-methods`<br>`SFCC_AUTH_METHODS`                 | Ordered JSON array or comma-separated environment value; see [authentication methods](#overriding-authentication-behavior).      |
+| Field / environment variable                          | Purpose                                                                                                                             |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `client-id`<br>`SFCC_CLIENT_ID`                       | Account Manager API client ID.                                                                                                      |
+| `client-secret`<br>`SFCC_CLIENT_SECRET`               | Account Manager client secret.                                                                                                      |
+| `client-auth-method`<br>`SFCC_CLIENT_AUTH_METHOD`     | How the client ID and secret are sent to Account Manager; see [client authentication method](#client-authentication-method).        |
+| `oauth-scopes`<br>`SFCC_OAUTH_SCOPES`                 | Requested OAuth scopes: a JSON string array or comma-separated environment value. Scope grants must be configured on the client.    |
+| `jwt-cert-path`<br>`SFCC_JWT_CERT`                    | PEM certificate path for JWT authentication. CLI flag: `--jwt-cert`.                                                                |
+| `jwt-key-path`<br>`SFCC_JWT_KEY`                      | PEM private key path. CLI flag: `--jwt-key`.                                                                                        |
+| `jwt-passphrase`<br>`SFCC_JWT_PASSPHRASE`             | Passphrase for an encrypted private key.                                                                                            |
+| `auth-methods`<br>`SFCC_AUTH_METHODS`                 | Ordered JSON array or comma-separated environment value; see [authentication methods](#overriding-authentication-behavior).         |
 | `user-auth`                                           | Set `true` to sign in with your Account Manager account in the browser. Don't combine with `auth-methods`. CLI flag: `--user-auth`. |
-| `account-manager-host`<br>`SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname override.                                                                                               |
+| `account-manager-host`<br>`SFCC_ACCOUNT_MANAGER_HOST` | Account Manager hostname override.                                                                                                  |
 
 ### Client Authentication Method {#client-authentication-method}
 
@@ -366,18 +370,19 @@ Shopper authentication also uses `short-code`, `tenant-id`, and `site-id` from [
 
 ### Code, Content, and Documentation
 
-| Field / environment variable                      | Purpose                                                                                                                                                          |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cartridges`<br>`SFCC_CARTRIDGES`                 | Cartridge names for deployment/watch filtering and IDE discovery. JSON array or colon/comma-separated JSON string; explicit CLI cartridge filters take priority. |
-| `auto-upload`                                     | Boolean controlling automatic code upload in the IDE Extension.                                                                                                  |
-| `content-library`                                 | Default library for content list/export.                                                                                                                         |
-| `catalogs`<br>`SFCC_CATALOGS`                     | Catalog IDs for WebDAV browsing.                                                                                                                                 |
-| `libraries`<br>`SFCC_LIBRARIES`                   | Library IDs. JSON accepts strings or `{ "id": "RefArch", "siteLibrary": true }` entries; see [content libraries](#content-libraries-example).                    |
-| `asset-query`<br>`SFCC_ASSET_QUERY`               | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                               |
-| `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE` | Project-relative directories to exclude recursively from import-set discovery.                                                                                   |
-| `cartridge-ignore-dirs`<br>`SFCC_CARTRIDGE_IGNORE_DIRS`| Directory names skipped inside cartridges on deploy. Replaces the default list; see [ignored directories](/cli/code#ignored-directories).                        |
-| `docs-categories`<br>`SFCC_DOCS_CATEGORIES`       | Documentation category allowlist for supported searches.                                                                                                         |
-| `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`           | Project-relative local SCAPI OpenAPI JSON files or folders, or http(s) URLs, for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                          |
+| Field / environment variable                            | Purpose                                                                                                                                                                    |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cartridges`<br>`SFCC_CARTRIDGES`                       | Cartridge names for deployment/watch filtering and IDE discovery. JSON array or colon/comma-separated JSON string; explicit CLI cartridge filters take priority.           |
+| `auto-upload`                                           | Boolean controlling automatic code upload in the IDE Extension.                                                                                                            |
+| `content-library`                                       | Default library for content list/export.                                                                                                                                   |
+| `catalogs`<br>`SFCC_CATALOGS`                           | Catalog IDs for WebDAV browsing.                                                                                                                                           |
+| `libraries`<br>`SFCC_LIBRARIES`                         | Library IDs. JSON accepts strings or `{ "id": "RefArch", "siteLibrary": true }` entries; see [content libraries](#content-libraries-example).                              |
+| `asset-query`<br>`SFCC_ASSET_QUERY`                     | JSON dot-paths for finding static asset URLs in content; default `["image.path"]`.                                                                                         |
+| `import-set-exclude`<br>`SFCC_IMPORT_SET_EXCLUDE`       | Project-relative directories to exclude recursively from import-set discovery.                                                                                             |
+| `cartridge-ignore-dirs`<br>`SFCC_CARTRIDGE_IGNORE_DIRS` | Directory names skipped inside cartridges on deploy. Replaces the default list; see [ignored directories](/cli/code#ignored-directories).                                  |
+| `max-archive-size`<br>`SFCC_MAX_ARCHIVE_SIZE`           | Maximum size of one code deploy archive, e.g. `200mb` (default; a bare number is MiB). Larger deploys are split; see [large code versions](/cli/code#large-code-versions). |
+| `docs-categories`<br>`SFCC_DOCS_CATEGORIES`             | Documentation category allowlist for supported searches.                                                                                                                   |
+| `scapi-schemas`<br>`SFCC_SCAPI_SCHEMAS`                 | Project-relative local SCAPI OpenAPI JSON files or folders, or http(s) URLs, for [MCP code mode](/mcp/configuration#local-scapi-schemas).                                  |
 
 Use JSON arrays for list fields unless another format is noted. Environment list values are comma-separated; `SFCC_LIBRARIES` accepts IDs, not the JSON object form.
 
@@ -409,19 +414,19 @@ The `SFCC_`-prefixed forms of these variables are also supported, with the unpre
 
 These are not `dw.json` fields:
 
-| Variable                     | Purpose                                                                                                         |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `SFCC_PROJECT_DIRECTORY`     | Project directory used for configuration lookup.                                                                |
-| `SFCC_CONFIG`                | Path to the primary connection file in `dw.json` format.                                                        |
-| `SFCC_DOTENV_FILE`           | Env file used instead of the project `.env` (same as `--dotenv-file`); empty for none.                          |
-| `SFCC_INSTANCE`              | Named instance to select.                                                                                       |
-| `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                          |
-| `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                            |
-| `SFCC_OAUTH_LOCAL_PORT`      | Browser-login redirect server port; default `8080`.                                                             |
+| Variable                     | Purpose                                                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `SFCC_PROJECT_DIRECTORY`     | Project directory used for configuration lookup.                                                                                |
+| `SFCC_CONFIG`                | Path to the primary connection file in `dw.json` format.                                                                        |
+| `SFCC_DOTENV_FILE`           | Env file used instead of the project `.env` (same as `--dotenv-file`); empty for none.                                          |
+| `SFCC_INSTANCE`              | Named instance to select.                                                                                                       |
+| `MRT_CREDENTIALS_FILE`       | MRT CLI override for the `~/.mobify` credentials file.                                                                          |
+| `SFCC_REDIRECT_URI`          | Account Manager browser-login redirect URI override.                                                                            |
+| `SFCC_OAUTH_LOCAL_PORT`      | Browser-login redirect server port; default `8080`.                                                                             |
 | `SFCC_DISABLE_PKCE_FALLBACK` | Set to `1` to turn off the automatic fallback to the deprecated [implicit sign-in](./authentication#implicit-flow-deprecation). |
-| `SFCC_SAFETY_LEVEL`          | `NONE`, `NO_DELETE`, `NO_UPDATE`, or `READ_ONLY`.                                                               |
-| `SFCC_SAFETY_CONFIRM`        | Set to `true` or `1` to enable supported safety confirmations.                                                  |
-| `SFCC_SAFETY_CONFIG`         | Path to a shared safety configuration file.                                                                     |
+| `SFCC_SAFETY_LEVEL`          | `NONE`, `NO_DELETE`, `NO_UPDATE`, or `READ_ONLY`.                                                                               |
+| `SFCC_SAFETY_CONFIRM`        | Set to `true` or `1` to enable supported safety confirmations.                                                                  |
+| `SFCC_SAFETY_CONFIG`         | Path to a shared safety configuration file.                                                                                     |
 
 See [Safety Mode](./safety) for precedence and behavior across the CLI, MCP, and IDE Extension. MCP tool selection, documentation topics, and startup logging are covered in [MCP Configuration](/mcp/configuration).
 
@@ -451,7 +456,7 @@ Only these fields are read from `package.json` (camelCase and kebab-case are acc
 | --------------------- | --------------------------------------------------------------- |
 | API and site defaults | `shortCode`, `clientId`, `siteId`                               |
 | Content and imports   | `contentLibrary`, `libraries`, `assetQuery`, `importSetExclude` |
-| Code                  | `cartridgeIgnoreDirs` |
+| Code                  | `cartridgeIgnoreDirs`, `maxArchiveSize`                         |
 | Managed Runtime       | `mrtProject`, `mrtOrigin`                                       |
 | Platform defaults     | `accountManagerHost`, `sandboxApiHost`, `realm`                 |
 
@@ -487,14 +492,14 @@ For OAuth, the CLI uses client credentials, then JWT, then signing in with your 
 
 ### Available Auth Methods
 
-| Value                | Use                                                                                                                               |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `client-credentials` | Account Manager client ID and secret; supported by SCAPI Admin, OCAPI, and OAuth WebDAV. Required for CIP.                        |
-| `jwt`                | Account Manager client ID and PEM certificate/private key; supported by SCAPI Admin, OCAPI, and OAuth WebDAV.                     |
-| `user`               | Sign in with your Account Manager account in the browser. Works with OCAPI, WebDAV, and account-level commands; not SCAPI Admin APIs. |
+| Value                | Use                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `client-credentials` | Account Manager client ID and secret; supported by SCAPI Admin, OCAPI, and OAuth WebDAV. Required for CIP.                              |
+| `jwt`                | Account Manager client ID and PEM certificate/private key; supported by SCAPI Admin, OCAPI, and OAuth WebDAV.                           |
+| `user`               | Sign in with your Account Manager account in the browser. Works with OCAPI, WebDAV, and account-level commands; not SCAPI Admin APIs.   |
 | `implicit`           | Deprecated browser sign-in, used only when set explicitly. See [Implicit Flow Deprecation](./authentication#implicit-flow-deprecation). |
-| `basic`              | WebDAV username and access key; not an OAuth method.                                                                              |
-| `api-key`            | MRT API key; not an OAuth method.                                                                                                 |
+| `basic`              | WebDAV username and access key; not an OAuth method.                                                                                    |
+| `api-key`            | MRT API key; not an OAuth method.                                                                                                       |
 
 ### Specifying Auth Methods
 

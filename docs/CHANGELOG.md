@@ -1,5 +1,19 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.14
+
+### Patch Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#858](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/858) [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454) - Configure how often the Script Debugger polls for breakpoint hits and sends keepalives with `SFCC_DEBUG_POLL_INTERVAL` and `SFCC_DEBUG_KEEPALIVE_INTERVAL` (CLI, MCP, and VS Code), the `b2c-dx.debugger.pollInterval` and `b2c-dx.debugger.keepaliveInterval` VS Code settings, or `pollInterval`/`keepaliveInterval` in a `b2c-script` launch configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.13
+
+### Patch Changes
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - New [SLAS guide](https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/slas) walks through shopper tokens, SLAS clients, passwordless login templates, social login, and shopper logout, with example prompts for your AI assistant. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.12
 
 ### Patch Changes

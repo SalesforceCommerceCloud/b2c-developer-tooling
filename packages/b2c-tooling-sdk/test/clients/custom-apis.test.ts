@@ -13,6 +13,8 @@ import {
   toOrganizationId,
   normalizeTenantId,
   tenantIdFromSandboxHostname,
+  isDefaultDomainHostname,
+  sandboxHostnameFromDefaultDomain,
   sandboxHostnameFromTenantId,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
@@ -328,6 +330,26 @@ describe('clients/custom-apis', () => {
 
       expect(data).to.be.undefined;
       expect(error).to.have.property('title', 'Forbidden');
+    });
+  });
+
+  describe('isDefaultDomainHostname', () => {
+    it('matches only the Salesforce-managed .my Default Domain', () => {
+      expect(isDefaultDomainHostname('abcd-stg.my.commercecloud.salesforce.com')).to.equal(true);
+      expect(isDefaultDomainHostname('ABCD-001.SBX.MY.COMMERCECLOUD.SALESFORCE.COM')).to.equal(true);
+      expect(isDefaultDomainHostname('abcd-001.dx.commercecloud.salesforce.com')).to.equal(false);
+      expect(isDefaultDomainHostname('my.example.com')).to.equal(false);
+      expect(isDefaultDomainHostname('notmy.commercecloud.salesforce.com')).to.equal(false);
+    });
+
+    it('derives the sandbox BM host only for sandbox Default Domains', () => {
+      expect(sandboxHostnameFromDefaultDomain('abcd-001.sbx.my.commercecloud.salesforce.com')).to.equal(
+        'abcd-001.dx.commercecloud.salesforce.com',
+      );
+      expect(sandboxHostnameFromDefaultDomain('abcd-001.my.commercecloud.salesforce.com')).to.equal(
+        'abcd-001.dx.commercecloud.salesforce.com',
+      );
+      expect(sandboxHostnameFromDefaultDomain('abcd-stg.my.commercecloud.salesforce.com')).to.equal(undefined);
     });
   });
 

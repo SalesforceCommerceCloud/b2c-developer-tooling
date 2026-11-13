@@ -76,7 +76,7 @@ declare class PageMgr {
      * separate call to getPageByCategory (with the category of your choice, e.g. the default
      * category of the product) needs to be made.
      */
-    static getPageByProduct(product: Product<any>, pageMustBeVisible: boolean, aspectTypeID: string): Page | null;
+    static getPageByProduct(product: Product, pageMustBeVisible: boolean, aspectTypeID: string): Page | null;
     /**
      * Render a page. All of this is going to happen in two layers of remote includes, therefore pagecaching of page rendering
      * is separated from the pagecache lifecycle of the caller. The first one is going to be returned by this method.

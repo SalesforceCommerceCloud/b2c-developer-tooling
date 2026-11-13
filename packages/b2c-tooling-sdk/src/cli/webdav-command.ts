@@ -6,29 +6,9 @@
 import {Command, Flags} from '@oclif/core';
 import {InstanceCommand} from './instance-command.js';
 import {t} from '../i18n/index.js';
+import {WEBDAV_ROOTS, type WebDavRootKey} from '../clients/webdav-paths.js';
 
-/**
- * WebDAV root location identifiers.
- *
- * These map to the standard B2C Commerce WebDAV directories.
- */
-export const WEBDAV_ROOTS = {
-  IMPEX: 'Impex',
-  TEMP: 'Temp',
-  CARTRIDGES: 'Cartridges',
-  REALMDATA: 'Realmdata',
-  CATALOGS: 'Catalogs',
-  LIBRARIES: 'Libraries',
-  STATIC: 'Static',
-  DYNAMIC: 'Dynamic',
-  LOGS: 'Logs',
-  SECURITYLOGS: 'Securitylogs',
-} as const;
-
-/**
- * Type for valid WebDAV root keys.
- */
-export type WebDavRootKey = keyof typeof WEBDAV_ROOTS;
+export {WEBDAV_ROOTS, type WebDavRootKey} from '../clients/webdav-paths.js';
 
 /**
  * Array of valid root location values for flag validation.

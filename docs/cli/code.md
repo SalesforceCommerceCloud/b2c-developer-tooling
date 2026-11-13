@@ -150,14 +150,15 @@ b2c code deploy [CARTRIDGEPATH]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag                        | Description                                                          | Default |
-| --------------------------- | -------------------------------------------------------------------- | ------- |
-| `--activate`, `-a`          | Activate code version after deploy                                   | `false` |
-| `--reload`, `-r`            | Reload (toggle activation to force reload) code version after deploy | `false` |
-| `--delete`                  | Delete existing cartridges before upload                             | `false` |
-| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)          |         |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)          |         |
-| `--cartridge-ignore-dirs`   | Directory names to skip inside cartridges (see below)                |         |
+| Flag                        | Description                                                                            | Default |
+| --------------------------- | -------------------------------------------------------------------------------------- | ------- |
+| `--activate`, `-a`          | Activate code version after deploy                                                     | `false` |
+| `--reload`, `-r`            | Reload (toggle activation to force reload) code version after deploy                   | `false` |
+| `--delete`                  | Delete existing cartridges before upload                                               | `false` |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)                            |         |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)                            |         |
+| `--cartridge-ignore-dirs`   | Directory names to skip inside cartridges (see below)                                  |         |
+| `--max-archive-size`        | Maximum size of one uploaded archive (see [large code versions](#large-code-versions)) | `200mb` |
 
 ### Examples
 
@@ -210,6 +211,21 @@ b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
 # Archive everything
 b2c code deploy --cartridge-ignore-dirs ''
 ```
+
+### Large Code Versions
+
+Deploy streams cartridges into zip archives on disk, so large code versions don't need much memory. When the compressed cartridges are larger than the archive size limit (200 MiB by default), deploy splits them into several archives. It uploads and unzips each archive into the same code version, one at a time. Cartridges are kept whole where they fit; a cartridge larger than the limit is split at file boundaries. A single file larger than the limit stops the deploy before anything is uploaded.
+
+Set the limit with `--max-archive-size`, or with `max-archive-size` in `dw.json` (env: `SFCC_MAX_ARCHIVE_SIZE`) so CI, the VS Code extension, and the MCP server use it too. Values accept `kb`, `mb`, and `gb` suffixes; a bare number is MiB.
+
+```bash
+# Upload in archives of at most 100 MiB
+b2c code deploy --max-archive-size 100mb
+```
+
+WebDAV uploads to an instance are limited to 500 MB, and some instances also drop uploads that take longer than about a minute. If an upload is rejected as too large (HTTP 413) or the connection keeps dropping, lower the limit. Uploads that drop are retried automatically. If the connection drops while the server is unzipping an archive, deploy waits for the server to finish instead of failing.
+
+A 413 response for a small archive usually means the sandbox is stopped rather than that the archive is too large.
 
 ---
 

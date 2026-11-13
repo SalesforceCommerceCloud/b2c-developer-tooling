@@ -31,7 +31,17 @@ rm -f packages/b2c-script-types/types/stale-overrides.txt
 # Keep upstream metadata under a different name so it doesn't clash with our package.json:
 mv packages/b2c-script-types/types/package.json packages/b2c-script-types/types/upstream-package.json
 mv packages/b2c-script-types/types/tsconfig.json packages/b2c-script-types/types/upstream-tsconfig.json
+# Apply local fixes to the generated types (see below):
+pnpm --filter @salesforce/b2c-script-types run patch-types
 ```
+
+### Local patches
+
+`scripts/patch-vendored-types.mjs` removes explicit `any` type arguments from
+classes with custom attributes (`Product<any>` becomes `Product`), so APIs such
+as `ProductMgr.getProduct()` return objects whose `custom` property uses the
+`ICustomAttributes` interfaces. Without it, generated custom attribute
+declarations have no effect on most values.
 
 Update `version` in `package.json` and the table above.
 

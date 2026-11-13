@@ -44,7 +44,7 @@ declare interface FacebookFeedHooks {
      * Instagram Commerce, use the `feedId` parameter to determine which feed is being exported. If the same
      * customization should apply to all feeds, ignore the parameter.
      */
-    transformProduct(product: Product<any>, facebookProduct: FacebookProduct, feedId: string): Status;
+    transformProduct(product: Product, facebookProduct: FacebookProduct, feedId: string): Status;
 }
 
 export = FacebookFeedHooks;

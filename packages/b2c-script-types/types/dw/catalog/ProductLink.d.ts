@@ -39,11 +39,11 @@ declare class ProductLink {
     /**
      * Returns the source product for this link.
      */
-    readonly sourceProduct: Product<any>;
+    readonly sourceProduct: Product;
     /**
      * Returns the target product for this link.
      */
-    readonly targetProduct: Product<any>;
+    readonly targetProduct: Product;
     /**
      * Returns the type of this link (see constants).
      */
@@ -52,11 +52,11 @@ declare class ProductLink {
     /**
      * Returns the source product for this link.
      */
-    getSourceProduct(): Product<any>;
+    getSourceProduct(): Product;
     /**
      * Returns the target product for this link.
      */
-    getTargetProduct(): Product<any>;
+    getTargetProduct(): Product;
     /**
      * Returns the type of this link (see constants).
      */

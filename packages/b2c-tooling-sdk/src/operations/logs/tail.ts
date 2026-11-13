@@ -548,6 +548,7 @@ export async function getRecentLogs(instance: B2CInstance, options: GetRecentLog
     maxEntries = DEFAULT_MAX_ENTRIES,
     tailBytes = DEFAULT_TAIL_BYTES,
     pathNormalizer,
+    signal,
   } = options;
 
   logger.debug({prefixes, maxEntries, tailBytes}, 'Getting recent logs');
@@ -557,6 +558,7 @@ export async function getRecentLogs(instance: B2CInstance, options: GetRecentLog
     prefixes,
     sortBy: 'date',
     sortOrder: 'desc',
+    signal,
   });
 
   const allEntries: LogEntry[] = [];
@@ -564,6 +566,7 @@ export async function getRecentLogs(instance: B2CInstance, options: GetRecentLog
   // Read from files until we have enough entries
   for (const file of files) {
     if (allEntries.length >= maxEntries) break;
+    signal?.throwIfAborted();
 
     try {
       // Calculate range to read (tail end of file)
@@ -572,7 +575,7 @@ export async function getRecentLogs(instance: B2CInstance, options: GetRecentLog
       let content: ArrayBuffer;
       if (startByte === 0) {
         // Read entire file
-        content = await instance.webdav.get(file.path);
+        content = await instance.webdav.get(file.path, {signal});
       } else {
         // Use Range request for tail
         const response = await instance.webdav.request(file.path, {
@@ -580,11 +583,12 @@ export async function getRecentLogs(instance: B2CInstance, options: GetRecentLog
           headers: {
             Range: `bytes=${startByte}-`,
           },
+          signal,
         });
 
         if (response.status === 416) {
           // File might be smaller than expected, read entire file
-          content = await instance.webdav.get(file.path);
+          content = await instance.webdav.get(file.path, {signal});
         } else if (!response.ok && response.status !== 206) {
           throw new Error(`Failed to read ${file.name}: ${response.status}`);
         } else {
@@ -623,6 +627,7 @@ export async function getRecentLogs(instance: B2CInstance, options: GetRecentLog
         if (allEntries.length >= maxEntries) break;
       }
     } catch (error) {
+      if (signal?.aborted) throw error;
       logger.error({error, file: file.name}, `Error reading ${file.name}`);
       // Continue to next file instead of failing completely
     }

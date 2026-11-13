@@ -38,7 +38,7 @@ export const DEFAULT_ODS_HOST = 'admin.dx.commercecloud.salesforce.com';
  * {@link LEGACY_IMPLICIT_PUBLIC_CLIENT_ID} for users who explicitly opt into
  * `--auth-methods implicit`.
  */
-export const DEFAULT_PUBLIC_CLIENT_ID = 'a40a7a9b-e854-4aa6-8078-d5f79872aa65';
+export const DEFAULT_PUBLIC_CLIENT_ID = '3496b7e8-9cff-4cd3-8252-a7528d0e312d';
 
 /**
  * Legacy public client ID used for the deprecated OAuth implicit flow.
@@ -47,16 +47,59 @@ export const DEFAULT_PUBLIC_CLIENT_ID = 'a40a7a9b-e854-4aa6-8078-d5f79872aa65';
 export const LEGACY_IMPLICIT_PUBLIC_CLIENT_ID = '7eee11e3-375b-498f-a087-e450a330d202';
 
 /**
- * Host-specific overrides for the default public client ID.
- * Some Account Manager instances require a different public client registration.
- *
- * The pod5 entry is a PKCE-capable public client, so the default `user` flow
- * completes via Authorization Code + PKCE without engaging the transitional
- * implicit fallback (see `auth/oauth-pkce-fallback`).
+ * An Account Manager host and the SDK's public (PKCE) client registered on it.
  */
-const HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
-  'account-pod5.demandware.net': '3f41a930-b2bb-42c9-907d-f06a33c85849',
-};
+export interface AccountManagerHostInfo {
+  /** Account Manager hostname, e.g. `account.demandware.com`. */
+  host: string;
+  /** Short human-readable label. */
+  label: string;
+  /** Public client ID used for Authorization Code + PKCE sign-in on this host. */
+  publicClientId: string;
+  /** Redirect URIs registered for `publicClientId` in Account Manager. */
+  redirectUris: readonly string[];
+  /**
+   * Scopes the public client grants by default. When it includes `roles` and
+   * `tenantFilter`, user tokens carry those claims (see `readAccountManagerClaims`).
+   */
+  defaultScopes: readonly string[];
+}
+
+/**
+ * Account Manager hosts with an SDK public client. Hosts not listed here use
+ * {@link DEFAULT_PUBLIC_CLIENT_ID}, which is registered only on the production host.
+ *
+ * Hosts that need a different client (for example one registered with another
+ * redirect URI) should pass their own `clientId` and `redirectUri`.
+ */
+export const ACCOUNT_MANAGER_HOSTS: readonly AccountManagerHostInfo[] = Object.freeze([
+  Object.freeze({
+    host: DEFAULT_ACCOUNT_MANAGER_HOST,
+    label: 'Production',
+    publicClientId: DEFAULT_PUBLIC_CLIENT_ID,
+    redirectUris: Object.freeze(['http://localhost:8080']),
+    defaultScopes: Object.freeze(['mail', 'roles', 'tenantFilter', 'externalId', 'openid']),
+  }),
+  // A PKCE-capable public client, so the default `user` flow completes via
+  // Authorization Code + PKCE without engaging the transitional implicit
+  // fallback (see `auth/oauth-pkce-fallback`).
+  Object.freeze({
+    host: 'account-pod5.demandware.net',
+    label: 'POD5',
+    publicClientId: '3f41a930-b2bb-42c9-907d-f06a33c85849',
+    redirectUris: Object.freeze(['http://localhost:8080']),
+    defaultScopes: Object.freeze(['mail', 'roles', 'tenantFilter', 'externalId', 'openid']),
+  }),
+]);
+
+/**
+ * Returns the {@link ACCOUNT_MANAGER_HOSTS} entry for an Account Manager host,
+ * or `undefined` for hosts without an SDK public client.
+ */
+export function getAccountManagerHostInfo(accountManagerHost?: string): AccountManagerHostInfo | undefined {
+  const host = accountManagerHost ?? DEFAULT_ACCOUNT_MANAGER_HOST;
+  return ACCOUNT_MANAGER_HOSTS.find((entry) => entry.host === host);
+}
 
 /** Host-specific legacy implicit clients retained for explicit opt-in only. */
 const LEGACY_IMPLICIT_HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
@@ -71,10 +114,7 @@ const LEGACY_IMPLICIT_HOST_CLIENT_ID_OVERRIDES: Record<string, string> = {
  * @returns The appropriate public client ID for that host
  */
 export function getDefaultPublicClientId(accountManagerHost?: string): string {
-  if (accountManagerHost && accountManagerHost in HOST_CLIENT_ID_OVERRIDES) {
-    return HOST_CLIENT_ID_OVERRIDES[accountManagerHost];
-  }
-  return DEFAULT_PUBLIC_CLIENT_ID;
+  return getAccountManagerHostInfo(accountManagerHost)?.publicClientId ?? DEFAULT_PUBLIC_CLIENT_ID;
 }
 
 /**

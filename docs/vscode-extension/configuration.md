@@ -34,7 +34,7 @@ The extension's instance picker combines instances from the primary and global f
 
 ### Code sync with only a server
 
-Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any URL on the instance, such as a Business Manager link. The extension saves the hostname to `dw.json`.
+Uploading cartridges needs only your instance hostname. When code sync finds no configuration, choose **Connect to Instance** and paste the hostname or any Business Manager URL on the instance. The extension saves the hostname to `dw.json`. Use the Business Manager host, not a storefront link: storefront hostnames, including the Default Domain (`*.my.commercecloud.salesforce.com`), are subject to eCDN rate limits and firewall rules, and on On-Demand Sandboxes they don't serve WebDAV.
 
 The first upload asks you to sign in with your Account Manager account, and your Business Manager roles decide what you can upload. Code sync uploads to the instance's active code version. To upload to a different version, run **B2C DX - Code Sync: Select Code Version for Uploads**.
 
@@ -51,6 +51,7 @@ A summary by feature, regardless of which configuration source provides the valu
 | **Content Libraries**      | Same as WebDAV. Optionally `contentLibrary` (or `libraries`) to seed the tree.                                                                                                                                           |
 | **Cartridge Code Sync**    | Only `hostname`; you sign in when asked (see [Code sync with only a server](#code-sync-with-only-a-server)). An API client (`client-id` + `client-secret`) to activate or delete code versions.                          |
 | **SCAPI API Browser**      | Account Manager access, `short-code`, and `tenant-id` to load schemas. Shopper requests also use `slas-client-id` and `site-id`; private clients need `slas-client-secret`. See [API Browser Setup](#api-browser-setup). |
+| **Object Types**           | Account Manager access with the `sfcc.object-definitions` scope (`.rw` for enum values), `short-code`, and `tenant-id`.                                                                                                  |
 | **B2C Script Debugger**    | WebDAV (for source-mapping).                                                                                                                                                                                             |
 | **Log Tailing**            | WebDAV (logs are read from `Logs/`).                                                                                                                                                                                     |
 | **CAP install**            | WebDAV; some apps additionally require OAuth client credentials.                                                                                                                                                         |
@@ -151,15 +152,17 @@ Each feature is enabled by default. Set to `false` to skip its activation entire
 | `b2c-dx.features.apiBrowser`       | `true`  |
 | `b2c-dx.features.cap`              | `true`  |
 
-The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used.
+The B2C Script Debugger registers regardless of these toggles — it activates only when a `b2c-script` launch configuration is used. A `b2c-script` launch configuration can also set `pollInterval` and `keepaliveInterval` (milliseconds), which override the `b2c-dx.debugger.*` settings for that configuration.
 
 ### Verbosity, polling, telemetry
 
-| Setting                          | Default | Description                                                                                                                                                                                     |
-| -------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `b2c-dx.logLevel`                | `info`  | Verbosity for the extension output channel. Allowed: `trace`, `debug`, `info`, `warn`, `error`, `silent`. Applied immediately on change. Drop to `debug` or `trace` when filing a bug.          |
-| `b2c-dx.sandbox.pollingInterval` | `10`    | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles. |
-| `b2c-dx.telemetry.enabled`       | `true`  | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting.                                                          |
+| Setting                             | Default | Description                                                                                                                                                                                                               |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c-dx.logLevel`                   | `info`  | Verbosity for the extension output channel. Allowed: `trace`, `debug`, `info`, `warn`, `error`, `silent`. Applied immediately on change. Drop to `debug` or `trace` when filing a bug.                                    |
+| `b2c-dx.sandbox.pollingInterval`    | `10`    | Seconds between polls while a sandbox is in a transitional state (`creating`, `starting`, `stopping`, `deleting`, `cloning`). Range: 2–300. Polling stops automatically once the realm settles.                           |
+| `b2c-dx.debugger.pollInterval`      | `0`     | Milliseconds between Script Debugger thread polls, which detect breakpoint hits and step completion. `0` uses `SFCC_DEBUG_POLL_INTERVAL` or the default (500). Minimum 100.                                               |
+| `b2c-dx.debugger.keepaliveInterval` | `0`     | Milliseconds between Script Debugger keepalive resets, which stop halted threads from resuming after 60 seconds. `0` uses `SFCC_DEBUG_KEEPALIVE_INTERVAL` or the default (15000). Minimum 1000; keep it well below 60000. |
+| `b2c-dx.telemetry.enabled`          | `true`  | Send anonymous usage telemetry. Honors VS Code's `telemetry.telemetryLevel` — disabling that disables this regardless of this setting.                                                                                    |
 
 ### Authentication
 

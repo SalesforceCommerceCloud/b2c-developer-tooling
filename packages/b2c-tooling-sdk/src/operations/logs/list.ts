@@ -167,14 +167,15 @@ export function unreadCustomPrefixes(files: LogFile[], filters: string[]): strin
  * include the relative directory so file identities stay unique across subdirectories
  * (e.g. `internal/server-...log`) and reads target the correct WebDAV path.
  */
-async function listLogFilesInDir(instance: B2CInstance, relativeDir: string): Promise<LogFile[]> {
+async function listLogFilesInDir(instance: B2CInstance, relativeDir: string, signal?: AbortSignal): Promise<LogFile[]> {
   const logger = getLogger();
   const propfindPath = relativeDir ? `Logs/${relativeDir}` : 'Logs';
 
   let entries;
   try {
-    entries = await instance.webdav.propfind(propfindPath, '1');
+    entries = await instance.webdav.propfind(propfindPath, '1', {signal});
   } catch (error) {
+    if (signal?.aborted) throw error;
     // A non-existent subdirectory (e.g. a typo'd path filter) should not abort the
     // whole listing — log and treat it as empty. Anything else (auth/permission
     // failures, token errors, the top-level Logs directory) must surface.
@@ -242,7 +243,7 @@ async function listLogFilesInDir(instance: B2CInstance, relativeDir: string): Pr
  */
 export async function listLogFiles(instance: B2CInstance, options: ListLogsOptions = {}): Promise<LogFile[]> {
   const logger = getLogger();
-  const {prefixes, sortBy = 'date', sortOrder = 'desc'} = options;
+  const {prefixes, sortBy = 'date', sortOrder = 'desc', signal} = options;
 
   logger.debug({prefixes, sortBy, sortOrder}, 'Listing log files');
 
@@ -253,14 +254,14 @@ export async function listLogFiles(instance: B2CInstance, options: ListLogsOptio
   const prefixFilters = allFilters.filter((p) => !p.includes('/'));
 
   // Always scan the top-level Logs directory.
-  const topLevel = await listLogFilesInDir(instance, '');
+  const topLevel = await listLogFilesInDir(instance, '', signal);
 
   // Recurse only when a path-like filter is present, and only into the
   // subdirectory that filter names (the segment before its last "/").
   const subDirs = new Set(pathFilters.map((p) => p.slice(0, p.lastIndexOf('/'))).filter((dir) => dir.length > 0));
   const nested: LogFile[] = [];
   for (const dir of subDirs) {
-    nested.push(...(await listLogFilesInDir(instance, dir)));
+    nested.push(...(await listLogFilesInDir(instance, dir, signal)));
   }
 
   // Filter by prefix and/or path if any filters were specified.

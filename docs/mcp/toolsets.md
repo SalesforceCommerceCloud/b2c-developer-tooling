@@ -240,6 +240,13 @@ from the machine running the MCP server.
 | `webdav_get_to_file` | Download a whole file, including binary archives, to a new local file.   |
 | `webdav_put`         | Upload text or a local file; replace existing files only when requested. |
 
+`site_archive_import` (`SCAPI` toolset) imports site archive XML given as text,
+for data with no SCAPI write such as promotion discount rules. It validates every
+file against the bundled schemas, uploads nothing if one fails, then zips the files
+and runs the `sfcc-site-archive-import` job. Imports merge into existing data. It
+requires reading `skill://mcp/b2c-mcp-site-import/SKILL.md` first (`skillRead: true`)
+and the same job permissions as `b2c job import`.
+
 With only a hostname configured, the first call asks you to
 [sign in](../guide/authentication#webdav-access) with your Account Manager account,
 and your Business Manager roles decide what you can access. This also applies to logs
@@ -253,6 +260,29 @@ See [file access](./security#instance-files).
 <ExamplePrompt>
 
 > Download the log for this failed import and help me find what went wrong.
+
+</ExamplePrompt>
+
+## Object types {#object-types}
+
+**Toolsets:** `CARTRIDGES`, `SCAPI`
+
+| Tool                    | Capability                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `object_types_describe` | List system object types, or an object type's attribute definitions, enum values, and attribute groups. |
+
+Your assistant can check which custom attributes exist (for example `c_color` on
+Product), their value types, and their enum values before it writes code that uses
+them. Requires an API client with the `sfcc.object-definitions` scope, plus
+`short-code` and `tenant-id`. Enum values need `sfcc.object-definitions.rw`
+and a safety level that allows the attribute search, which is a POST request. When
+the search is blocked, the tool returns the definitions without values and says
+why. Custom object types aren't covered. To change
+definitions, use [`b2c object-types`](../cli/object-types).
+
+<ExamplePrompt>
+
+> Which custom attributes does Product have for colors, and what values can they take?
 
 </ExamplePrompt>
 

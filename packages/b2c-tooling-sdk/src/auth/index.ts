@@ -94,8 +94,48 @@ export {OAuthStrategy, decodeJWT} from './oauth.js';
 export type {OAuthConfig} from './oauth.js';
 export {ImplicitOAuthStrategy} from './oauth-implicit.js';
 export type {ImplicitOAuthConfig} from './oauth-implicit.js';
-export {PkceOAuthStrategy, PkceGrantUnsupportedError} from './oauth-pkce.js';
-export type {PkceOAuthConfig} from './oauth-pkce.js';
+export {
+  PkceOAuthStrategy,
+  PkceGrantUnsupportedError,
+  buildPkceAuthorizeRequest,
+  readPkceAuthorizationResponse,
+  exchangePkceAuthorizationCode,
+} from './oauth-pkce.js';
+export type {
+  PkceOAuthConfig,
+  PkceAuthorizeRequest,
+  PkceAuthorizeRequestOptions,
+  PkceCodeExchangeOptions,
+  PkceTokenSet,
+} from './oauth-pkce.js';
+export {AccountManagerTokenError, AuthRequiredError, isAuthRequiredError} from './errors.js';
+
+// Account Manager hosts and the SDK's public client on each
+export {ACCOUNT_MANAGER_HOSTS, getAccountManagerHostInfo, getDefaultPublicClientId} from '../defaults.js';
+export type {AccountManagerHostInfo} from '../defaults.js';
+
+// JWT helpers (decode only; signatures are not verified)
+export {DEFAULT_EXPIRY_BUFFER_SEC, extractJwtScopes, decodeJwtTokenInfo, isJwtTokenValid} from './jwt-utils.js';
+
+// Account Manager token claims: identity, roles, tenant filter
+export {
+  AM_ROLE_ACCOUNT_ADMIN,
+  AM_ROLE_API_ADMIN,
+  AM_ROLE_USER_ADMIN,
+  AM_ROLE_COMMERCE_API,
+  ACCOUNT_MANAGER_ROLE_DISPLAY_NAMES,
+  ACCOUNT_MANAGER_API_CLIENT_ADMIN_ROLES,
+  readAccountManagerClaims,
+  accountManagerClaimsFromPayload,
+  parseAccountManagerTenantFilter,
+  formatAccountManagerTenantFilter,
+  hasAccountManagerRole,
+  hasAccountManagerTenantRole,
+  getAccountManagerRoleTenants,
+  getAccountManagerRoleDisplayName,
+  isAccountManagerApiClientAdmin,
+} from './account-manager-claims.js';
+export type {AccountManagerClaims} from './account-manager-claims.js';
 export {
   PkceWithImplicitFallbackStrategy,
   createUserAuthStrategy,

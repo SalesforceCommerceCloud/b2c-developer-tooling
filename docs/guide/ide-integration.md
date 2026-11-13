@@ -33,6 +33,12 @@ The plugin also resolves SFCC cartridge-style requires, matching runtime semanti
 
 Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the extension's **Cartridges** tree view.
 
+#### Custom attributes
+
+To type the `custom` property of Script API objects with your instance's custom attributes, run **B2C DX: Write Custom Attribute Types to Project**. Then `product.custom.myAttribute` gets completions, hover docs (display name, description, enum values), and type checking. Enum attributes narrow to their values, for example `product.custom.color.value` is `'red' | 'blue'`.
+
+The command reads attribute definitions from the configured instance through the Object Definitions API and writes `.b2c-script-types/custom-attributes.d.ts`, which the extension loads automatically. Commit the file to share it, and run the command again when attribute definitions change. It needs an Account Manager API client with the `sfcc.object-definitions` scope plus `short-code` and `tenant-id` (see [Object Types](../cli/object-types.md)); enum values need `sfcc.object-definitions.rw`. `b2c setup ide vscode-types --custom-attributes` writes the same file.
+
 #### Legacy `.ds` scripts
 
 The extension associates `**/cartridge/scripts/**/*.ds` with the JavaScript language mode, so legacy pipeline-era scripts get the same syntax highlighting, completions, hover docs, and debugger breakpoints as their `.js` siblings. Requires that land on a `.ds` file resolve as well — `.js` still wins when both exist, matching the platform. Override the association in your own settings if you use `.ds` files for something else:
@@ -57,6 +63,12 @@ This creates two artifacts at the repo root:
 
 - `./.b2c-script-types/types/` — vendored copy of the Script API definitions.
 - `./jsconfig.json` — TypeScript Language Service configuration mapping `dw/*` to the vendored types.
+
+Add `--custom-attributes` to also generate `./.b2c-script-types/custom-attributes.d.ts` with the instance's custom attributes (same requirements as the VS Code command above):
+
+```bash
+b2c setup ide vscode-types --custom-attributes --force
+```
 
 You can commit both into your repository if you want everyone on the team to share the same setup. To re-vendor after upgrading the CLI, re-run the command with `--force` to overwrite the existing files. The vendored types are refreshed automatically because the `--copy` flag defaults to true. The `jsconfig.json` lives at the repo root by design — the `paths` mappings inside it are repo-root-relative and will not resolve correctly from a subdirectory.
 

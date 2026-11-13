@@ -14,6 +14,7 @@ Read only the skill that matches the task; each links its own references.
 | Set up a sandbox or realm: sample data, storefronts, replication | `skill://b2c-cli/b2c-setup/SKILL.md` |
 | Commerce API reads/writes (required before `scapi_search` / `scapi_execute`) | `skill://mcp/b2c-mcp-scapi/SKILL.md` |
 | Warehouse reports and SQL (required before `cip_query`) | `skill://mcp/b2c-mcp-cip/SKILL.md` |
+| Write data SCAPI cannot, e.g. promotion discount rules (required before `site_archive_import`) | `skill://mcp/b2c-mcp-site-import/SKILL.md` |
 | Configuration, credentials, access grants, wrong target | `skill://mcp/b2c-mcp-config/SKILL.md` |
 | Server-side script debugging | `skill://mcp/b2c-mcp-debugger/SKILL.md` |
 | Dashboard, Claude artifact or Cowork page showing B2C data | `skill://mcp/b2c-mcp-claude-artifacts/SKILL.md` |

@@ -96,6 +96,8 @@ function mapScapiExecution(scapi: ScapiJobExecution): JobExecutionInfo {
 export interface ExecuteJobScapiOptions extends ExecuteJobOptions {
   /** Tenant ID for organization path param. Required. */
   tenantId: string;
+  /** Cancels the start request. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -123,6 +125,7 @@ export async function executeJob(
     params: {path: {organizationId, jobId}},
     headers: WRITE_HEADERS,
     body: requestBody as unknown as {parameters?: Array<{name: string; value: string}>},
+    signal: options.signal,
   });
 
   if (response.status === 400) {
@@ -156,6 +159,7 @@ export async function getJobExecution(
   jobId: string,
   executionId: string,
   tenantId: string,
+  signal?: AbortSignal,
 ): Promise<JobExecutionInfo> {
   const organizationId = toOrganizationId(tenantId);
 
@@ -164,6 +168,7 @@ export async function getJobExecution(
     {
       params: {path: {organizationId, jobId, executionId}},
       headers: READ_HEADERS,
+      signal,
     },
   );
 

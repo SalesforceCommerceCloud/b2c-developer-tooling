@@ -44,6 +44,7 @@ const DW_JSON_CONFIG_KEYS = {
   cartridges: true,
   importSetExclude: true,
   cartridgeIgnoreDirs: true,
+  maxArchiveSize: true,
   contentLibrary: true,
   catalogs: true,
   libraries: true,

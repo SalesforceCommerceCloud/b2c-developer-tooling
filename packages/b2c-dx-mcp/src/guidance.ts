@@ -4,8 +4,12 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {ResourceTemplate, ProtocolError, ProtocolErrorCode} from '@modelcontextprotocol/server';
-import {fileURLToPath} from 'node:url';
-import {GuidanceCatalog, GuidanceError, GUIDANCE_INDEX_URI} from '@salesforce/b2c-tooling-sdk/guidance';
+import {
+  GuidanceError,
+  GUIDANCE_INDEX_URI,
+  loadBundledGuidanceCatalog,
+  type GuidanceCatalog,
+} from '@salesforce/b2c-tooling-sdk/guidance';
 import {z} from 'zod';
 import type {B2CDxMcpServer} from './server.js';
 import {TOOLSETS} from './utils/constants.js';
@@ -58,8 +62,7 @@ const pageFields = {
 };
 const outputSchema = {
   result: z.discriminatedUnion('kind', [
-    z.object({kind: z.literal('directory'), ...pageFields}),
-    z.object({kind: z.literal('search'), ...pageFields}),
+    z.object({kind: z.enum(['directory', 'search']), ...pageFields}),
     z.object({
       kind: z.literal('read'),
       id: z.string(),
@@ -79,10 +82,7 @@ const outputSchema = {
 function catalogLoader(collections?: readonly string[]): () => GuidanceCatalog {
   let catalog: GuidanceCatalog | undefined;
   return () => {
-    catalog ??= new GuidanceCatalog(fileURLToPath(new URL('../content/guidance/', import.meta.url)), {
-      allowNonGa: true,
-      collections,
-    });
+    catalog ??= loadBundledGuidanceCatalog({allowNonGa: true, collections});
     return catalog;
   };
 }
@@ -113,8 +113,9 @@ export function createGuidanceTool(): McpTool {
     idempotent: true,
     openWorld: false,
     title: 'Read B2C Skills',
+    alwaysLoad: true,
     description:
-      'Read skill files: b2c (development), b2c-cli, b2c-ops (operations), storefront-next, mcp (setup/workflows). MCP resource fallback and full catalog. Omit args to list; query to search; collection to filter; id or uri to read.',
+      'Read B2C skills: b2c (development), b2c-cli, b2c-ops (operations), storefront-next, mcp (setup/workflows); fallback for skill:// resources, full catalog. No args lists; query searches; collection filters; id or uri reads.',
     inputSchema,
     outputSchema,
     toolsets: [...TOOLSETS],

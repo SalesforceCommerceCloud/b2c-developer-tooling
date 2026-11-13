@@ -12,6 +12,7 @@ import {
   getRecentLogs,
   listLogFiles,
   parseSinceTime,
+  InvalidTimeError,
   unreadCustomPrefixes,
   type GetRecentLogsOptions,
   type ListLogsOptions,
@@ -72,11 +73,12 @@ export function createLogsGetRecentTool(
   return createToolAdapter<GetRecentInput, GetRecentOutput>(
     {
       name: 'logs_get_recent',
+      searchHint: 'errors exceptions failing broken why server logs recent',
       effect: 'read',
       idempotent: true,
       openWorld: true,
       description:
-        'Fetch recent B2C instance logs. Use for quick lookups; start a log watch before actions whose entries must not be missed.',
+        'Fetch recent B2C instance logs (errors, exceptions, warnings, custom logs). Use for quick lookups; start a log watch before actions whose entries must not be missed.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {
@@ -114,7 +116,12 @@ export function createLogsGetRecentTool(
 
         let sinceDate: Date | undefined;
         if (args.since) {
-          sinceDate = parseSinceTime(args.since);
+          try {
+            sinceDate = parseSinceTime(args.since);
+          } catch (error) {
+            if (error instanceof InvalidTimeError) throw new TypeError(InvalidTimeError.describe(error.value, 'since'));
+            throw error;
+          }
         }
 
         const needsClientFilter = Boolean(sinceDate || args.level?.length || args.search);

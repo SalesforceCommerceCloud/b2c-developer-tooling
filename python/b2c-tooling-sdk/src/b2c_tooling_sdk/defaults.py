@@ -22,7 +22,7 @@ DEFAULT_ODS_HOST = "admin.dx.commercecloud.salesforce.com"
 #: Default public client ID for browser-based user authentication
 #: (Authorization Code + PKCE). Used as a fallback when no client ID is
 #: configured for platform-level operations.
-DEFAULT_PUBLIC_CLIENT_ID = "a40a7a9b-e854-4aa6-8078-d5f79872aa65"
+DEFAULT_PUBLIC_CLIENT_ID = "3496b7e8-9cff-4cd3-8252-a7528d0e312d"
 
 #: Legacy public client ID used for the deprecated OAuth implicit flow.
 #: Only used when a caller explicitly selects the ``implicit`` auth method.

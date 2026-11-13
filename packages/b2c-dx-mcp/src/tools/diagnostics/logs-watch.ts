@@ -6,13 +6,7 @@
 
 import {z} from 'zod';
 import {createWatchLifecycleTool} from './watch-lifecycle.js';
-import {
-  matchesLevel,
-  matchesSearch,
-  tailLogs,
-  type TailLogsOptions,
-  type TailLogsResult,
-} from '@salesforce/b2c-tooling-sdk/operations/logs';
+import {watchLogs, type TailLogsOptions, type TailLogsResult} from '@salesforce/b2c-tooling-sdk/operations/logs';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
@@ -21,7 +15,9 @@ import {createToolAdapter, jsonResult} from '../adapter.js';
 import {getLogWatchRegistry} from './log-watch-registry.js';
 
 export interface LogsWatchStartInjections {
-  tailLogs?: (instance: B2CInstance, options?: TailLogsOptions) => Promise<TailLogsResult>;
+  tailLogs?: (instance: B2CInstance, options: TailLogsOptions) => Promise<TailLogsResult>;
+  /** Override the buffer cap, for tests. */
+  bufferCap?: number;
 }
 
 const DEFAULT_PREFIXES = ['error', 'customerror'];
@@ -46,15 +42,15 @@ function createLogsWatchStartTool(
   serverContext?: ServerContext,
   injections?: LogsWatchStartInjections,
 ): McpTool {
-  const tailLogsFn = injections?.tailLogs ?? tailLogs;
   return createToolAdapter<StartInput, StartOutput>(
     {
       name: 'logs_watch',
+      searchHint: 'tail follow stream live server errors exceptions',
       effect: 'read',
       idempotent: true,
       openWorld: true,
       description:
-        'Start, list, or stop B2C log watches. Start before the target action; read with logs_watch_poll. Stop discards unread entries; safe to repeat.',
+        'Start, list, or stop B2C log watches that tail server logs. Start before the target action; read with logs_watch_poll. Stop discards unread entries; safe to repeat.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       requiresInstance: true,
       inputSchema: {
@@ -81,10 +77,7 @@ function createLogsWatchStartTool(
       },
       async execute(args, context) {
         const registry = getLogWatchRegistry(context);
-        const prefixes = args.prefixes ?? DEFAULT_PREFIXES;
         const hostname = context.b2cInstance!.config.hostname;
-
-        // Reserve the watchId on the registry by tracking the hostname check first
         const existing = registry.findByHostname(hostname);
         if (existing) {
           throw new Error(
@@ -92,65 +85,28 @@ function createLogsWatchStartTool(
               `Stop it with logs_watch(action: stop) first, or poll the existing watch.`,
           );
         }
-
-        const levelFilter = args.level;
-        const searchFilter = args.search;
-
-        // We need the watchId before tailLogs starts emitting, but we can only mint
-        // the id after registerWatch (which itself needs the tailResult). Use a holder
-        // so the callbacks below close over a mutable slot that we fill in after register.
-        const ref: {id?: string} = {};
-
-        const tailResult = await tailLogsFn(context.b2cInstance!, {
-          prefixes,
+        const watch = await watchLogs(context.b2cInstance!, {
+          prefixes: args.prefixes ?? DEFAULT_PREFIXES,
           pollInterval: args.poll_interval_ms ?? 3000,
           lastEntries: args.last_entries ?? 0,
-          onEntry(entry) {
-            if (!ref.id) return;
-            if (levelFilter && levelFilter.length > 0 && !matchesLevel(entry, levelFilter)) {
-              return;
-            }
-            if (searchFilter && !matchesSearch(entry, searchFilter)) {
-              return;
-            }
-            registry.appendEntry(ref.id, entry);
-          },
-          onFileDiscovered(file) {
-            if (!ref.id) return;
-            registry.appendFileDiscovered(ref.id, file);
-          },
-          onFileRotated(file) {
-            if (!ref.id) return;
-            registry.appendRotation(ref.id, file);
-          },
-          onError(err) {
-            if (!ref.id) return;
-            registry.appendError(ref.id, err);
-          },
+          level: args.level,
+          search: args.search,
+          bufferCap: injections?.bufferCap,
+          tail: injections?.tailLogs,
         });
-
-        // registerWatch re-checks the hostname and throws on a duplicate. If two
-        // logs_watch(action: start) calls race past the findByHostname check above, the
-        // loser's tailLogs poll is already running in the background — stop it so
-        // it isn't orphaned (it would otherwise poll WebDAV until process exit).
+        // registerWatch re-checks the hostname; if two starts raced past the check
+        // above, stop the loser's tail so it isn't orphaned.
         let entry;
         try {
-          entry = registry.registerWatch({
-            hostname,
-            prefixes,
-            tailResult,
-            resolution: structuredClone(context.resolution),
-          });
+          entry = registry.registerWatch({hostname, watch, resolution: structuredClone(context.resolution)});
         } catch (error) {
-          await tailResult.stop().catch(() => {});
+          await watch.stop();
           throw error;
         }
-        ref.id = entry.watchId;
-
         return {
           hostname,
-          prefixes,
-          started_at: new Date(entry.createdAt).toISOString(),
+          prefixes: watch.prefixes,
+          started_at: new Date(watch.info().createdAt).toISOString(),
           watch_id: entry.watchId,
         };
       },
@@ -176,26 +132,29 @@ export function createLogsWatchTool(
       return {
         watches: getRegistry()
           .listWatches()
-          .map((w) => ({
-            buffered_entries: w.buffer.length,
-            created_at: new Date(w.createdAt).toISOString(),
-            dropped_entries: w.droppedEntries,
-            files_discovered: w.filesDiscovered,
-            hostname: w.hostname,
-            last_activity_at: new Date(w.lastActivityAt).toISOString(),
-            prefixes: w.prefixes,
-            stopped: w.stopped,
-            total_entries_seen: w.totalEntriesSeen,
-            watch_id: w.watchId,
-            resolution: w.resolution,
-          })),
+          .map(({watchId, hostname, watch, resolution}) => {
+            const info = watch.info();
+            return {
+              buffered_entries: info.bufferedEntries,
+              created_at: new Date(info.createdAt).toISOString(),
+              dropped_entries: info.droppedEntries,
+              files_discovered: info.filesDiscovered,
+              hostname,
+              last_activity_at: new Date(info.lastActivityAt).toISOString(),
+              prefixes: info.prefixes,
+              stopped: info.stopped,
+              total_entries_seen: info.totalEntriesSeen,
+              watch_id: watchId,
+              resolution,
+            };
+          }),
       };
     },
     async (watchId) => {
       const registry = getRegistry();
-      const watch = registry.getWatch(watchId);
-      const total = watch?.totalEntriesSeen ?? 0;
-      if (watch) await registry.destroyWatch(watchId);
+      const entry = registry.getWatch(watchId);
+      const total = entry?.watch.info().totalEntriesSeen ?? 0;
+      if (entry) await registry.destroyWatch(watchId);
       return {watch_id: watchId, stopped_at: new Date().toISOString(), total_entries_seen: total};
     },
   );

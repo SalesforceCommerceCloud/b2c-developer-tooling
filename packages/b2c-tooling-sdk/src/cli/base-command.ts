@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {existsSync} from 'node:fs';
+import path from 'node:path';
 import {Command, Flags, type Interfaces} from '@oclif/core';
 import {loadConfig} from './config.js';
 import type {LoadConfigOptions} from './config.js';
@@ -17,10 +19,13 @@ import type {
   AuthMiddlewareHookResult,
   AuthSessionStoreHookOptions,
   AuthSessionStoreHookResult,
+  LogRedactionHookOptions,
+  LogRedactionHookResult,
 } from './hooks.js';
 import {byPluginName} from './hooks.js';
 import {setLanguage, t} from '../i18n/index.js';
 import {configureLogger, getLogger, type LogLevel, type Logger} from '../logging/index.js';
+import {globalLogRedactorRegistry} from '../logging/redaction.js';
 import {createExtraParamsMiddleware, createSafetyMiddleware, type ExtraParamsConfig} from '../clients/middleware.js';
 import {
   getSafetyLevel,
@@ -34,7 +39,7 @@ import type {SafetyEvaluation} from '../safety/types.js';
 import {confirm as safetyConfirm} from '../ux/confirm.js';
 import {getAgentContext, isInteractive} from '../ux/agent-context.js';
 import {globalConfigSourceRegistry} from '../config/config-source-registry.js';
-import {readB2CSettings} from '../config/settings.js';
+import {B2C_SETTINGS_FILENAME, getB2CConfigDirectory, readB2CSettings} from '../config/settings.js';
 import {
   ENV_FILE_ENV_VAR,
   loadEnvFileForArgv,
@@ -382,6 +387,9 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // the full config after initializeSafetyGuard() runs.
     this.registerSafetyMiddleware();
 
+    // Collect log redactors first so later plugin hooks and requests are redacted too
+    await this.collectPluginLogRedactors();
+
     // Collect middleware from plugins before any API clients are created
     await this.collectPluginHttpMiddleware();
 
@@ -553,7 +561,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * ```
    */
   protected getBaseConfigOptions(): LoadConfigOptions {
-    const settings = readB2CSettings({configDirectory: this.config.configDir});
+    const settings = readB2CSettings({configDirectory: this.findUserConfigDirectory(B2C_SETTINGS_FILENAME)});
     return {
       instance: this.flags.instance,
       configPath: this.getConfigPathFlag(),
@@ -562,6 +570,26 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       projectDirectory: this.flags['project-directory'],
       workingDirectory: this.flags['project-directory'],
     };
+  }
+
+  /**
+   * Directory holding a user-level config file such as `settings.json` or `safety.json`.
+   *
+   * Other CLIs built on this SDK (for example `sfnext`) have their own oclif config
+   * directory. For those, the file is read from the CLI's own directory when present,
+   * otherwise from the shared B2C directory (`~/.config/b2c`), so settings written by
+   * `b2c setup` apply to every SDK-based CLI. The B2C CLI and MCP server only use
+   * their own directory.
+   */
+  protected findUserConfigDirectory(filename: string): string | undefined {
+    const ownDirectory = this.config.configDir;
+    if (!ownDirectory || this.config.dirname === 'b2c') return ownDirectory;
+
+    const sharedDirectory = getB2CConfigDirectory();
+    if (existsSync(path.join(ownDirectory, filename)) || !existsSync(path.join(sharedDirectory, filename))) {
+      return ownDirectory;
+    }
+    return sharedDirectory;
   }
 
   /** `--config` / `SFCC_CONFIG`; oclif treats an empty env var as unset, but empty means "no dw.json". */
@@ -810,6 +838,32 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     // Log warnings for hook failures (don't break the CLI)
     for (const failure of hookResult.failures) {
       this.logger?.warn(`Plugin ${failure.plugin.name} b2c:auth-middleware hook failed: ${failure.error.message}`);
+    }
+  }
+
+  /**
+   * Collects log redactors from plugins via the `b2c:log-redaction` hook and
+   * registers them with the global log redactor registry.
+   */
+  protected async collectPluginLogRedactors(): Promise<void> {
+    if (process.env.B2C_SKIP_PLUGIN_HOOKS) return;
+
+    const hookOptions: LogRedactionHookOptions = {
+      flags: this.flags as Record<string, unknown>,
+    };
+
+    const hookResult = await this.config.runHook('b2c:log-redaction', hookOptions);
+
+    for (const success of byPluginName(hookResult.successes)) {
+      const result = success.result as LogRedactionHookResult | undefined;
+      for (const redactor of result?.redactors ?? []) {
+        globalLogRedactorRegistry.register(redactor);
+        this.logger?.debug(`Registered log redactor: ${redactor.name}`);
+      }
+    }
+
+    for (const failure of hookResult.failures) {
+      this.logger?.warn(`Plugin ${failure.plugin.name} b2c:log-redaction hook failed: ${failure.error.message}`);
     }
   }
 
@@ -1068,7 +1122,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
    * and per-instance dw.json config.
    */
   private initializeSafetyGuard(): void {
-    const globalSafety = loadGlobalSafetyConfig(this.config.configDir);
+    const globalSafety = loadGlobalSafetyConfig(this.findUserConfigDirectory('safety.json'));
     const config = resolveEffectiveSafetyConfig(this.resolvedConfig.values.safety, globalSafety);
     this.safetyGuard = new SafetyGuard(config);
 

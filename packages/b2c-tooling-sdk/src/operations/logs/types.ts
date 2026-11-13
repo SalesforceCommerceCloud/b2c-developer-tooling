@@ -49,6 +49,8 @@ export interface ListLogsOptions {
    * log-category prefix. If not specified, returns all top-level log files.
    */
   prefixes?: string[];
+  /** Cancels the directory listings. */
+  signal?: AbortSignal;
   /**
    * Sort field: "name", "date", or "size".
    * @default "date"
@@ -145,4 +147,6 @@ export interface GetRecentLogsOptions {
    * Path normalizer function to convert remote paths to local paths.
    */
   pathNormalizer?: (message: string) => string;
+  /** Cancels the listing and file reads (throws the abort reason). */
+  signal?: AbortSignal;
 }

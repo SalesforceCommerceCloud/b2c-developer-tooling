@@ -18,7 +18,14 @@ import {z} from 'zod';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
-import {getMetricsByCategory, resolveMetricsWindow, enrichMetricsTags} from '@salesforce/b2c-tooling-sdk';
+import {
+  enrichMetricsTags,
+  getMetricsByCategory,
+  resolveMetricsWindow,
+  summarizeSeriesData,
+} from '@salesforce/b2c-tooling-sdk';
+
+export {summarizeSeriesData} from '@salesforce/b2c-tooling-sdk';
 
 /**
  * Input parameters for metrics_get tool.
@@ -44,54 +51,6 @@ interface MetricsGetInput {
   ocapiApi?: string;
   /** Replace each series' data points with summary statistics (optional) */
   summarize?: boolean;
-}
-
-/**
- * Per-series statistics returned instead of data points when `summarize` is set.
- * Statistics cover the returned points only; intervals without a point are
- * absent from the API (not zero) and are not counted.
- */
-interface MetricSeriesSummary {
-  points: number;
-  sum?: number;
-  min?: number;
-  max?: number;
-  avg?: number;
-  /** ISO timestamp of the maximum value. */
-  maxAt?: string;
-  firstAt?: string;
-  lastAt?: string;
-}
-
-const round = (n: number): number => Math.round(n * 1000) / 1000;
-
-/**
- * Summarizes a series' data points. Placeholder series (no data) yield `{points: 0}`.
- */
-export function summarizeSeriesData(data: Array<{timestamp: number; value: number}>): MetricSeriesSummary {
-  if (data.length === 0) return {points: 0};
-  let sum = 0;
-  let min = data[0];
-  let max = data[0];
-  let first = data[0];
-  let last = data[0];
-  for (const point of data) {
-    sum += point.value;
-    if (point.value < min.value) min = point;
-    if (point.value > max.value) max = point;
-    if (point.timestamp < first.timestamp) first = point;
-    if (point.timestamp > last.timestamp) last = point;
-  }
-  return {
-    points: data.length,
-    sum: round(sum),
-    min: round(min.value),
-    max: round(max.value),
-    avg: round(sum / data.length),
-    maxAt: new Date(max.timestamp).toISOString(),
-    firstAt: new Date(first.timestamp).toISOString(),
-    lastAt: new Date(last.timestamp).toISOString(),
-  };
 }
 
 const SIGNALS_URI = 'skill://b2c-ops/b2c-production-triage/references/metrics-signals.md';
@@ -167,6 +126,7 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
   return createToolAdapter<MetricsGetInput, MetricsGetOutput>(
     {
       name: 'metrics_get',
+      searchHint: 'performance slow latency response time error rate traffic requests observability health',
       effect: 'read',
       idempotent: true,
       openWorld: true,
@@ -279,7 +239,7 @@ export function createMetricsGetTool(loadServices: () => Promise<Services> | Ser
         };
       },
       // Compact JSON: indentation roughly doubles the size of per-minute series.
-      formatOutput: (output) => jsonResult(output, 0),
+      formatOutput: (output) => jsonResult(output),
     },
     loadServices,
   );

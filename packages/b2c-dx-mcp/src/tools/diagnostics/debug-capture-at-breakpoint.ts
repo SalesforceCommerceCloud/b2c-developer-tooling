@@ -13,11 +13,10 @@ import {
   projectFrame,
   projectVariable,
   resolveBreakpointPath,
-  type BreakpointInput,
   type MappedFrame,
   type MappedVariable,
 } from '@salesforce/b2c-tooling-sdk/operations/debug';
-import {getRegistry, getSessionEntry} from './session-registry.js';
+import {getSessionEntry} from './session-registry.js';
 import {MCP_SKILL_REFERENCES, type SkillReference} from '../../skill-references.js';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -65,11 +64,12 @@ export function createDebugCaptureAtBreakpointTool(
   return createToolAdapter<CaptureInput, CaptureOutput>(
     {
       name: 'debug_capture_at_breakpoint',
+      searchHint: 'debug why wrong value runtime variables state request breakpoint',
       effect: 'write',
       idempotent: false,
       openWorld: true,
       description:
-        'Add a breakpoint and wait for a halt; return stack, variables, and evaluations. ' +
+        'Debug a request: add a breakpoint, wait for a halt, and return stack, variables, and evaluations. ' +
         'Trigger a GET here or an external request concurrently. Capture does not resume by default. ' +
         'Workflow: skill://mcp/b2c-mcp-debugger/SKILL.md.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
@@ -104,21 +104,13 @@ export function createDebugCaptureAtBreakpointTool(
       },
       async execute(args, context) {
         const entry = getSessionEntry(context, args.session_id);
-        const registry = getRegistry(context);
         const timeout = Math.min(args.timeout_ms ?? DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
 
         const scriptPath = resolveBreakpointPath(args.file, entry.sourceMapper, entry.cartridges);
 
-        // Add breakpoint to existing set
-        const allBps: BreakpointInput[] = [
-          ...entry.breakpoints.map((bp) => ({
-            script_path: bp.script_path,
-            line_number: bp.line_number,
-            condition: bp.condition,
-          })),
+        await entry.manager.addBreakpoints([
           {script_path: scriptPath, line_number: args.line, condition: args.condition},
-        ];
-        entry.breakpoints = await entry.manager.setBreakpoints(allBps);
+        ]);
 
         const breakpointInfo = {
           file: entry.sourceMapper.toLocalPath(scriptPath) ?? null,
@@ -140,7 +132,7 @@ export function createDebugCaptureAtBreakpointTool(
               })
           : undefined;
 
-        const thread = await registry.waitForHalt(entry, timeout);
+        const thread = await entry.manager.waitForHalt(timeout);
 
         if (!thread) {
           return {

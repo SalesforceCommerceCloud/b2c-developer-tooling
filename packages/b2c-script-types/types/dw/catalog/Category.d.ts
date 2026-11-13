@@ -133,7 +133,7 @@ declare class Category extends ExtensibleObject<ICustomAttributes.Category> {
      * defined explicit sorting of products in this category.
      * @see dw.catalog.Category.hasOnlineProducts
      */
-    readonly onlineProducts: Collection<Product<any>>;
+    readonly onlineProducts: Collection<Product>;
     /**
      * Returns a sorted collection of currently online subcategories of this
      * catalog category.
@@ -206,7 +206,7 @@ declare class Category extends ExtensibleObject<ICustomAttributes.Category> {
      * defined explicit sorting of products in this category.
      * @see dw.catalog.Category.getOnlineProducts
      */
-    readonly products: Collection<Product<any>>;
+    readonly products: Collection<Product>;
     /**
      * Returns the outgoing recommendations for this category.  If this category
      * is not in the site catalog, or there is no site catalog, an empty
@@ -379,7 +379,7 @@ declare class Category extends ExtensibleObject<ICustomAttributes.Category> {
      * defined explicit sorting of products in this category.
      * @see dw.catalog.Category.hasOnlineProducts
      */
-    getOnlineProducts(): Collection<Product<any>>;
+    getOnlineProducts(): Collection<Product>;
     /**
      * Returns a sorted collection of currently online subcategories of this
      * catalog category.
@@ -469,7 +469,7 @@ declare class Category extends ExtensibleObject<ICustomAttributes.Category> {
      * defined explicit sorting of products in this category.
      * @see dw.catalog.Category.getOnlineProducts
      */
-    getProducts(): Collection<Product<any>>;
+    getProducts(): Collection<Product>;
     /**
      * Returns the outgoing recommendations for this category.  If this category
      * is not in the site catalog, or there is no site catalog, an empty

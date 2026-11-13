@@ -366,13 +366,13 @@ declare class Promotion extends ExtensibleObject<ICustomAttributes.Promotion> {
      * return $13.49. If the discount is $2 off, the method will return $12.99.
      * If the discount is $10.00 fixed price, the method will return $10.00.
      */
-    getPromotionalPrice(product: Product<any>): Money;
+    getPromotionalPrice(product: Product): Money;
     /**
      * This method follows the same logic as
      * getPromotionalPrice but prices are calculated based
      * on the option values selected in the specified option model.
      */
-    getPromotionalPrice(product: Product<any>, optionModel: ProductOptionModel): Money;
+    getPromotionalPrice(product: Product, optionModel: ProductOptionModel): Money;
     /**
      * Returns the qualifier matching mode specified by this promotion. A
      * promotion may have up to 3 qualifier conditions based on whether it is

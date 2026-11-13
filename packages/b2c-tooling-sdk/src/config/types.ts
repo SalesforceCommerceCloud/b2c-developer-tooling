@@ -130,6 +130,9 @@ export interface NormalizedConfig {
   /** Directory names skipped at any depth when archiving cartridges for deploy (replaces the default list) */
   cartridgeIgnoreDirs?: string[];
 
+  /** Per-archive size limit for code deploy, e.g. `200mb` (bare number is MiB); kept as a string and parsed at use */
+  maxArchiveSize?: string;
+
   // Content
   /** Default content library ID for content export/list commands */
   contentLibrary?: string;
@@ -243,6 +246,7 @@ export type ConfigWarningCode =
   | 'CLIENT_ID_MISMATCH'
   | 'SLAS_CLIENT_ID_MISMATCH'
   | 'TENANT_MISMATCH'
+  | 'STOREFRONT_HOSTNAME'
   | 'DEPRECATED_FIELD'
   | 'MISSING_REQUIRED'
   | 'SOURCE_ERROR';

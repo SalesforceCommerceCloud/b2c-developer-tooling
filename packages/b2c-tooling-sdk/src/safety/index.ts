@@ -12,7 +12,7 @@
 
 // Types
 export type {SafetyAction, SafetyRule, SafetyOperation, SafetyEvaluation} from './types.js';
-export {isValidSafetyAction, VALID_SAFETY_ACTIONS} from './types.js';
+export {isValidSafetyAction, normalizeSafetyRule, VALID_SAFETY_ACTIONS} from './types.js';
 
 // Core safety config and levels
 export type {SafetyLevel, SafetyConfig, SafetyConfigFragment} from './safety-middleware.js';
@@ -31,7 +31,8 @@ export {
 } from './safety-middleware.js';
 
 // SafetyGuard
-export {SafetyGuard, extractJobIdFromPath} from './safety-guard.js';
+export {SafetyGuard, extractJobIdFromPath, isOperationAlwaysBlocked} from './safety-guard.js';
+export {READ_ONLY_SEARCH_PATHS, isReadOnlySearch} from './read-only-searches.js';
 
 // Confirmation utility
 export type {ConfirmHandler} from './with-confirmation.js';

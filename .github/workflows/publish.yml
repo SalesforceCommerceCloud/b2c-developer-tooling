@@ -5,8 +5,6 @@ on:
     workflows: ['CI']
     types: [completed]
     branches: ['release/**']
-  schedule:
-    - cron: '0 2 * * 1-5' # Weekdays at 2 AM UTC (Mon-Fri)
   workflow_dispatch:
     inputs:
       release_type:

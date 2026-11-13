@@ -6,8 +6,8 @@
 
 import {z} from 'zod';
 import {createWatchLifecycleTool} from './watch-lifecycle.js';
-import {getProfile, tailMrtLogs} from '@salesforce/b2c-tooling-sdk/operations/mrt';
-import type {MrtLogEntry, TailMrtLogsOptions, TailMrtLogsResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import {getProfile, watchMrtLogs} from '@salesforce/b2c-tooling-sdk/operations/mrt';
+import type {TailMrtLogsOptions, TailMrtLogsResult} from '@salesforce/b2c-tooling-sdk/operations/mrt';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
@@ -18,6 +18,8 @@ import {getMrtLogWatchRegistry} from './mrt-log-watch-registry.js';
 export interface MrtLogsWatchStartInjections {
   tailMrtLogs?: (options: TailMrtLogsOptions, auth: AuthStrategy) => Promise<TailMrtLogsResult>;
   getProfile?: (options: {origin?: string}, auth: AuthStrategy) => Promise<{email?: string}>;
+  /** Override the buffer cap, for tests. */
+  bufferCap?: number;
 }
 
 interface StartInput {
@@ -32,36 +34,21 @@ interface StartOutput {
   watch_id: string;
 }
 
-/**
- * Case-insensitive substring match against an entry's message and raw text.
- * Mirrors the SFCC `matchesSearch` semantics. The CLI `mrt tail-logs` command
- * treats `search` as a regex, but MCP tool consumers get the safer substring
- * filter (no ReDoS surface, predictable behavior).
- */
-function matchesSearch(entry: MrtLogEntry, search: string): boolean {
-  const lower = search.toLowerCase();
-  return entry.message.toLowerCase().includes(lower) || entry.raw.toLowerCase().includes(lower);
-}
-
-function matchesLevel(entry: MrtLogEntry, levels: Set<string>): boolean {
-  return Boolean(entry.level && levels.has(entry.level.toUpperCase()));
-}
-
 function createMrtLogsWatchStartTool(
   loadServices: () => Promise<Services> | Services,
   serverContext?: ServerContext,
   injections?: MrtLogsWatchStartInjections,
 ): McpTool {
-  const tailMrtLogsFn = injections?.tailMrtLogs ?? tailMrtLogs;
   const getProfileFn = injections?.getProfile ?? getProfile;
   return createToolAdapter<StartInput, StartOutput>(
     {
       name: 'mrt_logs_watch',
+      searchHint: 'managed runtime mrt pwa kit storefront next server logs tail',
       effect: 'read',
       idempotent: true,
       openWorld: true,
       description:
-        'Start, list, or stop live MRT log watches. Requires project/environment to start; read with mrt_logs_watch_poll. Stop discards unread entries; safe to repeat.',
+        'Start, list, or stop live Managed Runtime (MRT) log watches for PWA Kit or Storefront Next storefront servers. Requires project/environment to start; read with mrt_logs_watch_poll. Stop discards unread entries; safe to repeat.',
       toolsets: ['DIAGNOSTICS', 'MRT', 'PWAV3', 'STOREFRONTNEXT'],
       requiresMrtAuth: true,
       inputSchema: {
@@ -98,10 +85,6 @@ function createMrtLogsWatchStartTool(
           );
         }
 
-        const levelFilter =
-          args.level && args.level.length > 0 ? new Set(args.level.map((l) => l.toUpperCase())) : null;
-        const searchFilter = args.search;
-
         // Best-effort user email for the WebSocket connection (matches the CLI).
         let user: string | undefined;
         try {
@@ -111,64 +94,40 @@ function createMrtLogsWatchStartTool(
           // Non-fatal: proceed without user email.
         }
 
-        // The callbacks need the watchId, but it is only minted by registerWatch
-        // (which itself needs the tailResult). Close over a mutable holder filled
-        // in after registration.
-        const ref: {id?: string} = {};
-
-        const tailResult = await tailMrtLogsFn(
+        const watch = await watchMrtLogs(
           {
             projectSlug: project,
             environmentSlug: environment,
             origin,
             user,
-            onEntry(entry) {
-              if (!ref.id) return;
-              if (levelFilter && !matchesLevel(entry, levelFilter)) return;
-              if (searchFilter && !matchesSearch(entry, searchFilter)) return;
-              registry.appendEntry(ref.id, entry);
-            },
-            onError(err) {
-              if (!ref.id) return;
-              registry.appendError(ref.id, err);
-            },
-            onClose() {
-              if (!ref.id) return;
-              registry.markStreamClosed(ref.id);
-            },
+            level: args.level,
+            search: args.search,
+            bufferCap: injections?.bufferCap,
+            tail: injections?.tailMrtLogs,
           },
           auth,
         );
 
-        // tailMrtLogs rejects `done` on a non-clean WebSocket close. Attach a
-        // no-op catch up front so neither the registration-failure path below
-        // nor a later connection drop produces an unhandled rejection.
-        // destroyWatch awaits the same promise for real cleanup.
-        tailResult.done.catch(() => {});
-
-        // registerWatch re-checks the dedup key and throws on a duplicate. If two
-        // starts race past findByKey above, the loser's WebSocket is already open
-        // — stop it so it isn't orphaned (it would otherwise stream until process
-        // exit).
+        // registerWatch re-checks the key; if two starts raced past the check above,
+        // close the loser's stream so it isn't orphaned.
         let entry;
         try {
           entry = registry.registerWatch({
             project,
             environment,
             origin,
-            tailResult,
+            watch,
             resolution: structuredClone(context.resolution),
           });
         } catch (error) {
-          tailResult.stop();
+          await watch.stop();
           throw error;
         }
-        ref.id = entry.watchId;
 
         return {
           environment,
           project,
-          started_at: new Date(entry.createdAt).toISOString(),
+          started_at: new Date(watch.info().createdAt).toISOString(),
           watch_id: entry.watchId,
         };
       },
@@ -194,26 +153,29 @@ export function createMrtLogsWatchTool(
       return {
         watches: getRegistry()
           .listWatches()
-          .map((w) => ({
-            buffered_entries: w.buffer.length,
-            created_at: new Date(w.createdAt).toISOString(),
-            dropped_entries: w.droppedEntries,
-            environment: w.environment,
-            last_activity_at: new Date(w.lastActivityAt).toISOString(),
-            origin: w.origin,
-            project: w.project,
-            stopped: w.stopped,
-            total_entries_seen: w.totalEntriesSeen,
-            watch_id: w.watchId,
-            resolution: w.resolution,
-          })),
+          .map(({watchId, project, environment, origin, watch, resolution}) => {
+            const info = watch.info();
+            return {
+              buffered_entries: info.bufferedEntries,
+              created_at: new Date(info.createdAt).toISOString(),
+              dropped_entries: info.droppedEntries,
+              environment,
+              last_activity_at: new Date(info.lastActivityAt).toISOString(),
+              origin,
+              project,
+              stopped: info.stopped,
+              total_entries_seen: info.totalEntriesSeen,
+              watch_id: watchId,
+              resolution,
+            };
+          }),
       };
     },
     async (watchId) => {
       const registry = getRegistry();
-      const watch = registry.getWatch(watchId);
-      const total = watch?.totalEntriesSeen ?? 0;
-      if (watch) await registry.destroyWatch(watchId);
+      const entry = registry.getWatch(watchId);
+      const total = entry?.watch.info().totalEntriesSeen ?? 0;
+      if (entry) await registry.destroyWatch(watchId);
       return {watch_id: watchId, stopped_at: new Date().toISOString(), total_entries_seen: total};
     },
   );

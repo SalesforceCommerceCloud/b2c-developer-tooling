@@ -157,12 +157,12 @@ declare class Product<T extends ICustomAttributes.Product = ICustomAttributes.Pr
      * Returns a collection containing all products that participate in the
      * product bundle.
      */
-    readonly bundledProducts: Collection<Product<any>>;
+    readonly bundledProducts: Collection<Product>;
     /**
      * Returns a collection of all bundles in which this product is included.
      * The method only returns bundles assigned to the current site.
      */
-    readonly bundles: Collection<Product<any>>;
+    readonly bundles: Collection<Product>;
     /**
      * Returns a collection of all categories to which this product is assigned
      * and which are also available through the current site.
@@ -348,12 +348,12 @@ declare class Product<T extends ICustomAttributes.Product = ICustomAttributes.Pr
      * does not represent a product set then an empty collection will be
      * returned.
      */
-    readonly productSetProducts: Collection<Product<any>>;
+    readonly productSetProducts: Collection<Product>;
     /**
      * Returns a collection of all product sets in which this product is included.
      * The method only returns product sets assigned to the current site.
      */
-    readonly productSets: Collection<Product<any>>;
+    readonly productSets: Collection<Product>;
     /**
      * Returns the outgoing recommendations for this product which
      * belong to the site catalog.  If this product is not assigned to the site
@@ -591,17 +591,17 @@ declare class Product<T extends ICustomAttributes.Product = ICustomAttributes.Pr
      * Returns the quantity of the specified product within the bundle. If the
      * specified product is not part of the bundle, a 0 quantity is returned.
      */
-    getBundledProductQuantity(aProduct: Product<any>): Quantity;
+    getBundledProductQuantity(aProduct: Product): Quantity;
     /**
      * Returns a collection containing all products that participate in the
      * product bundle.
      */
-    getBundledProducts(): Collection<Product<any>>;
+    getBundledProducts(): Collection<Product>;
     /**
      * Returns a collection of all bundles in which this product is included.
      * The method only returns bundles assigned to the current site.
      */
-    getBundles(): Collection<Product<any>>;
+    getBundles(): Collection<Product>;
     /**
      * Returns a collection of all categories to which this product is assigned
      * and which are also available through the current site.
@@ -825,12 +825,12 @@ declare class Product<T extends ICustomAttributes.Product = ICustomAttributes.Pr
      * does not represent a product set then an empty collection will be
      * returned.
      */
-    getProductSetProducts(): Collection<Product<any>>;
+    getProductSetProducts(): Collection<Product>;
     /**
      * Returns a collection of all product sets in which this product is included.
      * The method only returns product sets assigned to the current site.
      */
-    getProductSets(): Collection<Product<any>>;
+    getProductSets(): Collection<Product>;
     /**
      * Returns the outgoing recommendations for this product which
      * belong to the site catalog.  If this product is not assigned to the site
@@ -981,7 +981,7 @@ declare class Product<T extends ICustomAttributes.Product = ICustomAttributes.Pr
      * If this product does not represent a bundle at all, then false will
      * always be returned.
      */
-    includedInBundle(product: Product<any>): boolean;
+    includedInBundle(product: Product): boolean;
     /**
      * Returns 'true' if item is assigned to the specified
      * category.

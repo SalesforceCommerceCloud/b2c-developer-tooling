@@ -40,10 +40,12 @@ export function createLogsWatchPollTool(
   return createToolAdapter<PollInput, PollOutput>(
     {
       name: 'logs_watch_poll',
+      searchHint: 'read new lines output from log watch tail stream',
       effect: 'read',
       idempotent: true,
       openWorld: false,
-      description: 'Drain buffered B2C logs; wait when empty. Repeat if truncated. Includes rotation and error events.',
+      description:
+        'Read new lines buffered by a B2C log watch; wait when empty. Repeat if truncated. Includes rotation and error events.',
       toolsets: ['CARTRIDGES', 'DIAGNOSTICS', 'SCAPI'],
       inputSchema: {
         watch_id: z.string(),
@@ -56,35 +58,20 @@ export function createLogsWatchPollTool(
         max_entries: z.number().int().positive().optional().describe('Maximum entries. Default: 200.'),
       },
       async execute(args, context) {
-        const registry = getLogWatchRegistry(context);
-        const watch = registry.getWatchOrThrow(args.watch_id);
-
-        const timeoutMs = args.timeout_ms ?? DEFAULT_TIMEOUT_MS;
-        const maxEntries = args.max_entries ?? DEFAULT_MAX_ENTRIES;
-
-        if (
-          watch.buffer.length === 0 &&
-          watch.rotations.length === 0 &&
-          watch.errors.length === 0 &&
-          !watch.stopped &&
-          timeoutMs > 0
-        ) {
-          await registry.waitForActivity(args.watch_id, timeoutMs);
-        }
-
-        const drained = registry.drain(args.watch_id, maxEntries);
-        const droppedSnapshot = watch.droppedEntries;
-        watch.droppedEntries = 0;
-
+        const {watch} = getLogWatchRegistry(context).getWatchOrThrow(args.watch_id);
+        const batch = await watch.poll({
+          timeoutMs: args.timeout_ms ?? DEFAULT_TIMEOUT_MS,
+          maxEntries: args.max_entries ?? DEFAULT_MAX_ENTRIES,
+        });
         return {
-          buffered_remaining: watch.buffer.length,
-          dropped_entries: droppedSnapshot,
-          entries: drained.entries,
-          errors: drained.errors,
-          files_discovered: drained.filesDiscovered,
-          files_rotated: drained.rotations,
-          stopped: watch.stopped,
-          truncated: drained.truncated,
+          buffered_remaining: batch.bufferedRemaining,
+          dropped_entries: batch.droppedEntries,
+          entries: batch.entries,
+          errors: batch.errors,
+          files_discovered: batch.filesDiscovered,
+          files_rotated: batch.filesRotated,
+          stopped: batch.stopped,
+          truncated: batch.truncated,
           watch_id: args.watch_id,
         };
       },

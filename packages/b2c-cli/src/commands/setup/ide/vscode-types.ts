@@ -8,7 +8,8 @@ import {existsSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {Flags, ux} from '@oclif/core';
-import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ERROR_CODE, OAuthCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {ObjectTypesClient, generateCustomAttributeTypes} from '@salesforce/b2c-tooling-sdk/operations/object-types';
 import {withDocs} from '../../../i18n/index.js';
 
 interface SetupIdeVscodeTypesResponse {
@@ -16,11 +17,18 @@ interface SetupIdeVscodeTypesResponse {
   jsconfigOverwritten: boolean;
   typesPath?: string;
   typesVersion?: string;
+  customAttributes?: {
+    path: string;
+    objectTypes: Array<{objectType: string; attributes: number}>;
+    valuesIncluded: boolean;
+    warnings: string[];
+  };
 }
 
 const SCRIPT_TYPES_DIR = '.b2c-script-types';
+const CUSTOM_ATTRIBUTES_FILE = 'custom-attributes.d.ts';
 
-function buildJsconfigContent(): string {
+function buildJsconfigContent(customAttributes: boolean): string {
   return JSON.stringify(
     {
       compilerOptions: {
@@ -36,7 +44,11 @@ function buildJsconfigContent(): string {
         },
         types: [],
       },
-      include: [`${SCRIPT_TYPES_DIR}/types/global.d.ts`, '**/cartridge/**/*.js'],
+      include: [
+        `${SCRIPT_TYPES_DIR}/types/global.d.ts`,
+        ...(customAttributes ? [`${SCRIPT_TYPES_DIR}/${CUSTOM_ATTRIBUTES_FILE}`] : []),
+        '**/cartridge/**/*.js',
+      ],
       exclude: ['**/cartridge/static/**', '**/node_modules/**'],
     },
     null,
@@ -63,7 +75,7 @@ async function copyDir(src: string, dest: string): Promise<void> {
  * workspace so non-extension IDEs (plain VS Code, WebStorm, Neovim) get
  * dw/* IntelliSense.
  */
-export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVscodeTypes> {
+export default class SetupIdeVscodeTypes extends OAuthCommand<typeof SetupIdeVscodeTypes> {
   static description = withDocs(
     'Vendor Script API TypeScript definitions and a jsconfig.json into the workspace for IDE IntelliSense',
     '/cli/setup.html#b2c-setup-ide-vscode-types',
@@ -75,10 +87,12 @@ export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVsco
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --force',
     '<%= config.bin %> <%= command.id %> --output jsconfig.json',
+    '<%= config.bin %> <%= command.id %> --custom-attributes --force',
+    '<%= config.bin %> <%= command.id %> --custom-attributes --object-type Product --object-type Order --force',
   ];
 
   static flags = {
-    ...BaseCommand.baseFlags,
+    ...OAuthCommand.baseFlags,
     output: Flags.string({
       char: 'o',
       description: 'Path for the generated jsconfig.json',
@@ -93,6 +107,15 @@ export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVsco
       description: `Copy bundled types into ./${SCRIPT_TYPES_DIR}/`,
       default: true,
       allowNo: true,
+    }),
+    'custom-attributes': Flags.boolean({
+      description: `Generate ./${SCRIPT_TYPES_DIR}/${CUSTOM_ATTRIBUTES_FILE} with the instance's custom attributes (needs the sfcc.object-definitions scope; .rw for enum values)`,
+      default: false,
+    }),
+    'object-type': Flags.string({
+      description: 'System object types to include with --custom-attributes (default: all)',
+      multiple: true,
+      dependsOn: ['custom-attributes'],
     }),
   };
 
@@ -129,13 +152,21 @@ export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVsco
       await copyDir(typesSrc, typesPath);
     }
 
+    const customAttributes = this.flags['custom-attributes'] ? await this.writeCustomAttributes(cwd) : undefined;
+
     await fs.mkdir(path.dirname(jsconfigPath), {recursive: true});
-    await fs.writeFile(jsconfigPath, buildJsconfigContent() + '\n', 'utf8');
+    await fs.writeFile(jsconfigPath, buildJsconfigContent(Boolean(customAttributes)) + '\n', 'utf8');
 
     if (!this.jsonEnabled()) {
       ux.stdout(`Created ${jsconfigPath}${jsconfigExisted ? ' (overwritten)' : ''}`);
       if (typesPath) {
         ux.stdout(`Vendored types into ${typesPath}${typesVersion ? ` (version ${typesVersion})` : ''}`);
+      }
+      if (customAttributes) {
+        const count = customAttributes.objectTypes.reduce((sum, type) => sum + type.attributes, 0);
+        ux.stdout(
+          `Wrote ${count} custom attribute(s) across ${customAttributes.objectTypes.length} object type(s) to ${customAttributes.path}`,
+        );
       }
     }
 
@@ -144,6 +175,7 @@ export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVsco
       jsconfigOverwritten: jsconfigExisted,
       typesPath,
       typesVersion,
+      customAttributes,
     };
   }
 
@@ -168,5 +200,37 @@ export default class SetupIdeVscodeTypes extends BaseCommand<typeof SetupIdeVsco
     if (existsSync(srcPath)) return srcPath;
 
     this.error('Could not locate the bundled Script API types. Reinstall the CLI or pass --no-copy.');
+  }
+
+  /**
+   * Generate custom attribute declarations from the instance's attribute
+   * definitions. Written next to the vendored types so the jsconfig can
+   * include it; the VS Code extension also picks it up from here.
+   */
+  private async writeCustomAttributes(cwd: string): Promise<SetupIdeVscodeTypesResponse['customAttributes']> {
+    const shortCode = this.resolvedConfig.values.shortCode;
+    if (!shortCode) {
+      this.error(
+        'SCAPI short code required for --custom-attributes. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
+        {code: ERROR_CODE.VALIDATION},
+      );
+    }
+    const client = new ObjectTypesClient({shortCode, tenantId: this.requireTenantId(), auth: this.getOAuthStrategy()});
+    const hostname = this.resolvedConfig.values.hostname;
+    const result = await generateCustomAttributeTypes(client, {
+      objectTypes: this.flags['object-type'],
+      header: hostname ? `Instance: ${hostname}` : undefined,
+    });
+    for (const warning of result.warnings) this.warn(warning);
+
+    const file = path.resolve(cwd, SCRIPT_TYPES_DIR, CUSTOM_ATTRIBUTES_FILE);
+    await fs.mkdir(path.dirname(file), {recursive: true});
+    await fs.writeFile(file, result.content, 'utf8');
+    return {
+      path: file,
+      objectTypes: result.objectTypes,
+      valuesIncluded: result.valuesIncluded,
+      warnings: result.warnings,
+    };
   }
 }

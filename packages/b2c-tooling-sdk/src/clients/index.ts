@@ -118,7 +118,15 @@
  * @module clients
  */
 export {WebDavClient} from './webdav.js';
-export type {PropfindEntry, WebDavClientOptions} from './webdav.js';
+export type {PropfindEntry, WebDavClientOptions, WebDavRequestOptions} from './webdav.js';
+export {
+  normalizeWebDavPath,
+  readWebDavResponse,
+  readWebDavTextRange,
+  WEBDAV_ROOTS,
+  WebDavReadError,
+} from './webdav-paths.js';
+export type {WebDavReadErrorCode, WebDavRootKey, WebDavTextRange, WebDavTextRangeOptions} from './webdav-paths.js';
 export {describeWebDavUserAccessFailure, getWebDavRootPermission} from './webdav-access-hint.js';
 
 export {
@@ -209,6 +217,8 @@ export {
   normalizeTenantId,
   tenantIdFromSandboxHostname,
   sandboxHostnameFromTenantId,
+  isDefaultDomainHostname,
+  sandboxHostnameFromDefaultDomain,
   buildTenantScope,
   ORGANIZATION_ID_PREFIX,
   SCAPI_TENANT_SCOPE_PREFIX,
@@ -257,7 +267,18 @@ export {
   createAccountManagerOrgsClient,
   isValidRoleTenantFilter,
   ROLE_TENANT_FILTER_PATTERN,
+  NotPermittedError,
 } from './am-api.js';
+export {
+  API_CLIENT_PASSWORD_MIN_LENGTH,
+  API_CLIENT_PASSWORD_MAX_LENGTH,
+  generateApiClientPassword,
+  normalizeTenantIdForFilter,
+  buildCommerceApiRoleTenantFilter,
+  buildCommerceApiClientRequest,
+  provisionCommerceApiClient,
+} from './am-provisioning.js';
+export type {CommerceApiClientOptions, ProvisionedCommerceApiClient} from './am-provisioning.js';
 export type {
   AccountManagerClient,
   AccountManagerClientConfig,
@@ -458,6 +479,27 @@ export type {
   paths as ScapiCatalogsPaths,
   components as ScapiCatalogsComponents,
 } from './scapi-catalogs.js';
+
+// Object Definitions (dx/object-definitions/v1)
+export {
+  createObjectDefinitionsClient,
+  OBJECT_DEFINITIONS_CASCADE,
+  OBJECT_DEFINITIONS_READ_SCOPE,
+  OBJECT_DEFINITIONS_RW_SCOPE,
+} from './object-definitions.js';
+export type {
+  ObjectDefinitionsClient,
+  ObjectDefinitionsClientConfig,
+  ObjectTypeDefinition,
+  ObjectAttributeDefinition,
+  ObjectAttributeGroup,
+  ObjectAttributeValueDefinition,
+  ObjectAttributeValueType,
+  ObjectDefinitionsSearchRequest,
+  ObjectDefinitionsQuery,
+  paths as ObjectDefinitionsPaths,
+  components as ObjectDefinitionsComponents,
+} from './object-definitions.js';
 
 // SCAPI Storefront family (storefront/*/v1) — the modern MRT backend. One
 // client per API; Deployments now, Environments + Storefronts to follow.

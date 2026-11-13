@@ -1,5 +1,33 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.15.2
+
+### Patch Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - Update the `b2c-mrt` skill to prefer `b2c mrt bundle deploy --v2` over the deprecated `upload-v2` (now built on it), document `deploy --dependencies`/`--cc-override`, and note that `--ssr-only`/`--ssr-shared` have no defaults. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30) - SCAPI code mode no longer exports Account Manager tokens: `auth.accountManager()` is removed. Use `b2c auth token` when an external client needs an Admin token. `auth.slas()` is now available only when a SLAS client is configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.15.1
+
+### Patch Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - New MCP tool `site_archive_import` imports site archive XML without a terminal: it validates the files first and imports nothing if one is invalid. Use it for data the Commerce API can't write yet, such as promotion discount rules; the SCAPI skill now walks through creating a promotion end to end. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.15.0
+
+### Minor Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added the `b2c-object-types` skill for inspecting and managing system object attributes and attribute groups with the CLI. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - The config and object types skills cover generating custom attribute IntelliSense. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - The b2c-slas skill now covers SLAS tenants, password action templates, identity providers, and shopper logout and deletion. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.14.0
 
 ### Minor Changes

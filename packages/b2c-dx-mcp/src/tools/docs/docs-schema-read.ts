@@ -25,11 +25,12 @@ export function createDocsSchemaReadTool(loadServices: () => Promise<Services> |
   return createToolAdapter<ReadInput, null | ReadOutput>(
     {
       name: 'docs_schema_read',
+      searchHint: 'xsd xml import export file format structure elements catalog inventory promotions',
       effect: 'read',
       idempotent: true,
       openWorld: false,
       description:
-        'Read a bundled B2C Commerce (SFCC/Demandware) XSD schema as XML by ID or fuzzy query. ' +
+        'Read a bundled B2C Commerce (SFCC/Demandware) XSD schema (the XML format of an import file) by ID or fuzzy query. ' +
         'Use docs_schema_search to find IDs; validate_xml_schema checks XML against them.',
       toolsets: [...TOOLSETS],
       inputSchema: {

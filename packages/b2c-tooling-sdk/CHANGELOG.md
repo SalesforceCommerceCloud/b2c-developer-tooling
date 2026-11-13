@@ -1,5 +1,87 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.15.0
+
+### Minor Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#858](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/858) [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454) - Configure how often the Script Debugger polls for breakpoint hits and sends keepalives with `SFCC_DEBUG_POLL_INTERVAL` and `SFCC_DEBUG_KEEPALIVE_INTERVAL` (CLI, MCP, and VS Code), the `b2c-dx.debugger.pollInterval` and `b2c-dx.debugger.keepaliveInterval` VS Code settings, or `pollInterval`/`keepaliveInterval` in a `b2c-script` launch configuration. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30) - SCAPI code mode no longer exports Account Manager tokens: `auth.accountManager()` is removed. Use `b2c auth token` when an external client needs an Admin token. `auth.slas()` is now available only when a SLAS client is configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - `b2c mrt bundle deploy`/`save` and `createBundle`/`createBundleV2` no longer guess default `ssrOnly`/`ssrShared` patterns (which produced `Files not found in bundle archive: ssr.js, ssr.mjs` for streaming builds). Both lists must now come from the build's `.mrt/config.json` (now also read for v1 uploads), `config.server.*`, or `--ssr-only`/`--ssr-shared` (`--ssr-shared '[]'` for none); otherwise the command fails with an error naming the missing list. The `DEFAULT_SSR_ONLY`/`DEFAULT_SSR_SHARED` exports are removed. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+### Patch Changes
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - Deprecate `b2c mrt bundle upload-v2`: it now prints a warning and shares `b2c mrt bundle deploy --v2`'s flags, `--mrt-backend` routing and config resolution, while staying upload-only (an environment is ignored) and keeping its `--json` result shape. `b2c mrt bundle deploy` gains `--dependencies` and `--cc-override` for v2 uploads, so nothing from `upload-v2` is lost — switch scripts to `b2c mrt bundle deploy --v2`. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- [#856](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/856) [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4) - The promotion and site import skills now create promotions, campaigns and coupons enabled unless the user asks otherwise, and point to campaign dates and assignment schedules to control when shoppers see them. Agents no longer create records disabled and then ask for a second approval to enable them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#860](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/860) [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1) - The SCAPI skill links promotion, campaign and coupon creation to its promotions reference, so agents create those records through SCAPI and import only the discount rule. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30)]:
+  - @salesforce/b2c-agent-plugins@1.15.2
+
+## 2.14.0
+
+### Minor Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - Plugins can redact more from CLI log output, such as deeply nested secrets or tokens inside messages, with the new `b2c:log-redaction` hook. Logs are unchanged unless a plugin uses it. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - SCAPI code mode is more locked down: programs can no longer open network connections themselves, and Safety Mode rules can match SCAPI operations by `operationId` or API, so you can allow-list exactly what an assistant may call. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - Apps can now embed the SDK and build their own B2C tools on it: Account Manager sign-in without a local redirect server, app-owned credentials and session storage, cancellable operations, and the same skills and tool building blocks the MCP server uses. See "Embedding the SDK in an App" in the API reference. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - New MCP tool `site_archive_import` imports site archive XML without a terminal: it validates the files first and imports nothing if one is invalid. Use it for data the Commerce API can't write yet, such as promotion discount rules; the SCAPI skill now walks through creating a promotion end to end. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - `b2c am` permission errors now list the roles in your current token, so it's clear which Account Manager role you're missing. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d)]:
+  - @salesforce/b2c-agent-plugins@1.15.1
+
+## 2.13.0
+
+### Minor Changes
+
+- [#849](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/849) [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78) - `code deploy` now handles very large code versions: cartridges are streamed to disk instead of memory and split into archives of up to 200 MiB (set with `--max-archive-size`, `max-archive-size` in `dw.json`, or `SFCC_MAX_ARCHIVE_SIZE`). Dropped uploads are retried, a dropped connection during server-side unzip no longer fails the deploy, and 413 errors explain whether the archive was too large or the sandbox is stopped. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#853](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/853) [`047f623`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/047f6234c5446c3d6c651f113c1c6e60c6dc8fc8) - Fixed `b2c auth token --default-client` failing with "This command needs an API client". It now returns a token for your account from the built-in client. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#852](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/852) [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2) - `SFCC_CARTRIDGE_IGNORE_DIRS` and `SFCC_MAX_ARCHIVE_SIZE` now apply to `b2c code deploy`, `sfnext deploy-cartridge`, and MCP cartridge deploys. Previously both were ignored and the defaults were used. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#850](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/850) [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c) - Refreshed the Developer Center guides and Salesforce Help content behind `b2c docs search`/`read` and the MCP docs tools. Search descriptions for guides and Help knowledge articles are now drawn from the whole page, so details far down a page, such as Managed Runtime bundle limits and allowed content types, are findable. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#850](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/850) [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c) - Docs search now treats "limits", "limitations", "constraints", and "quotas" as synonyms, so queries such as "MRT size limits" find pages whose Constraints sections hold the answer. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#852](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/852) [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2) - CLIs built on the SDK, such as `sfnext`, now use the global `dw.json` set with `b2c setup default-config` and the global `safety.json`. A file in the CLI's own configuration directory still takes precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.12.1
+
+### Patch Changes
+
+- [`315118c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/315118c96fff84319bd3eff7f44a3a3d7422876c) - Fix browser sign-in with the built-in client, which Account Manager stopped accepting for PKCE. Sign-in no longer falls back to the deprecated implicit flow, and MCP tools that sign in through the built-in client no longer hang. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 2.12.0
+
+### Minor Changes
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added `generateCustomAttributeTypes` to build Script API declarations for an instance's custom attributes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - Added `b2c object-types` to inspect and manage system object type attribute definitions and attribute groups (for example, add a custom attribute to Product) without a site import, using the SCAPI Object Definitions API. `object-types export` and `object-types apply` move definitions to and from `system-objecttype-extensions.xml`, so you can snapshot an instance or apply an import set's metadata without an import job. Add `--import` to also set enum values and default values, which the API can't write, with a site import of just those attributes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#844](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/844) [`87650bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/87650bd32f6a2ddb3adf8cbfd73458746091ba4e) - `READ_ONLY` Safety Mode now allows known search endpoints (such as product, job execution, and attribute definition searches) that use POST but don't change data, so read-only sessions and assistants can search without extra rules. Configured rules still take precedence. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#842](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/842) [`a865d27`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/a865d27b2e815385348f8f2234f8efb4c096ed5f) - SCAPI code mode now says up front which operations it can't run because they upload or download files (such as custom sitemap upload), and explains how to do those steps another way. Typed catalog clients now cover the full Catalogs API (categories, assignments, rules and exclusion lists), and two new built-in snippets are included. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#843](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/843) [`ba89391`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ba8939155286af8f767b2ec4c45ef01d570dc77a) - The SLAS Admin client types now include identity provider, password action template, batch logout, and shopper delete operations. The `NO_UPDATE` safety level now blocks SLAS batch logout. (Thanks [@clavery](https://github.com/clavery)!)
+
+  Fixed SLAS Admin types that did not match the live service: the `*PwdlessTemplate` operations are now `*PwdActionTemplate` and GET returns the template list, `PWD_FORGOT_ACTION` is removed from the action types, and `IdentityProvider.preferenceValue` and `PasswordActionTemplate.clientId` are removed. Code that used these fields never received them from the service; use `isPreferred` for identity providers.
+
 ## 2.11.0
 
 ### Minor Changes

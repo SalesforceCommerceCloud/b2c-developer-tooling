@@ -106,9 +106,9 @@ for your answer, but your assistant app may. Keep the session connected while
 you decide.
 
 Start with the [product approval example](../guide/safety.md#scapi-code-mode-example)
-or [shared SCAPI policy](../guide/safety.md#global-scapi-confirmation). Some searches
-use POST and need a rule to run under `READ_ONLY`; see the
-[job search example](../guide/safety#allow-a-search-without-enabling-other-writes).
+or [shared SCAPI policy](../guide/safety.md#global-scapi-confirmation). `READ_ONLY`
+allows [known POST searches](../guide/safety#read-only-searches); other POST reads
+need a [rule](../guide/safety#allow-a-search-without-enabling-other-writes).
 
 Use your existing `dw.json`, global safety configuration, or environment variables;
 SCAPI Code Mode needs no separate safety setup. See
@@ -142,12 +142,13 @@ your instance's API definitions and the API's declared `c_*` scope to call it.
 The `sfcc.custom-apis` scope lets you check whether an API is registered; calling
 that API requires its own permissions.
 
-Code mode can export Account Manager or SLAS access tokens when you need them
-for a separate HTTP client. Normal SCAPI requests authenticate automatically;
-no token export is needed. Shopper API requests use a guest token that stays in
-the MCP server and is never shown to the assistant.
-Exported tokens are credentials and may appear in your assistant's conversation
-history. Requests made by an external client are outside MCP Safety Mode.
+SCAPI requests authenticate automatically, and their tokens and request headers
+stay in the MCP server; the assistant sees only the response status and body.
+Code mode never exports Account Manager tokens. Use `b2c auth token` when you
+need one for a separate HTTP client. When a SLAS client is configured, code mode
+can export a SLAS shopper token on request. Exported tokens are credentials and
+may appear in your assistant's conversation history. Requests made by an external
+client are outside MCP Safety Mode.
 
 Save or install only workflows you trust, and keep credentials out of their source.
 Saved workflows use the credentials and safety policy of the project where you
