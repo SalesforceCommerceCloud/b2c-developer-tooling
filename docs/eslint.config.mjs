@@ -26,4 +26,18 @@ export default [
       ...sharedRules,
     },
   },
+  {
+    files: ['.vitepress/skills/**/*.ts'],
+    plugins: {header: headerPlugin},
+    languageOptions: {
+      parserOptions: {
+        project: './.vitepress/skills/tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      'header/header': ['error', 'block', copyrightHeader],
+      ...sharedRules,
+    },
+  },
 ];

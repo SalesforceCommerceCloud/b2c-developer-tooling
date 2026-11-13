@@ -1,0 +1,12 @@
+{
+  "skills": [
+    {
+      "name": "using-b2c-tooling-sdk",
+      "version": "1.15.2-b01cbb66c27f6d7ad1483508b68fa7a28ec2316cbb1340d015d62d5a57d867fa",
+      "files": [
+        "SKILL.md",
+        "references/api-catalog.md"
+      ]
+    }
+  ]
+}

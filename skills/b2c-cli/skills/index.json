@@ -1,0 +1,208 @@
+{
+  "skills": [
+    {
+      "name": "b2c-am",
+      "version": "1.15.2-386c00766977a4952dd90fcc49ad2f9891f1556c28125d0bcc804d5624d661e7",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-bm-users-roles",
+      "version": "1.15.2-fe3207325f9a2aee87e3c58f0cf63f52ac77659d12ec714d8066efcc54be43f0",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-cap",
+      "version": "1.15.2-048848da27392c470b23c795d44e1feaf97d224e464666d2931145a95e306443",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-cip",
+      "version": "1.15.2-e11d0c20abd2c89a53f55424e45d53b46068400bc71bf75558b93da190375bd1",
+      "files": [
+        "SKILL.md",
+        "references/KNOWN_TABLES.md",
+        "references/SALES_ANALYSIS.md",
+        "references/STARTER_QUERIES.md"
+      ]
+    },
+    {
+      "name": "b2c-code",
+      "version": "1.15.2-b4c427b6e5de4668fdb8aa88560add3ba0128cf238ac672788e649ea65519c94",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-config",
+      "version": "1.15.2-8fd4d977f0e0fd5eac1e81fe125ea279ad6f1ec9e1018b76ea484f5ec4e416b3",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-content",
+      "version": "1.15.2-ab0a343360efc6d3e56c96293b85f8c1513645c8bda31227b4f6c65946e45335",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-debug",
+      "version": "1.15.2-392a223202472612b4330510bf06811e60882b073bd32cc861b41f93fe4f24f8",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-docs",
+      "version": "1.15.2-06f79a6322b41e49576f52bfa74dd60c1b50efaa3a2db385d2a8d9f6ec2fe571",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-ecdn",
+      "version": "1.15.2-dba6785a3368c859db428adeccaf15472956b879378850b196bf24dc85710557",
+      "files": [
+        "SKILL.md",
+        "references/ADVANCED.md",
+        "references/SECURITY.md"
+      ]
+    },
+    {
+      "name": "b2c-import-set-migrations",
+      "version": "1.15.2-d21b7017f5a38a2c304da052bbe8f10d47145108f530c2eac48467f4ca96184b",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-job",
+      "version": "1.15.2-9bd58a9b8364e505e02623f4e4073b7cd726b01c886e50d69805aa397968ad16",
+      "files": [
+        "SKILL.md",
+        "references/EXPORT.md",
+        "references/IMPORT.md",
+        "references/RUN-AND-MONITOR.md"
+      ]
+    },
+    {
+      "name": "b2c-logs",
+      "version": "1.15.2-3792f3c07b4377ab16657f8e5c03522fb858e422961652e2f3ea3cb4d24e76b3",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-metrics",
+      "version": "1.15.2-509db9bc6450253034de655f6cb8901fc442b39c39137b78db1e593e866afc04",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-mrt",
+      "version": "1.15.2-ab67d884d65a6c9b5b7ae06ec65d48a9bec733eaef1e43356c33abe4b7ec8be1",
+      "files": [
+        "SKILL.md",
+        "references/BUNDLE-COMMANDS.md",
+        "references/ENVIRONMENT-COMMANDS.md",
+        "references/PROJECT-COMMANDS.md"
+      ]
+    },
+    {
+      "name": "b2c-object-types",
+      "version": "1.15.2-791abe0e2a001201a65576211759345012a12e9d69e2b2d0796146e0fd71eb28",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-replication",
+      "version": "1.15.2-540230448654ede56e5fbae4ee057a65ae20ecb1ba29d0b1cf4f09ab538eea8f",
+      "files": [
+        "SKILL.md",
+        "references/DATA-TASKS.md",
+        "references/JOBS.md"
+      ]
+    },
+    {
+      "name": "b2c-sandbox",
+      "version": "1.15.2-aa478dcfb022181082abe8ef6a6522ccb1a1aab2897534291c39e387f025254b",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-scapi-custom",
+      "version": "1.15.2-2796eae9ab1168610d49c41268ae3f96c375a95ff9f13491c6c8730473555ca0",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-scapi-schemas",
+      "version": "1.15.2-387b5f5bac53ec4ab385d7d84a180b44ad6917e3ceadf435f12a244f8071ee93",
+      "files": [
+        "SKILL.md",
+        "references/CLI-EXAMPLES.md"
+      ]
+    },
+    {
+      "name": "b2c-setup",
+      "version": "1.15.2-274d2488b0bcedb265ecfa39c1b0e6839f5b98980320668bd19fa000dbdd667e",
+      "files": [
+        "SKILL.md",
+        "references/DATASETS.md",
+        "references/REALM.md",
+        "references/SAFETY.md",
+        "references/SANDBOX.md",
+        "references/STOREFRONT-NEXT.md"
+      ]
+    },
+    {
+      "name": "b2c-site-import-export",
+      "version": "1.15.2-2cd81065162b2636ac00d36ee1d4d145baa5d500b7977a04b8ea1b706fd01327",
+      "files": [
+        "SKILL.md",
+        "references/IMPORT-OPTIONS.md",
+        "references/METADATA-XML.md",
+        "references/WORKFLOWS.md"
+      ]
+    },
+    {
+      "name": "b2c-sites",
+      "version": "1.15.2-cee418fd0b59d551c80a15a6183601845b93245eb60ac2a98ef97e08076b7f73",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-slas",
+      "version": "1.15.2-941c639049c9f0b02c9859e54724629867eaa6fa351669770cb500d123fda957",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-storefronts",
+      "version": "1.15.2-4715d86d294482a08384c81afef20f27bb856777c4995beb67e35b0b120ce092",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-webdav",
+      "version": "1.15.2-1ec025ed7ef4f44b9abf480329e0ee0841ffb4c2080cc85beb387c681e286d0a",
+      "files": [
+        "SKILL.md"
+      ]
+    }
+  ]
+}

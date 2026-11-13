@@ -70,6 +70,7 @@ Plugins listed in [`plugins.json`](./plugins.json) are zipped to `<name>-skills.
 
 ## For Contributors
 
+- After changing skills or supporting files, run `pnpm skills:catalogs` and commit the generated collection indexes. CI checks for missing or stale indexes with `pnpm skills:catalogs:check`; the release version command regenerates them after stamping plugin versions. The indexes enable OpenCode 2 users to pin catalogs to a Git release or commit without duplicating skill content.
 - When modifying CLI commands, update the corresponding skill in `b2c-cli/skills/b2c-<topic>/SKILL.md` to keep guidance in sync.
 - When changing development patterns, update the relevant `b2c/skills/<topic>/SKILL.md`.
 - Add runbooks under `b2c-ops/skills/` using the shared operational structure in

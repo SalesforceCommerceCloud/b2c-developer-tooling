@@ -127,7 +127,7 @@ Package branch naming convention: `release/<major.minor>` (e.g., `release/0.5`).
    ```bash
    git cherry-pick <commit-sha>
    pnpm changeset          # create changeset for the fix
-   pnpm changeset version  # consume it — bumps versions and changelogs
+   pnpm run version # Consume it and synchronize release metadata and catalogs
    git add -A && git commit -m "Version packages"
    ```
 
@@ -182,10 +182,43 @@ SDK version bumps automatically cascade to the docs package (since API docs are 
 
 The documentation site serves two versions:
 
-- **Stable** (root URL) — built from the most recent release tag (across all branches)
+- **Stable** (root URL) – built from the most recent stable package or docs release tag reachable from `main`
 - **Dev** (`/dev/`) — built from `main`, updated on every push
 
 Stable docs are rebuilt only when a package publishes to `@latest` (hotfix from the current minor or a regular release) or when a doc-only release is created. Maintenance patches on older minors (which publish to scoped dist-tags like `@release-0.4`) do not trigger a docs rebuild.
+
+### Native OpenCode skill catalogs
+
+The VitePress build writes native HTTP catalogs to `opencode/<collection>/index.json`, with verbatim skill instructions and supporting files alongside each index. Collections come from `skills/plugins.json`; evaluation directories are excluded as they are from release ZIPs. The entry version combines the skills package version and a digest of the published file names and contents, so supporting-file changes also refresh OpenCode's cache. These are cache versions, not publisher signatures or client-side integrity verification.
+
+The production docs workflow exports `skills/` from the highest stable `b2c-agent-plugins@<version>` tag reachable from `origin/main` and passes that directory through `OPENCODE_SKILLS_SOURCE`. It refuses to substitute unreleased checkout content when no stable skills tag exists. Catalogs therefore follow the skills release independently of the docs source tag, and the existing skills-release deployment trigger refreshes them. Local and preview builds use their checked-out skills unless `OPENCODE_SKILLS_SOURCE` is set explicitly.
+
+For OpenCode 2 release pins, generated `skills/<collection>/skills/index.json` files are committed beside the existing skill directories. A raw Git URL ending in `b2c-agent-plugins@<version>/skills/<collection>/skills/` serves the release's index and assets without relying on documentation deployment retention. A full commit ID selects a fixed Git tree. Do not move exact skills release tags or rewrite their historical content. Releases predating these indexes use versioned file installation instead. OpenCode 1's shared skill-name cache does not reliably isolate release URLs; the installation guide uses project-local files for its pins.
+
+Skills releases target the exact commit used to build their artifacts. The publisher checks remote tags before release creation and again before uploading assets, and refuses a tag pointing to another commit. A mismatched tag requires investigation; rerunning the workflow does not move it or overwrite its assets.
+
+After editing skill instructions, references, or the collection registry, regenerate and commit the indexes:
+
+```bash
+pnpm skills:catalogs
+pnpm skills:catalogs:check
+```
+
+The check command rejects missing or stale indexes without modifying source files. The root `pnpm run version` command regenerates them after stamping plugin versions, and the docs CI test command checks them. Generated indexes contain file inventories and update tokens only; skill instructions and supporting files remain authored in their existing locations.
+
+Build and test catalogs locally:
+
+```bash
+pnpm --filter @salesforce/b2c-dx-docs run test:skills
+pnpm run docs:build
+```
+
+Optional smoke tests serve catalogs on loopback with isolated configuration, cache, state, and data directories. The V1 test checks floating discovery and reference-only updates. The V2 test serves the committed Git directory layout and checks reference preservation across release changes, rollback, and a missing release. Supply trusted local executables; tests do not download clients or call a model:
+
+```bash
+OPENCODE_CATALOG_SMOKE=1 OPENCODE_BINARY=/path/to/opencode pnpm --filter @salesforce/b2c-dx-docs run test:skills
+OPENCODE_V2_BINARY=/path/to/opencode-v2 pnpm --filter @salesforce/b2c-dx-docs run test:skills
+```
 
 ### PR Previews
 

@@ -163,6 +163,61 @@ Run the same commands with `--update` to refresh your installed skills.
 </template>
 <template #opencode>
 
+#### Follow stable releases with native catalogs
+
+Add collection URLs to your project's `opencode.json` or global `~/.config/opencode/opencode.json`. OpenCode downloads the skills and their supporting files, then refreshes its cached files when a catalog entry's version changes. No B2C CLI or wrapper plugin is needed to install skills this way.
+
+For OpenCode 2:
+
+```json
+{
+  "skills": [
+    "https://salesforcecommercecloud.github.io/b2c-developer-tooling/opencode/b2c/",
+    "https://salesforcecommercecloud.github.io/b2c-developer-tooling/opencode/b2c-cli/"
+  ]
+}
+```
+
+For OpenCode 1:
+
+```json
+{
+  "skills": {
+    "urls": [
+      "https://salesforcecommercecloud.github.io/b2c-developer-tooling/opencode/b2c/",
+      "https://salesforcecommercecloud.github.io/b2c-developer-tooling/opencode/b2c-cli/"
+    ]
+  }
+}
+```
+
+These URLs automatically follow stable skills releases. Start a new session to discover updates. To add another [collection](#available-plugins), replace the final collection name in either URL. Use [OpenCode skill permissions](https://opencode.ai/docs/skills/#permissions) to control access to individual skills. Floating discovery and updates have been tested with OpenCode 1.19.5 and 2.2.7.
+
+Catalog discovery needs network access. When switching from copied skills or a wrapper plugin, preserve local edits and remove the matching old installation or registration to avoid duplicate definitions.
+
+#### Pin a release in OpenCode 2
+
+Use the catalogs stored in an exact Git release instead of the floating documentation URLs. Replace `<version>` with the **agent skills release version**, which is independent of the B2C CLI version:
+
+```json
+{
+  "skills": [
+    "https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/b2c-agent-plugins@<version>/skills/b2c/skills/",
+    "https://raw.githubusercontent.com/SalesforceCommerceCloud/b2c-developer-tooling/b2c-agent-plugins@<version>/skills/b2c-cli/skills/"
+  ]
+}
+```
+
+Choose a [skills release](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/releases?q=b2c-agent-plugins) that contains `skills/<collection>/skills/index.json`. Releases without these indexes use the file installation below. For a fixed Git tree, replace `b2c-agent-plugins@<version>` with that release's full commit ID. Indexes and supporting files live together in Git, so rebuilding the documentation does not replace pinned content. The catalog entry's `version` controls cache refresh; it does not verify downloaded file checksums.
+
+Configure each collection once. Remove its matching global floating URL before adding a project pin, and remove duplicate copied skills after preserving local edits. Change the release ref and start a new session to upgrade or roll back. Release isolation and rollback have been tested with OpenCode 2.2.7.
+
+::: warning OpenCode 1 pins need project-local files
+OpenCode 1.19.5 caches HTTP skills by name, so different release URLs can overwrite each other's instructions and references. A failed download can leave another release available in the same cache. Use the project-local file installation below with an explicit `--version` for OpenCode 1 pins.
+:::
+
+::: details File installation and manual updates
+
 Install both collections in your project:
 
 ```bash
@@ -171,11 +226,14 @@ npx @salesforce/b2c-cli setup skills b2c-cli --ide opencode
 # Optional: npx @salesforce/b2c-cli setup skills storefront-next --ide opencode
 ```
 
-Add `--global` for all projects. Start a new session after installation.
-See [OpenCode skills](https://opencode.ai/docs/skills/).
+Add `--global` for all projects. For offline use or a project pinned to a skills release, install project-local files with an explicit version:
 
-::: warning Manually installed skills don't auto-update
-Run the same commands with `--update` to refresh your installed skills.
+```bash
+npx @salesforce/b2c-cli setup skills b2c --ide opencode --version <version>
+npx @salesforce/b2c-cli setup skills b2c-cli --ide opencode --version <version>
+```
+
+Files installed with these commands do not auto-update. Keep the explicit `--version` when adding `--update`; omitting it selects the latest release. Remove matching HTTP catalog URLs to use these files, and start a new session after installation. This is a copied snapshot, rather than an enforced project lockfile.
 :::
 
 </template>

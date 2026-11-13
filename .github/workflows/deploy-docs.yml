@@ -59,6 +59,19 @@ jobs:
           echo "Building docs from: ${LATEST_TAG:-<none>}"
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
+      - name: Prepare released OpenCode skills
+        run: |
+          SKILLS_TAG=$(git tag --merged origin/main --list 'b2c-agent-plugins@*' --sort=-version:refname |
+            awk '/@[0-9]+\.[0-9]+\.[0-9]+$/ && !found {print; found=1}')
+          if [ -z "$SKILLS_TAG" ]; then
+            echo 'No stable agent skills tag reachable from origin/main' >&2
+            exit 1
+          fi
+          SKILLS_SOURCE=$(mktemp -d "$RUNNER_TEMP/opencode-skills.XXXXXX")
+          git archive "$SKILLS_TAG" skills/ | tar -x -C "$SKILLS_SOURCE"
+          printf 'OPENCODE_SKILLS_SOURCE=%s/skills\n' "$SKILLS_SOURCE" >> "$GITHUB_ENV"
+          echo "Building OpenCode catalogs from: $SKILLS_TAG"
+
       - name: Build documentation from release tag
         env:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}

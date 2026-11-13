@@ -6,6 +6,7 @@ import {groupIconMdPlugin, groupIconVitePlugin} from 'vitepress-plugin-group-ico
 import typedocSidebar from '../api/typedoc-sidebar.json';
 import pythonApiSidebar from '../python/api/sidebar.json';
 import {generateReleaseNotes} from './releases/generate.js';
+import {generateSkillCatalogs} from './skills/catalog.js';
 
 const docsDirectory = path.resolve(import.meta.dirname, '..');
 const releaseNotes = generateReleaseNotes(docsDirectory);
@@ -277,6 +278,10 @@ export default defineConfig({
     // `vitepress build` only, after rendering, so nothing lands in the source
     // tree or the VitePress page graph.
     extractHelpCorpus(siteConfig.srcDir, siteConfig.outDir);
+    generateSkillCatalogs(
+      process.env.OPENCODE_SKILLS_SOURCE || path.resolve(docsDirectory, '../skills'),
+      path.join(siteConfig.outDir, 'opencode'),
+    );
   },
 
   // Show deeper heading levels in the outline; register group-icons md plugin
