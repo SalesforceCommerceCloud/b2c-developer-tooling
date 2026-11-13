@@ -33,6 +33,7 @@ Skills covering the full Storefront Next development lifecycle. Start with **`sf
 - **`sfnext-configuration`** — `config.server.ts`, `PUBLIC__` environment variables, multi-site, URLs, domains, base path
 - **`sfnext-deployment`** — build and push to Managed Runtime, Page Designer cartridge deployment, pre-launch checks
 - **`sfnext-quality-gates`** — lint, format, typecheck, bundle-size and Lighthouse budgets, pre-PR checklist
+- **`sfnext-site-audit`** — pre-launch audit of the deployed storefront: performance, SEO, security and best practices in a live report
 
 **Application architecture**
 

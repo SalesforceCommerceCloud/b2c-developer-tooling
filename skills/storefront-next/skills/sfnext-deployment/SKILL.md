@@ -94,6 +94,7 @@ The project ships `.github/workflows/deploy.yml`: on push to the `latest` branch
 7. `url.seoRoutes` has an entry per active site if enabled (protected: needs a rebuild).
 8. Security headers/CSP and Turnstile reviewed (`storefront-next:sfnext-security`); robots and sitemap handled (`storefront-next:sfnext-seo`).
 9. Smoke test after deploy: home, PLP, PDP, cart, login, checkout, and a Page Designer page.
+10. Run a site audit of the deployed home, PLP and PDP (`storefront-next:sfnext-site-audit`) and fix what it finds.
 
 ## Upgrading a project
 
@@ -119,6 +120,7 @@ Your project records `storefrontNext.templateRelease`, `templateVersion`, and `m
 - `storefront-next:sfnext-page-designer` - Decorators and cartridge metadata
 - `storefront-next:sfnext-performance` - Bundle size and Lighthouse
 - `storefront-next:sfnext-quality-gates` - Pre-push lint/type/test gates
+- `storefront-next:sfnext-site-audit` - Pre-launch audit of the deployed storefront
 - `b2c-cli:b2c-mrt` - MRT projects, environments, bundles, env vars, redirects, logs
 - `b2c-cli:b2c-code` - Code version and cartridge deploy with the b2c CLI
 
