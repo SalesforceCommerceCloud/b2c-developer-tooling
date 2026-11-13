@@ -1,0 +1,16 @@
+{
+  "skills": [
+    {
+      "name": "sfnext-create-figma-kit",
+      "version": "1.15.2-8076bd98ae3eedff8c27d13ef33b7d59317740f6746f2d2d805e10ee2c75b0b3",
+      "files": [
+        "SKILL.md",
+        "references/FIGMA-COMPONENT-EDITING.md",
+        "references/PROJECT-STRUCTURE.md",
+        "references/TOKEN-SYSTEM.md",
+        "references/TROUBLESHOOTING.md",
+        "references/VERTICAL-FIGMA-SYNC.md"
+      ]
+    }
+  ]
+}

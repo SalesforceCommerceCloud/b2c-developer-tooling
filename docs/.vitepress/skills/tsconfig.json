@@ -1,0 +1,4 @@
+{
+  "extends": "../releases/tsconfig.json",
+  "include": ["*.ts"]
+}

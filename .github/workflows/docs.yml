@@ -6,9 +6,17 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'skills/**'
+      - '.github/workflows/docs.yml'
+      - '.github/workflows/deploy-docs.yml'
+      - '.github/workflows/publish.yml'
   pull_request:
     paths:
       - 'docs/**'
+      - 'skills/**'
+      - '.github/workflows/docs.yml'
+      - '.github/workflows/deploy-docs.yml'
+      - '.github/workflows/publish.yml'
 
 permissions:
   contents: read
@@ -51,3 +59,6 @@ jobs:
 
       - name: Test release notes
         run: pnpm --filter @salesforce/b2c-dx-docs run test:releases
+
+      - name: Test OpenCode skill catalogs
+        run: pnpm --filter @salesforce/b2c-dx-docs run test:skills

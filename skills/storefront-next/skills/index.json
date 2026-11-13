@@ -1,0 +1,226 @@
+{
+  "skills": [
+    {
+      "name": "sfnext-accessibility",
+      "version": "1.15.2-a8e0971499cb7ed005dcb7ed30bef1683d28db2458a2f0c083a26a1d26be1c26",
+      "files": [
+        "SKILL.md",
+        "references/checklist.md"
+      ]
+    },
+    {
+      "name": "sfnext-analytics-consent",
+      "version": "1.15.2-89e06110a5e33fce922fafed06ac39cb5a357a524d7413476f8c2e9dc0141495",
+      "files": [
+        "SKILL.md",
+        "references/CUSTOM-ADAPTER.md"
+      ]
+    },
+    {
+      "name": "sfnext-authentication",
+      "version": "1.15.2-2b549bcaf29b816eae9a284bb4f35b11b39e4ab8df33e3d4e034ea9474ab46a3",
+      "files": [
+        "SKILL.md",
+        "references/COOKIES.md",
+        "references/LOGIN-FLOWS.md"
+      ]
+    },
+    {
+      "name": "sfnext-commerce-features",
+      "version": "1.15.2-a79cf3b42ed7afe22210ddc2fc6e9441185c73c5d9cb7f8e5238a4b10e707bdd",
+      "files": [
+        "SKILL.md",
+        "references/FEATURE-PREREQUISITES.md"
+      ]
+    },
+    {
+      "name": "sfnext-components",
+      "version": "1.15.2-7987a8f1fbf0a9fb6e66fabec38fd6467132a1d7c297f550a6a20ca9a603bfbb",
+      "files": [
+        "SKILL.md",
+        "references/COMPONENT-AUTHORING.md",
+        "references/SHAPE-TOKENS.md",
+        "references/STORYBOOK.md",
+        "references/TOKEN-SYSTEM.md",
+        "references/TROUBLESHOOTING.md"
+      ]
+    },
+    {
+      "name": "sfnext-configuration",
+      "version": "1.15.2-6098bd98fbaf141c4bfb7de68454260cb4a101bcadef9894717b39fe6863e508",
+      "files": [
+        "SKILL.md",
+        "references/ENV-VARIABLES.md",
+        "references/MULTI-SITE-URLS.md"
+      ]
+    },
+    {
+      "name": "sfnext-data-fetching",
+      "version": "1.15.2-76be8611509d1601805efb01e42e5733c001045a113e2aedb4f69376da1be082",
+      "files": [
+        "SKILL.md",
+        "references/ACTIONS.md",
+        "references/API-CLIENTS.md",
+        "references/LOADERS.md",
+        "references/SCAPI-FETCHER.md"
+      ]
+    },
+    {
+      "name": "sfnext-deployment",
+      "version": "1.15.2-18c643a08ea9b7aee9b1bf2a39a05bea14cbe046b6508616574f5ebfbc213c73",
+      "files": [
+        "SKILL.md",
+        "references/MRT-DEPLOYMENT.md"
+      ]
+    },
+    {
+      "name": "sfnext-extensions",
+      "version": "1.15.2-d90bf6a48952ef9af5645b0a9f0ac75494b9d0770ba705b3319d307fae86ae93",
+      "files": [
+        "SKILL.md",
+        "references/ACTION-HOOKS.md",
+        "references/BASE-AUDIT.md",
+        "references/CLI-AND-INSTALL.md",
+        "references/EXTENSION-EXAMPLES.md"
+      ]
+    },
+    {
+      "name": "sfnext-hybrid-storefronts",
+      "version": "1.15.2-918130da48dace74d247ab311d90f6c988570972da642f9596503a7ff2ea1eac",
+      "files": [
+        "SKILL.md",
+        "references/HYBRID-PROXY-CONFIG.md"
+      ]
+    },
+    {
+      "name": "sfnext-i18n",
+      "version": "1.15.2-ee59dc01fbd09716b9a8b1badcdb605805db6a3899e482be9f1ff46fd9a5586f",
+      "files": [
+        "SKILL.md",
+        "references/locale-config.md"
+      ]
+    },
+    {
+      "name": "sfnext-overview",
+      "version": "1.15.2-1e1a616220bc9768d50548fb7c001640c05c12d0c43e622f57980e00842b9a38",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "sfnext-page-designer",
+      "version": "1.15.2-2144d61caffe7c2bc7c888cf402402318ea553d2816495adf75fa836a6c4ad67",
+      "files": [
+        "SKILL.md",
+        "references/BUSINESS-MANAGER.md",
+        "references/COMPONENT-REGISTRY.md",
+        "references/DECORATOR-PATTERNS.md",
+        "references/REVIEW-CHECKLIST.md",
+        "references/TROUBLESHOOTING.md"
+      ]
+    },
+    {
+      "name": "sfnext-performance",
+      "version": "1.15.2-c18cbcbab2f8cbc69093521165965f2b6c3556515053f9220c9a8a7d827e66bc",
+      "files": [
+        "SKILL.md",
+        "references/PERFORMANCE-REVIEW-CHECKLIST.md",
+        "references/SUSPENSE-AND-STREAMING.md"
+      ]
+    },
+    {
+      "name": "sfnext-project-setup",
+      "version": "1.15.2-35d4db2224e937cc422f06dc6d81ad4a13b424ca6af877a1683674b7bfe13e22",
+      "files": [
+        "SKILL.md",
+        "references/PROJECT-STRUCTURE.md",
+        "references/SCRIPTS.md",
+        "references/SFNEXT-CLI.md"
+      ]
+    },
+    {
+      "name": "sfnext-quality-gates",
+      "version": "1.15.2-a11dafddd0afcd1297a4703fc67475d95d117f344ce832d58ddb2e777b359c92",
+      "files": [
+        "SKILL.md",
+        "references/lint-and-budgets.md"
+      ]
+    },
+    {
+      "name": "sfnext-revalidation",
+      "version": "1.15.2-3f48e7b04d19432e4f77fa70300598db50933cbbd289836e0c43b25c4b387dcd",
+      "files": [
+        "SKILL.md",
+        "references/POLICIES-AND-TAGS.md"
+      ]
+    },
+    {
+      "name": "sfnext-routing",
+      "version": "1.15.2-e7a678cc094f250fd33f616d601f7365a9ee220f8e46fe16be4ac702ea12900b",
+      "files": [
+        "SKILL.md",
+        "references/ROUTE-CONVENTIONS.md",
+        "references/URLS-AND-SEO-ROUTES.md"
+      ]
+    },
+    {
+      "name": "sfnext-scapi",
+      "version": "1.15.2-94c8ab09ef4f34814e67cefd99d74e69514477068c1c9bf12e53f6ffaa2cc50e",
+      "files": [
+        "SKILL.md",
+        "references/WORKED-EXAMPLE.md"
+      ]
+    },
+    {
+      "name": "sfnext-security",
+      "version": "1.15.2-e3009f13bcb24b4c6ef60c514628d617676b2631985e8b30f3e20e043fdcab2d",
+      "files": [
+        "SKILL.md",
+        "references/COOKIE-DOMAIN.md",
+        "references/TURNSTILE.md"
+      ]
+    },
+    {
+      "name": "sfnext-seo",
+      "version": "1.15.2-de014891bcafa8246c593ed5b131088be653d1a6a2c7a2c6cbbd58dbb67c91c1",
+      "files": [
+        "SKILL.md",
+        "references/MULTI-DOMAIN-BASE-PATH.md",
+        "references/SEO-ROUTES.md"
+      ]
+    },
+    {
+      "name": "sfnext-site-audit",
+      "version": "1.15.2-a7178f9b0981a057e1311c0a4ac8607da6f499766d4d3c8d351bf40f9b672b19",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "sfnext-state-management",
+      "version": "1.15.2-478453d586bdeef9b5e2eeb7678985abdc075a762756bf066b0a33e6403f9e38",
+      "files": [
+        "SKILL.md",
+        "references/PATTERNS.md"
+      ]
+    },
+    {
+      "name": "sfnext-testing",
+      "version": "1.15.2-dfcd87bb892202d24bf0d1dba4ee6d38cd47e831cd14fed6b6ec1e7ddf9f1604",
+      "files": [
+        "SKILL.md",
+        "references/E2E.md",
+        "references/STORYBOOK-PATTERNS.md",
+        "references/UNIT-AND-ROUTE-TESTS.md"
+      ]
+    },
+    {
+      "name": "sfnext-theming",
+      "version": "1.15.2-1db307afd21c4a55cdd458fd7813bdfe7f4db66612c30712861f38b8e368412f",
+      "files": [
+        "SKILL.md",
+        "references/REBRAND-CHECKLIST.md"
+      ]
+    }
+  ]
+}

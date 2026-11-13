@@ -1,0 +1,57 @@
+{
+  "skills": [
+    {
+      "name": "b2c-checkout-triage",
+      "version": "1.15.2-a60f2bc8d082b8ff1d6e50490a65b1b02ecf8f795e5e11ba070a38f02b7ebf8e",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-edge-traffic-triage",
+      "version": "1.15.2-6db3aad9c8f3258b4bdfd431afb45ae48a226396ff8ad93b92214ee2b50ab4dd",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-integration-triage",
+      "version": "1.15.2-1333efac8ef5f120c6c6f1b512f31bbd86d969fbd931d43fbd2c898395b6e05f",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-job-health",
+      "version": "1.15.2-c984ce5b69fdda0fcf20fee4cc51fc73657042f75bc87e02b524ea671bc6c6b0",
+      "files": [
+        "SKILL.md",
+        "references/job-logs.md"
+      ]
+    },
+    {
+      "name": "b2c-order-failure-triage",
+      "version": "1.15.2-6720fd1cec18d76172e242c381c62cd9f74530baba3251a13508d89de33eeaec",
+      "files": [
+        "SKILL.md",
+        "references/order-evidence.md"
+      ]
+    },
+    {
+      "name": "b2c-performance-triage",
+      "version": "1.15.2-0e7051b91d134f42e44d2f28bb01a08907ae0605d3207c292122f4b7432c4714",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-production-triage",
+      "version": "1.15.2-789fa7bdb5032764203b2d6725eb67f10ff37a3cd3acd01750c327b371fdfedb",
+      "files": [
+        "SKILL.md",
+        "references/escalation.md",
+        "references/metrics-signals.md"
+      ]
+    }
+  ]
+}

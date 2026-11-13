@@ -26,7 +26,9 @@
     "mcp:eval:live": "claude plugin eval packages/b2c-dx-mcp/evals --eval-dir live --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --ablation none",
     "mcp:eval:ablation": "claude plugin eval packages/b2c-dx-mcp/evals --trust-plugin --mocks off --allow-tools 'mcp__plugin_b2c-dx-mcp_b2c-dx-mcp__*' --model claude-sonnet-5-5 --no-publish --tag ablation --ablation with-without",
     "changeset": "changeset",
-    "version": "changeset version && node scripts/sync-plugin-versions.mjs && node scripts/sync-python-sdk-version.mjs && node scripts/sync-actions-version.mjs && date -u > .changeset/RELEASE",
+    "skills:catalogs": "pnpm --filter @salesforce/b2c-dx-docs run skills:catalogs",
+    "skills:catalogs:check": "pnpm --filter @salesforce/b2c-dx-docs run skills:catalogs:check",
+    "version": "changeset version && node scripts/sync-plugin-versions.mjs && pnpm skills:catalogs && node scripts/sync-python-sdk-version.mjs && node scripts/sync-actions-version.mjs && date -u > .changeset/RELEASE",
     "release": "echo 'Releases are handled by CI (publish.yml). Use workflow_dispatch for manual releases.' && exit 1"
   },
   "keywords": [],

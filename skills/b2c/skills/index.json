@@ -1,0 +1,182 @@
+{
+  "skills": [
+    {
+      "name": "b2c-business-manager-extensions",
+      "version": "1.15.2-fc25a0314da0b7f7e56cb6ded557e9e5bf8a857129a0ab696d34b3b5e813f7c2",
+      "files": [
+        "SKILL.md",
+        "references/EXTENSIONS-XML.md"
+      ]
+    },
+    {
+      "name": "b2c-controllers",
+      "version": "1.15.2-e98520ee72954002580c0ad740170098b97ff747d5831843ba2def1c32de2ebb",
+      "files": [
+        "SKILL.md",
+        "references/CLASSIC-PATTERNS.md",
+        "references/SFRA-PATTERNS.md"
+      ]
+    },
+    {
+      "name": "b2c-custom-api-development",
+      "version": "1.15.2-b2124dbbf4d28b074f318f9a1982f06eb62cc2877145181d17206ea5dcd8d3b8",
+      "files": [
+        "SKILL.md",
+        "references/CONTRACT.md",
+        "references/IMPLEMENTATION.md",
+        "references/TESTING.md"
+      ]
+    },
+    {
+      "name": "b2c-custom-caches",
+      "version": "1.15.2-367aac8f17a858222e6004296c8f1fd558692ce4ad42cac8920c51759c5bf6bc",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-custom-job-steps",
+      "version": "1.15.2-46a2e1748ba965bc96e4a178c38ef2a4adaf35e6895cdcf5e17632b21aeb9a5d",
+      "files": [
+        "SKILL.md",
+        "references/CHUNK-ORIENTED.md",
+        "references/JOBS-XML.md",
+        "references/STEPTYPES-JSON.md",
+        "references/TASK-ORIENTED.md"
+      ]
+    },
+    {
+      "name": "b2c-custom-objects",
+      "version": "1.15.2-11ae80fa46a92f1c01ec3b6955cd7fbd6c18e89071a3bdeef9c19f3a386b3c73",
+      "files": [
+        "SKILL.md",
+        "references/OCAPI-SEARCH.md"
+      ]
+    },
+    {
+      "name": "b2c-forms",
+      "version": "1.15.2-06e293f1e523b3ba44048e6a30cf92989daf6e6422f0abe760cf13ba96880b18",
+      "files": [
+        "SKILL.md",
+        "references/FORM-XML.md"
+      ]
+    },
+    {
+      "name": "b2c-hooks",
+      "version": "1.15.2-914bf05062e9831c1db06103d8734436cc4578c97f974d212cfd061a50966bbf",
+      "files": [
+        "SKILL.md",
+        "references/OCAPI-SCAPI-HOOKS.md",
+        "references/ORDER-HOOK-LIFECYCLE.md",
+        "references/SYSTEM-HOOKS.md"
+      ]
+    },
+    {
+      "name": "b2c-isml",
+      "version": "1.15.2-1e42a3bba8db0f905fac7b1bf8a0ddab92683a743e70eb47aca25dcc7bf534eb",
+      "files": [
+        "SKILL.md",
+        "references/EXPRESSIONS.md",
+        "references/TAGS.md"
+      ]
+    },
+    {
+      "name": "b2c-localization",
+      "version": "1.15.2-bf3351035098c0cd7bc86e000946f171a1c5640df7de73eaf0f69c0ae1c84059",
+      "files": [
+        "SKILL.md",
+        "references/PATTERNS.md"
+      ]
+    },
+    {
+      "name": "b2c-logging",
+      "version": "1.15.2-4211d18424cf93af96f36f4242868702a221918f4c53f9c7efc98b8a22b9c593",
+      "files": [
+        "SKILL.md",
+        "references/LOG-FILES.md"
+      ]
+    },
+    {
+      "name": "b2c-metadata",
+      "version": "1.15.2-5c31d0aaaeab51e63c97fe189160b8cec4a297d7d2a739b031477cfac87a62ba",
+      "files": [
+        "SKILL.md",
+        "references/SYSTEM-OBJECTS.md",
+        "references/XML-EXAMPLES.md"
+      ]
+    },
+    {
+      "name": "b2c-onboarding",
+      "version": "1.15.2-39cbb95d058db69ad732adc8c4e43be2acf228d35c5417da45b61fe277c5af00",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-ordering",
+      "version": "1.15.2-37ae296fe43f0cec515bdef4dfa488993c95eef5a1fcdade7c94b1c343b0d4f5",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "b2c-page-designer",
+      "version": "1.15.2-b3d60bae638334bb241e13ae2298d504eddc7d446ea82e029d37f96781f5be89",
+      "files": [
+        "SKILL.md",
+        "references/ATTRIBUTE-TYPES.md",
+        "references/META-DEFINITIONS.md"
+      ]
+    },
+    {
+      "name": "b2c-querying-data",
+      "version": "1.15.2-34e6c776afd1954016c900a42ab8cce5fdbe73812a4ce996c11e614f1f48dd08",
+      "files": [
+        "SKILL.md",
+        "references/PERFORMANCE-APIS.md"
+      ]
+    },
+    {
+      "name": "b2c-scapi-admin",
+      "version": "1.15.2-2e97c9da2215ffdf4dc13563439292047a54794b65984eb268aeed063aa71c47",
+      "files": [
+        "SKILL.md",
+        "references/CLIENT-EXAMPLES.md",
+        "references/INTEGRATION-PATTERNS.md",
+        "references/OAUTH-SCOPES.md"
+      ]
+    },
+    {
+      "name": "b2c-scapi-shopper",
+      "version": "1.15.2-6ad94cb0197ddec8ec0893780de51f66ae54ba49b537c971890cc1f59a2072e2",
+      "files": [
+        "SKILL.md",
+        "references/CHECKOUT-FLOW.md",
+        "references/CLIENT-EXAMPLES.md",
+        "references/COMMON-PATTERNS.md",
+        "references/SCOPES.md"
+      ]
+    },
+    {
+      "name": "b2c-slas-auth-patterns",
+      "version": "1.15.2-4b08a284ae020825f55a878b30993925b302824ba3f2aa4d4edfeff11fa1032e",
+      "files": [
+        "SKILL.md",
+        "references/PASSKEYS.md",
+        "references/SESSION-BRIDGE.md",
+        "references/TOKEN-LIFECYCLE.md"
+      ]
+    },
+    {
+      "name": "b2c-webservices",
+      "version": "1.15.2-35b0d6cc42aadfed072dbf24c60be3bd1f04e0875b466a345dc0666ad8756eee",
+      "files": [
+        "SKILL.md",
+        "references/FTP-SERVICES.md",
+        "references/HTTP-SERVICES.md",
+        "references/SERVICES-XML.md",
+        "references/SOAP-SERVICES.md"
+      ]
+    }
+  ]
+}
