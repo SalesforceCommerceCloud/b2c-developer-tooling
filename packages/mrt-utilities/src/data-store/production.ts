@@ -7,8 +7,9 @@
 import {DynamoDBClient} from '@aws-sdk/client-dynamodb';
 import {DynamoDBDocumentClient, GetCommand, type GetCommandOutput} from '@aws-sdk/lib-dynamodb';
 
+import {CircuitBreaker} from './circuit-breaker.js';
 import {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
-import {logMRTError} from '../utils/utils.js';
+import {logMRTError, logMRTEvent} from '../utils/utils.js';
 
 export {DataStoreNotFoundError, DataStoreServiceError, DataStoreUnavailableError} from './errors.js';
 
@@ -71,6 +72,55 @@ const THROTTLING_ERROR_NAMES = new Set([
 ]);
 
 /**
+ * Circuit-breaker failure weight needed to trip from closed to open.
+ *
+ * A plain service error contributes 1 point; a throttling error contributes
+ * {@link DAL_BREAKER_THROTTLE_WEIGHT}. Sized so normal miss/hit traffic (misses are not
+ * failures) never opens the breaker, but a short run of real service failures does.
+ */
+const DAL_BREAKER_FAILURE_THRESHOLD = 5;
+
+/**
+ * Points a throttling failure contributes toward the trip threshold.
+ *
+ * Weighted heavier than a plain failure because sustained throttling is exactly the load
+ * signal this breaker exists to shed — a handful of throttles should open it well before an
+ * equal number of unrelated transient errors would.
+ */
+const DAL_BREAKER_THROTTLE_WEIGHT = 2;
+
+/**
+ * How long (ms) the breaker stays open before admitting a half-open probe.
+ *
+ * A short window: long enough to give a saturated table room to recover, short enough that a
+ * false trip only briefly diverts reads to the application-level API fallback.
+ */
+const DAL_BREAKER_COOLDOWN_MS = 5_000;
+
+/**
+ * Consecutive successful probes required in half-open to close the breaker.
+ */
+const DAL_BREAKER_HALF_OPEN_PROBES = 1;
+
+/**
+ * Env var kill switch for the circuit breaker.
+ *
+ * Set to a truthy value (`'1'` / `'true'`) to disable breaking entirely — reads always flow
+ * through to DynamoDB as if the breaker were permanently closed. Unset or falsy leaves the
+ * breaker active. The only operational dial; thresholds/cooldown are engineering-tuned
+ * constants, not incident-time knobs.
+ */
+const DAL_BREAKER_DISABLED_ENV = 'MRT_DATA_STORE_CIRCUIT_BREAKER_DISABLED';
+
+/**
+ * Whether the circuit breaker is disabled via {@link DAL_BREAKER_DISABLED_ENV}.
+ */
+function isBreakerDisabled(): boolean {
+  const value = process.env[DAL_BREAKER_DISABLED_ENV];
+  return value === '1' || value?.toLowerCase() === 'true';
+}
+
+/**
  * Whether an error represents a throttling response.
  *
  * Checks the SDK's retryable-throttling trait and an HTTP 429 status in addition to the
@@ -127,14 +177,20 @@ export function createDalDynamoDBClient(): DynamoDBClient {
 export class DataStore {
   private _tableName: string = '';
   private _ddb: DynamoDBDocumentClient | null = null;
+  private _breaker: CircuitBreaker | null = null;
   private static _instance: DataStore | null = null;
 
   /** @internal Test hook: inject a document client for unit tests */
   static _testDocumentClient: DynamoDBDocumentClient | null = null;
   /** @internal Test hook: inject logMRTError for unit tests */
   static _testLogMRTError: ((namespace: string, err: unknown, context?: Record<string, unknown>) => void) | null = null;
+  /** @internal Test hook: inject logMRTEvent for unit tests */
+  static _testLogMRTEvent: ((namespace: string, message: string, context?: Record<string, unknown>) => void) | null =
+    null;
   /** @internal Test hook: inject a deterministic random source (returns [0, 1)) for unit tests */
   static _testRandom: (() => number) | null = null;
+  /** @internal Test hook: inject a circuit breaker (e.g. with a fake clock) for unit tests */
+  static _testBreaker: CircuitBreaker | null = null;
 
   private constructor() {
     // Private constructor for singleton; use DataStore.getDataStore() instead.
@@ -193,6 +249,43 @@ export class DataStore {
   }
 
   /**
+   * Get or create this instance's circuit breaker.
+   *
+   * The breaker is memoized per DataStore instance so its state rides the same warm-container
+   * reuse as the singleton and the memoized DynamoDB client — a cold start begins closed. It
+   * emits state transitions via the MRT internal log constructs: opening is logged as an
+   * error (the backend is failing), recovery/probing as an event (info level) so recovery
+   * doesn't trip error-based alerting.
+   *
+   * @private
+   * @returns The circuit breaker guarding data store reads
+   */
+  private getBreaker(): CircuitBreaker {
+    if (DataStore._testBreaker) {
+      return DataStore._testBreaker;
+    }
+    if (!this._breaker) {
+      this._breaker = new CircuitBreaker({
+        failureThreshold: DAL_BREAKER_FAILURE_THRESHOLD,
+        throttleWeight: DAL_BREAKER_THROTTLE_WEIGHT,
+        cooldownMs: DAL_BREAKER_COOLDOWN_MS,
+        halfOpenProbes: DAL_BREAKER_HALF_OPEN_PROBES,
+        onTransition: ({from, to, reason}) => {
+          const context = {from, to, reason};
+          if (to === 'open') {
+            const logFn = DataStore._testLogMRTError ?? logMRTError;
+            logFn('data_store', new Error(`Circuit breaker opened: ${reason}`), context);
+          } else {
+            const logFn = DataStore._testLogMRTEvent ?? logMRTEvent;
+            logFn('data_store', 'circuit breaker state change', context);
+          }
+        },
+      });
+    }
+    return this._breaker;
+  }
+
+  /**
    * Get or create the singleton DataStore instance.
    *
    * @returns The singleton DataStore instance
@@ -229,6 +322,15 @@ export class DataStore {
 
     const ddb = this.getClient();
     const projectEnvironment = this.resolveShardPartitionKey();
+
+    // Circuit breaker: shed load when the table is failing. When open, fail fast without
+    // calling DynamoDB — the client's application-level API fallback then serves correct
+    // data. Skipped entirely when disabled via the kill switch.
+    const breaker = isBreakerDisabled() ? null : this.getBreaker();
+    if (breaker && !breaker.canRequest()) {
+      throw new DataStoreServiceError('Data store request failed.');
+    }
+
     let response: GetCommandOutput;
     try {
       response = await ddb.send(
@@ -243,10 +345,15 @@ export class DataStore {
     } catch (error) {
       const errorName = error instanceof Error ? error.name : undefined;
       const throttled = isThrottlingError(error);
+      breaker?.recordFailure(throttled);
       const logFn = DataStore._testLogMRTError ?? logMRTError;
       logFn('data_store', error, {key, projectEnvironment, tableName: this._tableName, errorName, throttled});
       throw new DataStoreServiceError('Data store request failed.');
     }
+
+    // The send succeeded (the table answered) — record success even on a miss, since a miss
+    // is a healthy response, not a backend failure.
+    breaker?.recordSuccess();
 
     if (!response.Item?.value) {
       throw new DataStoreNotFoundError(`Data store entry '${key}' not found.`);
