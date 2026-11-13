@@ -13,6 +13,9 @@ jobs:
   version:
     name: Create Version PR
     runs-on: ubuntu-latest
+    # CHANGESETS_TOKEN lives in the changesets environment (main only), so workflows on
+    # other branches can't read it.
+    environment: changesets
     permissions:
       contents: write
       pull-requests: write
