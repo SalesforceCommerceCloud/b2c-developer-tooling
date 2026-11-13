@@ -1,5 +1,16 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.16.0
+
+### Minor Changes
+
+- [#861](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/861) [`84956d1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84956d14be04902fb3d20388335b9b1c23da9737) - Add `--[no-]delete-mrt-env`, `--[no-]delete-am-slas-clients`, and `--[no-]delete-ecdn-routing` to `b2c mrt project delete` (SCAPI backend only). All three default to `true`, so the storefront and every downstream resource are deleted — matching prior behavior. Pass the `--no-...` form of a flag to preserve that downstream resource after the storefront record is removed. On the legacy backend the new flags are ignored with a warning (legacy MRT only supports full teardown). (Thanks [@sf-deepali-bharmal](https://github.com/sf-deepali-bharmal)!)
+
+### Patch Changes
+
+- Updated dependencies [[`3355af1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3355af1dee4b8ec4dc9ab68378d42eea5912d0ee)]:
+  - @salesforce/b2c-agent-plugins@1.16.0
+
 ## 2.15.0
 
 ### Minor Changes
