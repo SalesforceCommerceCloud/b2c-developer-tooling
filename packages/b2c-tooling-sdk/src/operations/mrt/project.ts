@@ -756,23 +756,50 @@ export async function updateStorefrontScapi(
  * Returns 202 Accepted with the storefront in the `delete_in_progress` setup
  * status; poll the storefront by ID to track deletion.
  *
+ * By default (all three flags omitted or `true`) every downstream resource is
+ * torn down: MRT environments/deployments, the AM/SLAS client, and eCDN
+ * routing. Pass `false` for any of {@link deleteMrtEnv}, {@link deleteAmSlasClients},
+ * {@link deleteEcdnRouting} to preserve that downstream resource after the
+ * storefront record is removed. Only `false` is forwarded on the wire — a
+ * `true` value is left off the request so server-side defaults remain the
+ * single source of truth.
+ *
  * @throws {ScapiRequestError} carrying the HTTP status on a non-2xx response.
  */
 export async function deleteStorefrontScapi(
   conn: ScapiMrtConnection,
-  params: {storefrontId: string},
+  params: {
+    storefrontId: string;
+    deleteMrtEnv?: boolean;
+    deleteAmSlasClients?: boolean;
+    deleteEcdnRouting?: boolean;
+  },
 ): Promise<{raw: unknown}> {
   const logger = getLogger();
-  const {storefrontId} = params;
+  const {storefrontId, deleteMrtEnv, deleteAmSlasClients, deleteEcdnRouting} = params;
   const organizationId = toOrganizationId(conn.tenantId);
 
-  logger.debug({organizationId, storefrontId}, '[MRT-SCAPI] Deleting storefront');
+  logger.debug(
+    {organizationId, storefrontId, deleteMrtEnv, deleteAmSlasClients, deleteEcdnRouting},
+    '[MRT-SCAPI] Deleting storefront',
+  );
+
+  const query: {deleteMrtEnv?: boolean; deleteAmSlasClients?: boolean; deleteEcdnRouting?: boolean} = {};
+  if (deleteMrtEnv === false) {
+    query.deleteMrtEnv = false;
+  }
+  if (deleteAmSlasClients === false) {
+    query.deleteAmSlasClients = false;
+  }
+  if (deleteEcdnRouting === false) {
+    query.deleteEcdnRouting = false;
+  }
 
   const client = buildScapiStorefrontsClient(conn);
   // 202 Accepted returns the storefront in delete_in_progress. Inspect `error`
   // only: a successful queued delete must not be rejected for a missing body.
   const {data, error, response} = await client.DELETE('/organizations/{organizationId}/storefronts/{storefrontId}', {
-    params: {path: {organizationId, storefrontId}},
+    params: {path: {organizationId, storefrontId}, query},
     headers: WRITE_HEADERS,
   });
 
@@ -1081,14 +1108,44 @@ export async function updateProjectWithBackend(options: UpdateProjectBackendOpti
 export interface DeleteProjectBackendOptions extends ProjectBackendOptions {
   /** Project slug (= SCAPI storefront ID) to delete. */
   projectSlug: string;
+  /**
+   * Whether to delete the MRT environments and deployments (SCAPI only).
+   * Defaults to server-side default (`true`). Pass `false` to preserve.
+   */
+  deleteMrtEnv?: boolean;
+  /**
+   * Whether to delete the AM/SLAS client (SCAPI only). Defaults to server-side
+   * default (`true`). Pass `false` to preserve.
+   */
+  deleteAmSlasClients?: boolean;
+  /**
+   * Whether to delete eCDN routing (SCAPI only). Defaults to server-side
+   * default (`true`). Pass `false` to preserve.
+   */
+  deleteEcdnRouting?: boolean;
 }
 
 /**
  * Deletes a project, routing to the SCAPI or legacy backend per the given
- * preference (with safe `auto` fallback).
+ * preference (with safe `auto` fallback). The three `delete*` flags are
+ * SCAPI-only; when the resolved backend is legacy, they are silently ignored
+ * (the legacy MRT API only supports full teardown). Callers that need to
+ * surface a user-facing warning in that case can check the resolved backend
+ * via {@link ProjectBackendOptions.onResolve}.
  */
 export async function deleteProjectWithBackend(options: DeleteProjectBackendOptions): Promise<MrtProjectWriteResult> {
-  const {preference, scapiConnection, legacyAuth, projectSlug, origin, onFallback, onResolve} = options;
+  const {
+    preference,
+    scapiConnection,
+    legacyAuth,
+    projectSlug,
+    deleteMrtEnv,
+    deleteAmSlasClients,
+    deleteEcdnRouting,
+    origin,
+    onFallback,
+    onResolve,
+  } = options;
 
   const run = await runMrtWithFallback<{raw: unknown}>(
     {
@@ -1099,7 +1156,13 @@ export async function deleteProjectWithBackend(options: DeleteProjectBackendOpti
       onResolve,
     },
     {
-      scapi: () => deleteStorefrontScapi(scapiConnection!, {storefrontId: projectSlug}),
+      scapi: () =>
+        deleteStorefrontScapi(scapiConnection!, {
+          storefrontId: projectSlug,
+          deleteMrtEnv,
+          deleteAmSlasClients,
+          deleteEcdnRouting,
+        }),
       legacy: async () => {
         if (!legacyAuth) {
           throw new Error(LEGACY_AUTH_REQUIRED_MESSAGE);

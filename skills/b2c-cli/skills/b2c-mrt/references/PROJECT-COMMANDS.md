@@ -68,12 +68,29 @@ b2c mrt project update --project my-storefront --site RefArch --site OtherSite -
 
 Over SCAPI, deletion returns `202` and completes asynchronously.
 
+By default the storefront **and** every downstream resource (MRT environments/deployments, AM/SLAS client, eCDN routing) are torn down. Pass a `--no-delete-*` flag to preserve a downstream resource — the storefront record itself is always removed. Preserved resources are orphaned and must be cleaned up manually if no longer needed.
+
+Granular opt-outs are **SCAPI-only**. On the legacy backend the flags are ignored and a warning is emitted (legacy MRT only supports full teardown).
+
 ```bash
 b2c mrt project delete my-storefront
 b2c mrt project delete --project my-storefront
 b2c mrt project delete -p my-storefront --force  # skip confirmation
 b2c mrt project delete my-storefront --mrt-backend scapi --force
+
+# Preserve MRT envs/deployments; delete everything else
+b2c mrt project delete my-storefront --mrt-backend scapi --no-delete-mrt-env
+
+# Preserve AM/SLAS and eCDN; delete only the storefront + MRT env
+b2c mrt project delete my-storefront --mrt-backend scapi \
+  --no-delete-am-slas-clients --no-delete-ecdn-routing
 ```
+
+| Flag | Default | When `--no-...` is passed |
+|---|---|---|
+| `--[no-]delete-mrt-env` | `true` | MRT environments and deployments are preserved |
+| `--[no-]delete-am-slas-clients` | `true` | AM and SLAS clients are preserved |
+| `--[no-]delete-ecdn-routing` | `true` | eCDN routing is preserved |
 
 ## Member Management
 
