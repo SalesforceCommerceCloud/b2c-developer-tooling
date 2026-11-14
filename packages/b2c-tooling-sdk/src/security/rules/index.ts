@@ -5,6 +5,7 @@
  */
 import type {ScriptRule} from '../rule.js';
 import dynamicCode from './dynamic-code.js';
+import filePathFromRequest from './file-path-from-request.js';
 import hardcodedCredentials from './hardcoded-credentials.js';
 import insecureCookie from './insecure-cookie.js';
 import objectQueryInjection from './object-query-injection.js';
@@ -18,6 +19,7 @@ import weakCrypto from './weak-crypto.js';
  */
 export const SCRIPT_RULES: readonly ScriptRule[] = Object.freeze([
   dynamicCode,
+  filePathFromRequest,
   hardcodedCredentials,
   insecureCookie,
   objectQueryInjection,

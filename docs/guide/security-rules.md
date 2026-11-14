@@ -6,9 +6,10 @@ description: Reference for the rules that b2c security scan runs on B2C Commerce
 
 The rules that [`b2c security scan`](../cli/security.md#b2c-security-scan) runs. List them with `b2c security rules`. To suppress a finding, add `// b2c-dx-disable-next-line <rule-id>` on the line before it.
 
-| Rule                                               | Severity | Finds                                                    |
-| -------------------------------------------------- | -------- | -------------------------------------------------------- |
+| Rule                                                | Severity | Finds                                                    |
+| --------------------------------------------------- | -------- | -------------------------------------------------------- |
 | [`dynamic-code`](#dynamic-code)                     | high     | `eval`, `new Function`, `require` with a computed path   |
+| [`file-path-from-request`](#file-path-from-request) | high     | File paths and upload names chosen by the client         |
 | [`hardcoded-credentials`](#hardcoded-credentials)   | high     | Passwords, API keys, and auth headers written into code  |
 | [`insecure-cookie`](#insecure-cookie)               | low      | Cookies without the Secure and HttpOnly flags            |
 | [`object-query-injection`](#object-query-injection) | high     | Object query strings built by concatenation              |
@@ -30,6 +31,37 @@ var HELPERS = {cart: require('*/cartridge/scripts/helpers/cartHelpers')};
 var helper = HELPERS[name];
 ```
 
+## file-path-from-request
+
+**Severity:** high · **Confidence:** medium · **CWE:** CWE-73, CWE-22, CWE-434
+
+Finds `dw.io.File` paths built from request input. That includes the three values the platform passes to the `HttpParameterMap.processMultipart()` callback (field name, content type, and original file name), which all come from the client, as well as `req.querystring`, `req.form`, and `request.httpParameterMap` values used anywhere in a path.
+
+When the callback returns a `File` that already exists, the platform deletes it and stores the upload in its place. A client-chosen name lets an attacker overwrite other files in the target directory (for example, files that import jobs read from `IMPEX`), pick extensions and special characters, and probe for traversal. Outside uploads, a request-controlled path lets the client choose which file is read, renamed, or deleted. Cleaning the name with `replace()` still leaves the choice of name to the client, so it is still reported.
+
+```js
+// Finding
+request.httpParameterMap.processMultipart(function (field, contentType, fileName) {
+  return new File(File.IMPEX + '/src/upload/' + fileName);
+});
+
+// Fix: return a directory so the platform generates a unique name...
+var dir = new File(File.TEMP + '/uploads');
+request.httpParameterMap.processMultipart(function () {
+  return dir;
+});
+
+// ...or generate the name and take the extension from an allowlist
+var EXTENSIONS = {'image/png': 'png', 'image/jpeg': 'jpg'};
+request.httpParameterMap.processMultipart(function (field, contentType) {
+  var ext = EXTENSIONS[contentType];
+  if (field !== 'attachment' || !ext) return null;
+  return new File(File.TEMP + '/uploads/' + UUIDUtils.createUUID() + '.' + ext);
+});
+```
+
+Returning `null` from the callback skips a part, so check the field name and content type and skip anything you don't expect.
+
 ## hardcoded-credentials
 
 **Severity:** high · **Confidence:** medium · **CWE:** CWE-798
@@ -42,11 +74,11 @@ client.setRequestHeader('Authorization', 'Bearer eyJhbGciOiJIUzI1NiJ9abc');
 
 // Fix: keep credentials in a service credential and read it in the service callback
 var service = LocalServiceRegistry.createService('payment.http', {
-    createRequest: function (svc, args) {
-        var credential = svc.configuration.credential;
-        svc.addHeader('Authorization', 'Bearer ' + credential.password);
-        return args;
-    }
+  createRequest: function (svc, args) {
+    var credential = svc.configuration.credential;
+    svc.addHeader('Authorization', 'Bearer ' + credential.password);
+    return args;
+  },
 });
 ```
 

@@ -40,14 +40,15 @@ Rule references, with examples and fixes: `b2c docs search "security rules"` or 
 
 ## Fix patterns
 
-| Rule                     | Fix                                                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `object-query-injection` | Use `{0}` placeholders and pass values as arguments: `queryCustomObject(type, 'custom.email = {0}', email)`         |
-| `open-redirect`          | Redirect to `URLUtils` URLs, or check the target against an allowlist before `res.redirect()`                       |
-| `hardcoded-credentials`  | Move the value to a service credential (read via `LocalServiceRegistry`) or a password site preference; rotate it   |
-| `weak-crypto`            | `Cipher` with `AES/GCM/NoPadding`; `MessageDigest`/`Mac` with SHA-256 or stronger; avoid the `Weak*` classes        |
-| `insecure-cookie`        | `cookie.setSecure(true)` and `cookie.setHttpOnly(true)` before `response.addHttpCookie(cookie)`                     |
-| `dynamic-code`           | Replace `eval`/`new Function`; map known names to static `require()` calls                                          |
+| Rule                     | Fix                                                                                                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `object-query-injection` | Use `{0}` placeholders and pass values as arguments: `queryCustomObject(type, 'custom.email = {0}', email)`                                                                             |
+| `file-path-from-request` | Return a directory from the `processMultipart()` callback (the platform names the file), or generate the name (UUID) with an allowlisted extension; return `null` for unexpected fields |
+| `open-redirect`          | Redirect to `URLUtils` URLs, or check the target against an allowlist before `res.redirect()`                                                                                           |
+| `hardcoded-credentials`  | Move the value to a service credential (read via `LocalServiceRegistry`) or a password site preference; rotate it                                                                       |
+| `weak-crypto`            | `Cipher` with `AES/GCM/NoPadding`; `MessageDigest`/`Mac` with SHA-256 or stronger; avoid the `Weak*` classes                                                                            |
+| `insecure-cookie`        | `cookie.setSecure(true)` and `cookie.setHttpOnly(true)` before `response.addHttpCookie(cookie)`                                                                                         |
+| `dynamic-code`           | Replace `eval`/`new Function`; map known names to static `require()` calls                                                                                                              |
 
 Re-run `b2c security scan --rule <rule-id> <file>` after a fix to confirm the finding is gone.
 

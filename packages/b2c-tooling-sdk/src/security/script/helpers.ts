@@ -127,6 +127,8 @@ export function requiredModuleOf(identifier: AstNode, sourceCode: ScriptSourceCo
  */
 const REQUEST_SOURCES: Record<string, ReadonlySet<string>> = {
   req: new Set(['querystring', 'form', 'httpParameterMap', 'httpHeaders', 'httpParameters', 'body', 'referer']),
+  // Pipeline-era controllers and templates receive the parameter map and forms through pdict.
+  pdict: new Set(['CurrentHttpParameterMap', 'CurrentForms']),
   request: new Set([
     'httpParameterMap',
     'httpParameters',
@@ -141,6 +143,7 @@ const REQUEST_SOURCES: Record<string, ReadonlySet<string>> = {
 /** Methods that pass their receiver's taint through to the result. */
 const PASS_THROUGH_METHODS = new Set([
   'get',
+  'join',
   'getStringValue',
   'getValue',
   'toString',
@@ -166,6 +169,11 @@ const PASS_THROUGH_FUNCTIONS = new Set(['decodeURIComponent', 'decodeURI', 'unes
 export interface RequestTaintOptions {
   /** Variables to treat as clean even if assigned request input (for example, values that were validated). */
   isTrusted?: (variable: AstVariable) => boolean;
+  /**
+   * Additional variables that carry request input, such as the parameters of
+   * a callback the platform calls with client-supplied values.
+   */
+  isSource?: (variable: AstVariable) => boolean;
 }
 
 export function isRequestDerived(
@@ -205,12 +213,15 @@ export function isRequestDerived(
       return recurse(n.left) || recurse(n.right);
     case 'ConditionalExpression':
       return recurse(n.consequent) || recurse(n.alternate);
+    case 'ArrayExpression':
+      return n.elements.some((e: AstNode | null) => recurse(e));
     case 'ChainExpression':
     case 'TSNonNullExpression':
       return recurse(n.expression);
     case 'Identifier': {
       const variable = findVariable(sourceCode.getScope(n), n.name);
       if (!variable || options.isTrusted?.(variable)) return false;
+      if (options.isSource?.(variable)) return true;
       return assignedValues(variable).some((v) => v !== n && recurse(v));
     }
     default:

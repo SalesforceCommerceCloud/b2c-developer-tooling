@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-14T04:40:04.368Z",
+  "generatedAt": "2026-11-14T04:52:55.942Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -521,7 +521,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.md",
-      "headings": "dynamic-code • hardcoded-credentials • insecure-cookie • object-query-injection • open-redirect • weak-crypto",
+      "headings": "dynamic-code • file-path-from-request • hardcoded-credentials • insecure-cookie • object-query-injection • open-redirect • weak-crypto",
       "preview": "Reference for the rules that b2c security scan runs on B2C Commerce cartridge code, with examples and fixes for each."
     },
     {
