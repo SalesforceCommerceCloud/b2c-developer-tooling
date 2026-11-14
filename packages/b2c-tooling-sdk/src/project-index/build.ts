@@ -6,6 +6,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import yaml from 'js-yaml';
+
 import {
   type CartridgeFileSystemHost,
   type CartridgeLocation,
@@ -27,6 +29,8 @@ import {
   sgControllerExport,
 } from '../security/script/routes.js';
 import {runScriptRules} from '../security/script/runner.js';
+import {analyzeModuleExports, type ModuleExports} from './exports.js';
+import {droppedSecurityMiddleware} from './labels.js';
 import type {
   EndpointMethod,
   IndexedCustomApiEndpoint,
@@ -121,15 +125,24 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
     const owner = resolver.ownerOf(file);
     const relPath = resolver.relativePath(file) ?? path.basename(file);
     for (const s of parsed?.statements ?? []) {
-      const entries = s.chain.map<IndexedMiddleware>((m) => ({...m, cartridge: owner?.name ?? '', relPath}));
+      const entries = s.chain.map<IndexedMiddleware>((m) => {
+        const {module, ...rest} = m;
+        const resolved = module ? resolver.resolveRequire(module, file) : undefined;
+        const source = resolved?.cartridge
+          ? {cartridge: resolved.cartridge, relPath: resolver.relativePath(resolved.path)!}
+          : undefined;
+        return {...rest, cartridge: owner?.name ?? '', relPath, ...(source ? {source} : {})};
+      });
       const step: RouteStep = {method: s.method, cartridge: owner?.name ?? '', relPath, line: s.line};
       const current = routes.get(s.name);
       if (s.method === 'get' || s.method === 'post' || s.method === 'use') {
         routes.set(s.name, {chain: entries, steps: [step]});
       } else if (s.method === 'replace') {
+        const replaced = current?.chain ?? [];
+        const dropped = droppedSecurityMiddleware(replaced, entries);
         routes.set(s.name, {
           chain: entries,
-          steps: [...(current?.steps ?? []), {...step, replaced: current?.chain ?? []}],
+          steps: [...(current?.steps ?? []), {...step, replaced, ...(dropped.length > 0 ? {dropped} : {})}],
         });
       } else if (current && s.method === 'append') {
         current.chain = [...current.chain, ...entries.map((e) => ({...e, via: 'append' as const}))];
@@ -172,9 +185,17 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
     }
   }
 
+  const exportsCache = new Map<string, ModuleExports | undefined>();
+  const exportsOf = (file: string): ModuleExports | undefined => {
+    if (!exportsCache.has(file)) {
+      const text = host.readFile(file);
+      exportsCache.set(file, text === undefined ? undefined : analyzeModuleExports(text, file));
+    }
+    return exportsCache.get(file);
+  };
   for (const cartridge of cartridges) {
-    index.hooks.push(...readHooks(cartridge, host, resolver));
-    index.customApis.push(...readCustomApis(cartridge));
+    index.hooks.push(...readHooks(cartridge, host, resolver, exportsOf));
+    index.customApis.push(...readCustomApis(cartridge, host, resolver, exportsOf));
     index.jobSteps.push(...readJobSteps(cartridge));
   }
   return index;
@@ -368,6 +389,7 @@ function readHooks(
   cartridge: CartridgeLocation,
   host: CartridgeFileSystemHost,
   resolver: CartridgeResolver,
+  exportsOf: (file: string) => ModuleExports | undefined,
 ): IndexedHook[] {
   const pkg = readJson(path.join(cartridge.src, 'package.json')) as {hooks?: unknown} | undefined;
   if (typeof pkg?.hooks !== 'string') return [];
@@ -378,17 +400,36 @@ function readHooks(
     if (typeof h.name !== 'string' || typeof h.script !== 'string') continue;
     const base = path.resolve(path.dirname(hooksFile), h.script);
     const found = [base, ...SCRIPT_EXT.map((e) => base + e)].find((f) => host.fileExists(f));
+    const kind = h.name.startsWith('dw.') ? 'system' : 'custom';
+    const exported = found ? exportsOf(found) : undefined;
+    const fn = kind === 'system' ? (h.name.split('.').at(-1) ?? h.name) : undefined;
+    const info = fn ? exported?.get(fn) : undefined;
     hooks.push({
       name: h.name,
+      kind,
+      ...(fn ? {function: fn} : {}),
+      ...(exported ? {exports: [...exported.keys()]} : {}),
       cartridge: cartridge.name,
       script: h.script,
       ...(found ? {relPath: resolver.relativePath(found)} : {}),
+      ...(info?.line ? {line: info.line} : {}),
+      returnsValue: info?.returnsValue ?? 'unknown',
     });
   }
   return hooks;
 }
 
-function readCustomApis(cartridge: CartridgeLocation): IndexedCustomApiEndpoint[] {
+interface OpenApiOperation {
+  operationId?: unknown;
+  security?: Array<Record<string, unknown>>;
+}
+
+function readCustomApis(
+  cartridge: CartridgeLocation,
+  host: CartridgeFileSystemHost,
+  resolver: CartridgeResolver,
+  exportsOf: (file: string) => ModuleExports | undefined,
+): IndexedCustomApiEndpoint[] {
   const dir = path.join(cartridge.src, 'cartridge', 'rest-apis');
   const apis: IndexedCustomApiEndpoint[] = [];
   let names: string[] = [];
@@ -398,21 +439,99 @@ function readCustomApis(cartridge: CartridgeLocation): IndexedCustomApiEndpoint[
     return apis;
   }
   for (const api of names.sort()) {
-    const data = readJson(path.join(dir, api, 'api.json')) as
+    const apiDir = path.join(dir, api);
+    const data = readJson(path.join(apiDir, 'api.json')) as
       | {endpoints?: Array<{endpoint?: unknown; schema?: unknown; implementation?: unknown}>}
       | undefined;
     for (const e of data?.endpoints ?? []) {
       if (typeof e.endpoint !== 'string') continue;
-      apis.push({
+      const problems: string[] = [];
+      const entry: IndexedCustomApiEndpoint = {
         api,
         endpoint: e.endpoint,
         cartridge: cartridge.name,
-        ...(typeof e.schema === 'string' ? {schema: e.schema} : {}),
-        ...(typeof e.implementation === 'string' ? {implementation: e.implementation} : {}),
-      });
+        apiType: 'unknown',
+        problems,
+      };
+      if (typeof e.schema === 'string') {
+        entry.schema = e.schema;
+        const schema = readYaml(path.join(apiDir, e.schema), host) as
+          | {paths?: Record<string, Record<string, OpenApiOperation>>; security?: Array<Record<string, unknown>>}
+          | undefined;
+        if (!schema) {
+          problems.push(`Schema file ${e.schema} is missing or not valid YAML.`);
+        } else {
+          const match = findOperation(schema.paths, e.endpoint);
+          if (match) {
+            entry.method = match.method.toUpperCase();
+            entry.path = match.path;
+            const requirements = match.operation.security ?? schema.security ?? [];
+            const security = requirements.flatMap((r) => Object.keys(r ?? {}));
+            const scopes = requirements.flatMap((r) =>
+              Object.values(r ?? {}).flatMap((v) => (Array.isArray(v) ? v : [])),
+            );
+            if (security.length > 0) entry.security = [...new Set(security)];
+            if (scopes.length > 0) entry.scopes = [...new Set(scopes.map(String))];
+            entry.apiType = security.includes('ShopperToken')
+              ? 'shopper'
+              : security.includes('AmOAuth2')
+                ? 'admin'
+                : 'unknown';
+          } else {
+            problems.push(`No operation with operationId "${e.endpoint}" in ${e.schema}.`);
+          }
+        }
+      } else {
+        problems.push('api.json entry has no schema.');
+      }
+      if (typeof e.implementation === 'string') {
+        entry.implementation = e.implementation;
+        const base = path.join(apiDir, e.implementation);
+        const found = [base, ...SCRIPT_EXT.map((x) => base + x)].find((f) => host.fileExists(f));
+        if (found) {
+          const info = exportsOf(found)?.get(e.endpoint);
+          entry.implementationFile = {relPath: resolver.relativePath(found)!, ...(info?.line ? {line: info.line} : {})};
+          if (!info) problems.push(`${path.basename(found)} does not export a function named "${e.endpoint}".`);
+          else {
+            entry.public = info.public;
+            if (!info.public)
+              problems.push(`exports.${e.endpoint}.public = true is missing; the platform won't call it.`);
+          }
+        } else {
+          problems.push(`Implementation script "${e.implementation}" not found.`);
+        }
+      } else {
+        problems.push('api.json entry has no implementation.');
+      }
+      apis.push(entry);
     }
   }
   return apis;
+}
+
+const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options'];
+
+function findOperation(
+  paths: Record<string, Record<string, OpenApiOperation>> | undefined,
+  operationId: string,
+): {path: string; method: string; operation: OpenApiOperation} | undefined {
+  for (const [p, item] of Object.entries(paths ?? {})) {
+    for (const method of HTTP_METHODS) {
+      const operation = item?.[method];
+      if (operation && operation.operationId === operationId) return {path: p, method, operation};
+    }
+  }
+  return undefined;
+}
+
+function readYaml(file: string, host: CartridgeFileSystemHost): unknown {
+  const text = host.readFile(file);
+  if (text === undefined) return undefined;
+  try {
+    return yaml.load(text);
+  } catch {
+    return undefined;
+  }
 }
 
 function readJobSteps(cartridge: CartridgeLocation): IndexedJobStep[] {

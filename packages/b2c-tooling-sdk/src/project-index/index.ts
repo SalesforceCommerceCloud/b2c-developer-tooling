@@ -28,6 +28,7 @@
 
 export {buildProjectIndex} from './build.js';
 export type {BuildProjectIndexOptions} from './build.js';
+export {droppedSecurityMiddleware, middlewareLabel, securityRole} from './labels.js';
 export type {
   EndpointKind,
   EndpointMethod,
@@ -38,5 +39,6 @@ export type {
   IndexedJobStep,
   IndexedMiddleware,
   ProjectIndex,
+  ReturnBehavior,
   RouteStep,
 } from './types.js';

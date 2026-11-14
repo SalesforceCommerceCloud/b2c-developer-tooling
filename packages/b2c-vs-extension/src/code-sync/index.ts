@@ -5,6 +5,7 @@
  */
 import * as vscode from 'vscode';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
+import type {ProjectIndexService} from '../cartridges/project-index-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
@@ -29,9 +30,10 @@ export function registerCodeSync(
   configProvider: B2CExtensionConfig,
   cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
+  indexService?: ProjectIndexService,
 ): void {
   const manager = new CodeSyncManager(context.workspaceState, configProvider);
-  const treeProvider = new CartridgeTreeProvider(cartridgeService);
+  const treeProvider = new CartridgeTreeProvider(cartridgeService, indexService);
   const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {
     treeDataProvider: treeProvider,
     dragAndDropController: new CartridgeOrderDragAndDrop(cartridgeService),

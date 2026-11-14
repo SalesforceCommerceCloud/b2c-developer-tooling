@@ -34,6 +34,8 @@ export interface MiddlewareRef {
    */
   id: string;
   line: number;
+  /** For required middleware: the module specifier it was required from (`*\/cartridge/scripts/middleware/csrf`). */
+  module?: string;
   /** For inline functions: the function calls CSRFProtection.validateRequest() itself. */
   validatesCsrf?: boolean;
   /** For inline functions: the function handles a form submission (req.form, handleAction). */
@@ -121,7 +123,7 @@ export function describeMiddleware(node: AstNode, sourceCode: ScriptSourceCode):
               .replace(/\.(js|ds)$/, '')
               .split('/')
               .at(-1)!;
-      return {id: [base, ...chain.slice(1)].join('.'), line};
+      return {id: [base, ...chain.slice(1)].join('.'), line, ...(spec === 'server' ? {} : {module: spec})};
     }
     return {id: chain.join('.'), line};
   }

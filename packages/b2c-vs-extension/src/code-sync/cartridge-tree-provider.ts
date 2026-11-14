@@ -9,6 +9,9 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import {type CartridgeOrderSource, describeOrderSource} from '../cartridges/cartridge-order.js';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
+import type {ProjectIndexService} from '../cartridges/project-index-service.js';
+import {openCommand} from '../endpoints/endpoints-tree.js';
+import {controllerFiles, type ControllerFile, type RowModel} from '../endpoints/model.js';
 
 /**
  * The Cartridges tree was originally a flat list of cartridge mappings. Per the
@@ -18,7 +21,7 @@ import type {CartridgeService} from '../cartridges/cartridge-service.js';
  * of the cartridge folder (we don't want to depend on the full server-side
  * deploy pipeline just to render the tree).
  */
-export type CartridgeCategory = 'hooks' | 'jobSteps' | 'stepTypes';
+export type CartridgeCategory = 'controllers' | 'hooks' | 'jobSteps' | 'stepTypes';
 
 // Extensions a cartridge script module can have. `.ds` is the legacy
 // pipeline-era script extension, still resolvable by the platform.
@@ -31,6 +34,8 @@ function isScriptFile(name: string): boolean {
 export type CartridgeNode =
   | CartridgeItem
   | CartridgeCategoryItem
+  | ControllerFileItem
+  | ControllerStatementItem
   | CartridgeFileItem
   | CartridgeStepTypeItem
   | CartridgeCategoryEmptyItem;
@@ -74,18 +79,21 @@ export class CartridgeItem extends vscode.TreeItem {
 }
 
 const CATEGORY_LABELS: Record<CartridgeCategory, string> = {
+  controllers: 'Controllers',
   hooks: 'Hooks',
   jobSteps: 'Job Steps',
   stepTypes: 'Custom Step Types',
 };
 
 const CATEGORY_ICONS: Record<CartridgeCategory, string> = {
+  controllers: 'symbol-class',
   hooks: 'plug',
   jobSteps: 'list-ordered',
   stepTypes: 'symbol-method',
 };
 
 const CATEGORY_EMPTY_HINTS: Record<CartridgeCategory, {label: string; description: string}> = {
+  controllers: {label: 'No controllers', description: 'Add a controller under cartridge/controllers/'},
   hooks: {label: 'No hooks registered', description: 'Add a hooks.json to register one'},
   jobSteps: {label: 'No job step modules found', description: 'Drop a script into cartridge/scripts/jobsteps/'},
   stepTypes: {label: 'No custom step types registered', description: 'Add a steptypes.json in the cartridge root'},
@@ -211,6 +219,47 @@ export class CartridgeStepTypeItem extends vscode.TreeItem {
   }
 }
 
+/** A controller file under a cartridge's Controllers category. */
+export class ControllerFileItem extends vscode.TreeItem {
+  readonly kind = 'controllerFile' as const;
+
+  constructor(
+    readonly cartridge: CartridgeMapping,
+    readonly file: ControllerFile,
+  ) {
+    super(file.relPath.split('/').at(-1) ?? file.relPath, vscode.TreeItemCollapsibleState.Collapsed);
+    this.id = `cart-controller:${cartridge.src}:${file.relPath}`;
+    this.description = file.extends ? `extends ${file.extends}` : undefined;
+    this.resourceUri = vscode.Uri.file(path.join(cartridge.src, file.relPath));
+    this.iconPath = file.rows.some((r) => r.warning)
+      ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'))
+      : new vscode.ThemeIcon('symbol-class');
+    this.contextValue = 'cartridge-controller-file';
+    this.command = openCommand(path.join(cartridge.src, file.relPath));
+  }
+}
+
+/** One route statement (`post AddProduct`, `replace Show`, `exports.Submit`) in a controller file. */
+export class ControllerStatementItem extends vscode.TreeItem {
+  readonly kind = 'controllerStatement' as const;
+
+  constructor(
+    readonly cartridge: CartridgeMapping,
+    row: RowModel,
+    position: number,
+  ) {
+    super(row.label, vscode.TreeItemCollapsibleState.None);
+    this.id = `cart-controller-row:${cartridge.src}:${row.location?.relPath}:${position}`;
+    this.description = row.description;
+    this.tooltip = row.tooltip;
+    this.iconPath = row.warning
+      ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'))
+      : new vscode.ThemeIcon('symbol-method');
+    this.contextValue = 'cartridge-controller-statement';
+    if (row.location) this.command = openCommand(path.join(cartridge.src, row.location.relPath), row.location.line);
+  }
+}
+
 export type CartridgeTreeItem = CartridgeNode;
 
 export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeNode> {
@@ -219,8 +268,14 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
   private readonly cartridgesSub: vscode.Disposable;
 
-  constructor(private readonly cartridgeService: CartridgeService) {
+  private readonly indexSub: vscode.Disposable | undefined;
+
+  constructor(
+    private readonly cartridgeService: CartridgeService,
+    private readonly indexService?: ProjectIndexService,
+  ) {
     this.cartridgesSub = cartridgeService.onDidChange(() => this._onDidChangeTreeData.fire());
+    this.indexSub = indexService?.onDidChange(() => this._onDidChangeTreeData.fire());
   }
 
   refresh(): void {
@@ -251,6 +306,7 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
     if (element instanceof CartridgeItem) {
       return [
+        ...(this.indexService ? [new CartridgeCategoryItem(element.cartridge, 'controllers')] : []),
         new CartridgeCategoryItem(element.cartridge, 'hooks'),
         new CartridgeCategoryItem(element.cartridge, 'jobSteps'),
         new CartridgeCategoryItem(element.cartridge, 'stepTypes'),
@@ -259,6 +315,10 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
     if (element instanceof CartridgeCategoryItem) {
       return this.getCategoryChildren(element);
+    }
+
+    if (element instanceof ControllerFileItem) {
+      return element.file.rows.map((row, i) => new ControllerStatementItem(element.cartridge, row, i));
     }
 
     return [];
@@ -271,6 +331,12 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
    */
   private async getCategoryChildren(node: CartridgeCategoryItem): Promise<CartridgeNode[]> {
     const cartridgeRoot = node.cartridge.src;
+
+    if (node.category === 'controllers') {
+      const files = this.indexService ? controllerFiles(this.indexService.getIndex(), node.cartridge.name) : [];
+      if (files.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'controllers')];
+      return files.map((file) => new ControllerFileItem(node.cartridge, file));
+    }
 
     if (node.category === 'hooks') {
       const files = await collectHookFiles(cartridgeRoot);
@@ -300,6 +366,7 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
   }
 
   dispose(): void {
+    this.indexSub?.dispose();
     this.cartridgesSub.dispose();
     this._onDidChangeTreeData.dispose();
   }

@@ -181,14 +181,24 @@ describe('project-index', () => {
     expect(index.hooks).to.deep.equal([
       {
         name: 'dw.order.calculate',
+        kind: 'system',
+        function: 'calculate',
+        exports: ['calculate'],
         cartridge: 'app_storefront_controllers',
         script: './cart/calculate',
         relPath: 'cartridge/scripts/cart/calculate.js',
+        line: 1,
+        returnsValue: 'no',
       },
     ]);
-    expect(index.customApis).to.deep.equal([
-      {api: 'loyalty', endpoint: 'getPoints', cartridge: 'int_api', schema: 'schema.yaml', implementation: 'script'},
-    ]);
+    expect(index.customApis).to.have.length(1);
+    expect(index.customApis[0]).to.deep.include({
+      api: 'loyalty',
+      endpoint: 'getPoints',
+      cartridge: 'int_api',
+      apiType: 'unknown',
+    });
+    expect(index.customApis[0].problems[0]).to.match(/schema.yaml is missing/);
     expect(index.jobSteps).to.deep.equal([
       {
         typeId: 'custom.Export',
@@ -197,6 +207,134 @@ describe('project-index', () => {
         module: 'int_api/cartridge/scripts/export.js',
       },
     ]);
+  });
+
+  describe('hooks', () => {
+    it('classifies system and custom extension points and finds whether implementations return a value', () => {
+      write('app_a/.project');
+      write('app_a/package.json', JSON.stringify({hooks: './hooks.json'}));
+      write(
+        'app_a/hooks.json',
+        JSON.stringify({
+          hooks: [
+            {name: 'dw.ocapi.shop.basket.afterPOST', script: './cartridge/scripts/hooks/basket'},
+            {name: 'dw.ocapi.shop.basket.beforePATCH', script: './cartridge/scripts/hooks/basket'},
+            {name: 'app.custom.notify', script: './cartridge/scripts/hooks/notify.js'},
+            {name: 'dw.order.calculate', script: './cartridge/scripts/hooks/missing'},
+          ],
+        }),
+      );
+      write(
+        'app_a/cartridge/scripts/hooks/basket.js',
+        [
+          "var Status = require('dw/system/Status');",
+          'exports.afterPOST = function (basket) {',
+          '  basket.items.forEach(function (i) { return i; });',
+          '  if (!basket) return;',
+          '};',
+          'function beforePATCH(basket) {',
+          '  if (!basket) { return new Status(Status.ERROR); }',
+          '}',
+          'module.exports.beforePATCH = beforePATCH;',
+        ].join('\n'),
+      );
+      write('app_a/cartridge/scripts/hooks/notify.js', 'module.exports = {notify: () => true};');
+
+      const index = buildProjectIndex({root: dir});
+      const byName = Object.fromEntries(index.hooks.map((h) => [h.name, h]));
+      expect(byName['dw.ocapi.shop.basket.afterPOST']).to.include({
+        kind: 'system',
+        function: 'afterPOST',
+        line: 2,
+        returnsValue: 'no',
+      });
+      expect(byName['dw.ocapi.shop.basket.beforePATCH']).to.include({line: 6, returnsValue: 'yes'});
+      expect(byName['app.custom.notify']).to.include({kind: 'custom', returnsValue: 'unknown'});
+      expect(byName['app.custom.notify'].function, 'custom hooks have no fixed function').to.equal(undefined);
+      expect(byName['app.custom.notify'].exports).to.deep.equal(['notify']);
+      expect(byName['dw.order.calculate']).to.include({returnsValue: 'unknown'});
+      expect(byName['dw.order.calculate'].relPath).to.equal(undefined);
+    });
+  });
+
+  describe('custom APIs', () => {
+    beforeEach(() => {
+      write('int_api/.project');
+      write(
+        'int_api/cartridge/rest-apis/loyalty/api.json',
+        JSON.stringify({
+          endpoints: [
+            {endpoint: 'getPoints', schema: 'schema.yaml', implementation: 'script'},
+            {endpoint: 'setPoints', schema: 'schema.yaml', implementation: 'script'},
+            {endpoint: 'missingOp', schema: 'schema.yaml', implementation: 'script'},
+          ],
+        }),
+      );
+      write(
+        'int_api/cartridge/rest-apis/loyalty/schema.yaml',
+        [
+          'openapi: 3.0.0',
+          'paths:',
+          '  /points:',
+          '    get:',
+          '      operationId: getPoints',
+          '    put:',
+          '      operationId: setPoints',
+          '      security:',
+          '        - AmOAuth2: [c_loyalty_rw]',
+          'security:',
+          '  - ShopperToken: [c_loyalty]',
+        ].join('\n'),
+      );
+      write(
+        'int_api/cartridge/rest-apis/loyalty/script.js',
+        [
+          'exports.getPoints = function () {};',
+          'exports.getPoints.public = true;',
+          'function setPoints() {}',
+          'exports.setPoints = setPoints;',
+        ].join('\n'),
+      );
+    });
+
+    it('joins api.json with the schema operation and the implementation', () => {
+      const index = buildProjectIndex({root: dir});
+      const [get, put, missing] = index.customApis;
+      expect(get).to.deep.include({
+        method: 'GET',
+        path: '/points',
+        security: ['ShopperToken'],
+        scopes: ['c_loyalty'],
+        apiType: 'shopper',
+        implementationFile: {relPath: 'cartridge/rest-apis/loyalty/script.js', line: 1},
+        public: true,
+        problems: [],
+      });
+      expect(put).to.deep.include({method: 'PUT', apiType: 'admin', scopes: ['c_loyalty_rw'], public: false});
+      expect(put.problems[0]).to.match(/public = true is missing/);
+      expect(missing.problems).to.have.length(2);
+      expect(missing.problems[0]).to.match(/No operation with operationId "missingOp"/);
+    });
+  });
+
+  it('resolves where required middleware is implemented and records what replace dropped', () => {
+    write('app_base/.project');
+    write('app_base/cartridge/scripts/middleware/csrf.js', 'exports.validateAjaxRequest = function () {};');
+    write(
+      'app_base/cartridge/controllers/A.js',
+      "var server = require('server'); var csrf = require('*/cartridge/scripts/middleware/csrf');\nserver.post('B', server.middleware.https, csrf.validateAjaxRequest, function () {});\nmodule.exports = server.exports();",
+    );
+    write('app_custom/.project');
+    write(
+      'app_custom/cartridge/controllers/A.js',
+      "var server = require('server');\nserver.extend(module.superModule);\nserver.replace('B', server.middleware.post, function () {});\nmodule.exports = server.exports();",
+    );
+    const index = buildProjectIndex({root: dir, cartridgePath: ['app_custom', 'app_base']});
+    const b = index.endpoints.find((e) => e.id === 'A-B')!;
+    const replace = b.steps!.find((s) => s.method === 'replace')!;
+    expect(replace.dropped).to.deep.equal(['server.middleware.https', 'csrf.validateAjaxRequest']);
+    const csrf = replace.replaced!.find((m) => m.id === 'csrf.validateAjaxRequest')!;
+    expect(csrf.source).to.deep.equal({cartridge: 'app_base', relPath: 'cartridge/scripts/middleware/csrf.js'});
   });
 
   it('records controllers that cannot be parsed', () => {

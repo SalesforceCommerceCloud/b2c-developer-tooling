@@ -294,6 +294,11 @@
           "default": true,
           "description": "Provide Script API IntelliSense (dw/*) in cartridge JavaScript via the bundled TypeScript Server plugin. No files are written to your workspace."
         },
+        "b2c-dx.features.endpoints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Endpoints view (controller endpoints with their middleware across cartridges, Custom APIs, and hooks) and the Controllers category in the Cartridges view."
+        },
         "b2c-dx.auth.usePluginSessionStore": {
           "type": "boolean",
           "default": false,
@@ -432,6 +437,13 @@
           "contextualTitle": "B2C-DX"
         },
         {
+          "id": "b2cEndpointsExplorer",
+          "name": "Endpoints",
+          "icon": "media/b2c-icon.svg",
+          "contextualTitle": "B2C-DX",
+          "when": "config.b2c-dx.features.endpoints"
+        },
+        {
           "id": "b2cJobsExplorer",
           "name": "Jobs",
           "icon": "media/b2c-icon.svg",
@@ -528,6 +540,10 @@
       {
         "view": "b2cExportExplorer",
         "contents": "Interactively export site impex data units.\n\nRequires OAuth and WebDAV credentials in dw.json. Check the data units you want, then run Export.\n\n[Refresh](command:b2c-dx.export.refresh)"
+      },
+      {
+        "view": "b2cEndpointsExplorer",
+        "contents": "No cartridges found.\n\nThe Endpoints view lists controller endpoints, Custom APIs, and hooks from the cartridges in your workspace (folders with a .project file), in cartridge path order.\n\n[Refresh](command:b2c-dx.endpoints.refresh)"
       }
     ],
     "debuggers": [
@@ -1453,6 +1469,42 @@
         "command": "b2c-dx.walkthrough.showTelemetry",
         "title": "Show Walkthrough Telemetry",
         "category": "B2C DX - Development"
+      },
+      {
+        "command": "b2c-dx.endpoints.refresh",
+        "title": "Refresh Endpoints",
+        "icon": "$(refresh)",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.endpoints.filter",
+        "title": "Filter Endpoints…",
+        "icon": "$(filter)",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.endpoints.clearFilter",
+        "title": "Clear Endpoints Filter",
+        "icon": "$(clear-all)",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.endpoints.showIssuesOnly",
+        "title": "Show Only Endpoints with Issues",
+        "icon": "$(warning)",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.endpoints.showAll",
+        "title": "Show All Endpoints",
+        "icon": "$(list-flat)",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.endpoints.openImplementation",
+        "title": "Open Middleware Implementation",
+        "icon": "$(go-to-file)",
+        "category": "B2C DX - Endpoints"
       }
     ],
     "walkthroughs": [
@@ -1734,6 +1786,31 @@
           "command": "b2c-dx.cartridges.chooseOrderSite",
           "when": "view == b2cCartridgeExplorer",
           "group": "2_order@2"
+        },
+        {
+          "command": "b2c-dx.endpoints.filter",
+          "when": "view == b2cEndpointsExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.endpoints.clearFilter",
+          "when": "view == b2cEndpointsExplorer && b2c-dx.endpoints.filtered",
+          "group": "navigation@2"
+        },
+        {
+          "command": "b2c-dx.endpoints.showIssuesOnly",
+          "when": "view == b2cEndpointsExplorer && !b2c-dx.endpoints.issuesOnly",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.endpoints.showAll",
+          "when": "view == b2cEndpointsExplorer && b2c-dx.endpoints.issuesOnly",
+          "group": "navigation@3"
+        },
+        {
+          "command": "b2c-dx.endpoints.refresh",
+          "when": "view == b2cEndpointsExplorer",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -2061,6 +2138,16 @@
           "command": "b2c-dx.cartridges.moveDown",
           "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
           "group": "5_order@2"
+        },
+        {
+          "command": "b2c-dx.endpoints.openImplementation",
+          "when": "view == b2cEndpointsExplorer && viewItem == endpoints-row-implementation",
+          "group": "inline"
+        },
+        {
+          "command": "b2c-dx.endpoints.openImplementation",
+          "when": "view == b2cEndpointsExplorer && viewItem == endpoints-row-implementation",
+          "group": "navigation@1"
         }
       ],
       "file/newFile": [
@@ -2514,6 +2601,10 @@
         },
         {
           "command": "b2c-dx.cartridges.moveDown",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.endpoints.openImplementation",
           "when": "false"
         }
       ]

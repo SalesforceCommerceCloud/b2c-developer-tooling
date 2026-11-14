@@ -29,6 +29,7 @@ const COMMAND_PREFIX_TO_CATEGORY: Array<readonly [string, FeatureCategory]> = [
   ['b2c-dx.content.', 'content'],
   ['b2c-dx.codeSync.', 'codeSync'],
   ['b2c-dx.cartridges.', 'codeSync'],
+  ['b2c-dx.endpoints.', 'codeSync'],
   ['b2c-dx.apiBrowser.', 'apiBrowser'],
   ['b2c-dx.objectTypes.', 'objectTypes'],
   ['b2c-dx.scaffold.', 'scaffold'],

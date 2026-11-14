@@ -5,17 +5,8 @@
  */
 import {defineScriptRule, type ScriptRuleListener} from '../rule.js';
 import {controllerName, isIndexedFile, projectIndexOf} from '../script/project.js';
-import {isCsrfValidator, isLoginValidator, sfraRouteCall} from '../script/routes.js';
-
-/** Security-relevant middleware, and how to describe losing it. */
-function securityRole(id: string): string | undefined {
-  if (isCsrfValidator(id)) return `CSRF check (${id})`;
-  if (isLoginValidator(id)) return `login check (${id})`;
-  if (id === 'server.middleware.https') return 'HTTPS requirement (server.middleware.https)';
-  if (id === 'server.middleware.post') return 'POST-only restriction (server.middleware.post)';
-  if (id === 'server.middleware.get') return 'GET-only restriction (server.middleware.get)';
-  return undefined;
-}
+import {securityRole} from '../../project-index/labels.js';
+import {sfraRouteCall} from '../script/routes.js';
 
 export default defineScriptRule({
   id: 'sfra-replace-drops-middleware',
@@ -41,13 +32,8 @@ export default defineScriptRule({
           .find(
             (s) => s.method === 'replace' && s.line === line && isIndexedFile(context.filename, s.cartridge, s.relPath),
           );
-        if (!step?.replaced) return;
-        const kept = new Set(route.chain.map((m) => m.id));
-        const keptCsrf = route.chain.some((m) => isCsrfValidator(m.id) || m.validatesCsrf);
-        const dropped = [...new Set(step.replaced.filter((m) => m.via !== 'append').map((m) => m.id))]
-          .filter((mid) => !kept.has(mid) && !(isCsrfValidator(mid) && keptCsrf))
-          .map(securityRole)
-          .filter((r): r is string => r !== undefined);
+        if (!step?.dropped || step.dropped.length === 0) return;
+        const dropped = step.dropped.map((mid) => `${securityRole(mid)} (${mid})`);
         if (dropped.length > 0) {
           context.report({
             node,
