@@ -20,6 +20,7 @@ Usage:
       --verbose
 """
 
+import os
 import argparse
 import json
 import random
@@ -34,6 +35,10 @@ from eval_lib import find_eval_project, find_project_root, generate_html, parse_
 
 import anthropic
 
+
+
+# Default model for claude -p; override with --model or the SKILLS_EVAL_MODEL environment variable.
+DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6"
 
 def split_eval_set(eval_set: list[dict], holdout: float, seed: int = 42) -> tuple[list[dict], list[dict]]:
     """Split eval set into train and test sets, stratified by should_trigger."""
@@ -395,7 +400,11 @@ def main():
     parser.add_argument("--runs-per-query", type=int, default=3, help="Number of runs per query")
     parser.add_argument("--trigger-threshold", type=float, default=0.5, help="Trigger rate threshold")
     parser.add_argument("--holdout", type=float, default=0.4, help="Fraction held out for testing (0 to disable)")
-    parser.add_argument("--model", required=True, help="Model for eval and improvement")
+    parser.add_argument(
+        "--model",
+        default=os.environ.get("SKILLS_EVAL_MODEL", DEFAULT_MODEL),
+        help=f"Model for eval and improvement (default: $SKILLS_EVAL_MODEL, else {DEFAULT_MODEL})",
+    )
     parser.add_argument("--verbose", action="store_true", help="Print progress to stderr")
     parser.add_argument("--report", default="auto", help="HTML report path ('auto' for temp file, 'none' to disable)")
     parser.add_argument("--results-dir", default=None, help="Save outputs to a timestamped subdirectory here")

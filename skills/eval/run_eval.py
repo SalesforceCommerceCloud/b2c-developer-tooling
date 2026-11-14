@@ -19,6 +19,7 @@ Usage:
 Based on the skill-creator eval harness.
 """
 
+import os
 import argparse
 import json
 import sys
@@ -29,6 +30,10 @@ from pathlib import Path
 
 from eval_lib import find_eval_project, find_project_root, generate_eval_report_html, parse_skill_md, run_eval
 
+
+
+# Default model for claude -p; override with --model or the SKILLS_EVAL_MODEL environment variable.
+DEFAULT_MODEL = "us.anthropic.claude-sonnet-4-6"
 
 def discover_skills(search_dirs: list[str]) -> list[Path]:
     """Find all skill directories that have evals/trigger-evals.json."""
@@ -45,7 +50,11 @@ def main():
     parser = argparse.ArgumentParser(description="Run trigger evaluation for skill descriptions")
     parser.add_argument("--skill-path", help="Evaluate a single skill directory (overrides discovery)")
     parser.add_argument("--discover", nargs="*", default=["skills/"], help="Directories to search for skills with trigger evals (default: skills/)")
-    parser.add_argument("--model", default=None, help="Model to use for claude -p")
+    parser.add_argument(
+        "--model",
+        default=os.environ.get("SKILLS_EVAL_MODEL", DEFAULT_MODEL),
+        help=f"Model to use for claude -p (default: $SKILLS_EVAL_MODEL, else {DEFAULT_MODEL})",
+    )
     parser.add_argument("--num-workers", type=int, default=1, help="Number of parallel workers (default: 1, serial)")
     parser.add_argument("--timeout", type=int, default=30, help="Timeout per query in seconds")
     parser.add_argument("--runs-per-query", type=int, default=1, help="Number of runs per query")
