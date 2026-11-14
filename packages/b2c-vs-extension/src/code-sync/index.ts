@@ -17,6 +17,12 @@ import {
 import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
 import {pickCodeVersion, saveCodeVersion, showNoInstanceError} from './code-sync-setup.js';
+import {
+  CartridgeOrderDragAndDrop,
+  bindCartridgeOrderDisplay,
+  registerCartridgeOrderCommands,
+} from './cartridge-order-view.js';
+import {setCartridgeViewLabel} from './cartridge-view-labels.js';
 
 export function registerCodeSync(
   context: vscode.ExtensionContext,
@@ -26,7 +32,13 @@ export function registerCodeSync(
 ): void {
   const manager = new CodeSyncManager(context.workspaceState, configProvider);
   const treeProvider = new CartridgeTreeProvider(cartridgeService);
-  const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {treeDataProvider: treeProvider});
+  const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {
+    treeDataProvider: treeProvider,
+    dragAndDropController: new CartridgeOrderDragAndDrop(cartridgeService),
+    canSelectMany: false,
+  });
+  const orderDisplay = bindCartridgeOrderDisplay(treeView, cartridgeService, configProvider);
+  const orderCmds = registerCartridgeOrderCommands(cartridgeService, configProvider);
 
   // --- Core sync commands ---
 
@@ -70,7 +82,7 @@ export function registerCodeSync(
   );
 
   const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
-    cartridgeService.refresh();
+    cartridgeService.refresh({refetchInstance: true});
     manager.refreshCartridges(configProvider.getWorkingDirectory());
   });
 
@@ -158,7 +170,7 @@ export function registerCodeSync(
         await manager.startWatch(instance, configProvider.getWorkingDirectory());
       }
     }
-    treeView.description = `v: ${codeVersion}`;
+    setCartridgeViewLabel(treeView, 'codeVersion', `v: ${codeVersion}`);
   });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
@@ -248,6 +260,8 @@ export function registerCodeSync(
     uploadToInstanceCmd,
     selectCodeVersionCmd,
     cartridgesSub,
+    orderDisplay,
+    ...orderCmds,
     ...cartridgeCmdDisposables,
   );
 }

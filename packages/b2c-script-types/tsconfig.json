@@ -1,15 +1,18 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
-    "declaration": false,
-    "outDir": "plugin",
     "rootDir": "src",
     "skipLibCheck": true,
-    "noEmitOnError": true
+    "customConditions": [
+      "development"
+    ],
+    "noEmit": true
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }

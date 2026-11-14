@@ -119,10 +119,12 @@ describe('cartridge resolution on case-sensitive volumes', () => {
       {name: 'app_Core', src: CORE},
     ]);
 
-    // Owner-first ordering requires matching the lowercased containing file
-    // against the cartridge roots, so this must still land on app_Core.
+    // ~/ only resolves when the lowercased containing file is matched to its
+    // owning cartridge, so this must land on app_Core (probed in exact case).
     const containingFile = `${CORE.toLowerCase()}/cartridge/scripts/Caller.js`;
-    expect(resolve('*/cartridge/scripts/util/Helper', containingFile)).to.equal(coreTarget);
+    expect(resolve('~/cartridge/scripts/util/Helper', containingFile)).to.equal(coreTarget);
+    // */ walks the cartridge path left to right, so app_Base wins.
+    expect(resolve('*/cartridge/scripts/util/Helper', containingFile)).to.equal(baseTarget);
   });
 
   it('leaves non-cartridge module names alone', () => {

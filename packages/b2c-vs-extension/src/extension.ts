@@ -617,7 +617,7 @@ async function activateInner(
     }),
   );
 
-  const cartridgeService = new CartridgeService(configProvider);
+  const cartridgeService = new CartridgeService(configProvider, {workspaceState: context.workspaceState, log});
   context.subscriptions.push(cartridgeService);
 
   // Walkthrough context keys: drive auto-completion of the native walkthrough

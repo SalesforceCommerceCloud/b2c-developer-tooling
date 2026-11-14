@@ -50,6 +50,11 @@
       "types": "./dist/esm/utils/index.d.ts",
       "default": "./dist/esm/utils/index.js"
     },
+    "./cartridges": {
+      "development": "./src/cartridges/index.ts",
+      "types": "./dist/esm/cartridges/index.d.ts",
+      "default": "./dist/esm/cartridges/index.js"
+    },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
       "types": "./dist/esm/operations/code/index.d.ts",

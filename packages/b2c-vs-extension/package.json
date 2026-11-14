@@ -965,6 +965,30 @@
         "category": "B2C DX - Cartridges"
       },
       {
+        "command": "b2c-dx.cartridges.moveUp",
+        "title": "Move Up in Cartridge Order",
+        "icon": "$(arrow-up)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
+        "command": "b2c-dx.cartridges.moveDown",
+        "title": "Move Down in Cartridge Order",
+        "icon": "$(arrow-down)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
+        "command": "b2c-dx.cartridges.resetOrder",
+        "title": "Reset Cartridge Order",
+        "icon": "$(discard)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
+        "command": "b2c-dx.cartridges.chooseOrderSite",
+        "title": "Choose Site for Cartridge Order…",
+        "icon": "$(globe)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
         "command": "b2c-dx.jobs.rerun",
         "title": "Re-Run Job",
         "icon": "$(debug-restart)",
@@ -1700,6 +1724,16 @@
           "command": "b2c-dx.codeSync.selectCodeVersion",
           "when": "view == b2cCartridgeExplorer",
           "group": "1_versions"
+        },
+        {
+          "command": "b2c-dx.cartridges.resetOrder",
+          "when": "view == b2cCartridgeExplorer && b2c-dx.cartridgeOrderSource == manual",
+          "group": "2_order@1"
+        },
+        {
+          "command": "b2c-dx.cartridges.chooseOrderSite",
+          "when": "view == b2cCartridgeExplorer",
+          "group": "2_order@2"
         }
       ],
       "view/item/context": [
@@ -2017,6 +2051,16 @@
           "command": "b2c-dx.cartridge.openStepTypeDefinition",
           "when": "view == b2cCartridgeExplorer && viewItem =~ /^cartridge-step-type/",
           "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.cartridges.moveUp",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "5_order@1"
+        },
+        {
+          "command": "b2c-dx.cartridges.moveDown",
+          "when": "view == b2cCartridgeExplorer && viewItem == cartridge",
+          "group": "5_order@2"
         }
       ],
       "file/newFile": [
@@ -2463,6 +2507,14 @@
         {
           "command": "b2c-dx.codeSync.removeFromSitePath",
           "when": "false"
+        },
+        {
+          "command": "b2c-dx.cartridges.moveUp",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.cartridges.moveDown",
+          "when": "false"
         }
       ]
     },
@@ -2501,7 +2553,7 @@
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.9.1",
     "c8": "catalog:",
-    "esbuild": "^0.24.0",
+    "esbuild": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",

@@ -7,6 +7,7 @@ import {type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code
 import * as fs from 'node:fs/promises';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {type CartridgeOrderSource, describeOrderSource} from '../cartridges/cartridge-order.js';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
 
 /**
@@ -34,22 +35,41 @@ export type CartridgeNode =
   | CartridgeStepTypeItem
   | CartridgeCategoryEmptyItem;
 
+/** Where a cartridge sits in the panel order, for its description and tooltip. */
+export interface CartridgeItemOrder {
+  /** 1-based position. */
+  position: number;
+  total: number;
+  source: CartridgeOrderSource;
+  sourceLabel: string;
+  /** False when the order comes from a cartridge path that doesn't name this cartridge. */
+  onPath?: boolean;
+}
+
 export class CartridgeItem extends vscode.TreeItem {
   readonly kind = 'cartridge' as const;
 
-  constructor(public readonly cartridge: CartridgeMapping) {
+  constructor(
+    public readonly cartridge: CartridgeMapping,
+    order?: CartridgeItemOrder,
+  ) {
     super(cartridge.name, vscode.TreeItemCollapsibleState.Collapsed);
     this.id = `cart:${cartridge.src}`;
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (workspaceFolders) {
-      const workspaceRoot = workspaceFolders[0].uri.fsPath;
-      this.description = path.relative(workspaceRoot, cartridge.src);
-    }
+    const location = workspaceFolders ? path.relative(workspaceFolders[0].uri.fsPath, cartridge.src) : undefined;
+    const notOnPath = order?.onPath === false;
+    this.description = [location, notOnPath ? 'not on cartridge path' : undefined].filter(Boolean).join(' · ');
 
     this.iconPath = new vscode.ThemeIcon('package');
     this.contextValue = 'cartridge';
-    this.tooltip = cartridge.src;
+    this.tooltip = order
+      ? `${cartridge.src}\nPosition ${order.position} of ${order.total} · ${order.sourceLabel}` +
+        (notOnPath ? '\nNot named in the cartridge path this order comes from.' : '') +
+        (order.source === 'guessed'
+          ? '\nTo use the real order: choose a site for the cartridge order, set "cartridges" in your configuration, or drag to reorder.'
+          : '')
+      : cartridge.src;
   }
 }
 
@@ -213,7 +233,20 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
   async getChildren(element?: CartridgeNode): Promise<CartridgeNode[]> {
     if (!element) {
-      return this.cartridgeService.getCartridges().map((c) => new CartridgeItem(c));
+      const cartridges = this.cartridgeService.getCartridges();
+      const info = this.cartridgeService.getOrderInfo();
+      const sourceLabel = describeOrderSource(info).replace(/^Order: /, 'order from ');
+      const checkPath = info.source === 'config' || info.source === 'instance';
+      return cartridges.map(
+        (c, i) =>
+          new CartridgeItem(c, {
+            position: i + 1,
+            total: cartridges.length,
+            source: info.source,
+            sourceLabel,
+            onPath: checkPath ? info.path?.includes(c.name) : undefined,
+          }),
+      );
     }
 
     if (element instanceof CartridgeItem) {
