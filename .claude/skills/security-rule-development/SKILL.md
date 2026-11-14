@@ -48,6 +48,37 @@ Security rules live in `packages/b2c-tooling-sdk/src/security/`. Each rule is an
 6. **Run** `pnpm --filter @salesforce/b2c-tooling-sdk exec mocha "test/security/**/*.test.ts"`. The harness checks the ID format, fixtures, docs section, and that the SDK runner, ESLint, and oxlint all report exactly the marked lines.
 7. **Add a changeset** (`@salesforce/b2c-tooling-sdk` and `@salesforce/b2c-cli`, minor for a new rule).
 
+## Metadata rules
+
+Rules over site import/export data live in `src/security/metadata/rules/` and are registered in `METADATA_RULES`. They don't run in ESLint or oxlint, but share findings, suppressions, baselines, and SARIF with script rules.
+
+```typescript
+import {defineMetadataRule} from '../types.js';
+import {childNamed, descendantsNamed} from '../xml.js';
+
+export const myRule = defineMetadataRule({
+  id: 'service-something',
+  severity: 'medium',
+  confidence: 'high',
+  category: 'config',
+  cwe: ['CWE-16'],
+  description: 'What it finds.',
+  remediation: 'How to fix it.',
+  kinds: ['services'], // services | preferences | metadata | csrf-allowlist | ocapi-settings
+  check(document, report) {
+    if (document.format !== 'xml') return;
+    for (const service of descendantsNamed(document.root, 'service')) {
+      const flag = childNamed(service, 'some-flag');
+      if (flag?.text === 'true') report({line: flag.line, column: flag.column, message: '...'});
+    }
+  },
+});
+```
+
+- XML elements have local `name`, `attributes`, trimmed `text`, `line`, `column`, and `children`. JSON documents (OCAPI settings) have `data` and `text`; locate lines with `jsonKeyLines(text, key, value)`.
+- To read a new file kind, add its XML root element (or file name rule) to `detectMetadataKind()` in `src/security/metadata/run.ts`.
+- Fixtures go in `test/security/fixtures/<rule-id>/bad/` and `good/` with real file names (`services.xml`, `wapi_shop_config.json`). Mark XML lines with `<!-- expect -->` at the end of the line; for JSON, list expected line numbers in a sidecar `<file>.expect`.
+
 ## Rule API: what you may use
 
 Rules must run identically in all three runners, so stick to this subset:

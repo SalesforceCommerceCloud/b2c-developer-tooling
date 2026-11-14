@@ -27,7 +27,7 @@ b2c security rules
 
 Findings in SFRA and SiteGenesis base cartridges (`app_storefront_base`, `modules`, `app_storefront_controllers`, ...) are reported with `referenceCartridge` set. They are real for any storefront that deploys those cartridges; fix them from the project's own cartridge (for example `server.prepend()`), not by editing the base. `--exclude-reference-cartridges` leaves them out.
 
-Server-side `.js` and `.ds` files are scanned; `cartridge/client/`, `cartridge/static/`, `node_modules/`, and minified files are skipped. Legacy `.ds` files with type annotations can't be parsed yet and are reported under `errors`.
+Site data in the project (such as a `site_template` folder) is checked too: `services.xml`, `preferences.xml`, attribute definitions, `csrf-whitelists.xml`, and OCAPI settings JSON. Server-side `.js` and `.ds` files are scanned; `cartridge/client/`, `cartridge/static/`, `node_modules/`, and minified files are skipped. Legacy `.ds` files with type annotations can't be parsed yet and are reported under `errors`.
 
 ## Triage findings
 
@@ -42,21 +42,28 @@ Rule references, with examples and fixes: `b2c docs search "security rules"` or 
 
 ## Fix patterns
 
-| Rule                            | Fix                                                                                                                                                                                     |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `object-query-injection`        | Use `{0}` placeholders and pass values as arguments: `queryCustomObject(type, 'custom.email = {0}', email)`                                                                             |
-| `file-path-from-request`        | Return a directory from the `processMultipart()` callback (the platform names the file), or generate the name (UUID) with an allowlisted extension; return `null` for unexpected fields |
-| `open-redirect`                 | Redirect to `URLUtils` URLs, or check the target against an allowlist before `res.redirect()`                                                                                           |
-| `hardcoded-credentials`         | Move the value to a service credential (read via `LocalServiceRegistry`) or a password site preference; rotate it                                                                       |
-| `weak-crypto`                   | `Cipher` with `AES/GCM/NoPadding`; `MessageDigest`/`Mac` with SHA-256 or stronger; avoid the `Weak*` classes                                                                            |
-| `insecure-cookie`               | `cookie.setSecure(true)` and `cookie.setHttpOnly(true)` before `response.addHttpCookie(cookie)`                                                                                         |
-| `sfra-post-without-csrf`        | Add `csrfProtection.validateAjaxRequest`/`validateRequest`; for base routes, `server.extend(module.superModule)` then `server.prepend('Route', csrfProtection.validateAjaxRequest)`     |
-| `sg-post-without-csrf`          | Add the `'csrf'` filter to `guard.ensure([...])` and the token field to the form                                                                                                        |
-| `sfra-replace-drops-middleware` | Repeat `server.middleware.post`/`https`, login, and CSRF middleware in `server.replace()`, or use `server.append()`                                                                     |
-| `get-mutates-state`             | Make the route POST with a CSRF check; don't store request input in a GET                                                                                                               |
-| `mass-assignment`               | Assign expected fields by name, or check keys against an allowlist                                                                                                                      |
-| `pii-in-logs`                   | Log identifiers (customer or order number), not personal data                                                                                                                           |
-| `dynamic-code`                  | Replace `eval`/`new Function`; map known names to static `require()` calls                                                                                                              |
+| Rule                                                      | Fix                                                                                                                                                                                     |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `object-query-injection`                                  | Use `{0}` placeholders and pass values as arguments: `queryCustomObject(type, 'custom.email = {0}', email)`                                                                             |
+| `file-path-from-request`                                  | Return a directory from the `processMultipart()` callback (the platform names the file), or generate the name (UUID) with an allowlisted extension; return `null` for unexpected fields |
+| `open-redirect`                                           | Redirect to `URLUtils` URLs, or check the target against an allowlist before `res.redirect()`                                                                                           |
+| `hardcoded-credentials`                                   | Move the value to a service credential (read via `LocalServiceRegistry`) or a password site preference; rotate it                                                                       |
+| `weak-crypto`                                             | `Cipher` with `AES/GCM/NoPadding`; `MessageDigest`/`Mac` with SHA-256 or stronger; avoid the `Weak*` classes                                                                            |
+| `insecure-cookie`                                         | `cookie.setSecure(true)` and `cookie.setHttpOnly(true)` before `response.addHttpCookie(cookie)`                                                                                         |
+| `ocapi-demo-client-id`                                    | Replace the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` with a dedicated Account Manager client; remove it from OCAPI settings on every instance                                    |
+| `ocapi-broad-access`                                      | Grant specific resources and methods; allow only your own HTTPS origins                                                                                                                 |
+| `service-credential-password` / `preference-secret-value` | Remove the value from site data; set it per instance in Business Manager; rotate it                                                                                                     |
+| `service-insecure-url`                                    | Use the service's `https://` endpoint                                                                                                                                                   |
+| `service-communication-log`                               | Disable `comm-log-enabled` outside sandbox debugging; mask fields with `filterLogMessage`                                                                                               |
+| `secret-attribute-not-password`                           | Change the attribute `<type>` to `password`                                                                                                                                             |
+| `csrf-allowlist`                                          | Remove unneeded Business Manager CSRF exemptions; prefer single start nodes; no production user agents                                                                                  |
+| `sfra-post-without-csrf`                                  | Add `csrfProtection.validateAjaxRequest`/`validateRequest`; for base routes, `server.extend(module.superModule)` then `server.prepend('Route', csrfProtection.validateAjaxRequest)`     |
+| `sg-post-without-csrf`                                    | Add the `'csrf'` filter to `guard.ensure([...])` and the token field to the form                                                                                                        |
+| `sfra-replace-drops-middleware`                           | Repeat `server.middleware.post`/`https`, login, and CSRF middleware in `server.replace()`, or use `server.append()`                                                                     |
+| `get-mutates-state`                                       | Make the route POST with a CSRF check; don't store request input in a GET                                                                                                               |
+| `mass-assignment`                                         | Assign expected fields by name, or check keys against an allowlist                                                                                                                      |
+| `pii-in-logs`                                             | Log identifiers (customer or order number), not personal data                                                                                                                           |
+| `dynamic-code`                                            | Replace `eval`/`new Function`; map known names to static `require()` calls                                                                                                              |
 
 Re-run `b2c security scan --rule <rule-id> <file>` after a fix to confirm the finding is gone.
 

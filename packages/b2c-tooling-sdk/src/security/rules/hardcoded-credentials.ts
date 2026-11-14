@@ -6,22 +6,10 @@
 import type {AstNode} from '../rule.js';
 import {defineScriptRule} from '../rule.js';
 import {calleeName, propertyName, staticString} from '../script/helpers.js';
+import {SECRET_NAME, looksLikeSecret} from '../secrets.js';
 
-/** Names that hold secrets. Matches the end of the name, so `apiKeyPreference` doesn't match. */
-const SECRET_NAME =
-  /(password|passwd|passphrase|secret|apikey|api_key|accesstoken|access_token|authtoken|auth_token|privatekey|private_key)$/i;
 const AUTH_HEADER = /^(authorization|proxy-authorization|x-api-key|api-key|apikey|x-auth-token)$/i;
 const AUTH_SCHEME = /^\s*(basic|bearer|token)\s*/i;
-/** Values that are clearly not secrets: placeholders, dotted IDs (preference or resource keys), form field names. */
-const NOT_A_SECRET =
-  /^(\*+|x+|\.+|<[^>]*>|\$\{[^}]*\}|\{\{[^}]*\}\}|changeme|change_me|password|secret|todo|tbd|none|null|undefined|your[-_ ].*|[A-Za-z_][\w-]*(\.[A-Za-z_][\w-]*)+|dwfrm_\w+)$/i;
-
-function looksLikeSecret(value: string): boolean {
-  const v = value.trim();
-  if (v.length < 8 || /\s/.test(v) || NOT_A_SECRET.test(v)) return false;
-  // Require some entropy: a digit or symbol, or a long value.
-  return /[\d+/=_\-!@#$%^&*]/.test(v) || v.length >= 16;
-}
 
 /** The literal text of a header value, ignoring a leading auth scheme and any non-literal parts. */
 function literalHeaderValue(node: AstNode | undefined): string {

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+    <type-extension type-id="SitePreferences">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="paymentApiKey"> <!-- expect -->
+                <display-name xml:lang="x-default">Payment API Key</display-name>
+                <type>string</type>
+            </attribute-definition>
+            <attribute-definition attribute-id="erpClientSecret"> <!-- expect -->
+                <type>text</type>
+            </attribute-definition>
+        </custom-attribute-definitions>
+    </type-extension>
+</metadata>

@@ -617,6 +617,9 @@ importers:
       protobufjs:
         specifier: 7.6.6
         version: 7.6.6
+      sax:
+        specifier: ^1.4.1
+        version: 1.4.3
       tar-fs:
         specifier: 3.1.2
         version: 3.1.2
@@ -663,6 +666,9 @@ importers:
       '@types/node-forge':
         specifier: 1.3.14
         version: 1.3.14
+      '@types/sax':
+        specifier: ^1.2.7
+        version: 1.2.7
       '@types/sinon':
         specifier: 'catalog:'
         version: 21.0.0
@@ -3939,6 +3945,9 @@ packages:
 
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
+
+  '@types/sax@1.2.7':
+    resolution: {integrity: sha512-rO73L89PJxeYM3s3pPPjiPgVVcymqU490g0YO5n5By0k2Erzj6tay/4lr1CHAAU4JyOWd1rpQ8bCf6cZfHU96A==}
 
   '@types/send@1.2.1':
     resolution: {integrity: sha512-arsCikDvlU99zl1g69TcAB3mzZPpxgw0UQnaHeC1Nwb015xp8bknZv5rIfri9xTOcMuaVgvabfIRA7PSZVuZIQ==}
@@ -12494,7 +12503,7 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
 
   '@types/chai@4.3.20': {}
 
@@ -12502,7 +12511,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
 
   '@types/cookiejar@2.1.5': {}
 
@@ -12516,7 +12525,7 @@ snapshots:
 
   '@types/express-serve-static-core@5.1.1':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -12576,7 +12585,7 @@ snapshots:
 
   '@types/mute-stream@0.0.4':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
 
   '@types/negotiator@0.6.4': {}
 
@@ -12613,14 +12622,18 @@ snapshots:
 
   '@types/sarif@2.1.7': {}
 
+  '@types/sax@1.2.7':
+    dependencies:
+      '@types/node': 26.6.5
+
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
 
   '@types/serve-static@2.2.0':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
@@ -12642,7 +12655,7 @@ snapshots:
     dependencies:
       '@types/cookiejar': 2.1.5
       '@types/methods': 1.1.4
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
       form-data: 4.0.6
 
   '@types/supertest@6.0.3':
@@ -12657,7 +12670,7 @@ snapshots:
 
   '@types/tar-stream@3.1.4':
     dependencies:
-      '@types/node': 22.19.0
+      '@types/node': 26.6.5
 
   '@types/triple-beam@1.3.5': {}
 

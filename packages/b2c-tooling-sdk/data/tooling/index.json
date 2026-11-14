@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-14T15:34:22.832Z",
+  "generatedAt": "2026-11-14T16:00:18.026Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -539,7 +539,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.md",
-      "headings": "dynamic-code • file-path-from-request • get-mutates-state • hardcoded-credentials • insecure-cookie • mass-assignment • object-query-injection • open-redirect • pii-in-logs • sfra-post-without-csrf • sfra-replace-drops-middleware • sg-post-without-csrf • weak-crypto",
+      "headings": "csrf-allowlist • dynamic-code • file-path-from-request • get-mutates-state • hardcoded-credentials • insecure-cookie • mass-assignment • object-query-injection • ocapi-broad-access • ocapi-demo-client-id • open-redirect • pii-in-logs • preference-secret-value • secret-attribute-not-password • service-communication-log • service-credential-password • service-insecure-url • sfra-post-without-csrf • sfra-replace-drops-middleware • sg-post-without-csrf • weak-crypto",
       "preview": "Reference for the rules that b2c security scan runs on B2C Commerce cartridge code, with examples and fixes for each."
     },
     {

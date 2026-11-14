@@ -18,7 +18,10 @@ import {applyBaseline, fingerprintFinding, type SecurityBaseline} from './baseli
 import type {ScriptRule} from './rule.js';
 import {SCRIPT_RULES} from './rules/index.js';
 import {SECURITY_SETTINGS_KEY} from './script/project.js';
-import {runScriptRules} from './script/runner.js';
+import {runScriptRules, type ScriptComment, type ScriptRuleReport} from './script/runner.js';
+import {METADATA_RULES} from './metadata/rules/index.js';
+import {metadataKindOfFile, runMetadataRules} from './metadata/run.js';
+import type {MetadataFileKind, MetadataRule} from './metadata/types.js';
 import {findSuppression, parseSuppressions} from './suppressions.js';
 import {isAtLeastSeverity, type SecurityFinding, type SecurityRuleInfo, type SecuritySeverity} from './types.js';
 
@@ -93,21 +96,75 @@ export interface SecurityScanResult {
   indexedEndpoints: number;
 }
 
+/** A built-in rule of either analyzer. */
+export type SecurityRule = MetadataRule | ScriptRule;
+
+/** Every built-in rule, script rules first. */
+export const SECURITY_RULES: readonly SecurityRule[] = Object.freeze([...SCRIPT_RULES, ...METADATA_RULES]);
+
 /** Every built-in rule's metadata. */
 export function listSecurityRules(): SecurityRuleInfo[] {
-  return SCRIPT_RULES.map((r) => r.meta.b2c);
+  return SECURITY_RULES.map((r) => r.meta.b2c);
 }
 
 /** Resolves the rules to run from include/exclude lists, rejecting unknown IDs. */
-export function selectSecurityRules(include?: readonly string[], exclude?: readonly string[]): ScriptRule[] {
-  const known = new Set(SCRIPT_RULES.map((r) => r.meta.b2c.id));
+export function selectSecurityRules(include?: readonly string[], exclude?: readonly string[]): SecurityRule[] {
+  const known = new Set(SECURITY_RULES.map((r) => r.meta.b2c.id));
   const unknown = [...(include ?? []), ...(exclude ?? [])].filter((id) => !known.has(id));
   if (unknown.length > 0) {
     throw new Error(`Unknown security rule ID(s): ${unknown.join(', ')}. Known rules: ${[...known].sort().join(', ')}`);
   }
-  return SCRIPT_RULES.filter(
+  return SECURITY_RULES.filter(
     (r) => (!include || include.length === 0 || include.includes(r.meta.b2c.id)) && !exclude?.includes(r.meta.b2c.id),
   );
+}
+
+function isScriptRule(rule: SecurityRule): rule is ScriptRule {
+  return rule.meta.b2c.analyzer === 'script';
+}
+
+function isMetadataRule(rule: SecurityRule): rule is MetadataRule {
+  return rule.meta.b2c.analyzer === 'metadata';
+}
+
+/**
+ * Collects metadata files to scan below the given paths: services.xml,
+ * preferences.xml, metadata (attribute definitions), the CSRF allowlist, and
+ * OCAPI settings JSON, wherever they are (site archives, site_template
+ * folders). Files are recognized by their XML root element or OCAPI settings
+ * file name.
+ */
+export function collectMetadataFiles(paths: readonly string[]): Array<{file: string; kind: MetadataFileKind}> {
+  const found = new Map<string, MetadataFileKind>();
+  const visit = (file: string) => {
+    const kind = metadataKindOfFile(file);
+    if (kind) found.set(file, kind);
+  };
+  const walkAll = (dir: string) => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, {withFileTypes: true});
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (DISCOVERY_IGNORED_DIRECTORIES.has(entry.name) || entry.name === 'static') continue;
+        walkAll(full);
+      } else if (entry.isFile()) {
+        visit(full);
+      }
+    }
+  };
+  for (const p of paths) {
+    const abs = path.resolve(p);
+    const stat = fs.statSync(abs, {throwIfNoEntry: false});
+    if (!stat) throw new Error(`Path not found: ${p}`);
+    if (stat.isFile()) visit(abs);
+    else walkAll(abs);
+  }
+  return [...found].sort(([a], [b]) => a.localeCompare(b)).map(([file, kind]) => ({file, kind}));
 }
 
 /**
@@ -171,8 +228,11 @@ function* walk(dir: string): Generator<string> {
 export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanResult {
   const root = path.resolve(options.root ?? process.cwd());
   const rules = selectSecurityRules(options.rules, options.excludeRules);
+  const scriptRules = rules.filter(isScriptRule);
+  const metadataRules = rules.filter(isMetadataRule);
   const paths = options.paths && options.paths.length > 0 ? options.paths : [root];
-  const files = collectSecurityScanFiles(paths);
+  const files = scriptRules.length > 0 ? collectSecurityScanFiles(paths) : [];
+  const metadataFiles = metadataRules.length > 0 ? collectMetadataFiles(paths) : [];
   const projectIndex =
     options.projectIndex ??
     buildProjectIndex({
@@ -185,11 +245,11 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
   const findings: SecurityFinding[] = [];
   const errors: SecurityScanError[] = [];
   let hiddenReferenceFindings = 0;
+  const relativeTo = (file: string) => path.relative(root, file).split(path.sep).join('/');
 
   for (const file of files) {
-    const relative = path.relative(root, file).split(path.sep).join('/');
     const text = fs.readFileSync(file, 'utf8');
-    const fileFindings = scanSecurityText(text, relative, rules, errors, {filename: file, settings});
+    const fileFindings = scanSecurityText(text, relativeTo(file), scriptRules, errors, {filename: file, settings});
     const owner = resolver.ownerOf(file)?.name;
     if (owner && REFERENCE_CARTRIDGES.has(owner)) {
       if (options.excludeReferenceCartridges) {
@@ -201,13 +261,18 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
     findings.push(...fileFindings);
   }
 
+  for (const {file, kind} of metadataFiles) {
+    const text = fs.readFileSync(file, 'utf8');
+    findings.push(...scanMetadataText(text, relativeTo(file), kind, metadataRules, errors));
+  }
+
   let result = findings;
   if (options.minSeverity) result = result.filter((f) => isAtLeastSeverity(f.severity, options.minSeverity!));
   if (options.baseline) result = applyBaseline(result, options.baseline);
 
   return {
     root,
-    filesScanned: files.length,
+    filesScanned: files.length + metadataFiles.length,
     findings: result,
     errors,
     rules: rules.map((r) => r.meta.b2c),
@@ -231,21 +296,52 @@ export interface ScanSecurityTextOptions {
 export function scanSecurityText(
   text: string,
   file: string,
-  rules: readonly ScriptRule[] = SCRIPT_RULES,
+  rules: readonly SecurityRule[] = SCRIPT_RULES,
   errors?: SecurityScanError[],
   options: ScanSecurityTextOptions = {},
 ): SecurityFinding[] {
-  const run = runScriptRules(text, options.filename ?? file, rules, options.settings);
+  const scriptRules = rules.filter(isScriptRule);
+  const run = runScriptRules(text, options.filename ?? file, scriptRules, options.settings);
   if (run.parseError) {
     errors?.push({file, message: `Could not parse: ${run.parseError.message}`});
     return [];
   }
-  const suppressions = parseSuppressions(run.comments);
+  return toFindings(run.reports, run.comments, text, file, scriptRules);
+}
+
+/**
+ * Scans one metadata file's text. `kind` is the metadata file kind (see
+ * {@link collectMetadataFiles}); `file` is the path recorded in findings.
+ */
+export function scanMetadataText(
+  text: string,
+  file: string,
+  kind: MetadataFileKind,
+  rules: readonly SecurityRule[] = METADATA_RULES,
+  errors?: SecurityScanError[],
+): SecurityFinding[] {
+  const metadataRules = rules.filter(isMetadataRule);
+  const run = runMetadataRules(text, file, kind, metadataRules);
+  if (run.parseError) {
+    errors?.push({file, message: `Could not parse: ${run.parseError.message}`});
+    return [];
+  }
+  return toFindings(run.reports, run.comments, text, file, metadataRules);
+}
+
+function toFindings(
+  reports: readonly ScriptRuleReport[],
+  comments: readonly ScriptComment[],
+  text: string,
+  file: string,
+  rules: readonly SecurityRule[],
+): SecurityFinding[] {
+  const suppressions = parseSuppressions(comments);
   const lines = text.split(/\r?\n/);
   const byId = new Map(rules.map((r) => [r.meta.b2c.id, r.meta.b2c]));
   const occurrences = new Map<string, number>();
 
-  return run.reports.map((report) => {
+  return reports.map((report) => {
     const info = byId.get(report.ruleId)!;
     const snippet = (lines[report.line - 1] ?? '').trim();
     const key = `${report.ruleId}\0${snippet}`;

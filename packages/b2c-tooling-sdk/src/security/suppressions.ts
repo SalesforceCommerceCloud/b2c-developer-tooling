@@ -20,7 +20,7 @@ const PLUGIN_PREFIX = 'b2c-security/';
  * Parses `b2c-dx-disable-next-line` and `b2c-dx-disable-line` comments.
  *
  * A suppression must name one or more rule IDs (comma- or space-separated);
- * a reason after `--` is optional. IDs may carry the `b2c-security/` prefix.
+ * a reason after `--` (or ` - `, for XML comments, which can't contain `--`) is optional. IDs may carry the `b2c-security/` prefix.
  *
  * @example
  * ```js
@@ -35,7 +35,8 @@ export function parseSuppressions(
   for (const comment of comments) {
     const match = DIRECTIVE.exec(comment.value);
     if (!match) continue;
-    const [body, ...reasonParts] = match[2].split(/(?:^|\s)--(?:\s|$)/);
+    // `--` separates the reason in JavaScript; XML comments can't contain `--`, so a spaced single `-` works too.
+    const [body, ...reasonParts] = match[2].split(/(?:^|\s)--?(?:\s|$)/);
     const ids = body
       .split(/[\s,]+/)
       .map((s) => s.trim())

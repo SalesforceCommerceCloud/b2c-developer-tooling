@@ -6,23 +6,41 @@ description: Reference for the rules that b2c security scan runs on B2C Commerce
 
 The rules that [`b2c security scan`](../cli/security.md#b2c-security-scan) runs. List them with `b2c security rules`. To suppress a finding, add `// b2c-dx-disable-next-line <rule-id>` on the line before it.
 
+Most rules check cartridge JavaScript. Metadata rules (`csrf-allowlist`, `ocapi-*`, `preference-secret-value`, `secret-attribute-not-password`, `service-*`) check site import/export data wherever it is in the project, such as a `site_template` folder: `services.xml`, `preferences.xml`, attribute definitions (`meta/*.xml`), `csrf-whitelists.xml`, and OCAPI settings (`ocapi-settings/wapi_*_config.json`). Suppress a metadata finding with an XML comment, `<!-- b2c-dx-disable-next-line <rule-id> - reason -->` (XML comments can't contain `--`, so separate the optional reason with a single hyphen); JSON has no comments, so use the baseline.
+
 Route rules understand SFRA (`server.get`/`post`/`use`, and `server.extend` with `append`, `prepend`, and `replace` across the cartridge path) and SiteGenesis (`guard.ensure` filters). The scanner builds a project index of every cartridge under the scan root, so a rule can tell, for example, that an overlay cartridge prepends a CSRF check to a base route.
 
-| Rule                                                              | Severity | Finds                                                    |
-| ----------------------------------------------------------------- | -------- | -------------------------------------------------------- |
-| [`dynamic-code`](#dynamic-code)                                   | high     | `eval`, `new Function`, `require` with a computed path   |
-| [`file-path-from-request`](#file-path-from-request)               | high     | File paths and upload names chosen by the client         |
-| [`get-mutates-state`](#get-mutates-state)                         | medium   | GET routes that store request input in a transaction     |
-| [`hardcoded-credentials`](#hardcoded-credentials)                 | high     | Passwords, API keys, and auth headers written into code  |
-| [`insecure-cookie`](#insecure-cookie)                             | low      | Cookies without the Secure and HttpOnly flags            |
-| [`mass-assignment`](#mass-assignment)                             | high     | Request fields copied into persistent objects by key     |
-| [`object-query-injection`](#object-query-injection)               | high     | Object query strings built by concatenation              |
-| [`open-redirect`](#open-redirect)                                 | medium   | Redirects to a host chosen through the request           |
-| [`pii-in-logs`](#pii-in-logs)                                     | medium   | Personal or payment data written to logs                 |
-| [`sfra-post-without-csrf`](#sfra-post-without-csrf)               | high     | SFRA POST routes without a CSRF token check              |
-| [`sfra-replace-drops-middleware`](#sfra-replace-drops-middleware) | high     | `server.replace()` dropping security middleware          |
-| [`sg-post-without-csrf`](#sg-post-without-csrf)                   | high     | SiteGenesis POST actions without the `csrf` filter       |
-| [`weak-crypto`](#weak-crypto)                                     | medium   | `dw.crypto` Weak\* classes, MD5/SHA-1, DES/RC4, ECB mode |
+| Rule                                                              | Severity | Finds                                                                  |
+| ----------------------------------------------------------------- | -------- | ---------------------------------------------------------------------- |
+| [`csrf-allowlist`](#csrf-allowlist)                               | medium   | Business Manager CSRF exemptions (`csrf-whitelists.xml`)               |
+| [`dynamic-code`](#dynamic-code)                                   | high     | `eval`, `new Function`, `require` with a computed path                 |
+| [`file-path-from-request`](#file-path-from-request)               | high     | File paths and upload names chosen by the client                       |
+| [`get-mutates-state`](#get-mutates-state)                         | medium   | GET routes that store request input in a transaction                   |
+| [`hardcoded-credentials`](#hardcoded-credentials)                 | high     | Passwords, API keys, and auth headers written into code                |
+| [`insecure-cookie`](#insecure-cookie)                             | low      | Cookies without the Secure and HttpOnly flags                          |
+| [`mass-assignment`](#mass-assignment)                             | high     | Request fields copied into persistent objects by key                   |
+| [`object-query-injection`](#object-query-injection)               | high     | Object query strings built by concatenation                            |
+| [`ocapi-broad-access`](#ocapi-broad-access)                       | medium   | OCAPI clients granted every resource, or any/`http://` origins         |
+| [`ocapi-demo-client-id`](#ocapi-demo-client-id)                   | high     | OCAPI settings for the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` |
+| [`open-redirect`](#open-redirect)                                 | medium   | Redirects to a host chosen through the request                         |
+| [`pii-in-logs`](#pii-in-logs)                                     | medium   | Personal or payment data written to logs                               |
+| [`preference-secret-value`](#preference-secret-value)             | high     | Credential values in `preferences.xml`                                 |
+| [`secret-attribute-not-password`](#secret-attribute-not-password) | medium   | Secret-named attributes that aren't the password type                  |
+| [`service-communication-log`](#service-communication-log)         | medium   | Services that log full request and response bodies                     |
+| [`service-credential-password`](#service-credential-password)     | high     | Plaintext passwords in `services.xml`                                  |
+| [`service-insecure-url`](#service-insecure-url)                   | medium   | Service credentials with `http://` URLs                                |
+| [`sfra-post-without-csrf`](#sfra-post-without-csrf)               | high     | SFRA POST routes without a CSRF token check                            |
+| [`sfra-replace-drops-middleware`](#sfra-replace-drops-middleware) | high     | `server.replace()` dropping security middleware                        |
+| [`sg-post-without-csrf`](#sg-post-without-csrf)                   | high     | SiteGenesis POST actions without the `csrf` filter                     |
+| [`weak-crypto`](#weak-crypto)                                     | medium   | `dw.crypto` Weak\* classes, MD5/SHA-1, DES/RC4, ECB mode               |
+
+## csrf-allowlist
+
+**Severity:** medium · **Confidence:** medium · **CWE:** CWE-352
+
+Finds entries in the Business Manager CSRF allowlist (`csrf-whitelists.xml`) that exempt requests from CSRF protection: every pipeline or controller entry, worded more strongly when no `start-node` is given (all start nodes are exempt), and user agents exempt on production or on every instance (legacy entries directly under `<user-agents>`). Development-only user agents are not reported.
+
+Remove entries you no longer need, exempt a single start node rather than a whole pipeline, and avoid user-agent exemptions on production: a client can send any user agent.
 
 ## dynamic-code
 
@@ -160,6 +178,28 @@ CustomObjectMgr.queryCustomObject('Subscription', "custom.email = '" + email + "
 CustomObjectMgr.queryCustomObject('Subscription', 'custom.email = {0}', email);
 ```
 
+## ocapi-broad-access
+
+**Severity:** medium · **Confidence:** medium · **CWE:** CWE-284, CWE-942
+
+Finds OCAPI settings (Shop or Data API) that grant a client every resource (`"resource_id": "/**"` or `"/*"`), and Shop API clients whose `allowed_origins` include `"*"` or a plain `http://` origin other than localhost.
+
+```jsonc
+// Finding
+{"client_id": "...", "allowed_origins": ["*"], "resources": [{"resource_id": "/**", "methods": ["get", "post", "delete"]}]}
+
+// Fix: list what the client needs and your own HTTPS origins
+{"client_id": "...", "allowed_origins": ["https://www.example.com"], "resources": [{"resource_id": "/baskets/*", "methods": ["get", "patch"]}]}
+```
+
+## ocapi-demo-client-id
+
+**Severity:** high · **Confidence:** high · **CWE:** CWE-1188, CWE-798
+
+Finds OCAPI settings that grant anything to the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`. That ID appears in OCAPI documentation, tutorials, and sample site data (including SiteGenesis), so settings copied from them grant access to a client everyone knows about. Any permission granted to it is reported.
+
+Create a dedicated API client in Account Manager for each integration, grant it only the resources it needs, and remove the demo client ID from OCAPI settings (**Administration > Site Development > Open Commerce API Settings**) on every instance, not only in your site data.
+
 ## open-redirect
 
 **Severity:** medium · **Confidence:** medium · **CWE:** CWE-601
@@ -188,6 +228,52 @@ Logger.info('Customer login {0}', customer.profile.email);
 // Fix: log an identifier
 Logger.info('Customer login {0}', customer.profile.customerNo);
 ```
+
+## preference-secret-value
+
+**Severity:** high · **Confidence:** medium · **CWE:** CWE-798, CWE-312
+
+Finds site and global preference values in `preferences.xml` that look like credentials: a preference whose ID ends in `password`, `secret`, `apiKey`, `token`, `privateKey`, and similar, with a value that isn't empty, masked, a placeholder, or a dotted ID. Site data in source control is read by everyone with repository access and imported into every instance.
+
+Remove the value from the site data and set it per instance in Business Manager, using a password-type preference or a service credential. Rotate any credential that was committed.
+
+## secret-attribute-not-password
+
+**Severity:** medium · **Confidence:** medium · **CWE:** CWE-312
+
+Finds custom attribute definitions (site preferences, system object extensions, custom object types) whose ID names a secret (`paymentApiKey`, `erpClientSecret`) but whose `<type>` is not `password`. Business Manager shows other types in clear text and site exports include their values unencrypted.
+
+```xml
+<!-- Finding -->
+<attribute-definition attribute-id="paymentApiKey">
+    <type>string</type>
+</attribute-definition>
+
+<!-- Fix -->
+<attribute-definition attribute-id="paymentApiKey">
+    <type>password</type>
+</attribute-definition>
+```
+
+## service-communication-log
+
+**Severity:** medium · **Confidence:** medium · **CWE:** CWE-532
+
+Finds services in `services.xml` with `<comm-log-enabled>true</comm-log-enabled>`, which writes full request and response bodies to the service log. Bodies often include personal data, tokens, or payment details. Enable communication logging only while debugging on a sandbox, and implement `filterLogMessage` in the service callback to mask sensitive fields when you need it.
+
+## service-credential-password
+
+**Severity:** high · **Confidence:** high · **CWE:** CWE-256, CWE-798
+
+Finds service credentials in `services.xml` with a plaintext `<password>` (not `encrypted="true"` or `masked="true"`), and credential URLs with a user name and password embedded (`https://user:pass@host`).
+
+Commit `services.xml` without passwords and set them per instance in Business Manager (**Administration > Operations > Services > Credentials**), or keep encrypted exports only. Rotate any password that was committed.
+
+## service-insecure-url
+
+**Severity:** medium · **Confidence:** high · **CWE:** CWE-319
+
+Finds service credentials in `services.xml` whose `<url>` uses plain `http://` (other than localhost), so requests, responses, and credentials travel unencrypted. Use the service's `https://` endpoint.
 
 ## sfra-post-without-csrf
 

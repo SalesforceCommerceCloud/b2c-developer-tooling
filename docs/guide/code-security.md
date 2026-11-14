@@ -12,6 +12,7 @@ Code security scanning is a preview. Rules, output fields, and flags may change 
 
 - **CSRF:** SFRA and SiteGenesis POST routes without a CSRF token check, GET routes that change data, and `server.replace()` overrides that drop the CSRF, login, HTTPS, or method checks of the route they replace.
 - **Injection:** object query strings built by concatenation, file paths and upload names chosen by the client, request fields copied into persistent objects by key, and code built from strings at runtime.
+- **Site data and settings:** OCAPI settings that use the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` or grant every resource, plaintext service passwords and `http://` service URLs, communication logging, credentials in preferences, secret attributes that aren't the password type, and Business Manager CSRF exemptions.
 - **Redirects, secrets, and data handling:** open redirects, hardcoded credentials, weak `dw.crypto` usage, cookies without Secure and HttpOnly, and personal data in logs.
 
 The scan runs locally against your working tree, needs no instance or credentials, and takes well under a second for a typical storefront. See [Security Rules](./security-rules.md) for what each rule finds and how to fix it.
@@ -26,7 +27,7 @@ From the root of your project:
 b2c security scan
 ```
 
-The scanner finds the cartridges under the current directory (folders with a `.project` file) and checks their server-side `.js` and `.ds` scripts. Browser code under `cartridge/client/` and `cartridge/static/` is skipped. Findings are grouped by file:
+The scanner finds the cartridges under the current directory (folders with a `.project` file) and checks their server-side `.js` and `.ds` scripts, and checks site import/export data it finds (such as a `site_template` folder). Browser code under `cartridge/client/` and `cartridge/static/` is skipped. Findings are grouped by file:
 
 ```text
 cartridges/app_custom/cartridge/controllers/Account.js

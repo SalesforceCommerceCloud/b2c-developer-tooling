@@ -37,7 +37,7 @@ export type SecurityCategory =
   | 'xss';
 
 /** The analyzer that runs a rule. */
-export type SecurityAnalyzer = 'script';
+export type SecurityAnalyzer = 'metadata' | 'script';
 
 /** Descriptive metadata every security rule carries. */
 export interface SecurityRuleInfo {

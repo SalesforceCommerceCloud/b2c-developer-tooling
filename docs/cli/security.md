@@ -12,7 +12,7 @@ Scan cartridge code for security problems such as open redirects, object query i
 
 ## b2c security scan
 
-Scan the server-side scripts in your cartridges. Directories are searched for cartridges (folders with a `.project` file); inside them, `.js` and `.ds` files are scanned except under `cartridge/client/`, `cartridge/static/`, and `node_modules/`, and except minified files. Files you name directly are always scanned.
+Scan the server-side scripts in your cartridges and the site data in your project. Directories are searched for cartridges (folders with a `.project` file); inside them, `.js` and `.ds` files are scanned except under `cartridge/client/`, `cartridge/static/`, and `node_modules/`, and except minified files. Directories are also searched for site import/export data, such as a `site_template` folder: `services.xml`, `preferences.xml`, attribute definitions, `csrf-whitelists.xml`, and OCAPI settings (`ocapi-settings/wapi_*_config.json`). Files you name directly are always scanned.
 
 ### Usage
 
@@ -99,7 +99,12 @@ res.redirect(target);
 res.redirect(target); // b2c-dx-disable-line open-redirect
 ```
 
-A suppression must name the rule; several rules can be listed, separated by commas or spaces.
+A suppression must name the rule; several rules can be listed, separated by commas or spaces. In XML site data, use an XML comment and separate the reason with a single hyphen, because XML comments can't contain `--`:
+
+```xml
+<!-- b2c-dx-disable-next-line service-communication-log - sandbox-only service -->
+<comm-log-enabled>true</comm-log-enabled>
+```
 
 ### Notes
 

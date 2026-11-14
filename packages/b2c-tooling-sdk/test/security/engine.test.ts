@@ -9,11 +9,13 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import {
   applyBaseline,
+  collectMetadataFiles,
   collectSecurityScanFiles,
   createBaseline,
   listSecurityRules,
   parseBaseline,
   parseSuppressions,
+  scanMetadataText,
   scanSecurity,
   scanSecurityText,
   selectSecurityRules,
@@ -125,6 +127,74 @@ describe('security engine', () => {
         'runs[0].results.length',
         1,
       );
+    });
+  });
+
+  describe('metadata', () => {
+    let dir: string;
+    const write = (rel: string, text: string) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), {recursive: true});
+      fs.writeFileSync(path.join(dir, rel), text);
+    };
+    const services = (password: string, comment = '') =>
+      `<?xml version="1.0"?>\n<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">\n  <service-credential service-credential-id="c">\n${comment}    <password>${password}</password>\n  </service-credential>\n</services>\n`;
+
+    beforeEach(() => {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-security-metadata-'));
+    });
+
+    afterEach(() => {
+      fs.rmSync(dir, {recursive: true, force: true});
+    });
+
+    it('finds metadata files by root element and OCAPI settings name, skipping static, dependencies, and other XML', () => {
+      write('site_template/services.xml', services('x'));
+      write('site_template/sites/RefArch/ocapi-settings/wapi_shop_config.json', '{"clients": []}');
+      write('site_template/catalogs/catalog.xml', '<catalog xmlns="x"/>');
+      write('site_template/static/services.xml', services('x'));
+      write('node_modules/pkg/services.xml', services('x'));
+      write(
+        'site_template/meta/system-objecttype-extensions.xml',
+        '<?xml version="1.0"?>\n<!-- c -->\n<metadata xmlns="x"/>',
+      );
+      const found = collectMetadataFiles([dir]).map(
+        (f) => `${f.kind}:${path.relative(dir, f.file).split(path.sep).join('/')}`,
+      );
+      expect(found).to.deep.equal([
+        'metadata:site_template/meta/system-objecttype-extensions.xml',
+        'services:site_template/services.xml',
+        'ocapi-settings:site_template/sites/RefArch/ocapi-settings/wapi_shop_config.json',
+      ]);
+    });
+
+    it('scans metadata as part of scanSecurity and honors XML suppression comments', () => {
+      write(
+        'site_template/services.xml',
+        services(
+          'S3cr3tPassw0rd!',
+          '    <!-- b2c-dx-disable-next-line service-credential-password - sandbox only -->\n',
+        ),
+      );
+      write('site_template/other/services.xml', services('An0therPassw0rd!'));
+      const result = scanSecurity({root: dir, rules: ['service-credential-password']});
+      expect(result.filesScanned).to.equal(2);
+      expect(result.findings.map((f) => [f.location.file, Boolean(f.suppression)])).to.deep.equal([
+        ['site_template/other/services.xml', false],
+        ['site_template/services.xml', true],
+      ]);
+      expect(result.findings[1].suppression).to.deep.equal({kind: 'inline', reason: 'sandbox only'});
+    });
+
+    it('records malformed metadata as a parse error', () => {
+      const errors: {file: string; message: string}[] = [];
+      expect(
+        scanMetadataText('<services><oops></services>', 'services.xml', 'services', undefined, errors),
+      ).to.deep.equal([]);
+      expect(errors[0].message).to.match(/^Could not parse/);
+      expect(scanMetadataText('{not json', 'wapi_shop_config.json', 'ocapi-settings', undefined, errors)).to.deep.equal(
+        [],
+      );
+      expect(errors).to.have.length(2);
     });
   });
 

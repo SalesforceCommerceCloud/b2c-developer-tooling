@@ -1,0 +1,13 @@
+{
+  "_v": "23.2",
+  "clients": [
+    {
+      "client_id": "my-storefront-client-id-1234567",
+      "resources": [{"resource_id": "/products/*", "methods": ["get"], "read_attributes": "(**)", "write_attributes": ""}]
+    },
+    {
+      "client_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "resources": [{"resource_id": "/baskets", "methods": ["post"], "read_attributes": "(**)", "write_attributes": "(**)"}]
+    }
+  ]
+}

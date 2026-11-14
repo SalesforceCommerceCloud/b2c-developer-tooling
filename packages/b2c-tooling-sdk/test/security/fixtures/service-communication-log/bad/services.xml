@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+    <service service-id="payment.http">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>payment</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled> <!-- expect -->
+        <credential-id>payment.http.cred</credential-id>
+    </service>
+</services>

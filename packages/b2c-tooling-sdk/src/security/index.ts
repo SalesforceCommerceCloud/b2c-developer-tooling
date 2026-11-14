@@ -24,13 +24,34 @@
 
 export {
   REFERENCE_CARTRIDGES,
+  SECURITY_RULES,
+  collectMetadataFiles,
   collectSecurityScanFiles,
   listSecurityRules,
   scanSecurity,
+  scanMetadataText,
   scanSecurityText,
   selectSecurityRules,
 } from './engine.js';
-export type {ScanSecurityTextOptions, SecurityScanError, SecurityScanOptions, SecurityScanResult} from './engine.js';
+export type {
+  ScanSecurityTextOptions,
+  SecurityRule,
+  SecurityScanError,
+  SecurityScanOptions,
+  SecurityScanResult,
+} from './engine.js';
+
+export {METADATA_RULES} from './metadata/rules/index.js';
+export {DEMO_CLIENT_ID} from './metadata/rules/ocapi.js';
+export {defineMetadataRule} from './metadata/types.js';
+export type {
+  MetadataDocument,
+  MetadataFileKind,
+  MetadataReport,
+  MetadataRule,
+  MetadataRuleDefinition,
+} from './metadata/types.js';
+export {detectMetadataKind} from './metadata/run.js';
 
 export {SECURITY_SETTINGS_KEY} from './script/project.js';
 export type {SecurityRuleSettings} from './script/project.js';

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<preferences xmlns="http://www.demandware.com/xml/impex/preferences/2007-03-31">
+    <custom-preferences>
+        <all-instances>
+            <preference preference-id="paymentApiKey">sk_live_51HxQ2eKz8Y3abc</preference> <!-- expect -->
+            <preference preference-id="enableNewsletter">true</preference>
+        </all-instances>
+        <production>
+            <preference preference-id="erpClientSecret">a9F3kL0pQ7zX2mN8</preference> <!-- expect -->
+        </production>
+    </custom-preferences>
+</preferences>

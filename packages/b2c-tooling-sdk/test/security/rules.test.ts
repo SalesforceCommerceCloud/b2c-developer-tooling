@@ -28,7 +28,15 @@ import {fileURLToPath} from 'node:url';
 import {build} from 'esbuild';
 import {Linter} from 'eslint';
 import {buildProjectIndex, type ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
-import {SCRIPT_RULES, SECURITY_SETTINGS_KEY, runScriptRules} from '@salesforce/b2c-tooling-sdk/security';
+import {
+  METADATA_RULES,
+  SCRIPT_RULES,
+  SECURITY_RULES,
+  SECURITY_SETTINGS_KEY,
+  detectMetadataKind,
+  runScriptRules,
+  scanMetadataText,
+} from '@salesforce/b2c-tooling-sdk/security';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sdkRoot = path.resolve(here, '..', '..');
@@ -49,12 +57,32 @@ function listJsFiles(dir: string): string[] {
   return listFiles(dir, (name) => name.endsWith('.js'));
 }
 
+/**
+ * Lines a fixture expects findings on: `// expect` at the end of a JavaScript
+ * line, `<!-- expect -->` at the end of an XML line, and for JSON (which has
+ * no comments) the line numbers listed in a sidecar `<file>.expect`.
+ */
 function expectedLines(file: string): number[] {
+  if (file.endsWith('.json')) {
+    const sidecar = `${file}.expect`;
+    if (!fs.existsSync(sidecar)) return [];
+    return fs
+      .readFileSync(sidecar, 'utf8')
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number)
+      .sort((a, b) => a - b);
+  }
+  const marker = file.endsWith('.xml') ? /<!-- expect -->\s*$/ : /\/\/ expect\s*$/;
   return fs
     .readFileSync(file, 'utf8')
     .split('\n')
-    .map((line, i) => (/\/\/ expect\s*$/.test(line) ? i + 1 : 0))
+    .map((line, i) => (marker.test(line) ? i + 1 : 0))
     .filter(Boolean);
+}
+
+function listMetadataFixtures(dir: string): string[] {
+  return listFiles(dir, (name) => name.endsWith('.xml') || name.endsWith('.json'));
 }
 
 function uniqueSorted(lines: number[]): number[] {
@@ -107,12 +135,12 @@ function eslintLines(id: string, file: string, index: ProjectIndex): number[] {
 describe('security rules', () => {
   it('every rule has an ID, fixtures with and without findings, and a docs section', () => {
     const docs = fs.readFileSync(docsPath, 'utf8');
-    for (const rule of SCRIPT_RULES) {
-      const {id} = rule.meta.b2c;
+    for (const rule of SECURITY_RULES) {
+      const {id, analyzer} = rule.meta.b2c;
       expect(id, 'rule IDs are kebab-case without slashes').to.match(/^[a-z][a-z\d]*(-[a-z\d]+)*$/);
       const dir = path.join(fixturesDir, id);
       expect(fs.existsSync(dir), `fixtures/${id}/`).to.equal(true);
-      const files = listJsFiles(dir);
+      const files = analyzer === 'metadata' ? listMetadataFixtures(dir) : listJsFiles(dir);
       expect(
         files.some((f) => expectedLines(f).length > 0),
         `${id} has a fixture with // expect markers`,
@@ -123,7 +151,8 @@ describe('security rules', () => {
       ).to.equal(true);
       expect(docs, `docs/guide/security-rules.md has a "## ${id}" section`).to.match(new RegExp(`^## ${id}$`, 'm'));
     }
-    expect(new Set(ruleIds).size, 'rule IDs are unique').to.equal(ruleIds.length);
+    const allIds = SECURITY_RULES.map((r) => r.meta.b2c.id);
+    expect(new Set(allIds).size, 'rule IDs are unique').to.equal(allIds.length);
   });
 
   for (const id of ruleIds) {
@@ -145,6 +174,25 @@ describe('security rules', () => {
       }
     });
   }
+
+  describe('metadata rules', () => {
+    for (const rule of METADATA_RULES) {
+      const {id} = rule.meta.b2c;
+      const dir = path.join(fixturesDir, id);
+      const files = fs.existsSync(dir) ? listMetadataFixtures(dir) : [];
+      for (const file of files) {
+        it(`${id}: ${path.relative(dir, file)} reports exactly the expected lines`, () => {
+          const text = fs.readFileSync(file, 'utf8');
+          const kind = detectMetadataKind(file, text.slice(0, 4096));
+          expect(kind, `${file} is recognized as a metadata file`).to.not.equal(undefined);
+          const errors: {file: string; message: string}[] = [];
+          const findings = scanMetadataText(text, file, kind!, [rule], errors);
+          expect(errors, 'parses').to.deep.equal([]);
+          expect(uniqueSorted(findings.map((f) => f.location.startLine))).to.deep.equal(expectedLines(file));
+        });
+      }
+    }
+  });
 
   describe('oxlint JS plugin', function () {
     this.timeout(120_000);
