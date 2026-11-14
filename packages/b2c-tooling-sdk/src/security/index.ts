@@ -23,13 +23,17 @@
  */
 
 export {
+  REFERENCE_CARTRIDGES,
   collectSecurityScanFiles,
   listSecurityRules,
   scanSecurity,
   scanSecurityText,
   selectSecurityRules,
 } from './engine.js';
-export type {SecurityScanError, SecurityScanOptions, SecurityScanResult} from './engine.js';
+export type {ScanSecurityTextOptions, SecurityScanError, SecurityScanOptions, SecurityScanResult} from './engine.js';
+
+export {SECURITY_SETTINGS_KEY} from './script/project.js';
+export type {SecurityRuleSettings} from './script/project.js';
 
 export {applyBaseline, createBaseline, fingerprintFinding, parseBaseline} from './baseline.js';
 export type {SecurityBaseline} from './baseline.js';

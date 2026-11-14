@@ -15,6 +15,7 @@ See [Project Setup](./project-setup) for optional assistant instructions and tea
 - [Script debugger](./script-debugger) - Inspect live cartridge code with your editor or AI assistant.
 - [IDE integration](./ide-integration) - Connect editor tooling and Script API IntelliSense.
 - [Commerce Apps](./commerce-apps) - Develop and deploy Commerce App Packages.
+- [Code Security](./code-security) - Scan cartridge code for CSRF gaps, injection, open redirects, and other security problems.
 - [Security](./security) - Review toolkit security practices and dependency protections.
 
 ## Deployment and automation

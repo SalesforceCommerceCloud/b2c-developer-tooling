@@ -140,6 +140,20 @@ describe('security', () => {
       expect(output()).to.include('Baseline: .b2c-security-baseline.json');
     });
 
+    it('tags reference cartridge findings and leaves them out with --exclude-reference-cartridges', async () => {
+      write('cartridges/app_storefront_base/.project', '<xml/>');
+      write('cartridges/app_storefront_base/cartridge/scripts/x.js', 'eval(x);');
+
+      const tagged = await (await createScan([], {'fail-on': 'none'})).run();
+      expect(tagged.summary.reference).to.equal(1);
+      expect(output()).to.include('[reference cartridge]');
+      expect(output()).to.include('1 of the open findings are in SFRA or SiteGenesis reference cartridges');
+
+      const excluded = await (await createScan([], {'fail-on': 'none', 'exclude-reference-cartridges': true})).run();
+      expect(excluded.summary.reference).to.equal(0);
+      expect(excluded.hiddenReferenceFindings).to.equal(1);
+    });
+
     it('errors for a missing --baseline file', async () => {
       const errorStub = await runExpectingError(await createScan([], {baseline: 'missing.json'}));
       expect(errorStub.calledWithMatch(/Baseline file not found/)).to.equal(true);

@@ -10,6 +10,12 @@ import hardcodedCredentials from './hardcoded-credentials.js';
 import insecureCookie from './insecure-cookie.js';
 import objectQueryInjection from './object-query-injection.js';
 import openRedirect from './open-redirect.js';
+import getMutatesState from './get-mutates-state.js';
+import massAssignment from './mass-assignment.js';
+import piiInLogs from './pii-in-logs.js';
+import sfraPostWithoutCsrf from './sfra-post-without-csrf.js';
+import sfraReplaceDropsMiddleware from './sfra-replace-drops-middleware.js';
+import sgPostWithoutCsrf from './sg-post-without-csrf.js';
 import weakCrypto from './weak-crypto.js';
 
 /**
@@ -20,9 +26,15 @@ import weakCrypto from './weak-crypto.js';
 export const SCRIPT_RULES: readonly ScriptRule[] = Object.freeze([
   dynamicCode,
   filePathFromRequest,
+  getMutatesState,
   hardcodedCredentials,
   insecureCookie,
+  massAssignment,
   objectQueryInjection,
   openRedirect,
+  piiInLogs,
+  sfraPostWithoutCsrf,
+  sfraReplaceDropsMiddleware,
+  sgPostWithoutCsrf,
   weakCrypto,
 ]);

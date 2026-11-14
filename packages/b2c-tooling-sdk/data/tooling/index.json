@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-14T04:52:55.942Z",
+  "generatedAt": "2026-11-14T05:15:40.902Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -233,7 +233,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.md",
-      "headings": "b2c security scan • Usage • Arguments • Flags • Examples • Output • Suppressing a finding • Notes • b2c security rules • Usage • b2c security baseline • Usage • Flags • Examples",
+      "headings": "b2c security scan • Usage • Arguments • Flags • Examples • Output • Reference cartridges • Cartridge path • Suppressing a finding • Notes • b2c security rules • Usage • b2c security baseline • Usage • Flags • Examples",
       "preview": "Scan B2C Commerce cartridge code for security problems with b2c security scan, list the rules, and baseline existing findings."
     },
     {
@@ -341,8 +341,17 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.md",
-      "headings": "Overview • Authentication • Quick Start: Deploy Cartridges • Actions Reference • Root Action • Setup • Run • Code Deploy • Data Import • MRT Deploy • Job Run • WebDAV Upload • Staging Environments (Two-Factor mTLS) • CLI Flags • GitHub Actions • Patterns • Data Import Pipeline • MRT Release Deploy • Using Outputs • Version Pinning • Upgrade from Action v1 • Plugins • Logging • CI Defaults",
+      "headings": "Overview • Authentication • Quick Start: Deploy Cartridges • Actions Reference • Root Action • Setup • Run • Code Deploy • Data Import • MRT Deploy • Job Run • WebDAV Upload • Staging Environments (Two-Factor mTLS) • CLI Flags • GitHub Actions • Patterns • Data Import Pipeline • MRT Release Deploy • Using Outputs • Security Scan • Version Pinning • Upgrade from Action v1 • Plugins • Logging • CI Defaults",
       "preview": "Automate B2C Commerce code deployment, data import, MRT bundles, and job execution with the official B2C CLI GitHub Actions for CI/CD pipelines."
+    },
+    {
+      "id": "guide-code-security",
+      "title": "Code Security",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.md",
+      "headings": "Run a scan • Triage findings • Routes, overlays, and the cartridge path • SFRA and SiteGenesis base cartridges • Adopt scanning on an existing codebase • Run it in CI • Use it with your AI assistant • How it works • Limitations",
+      "preview": "Find and fix security problems in B2C Commerce storefront code (SFRA, SiteGenesis, and custom cartridges) with b2c security scan, in the terminal, in CI with SARIF, and with your AI assistant."
     },
     {
       "id": "guide-commerce-apps",
@@ -521,17 +530,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.md",
-      "headings": "dynamic-code • file-path-from-request • hardcoded-credentials • insecure-cookie • object-query-injection • open-redirect • weak-crypto",
+      "headings": "dynamic-code • file-path-from-request • get-mutates-state • hardcoded-credentials • insecure-cookie • mass-assignment • object-query-injection • open-redirect • pii-in-logs • sfra-post-without-csrf • sfra-replace-drops-middleware • sg-post-without-csrf • weak-crypto",
       "preview": "Reference for the rules that b2c security scan runs on B2C Commerce cartridge code, with examples and fixes for each."
-    },
-    {
-      "id": "guide-security-scanning",
-      "title": "Security Scanning",
-      "category": "tooling",
-      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-scanning.html",
-      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-scanning.md",
-      "headings": "Run a scan • Use it on an existing codebase • Run it in CI • How the rules work",
-      "preview": "Find security problems in B2C Commerce cartridge code with the b2c security scanner, in the terminal, in CI with SARIF, or through ESLint and oxlint."
     },
     {
       "id": "guide-sfcc-ci-migration",

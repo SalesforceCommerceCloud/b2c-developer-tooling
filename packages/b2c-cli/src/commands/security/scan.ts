@@ -33,6 +33,8 @@ export interface SecurityScanResponse extends SecurityScanResult {
     open: number;
     suppressed: number;
     baselined: number;
+    /** Open findings inside SFRA and SiteGenesis reference cartridges. */
+    reference: number;
     bySeverity: Record<SecuritySeverity, number>;
     baselineFile?: string;
     failed: boolean;
@@ -82,6 +84,11 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
     baseline: Flags.string({
       description: 'Baseline file of accepted findings (defaults to .b2c-security-baseline.json when present)',
     }),
+    'exclude-reference-cartridges': Flags.boolean({
+      description:
+        'Leave out findings in SFRA and SiteGenesis reference cartridges (app_storefront_base, modules, app_storefront_controllers, ...)',
+      default: false,
+    }),
     'show-suppressed': Flags.boolean({
       description: 'Also list findings that are suppressed inline or in the baseline',
       default: false,
@@ -113,6 +120,8 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         excludeRules: flags['exclude-rule'],
         minSeverity: flags.severity as SecuritySeverity | undefined,
         baseline: baselineInfo.baseline,
+        cartridgePath: this.resolvedConfig.values.cartridges,
+        excludeReferenceCartridges: flags['exclude-reference-cartridges'],
       });
     } catch (error) {
       this.error((error as Error).message);
@@ -130,6 +139,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         open: open.length,
         suppressed: result.findings.filter((f) => f.suppression).length,
         baselined: result.findings.filter((f) => f.baselined && !f.suppression).length,
+        reference: open.filter((f) => f.referenceCartridge).length,
         bySeverity,
         baselineFile: baselineInfo.file,
         failed,
@@ -184,6 +194,22 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         },
       ),
     );
+    if (summary.reference > 0) {
+      ux.stdout(
+        t(
+          'commands.security.scan.reference',
+          '{{count}} of the open findings are in SFRA or SiteGenesis reference cartridges. They affect any storefront that deploys those cartridges; fix them with an overlay cartridge, or leave them out with --exclude-reference-cartridges.',
+          {count: summary.reference},
+        ),
+      );
+    }
+    if (response.hiddenReferenceFindings > 0) {
+      ux.stdout(
+        t('commands.security.scan.referenceHidden', '{{count}} finding(s) in reference cartridges were left out.', {
+          count: response.hiddenReferenceFindings,
+        }),
+      );
+    }
     if (summary.baselineFile) {
       ux.stdout(
         t('commands.security.scan.baselineUsed', 'Baseline: {{file}}', {
@@ -220,7 +246,12 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
       }
       const where = `${f.location.startLine}:${f.location.startColumn}`.padEnd(8);
       const severity = ux.colorize(SEVERITY_COLORS[f.severity], f.severity.padEnd(8));
-      const tag = f.suppression ? ' [suppressed]' : f.baselined ? ' [baselined]' : '';
+      const tags = [
+        f.suppression ? 'suppressed' : undefined,
+        f.baselined ? 'baselined' : undefined,
+        f.referenceCartridge ? 'reference cartridge' : undefined,
+      ].filter(Boolean);
+      const tag = tags.length > 0 ? ` [${tags.join(', ')}]` : '';
       ux.stdout(`  ${where}${severity}${f.ruleId.padEnd(24)} ${f.message}${tag}`);
     }
     if (findings.length > 0 && result.rules.length > 0) {

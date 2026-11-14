@@ -33,13 +33,13 @@ Store credentials as GitHub [repository secrets](https://docs.github.com/en/acti
 
 **Recommended secrets:**
 
-| Secret               | Description                |
-| -------------------- | -------------------------- |
-| `SFCC_CLIENT_ID`     | OAuth Client ID            |
-| `SFCC_CLIENT_SECRET` | OAuth Client Secret        |
-| `SFCC_USERNAME`      | WebDAV username            |
-| `SFCC_PASSWORD`      | WebDAV access key          |
-| `MRT_API_KEY`        | MRT API key                |
+| Secret               | Description         |
+| -------------------- | ------------------- |
+| `SFCC_CLIENT_ID`     | OAuth Client ID     |
+| `SFCC_CLIENT_SECRET` | OAuth Client Secret |
+| `SFCC_USERNAME`      | WebDAV username     |
+| `SFCC_PASSWORD`      | WebDAV access key   |
+| `MRT_API_KEY`        | MRT API key         |
 
 **Recommended variables:**
 
@@ -532,6 +532,21 @@ Actions exit with the CLI's exit code, so a failed job will fail the step. Use `
   if: steps.job.outputs.exit-code != '0'
   run: echo "Job failed with status ${{ fromJSON(steps.job.outputs.result).exitStatus.code }}"
 ```
+
+### Security Scan
+
+Scan cartridge code on every pull request and publish the results to GitHub code scanning. The scan needs no credentials:
+
+```yaml
+- uses: SalesforceCommerceCloud/b2c-developer-tooling/actions/setup@v2
+- run: b2c security scan --fail-on high --format sarif --output security.sarif
+- uses: github/codeql-action/upload-sarif@v4
+  if: always()
+  with:
+    sarif_file: security.sarif
+```
+
+The upload step needs `security-events: write` permission. See [Code Security](./code-security.md) for baselines and triage.
 
 ## Version Pinning
 

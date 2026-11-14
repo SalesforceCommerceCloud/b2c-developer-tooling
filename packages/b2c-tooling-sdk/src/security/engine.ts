@@ -6,10 +6,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import {createNodeFileSystemHost, discoverCartridges, DISCOVERY_IGNORED_DIRECTORIES} from '../cartridges/index.js';
+import {
+  CartridgeResolver,
+  createNodeFileSystemHost,
+  discoverCartridges,
+  DISCOVERY_IGNORED_DIRECTORIES,
+} from '../cartridges/index.js';
+import {buildProjectIndex} from '../project-index/build.js';
+import type {ProjectIndex} from '../project-index/types.js';
 import {applyBaseline, fingerprintFinding, type SecurityBaseline} from './baseline.js';
 import type {ScriptRule} from './rule.js';
 import {SCRIPT_RULES} from './rules/index.js';
+import {SECURITY_SETTINGS_KEY} from './script/project.js';
 import {runScriptRules} from './script/runner.js';
 import {findSuppression, parseSuppressions} from './suppressions.js';
 import {isAtLeastSeverity, type SecurityFinding, type SecurityRuleInfo, type SecuritySeverity} from './types.js';
@@ -22,6 +30,21 @@ const SCRIPT_EXTENSIONS = new Set(['.js', '.ds']);
  * than Script API code.
  */
 const NON_SERVER_SEGMENTS = ['/cartridge/static/', '/cartridge/client/', '/node_modules/'];
+
+/**
+ * Cartridges that ship with SFRA and SiteGenesis. Findings in them are real
+ * exposures for any storefront that deploys them (fix them with an overlay
+ * cartridge), so they are reported, tagged with `referenceCartridge`, and can
+ * be left out with `excludeReferenceCartridges`.
+ */
+export const REFERENCE_CARTRIDGES: ReadonlySet<string> = new Set([
+  'app_storefront_base',
+  'bm_app_storefront_base',
+  'modules',
+  'app_storefront_controllers',
+  'app_storefront_core',
+  'app_storefront_pipelines',
+]);
 
 /** Options for {@link scanSecurity}. */
 export interface SecurityScanOptions {
@@ -40,6 +63,12 @@ export interface SecurityScanOptions {
   minSeverity?: SecuritySeverity;
   /** Mark findings that match this baseline. */
   baseline?: SecurityBaseline;
+  /** Cartridge path order (names) used to compose routes across cartridges. */
+  cartridgePath?: string[];
+  /** Leave out findings inside SFRA and SiteGenesis reference cartridges ({@link REFERENCE_CARTRIDGES}). */
+  excludeReferenceCartridges?: boolean;
+  /** A project index to use instead of building one from `root` and `paths`. */
+  projectIndex?: ProjectIndex;
 }
 
 /** A file that could not be analyzed. */
@@ -58,6 +87,10 @@ export interface SecurityScanResult {
   errors: SecurityScanError[];
   /** The rules that ran. */
   rules: SecurityRuleInfo[];
+  /** Findings left out because they are inside reference cartridges (see `excludeReferenceCartridges`). */
+  hiddenReferenceFindings: number;
+  /** Endpoints in the project index the rules used. */
+  indexedEndpoints: number;
 }
 
 /** Every built-in rule's metadata. */
@@ -138,21 +171,57 @@ function* walk(dir: string): Generator<string> {
 export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanResult {
   const root = path.resolve(options.root ?? process.cwd());
   const rules = selectSecurityRules(options.rules, options.excludeRules);
-  const files = collectSecurityScanFiles(options.paths && options.paths.length > 0 ? options.paths : [root]);
+  const paths = options.paths && options.paths.length > 0 ? options.paths : [root];
+  const files = collectSecurityScanFiles(paths);
+  const projectIndex =
+    options.projectIndex ??
+    buildProjectIndex({
+      root,
+      paths: paths.filter((p) => path.resolve(p) !== root),
+      cartridgePath: options.cartridgePath,
+    });
+  const resolver = new CartridgeResolver(projectIndex.cartridges, createNodeFileSystemHost());
+  const settings = {[SECURITY_SETTINGS_KEY]: {projectIndex}};
   const findings: SecurityFinding[] = [];
   const errors: SecurityScanError[] = [];
+  let hiddenReferenceFindings = 0;
 
   for (const file of files) {
     const relative = path.relative(root, file).split(path.sep).join('/');
     const text = fs.readFileSync(file, 'utf8');
-    findings.push(...scanSecurityText(text, relative, rules, errors));
+    const fileFindings = scanSecurityText(text, relative, rules, errors, {filename: file, settings});
+    const owner = resolver.ownerOf(file)?.name;
+    if (owner && REFERENCE_CARTRIDGES.has(owner)) {
+      if (options.excludeReferenceCartridges) {
+        hiddenReferenceFindings += fileFindings.length;
+        continue;
+      }
+      for (const f of fileFindings) f.referenceCartridge = owner;
+    }
+    findings.push(...fileFindings);
   }
 
   let result = findings;
   if (options.minSeverity) result = result.filter((f) => isAtLeastSeverity(f.severity, options.minSeverity!));
   if (options.baseline) result = applyBaseline(result, options.baseline);
 
-  return {root, filesScanned: files.length, findings: result, errors, rules: rules.map((r) => r.meta.b2c)};
+  return {
+    root,
+    filesScanned: files.length,
+    findings: result,
+    errors,
+    rules: rules.map((r) => r.meta.b2c),
+    hiddenReferenceFindings,
+    indexedEndpoints: projectIndex.endpoints.length,
+  };
+}
+
+/** Options for {@link scanSecurityText}. */
+export interface ScanSecurityTextOptions {
+  /** The file name rules see (absolute path); defaults to `file`. Project-aware rules match it against the index. */
+  filename?: string;
+  /** Rule settings, for example `{b2cSecurity: {projectIndex}}`. */
+  settings?: Record<string, unknown>;
 }
 
 /**
@@ -164,8 +233,9 @@ export function scanSecurityText(
   file: string,
   rules: readonly ScriptRule[] = SCRIPT_RULES,
   errors?: SecurityScanError[],
+  options: ScanSecurityTextOptions = {},
 ): SecurityFinding[] {
-  const run = runScriptRules(text, file, rules);
+  const run = runScriptRules(text, options.filename ?? file, rules, options.settings);
   if (run.parseError) {
     errors?.push({file, message: `Could not parse: ${run.parseError.message}`});
     return [];

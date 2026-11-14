@@ -193,6 +193,49 @@ describe('security engine', () => {
       expect(scanSecurity({root: dir, baseline}).findings.every((f) => f.baselined)).to.equal(true);
     });
 
+    it('tags findings in SFRA and SiteGenesis reference cartridges, and can leave them out', () => {
+      fs.mkdirSync(path.join(dir, 'cartridges/app_storefront_base/cartridge/scripts'), {recursive: true});
+      fs.writeFileSync(path.join(dir, 'cartridges/app_storefront_base/.project'), '<xml/>');
+      fs.writeFileSync(path.join(dir, 'cartridges/app_storefront_base/cartridge/scripts/x.js'), 'eval(x);');
+
+      const all = scanSecurity({root: dir});
+      const reference = all.findings.filter((f) => f.referenceCartridge);
+      expect(reference.map((f) => f.referenceCartridge).sort()).to.deep.equal(['app_storefront_base', 'modules']);
+      expect(all.hiddenReferenceFindings).to.equal(0);
+
+      const excluded = scanSecurity({root: dir, excludeReferenceCartridges: true});
+      expect(excluded.findings.some((f) => f.referenceCartridge)).to.equal(false);
+      expect(excluded.hiddenReferenceFindings).to.equal(2);
+    });
+
+    it('passes the project index to route rules, composing overlays across scanned paths', () => {
+      const write = (rel: string, text: string) => {
+        fs.mkdirSync(path.dirname(path.join(dir, rel)), {recursive: true});
+        fs.writeFileSync(path.join(dir, rel), text);
+      };
+      write('cartridges/app_base/.project', '');
+      write(
+        'cartridges/app_base/cartridge/controllers/Account.js',
+        "var server = require('server'); var csrf = require('*/cartridge/scripts/middleware/csrf');\nserver.post('Save', csrf.validateAjaxRequest, function (req, res, next) { next(); });\nmodule.exports = server.exports();",
+      );
+      write('cartridges/app_custom/.project', '');
+      write(
+        'cartridges/app_custom/cartridge/controllers/Account.js',
+        "var server = require('server');\nserver.extend(module.superModule);\nserver.replace('Save', function (req, res, next) { next(); });\nmodule.exports = server.exports();",
+      );
+      // Scan only the overlay; the index still covers app_base under root, so the replace can be judged.
+      const result = scanSecurity({
+        root: dir,
+        paths: [path.join(dir, 'cartridges/app_custom')],
+        rules: ['sfra-replace-drops-middleware'],
+        cartridgePath: ['app_custom', 'app_base'],
+      });
+      expect(result.findings.map((f) => `${f.location.file}:${f.location.startLine}`)).to.deep.equal([
+        'cartridges/app_custom/cartridge/controllers/Account.js:3',
+      ]);
+      expect(result.findings[0].message).to.include('CSRF check (csrf.validateAjaxRequest)');
+    });
+
     it('throws for missing paths', () => {
       expect(() => scanSecurity({root: dir, paths: [path.join(dir, 'missing')]})).to.throw(/Path not found/);
     });

@@ -6,15 +6,23 @@ description: Reference for the rules that b2c security scan runs on B2C Commerce
 
 The rules that [`b2c security scan`](../cli/security.md#b2c-security-scan) runs. List them with `b2c security rules`. To suppress a finding, add `// b2c-dx-disable-next-line <rule-id>` on the line before it.
 
-| Rule                                                | Severity | Finds                                                    |
-| --------------------------------------------------- | -------- | -------------------------------------------------------- |
-| [`dynamic-code`](#dynamic-code)                     | high     | `eval`, `new Function`, `require` with a computed path   |
-| [`file-path-from-request`](#file-path-from-request) | high     | File paths and upload names chosen by the client         |
-| [`hardcoded-credentials`](#hardcoded-credentials)   | high     | Passwords, API keys, and auth headers written into code  |
-| [`insecure-cookie`](#insecure-cookie)               | low      | Cookies without the Secure and HttpOnly flags            |
-| [`object-query-injection`](#object-query-injection) | high     | Object query strings built by concatenation              |
-| [`open-redirect`](#open-redirect)                   | medium   | Redirects to a host chosen through the request           |
-| [`weak-crypto`](#weak-crypto)                       | medium   | `dw.crypto` Weak\* classes, MD5/SHA-1, DES/RC4, ECB mode |
+Route rules understand SFRA (`server.get`/`post`/`use`, and `server.extend` with `append`, `prepend`, and `replace` across the cartridge path) and SiteGenesis (`guard.ensure` filters). The scanner builds a project index of every cartridge under the scan root, so a rule can tell, for example, that an overlay cartridge prepends a CSRF check to a base route.
+
+| Rule                                                              | Severity | Finds                                                    |
+| ----------------------------------------------------------------- | -------- | -------------------------------------------------------- |
+| [`dynamic-code`](#dynamic-code)                                   | high     | `eval`, `new Function`, `require` with a computed path   |
+| [`file-path-from-request`](#file-path-from-request)               | high     | File paths and upload names chosen by the client         |
+| [`get-mutates-state`](#get-mutates-state)                         | medium   | GET routes that store request input in a transaction     |
+| [`hardcoded-credentials`](#hardcoded-credentials)                 | high     | Passwords, API keys, and auth headers written into code  |
+| [`insecure-cookie`](#insecure-cookie)                             | low      | Cookies without the Secure and HttpOnly flags            |
+| [`mass-assignment`](#mass-assignment)                             | high     | Request fields copied into persistent objects by key     |
+| [`object-query-injection`](#object-query-injection)               | high     | Object query strings built by concatenation              |
+| [`open-redirect`](#open-redirect)                                 | medium   | Redirects to a host chosen through the request           |
+| [`pii-in-logs`](#pii-in-logs)                                     | medium   | Personal or payment data written to logs                 |
+| [`sfra-post-without-csrf`](#sfra-post-without-csrf)               | high     | SFRA POST routes without a CSRF token check              |
+| [`sfra-replace-drops-middleware`](#sfra-replace-drops-middleware) | high     | `server.replace()` dropping security middleware          |
+| [`sg-post-without-csrf`](#sg-post-without-csrf)                   | high     | SiteGenesis POST actions without the `csrf` filter       |
+| [`weak-crypto`](#weak-crypto)                                     | medium   | `dw.crypto` Weak\* classes, MD5/SHA-1, DES/RC4, ECB mode |
 
 ## dynamic-code
 
@@ -62,6 +70,30 @@ request.httpParameterMap.processMultipart(function (field, contentType) {
 
 Returning `null` from the callback skips a part, so check the field name and content type and skip anything you don't expect.
 
+## get-mutates-state
+
+**Severity:** medium · **Confidence:** medium · **CWE:** CWE-352, CWE-650
+
+Finds GET routes (SFRA `server.get`, SiteGenesis actions with the `get` filter) that write request input inside `Transaction.wrap()` or after `Transaction.begin()`: an assignment of a request value, or a `set*`, `create*`, `remove*`, `delete*`, `add*`, or `update*` call with one. GET requests carry no CSRF token, so another site can make the change by linking to the URL or loading it in an image. Routes that check a CSRF token (a token passed as a query parameter) are not reported, and recalculating a basket without request input is fine.
+
+```js
+// Finding
+server.get('AddCoupon', function (req, res, next) {
+  Transaction.wrap(function () {
+    basket.createCouponLineItem(req.querystring.couponCode, true);
+  });
+  next();
+});
+
+// Fix: accept POST and check the token
+server.post('AddCoupon', csrfProtection.validateAjaxRequest, function (req, res, next) {
+  Transaction.wrap(function () {
+    basket.createCouponLineItem(req.form.couponCode, true);
+  });
+  next();
+});
+```
+
 ## hardcoded-credentials
 
 **Severity:** high · **Confidence:** medium · **CWE:** CWE-798
@@ -98,6 +130,22 @@ cookie.setHttpOnly(true); // leave off only for cookies that client-side script 
 response.addHttpCookie(cookie);
 ```
 
+## mass-assignment
+
+**Severity:** high · **Confidence:** medium · **CWE:** CWE-915
+
+Finds request input copied into persistent objects with property names the client chooses: loops over `req.form`, `request.httpParameterMap`, or `Object.keys()`/`Object.entries()` of them that assign `obj.custom[key]`; computed keys taken directly from the request; and `Object.assign()` of request input into a custom attributes object, profile, customer, order, basket, address, or line item. The client can then set any attribute, including ones that control discounts, roles, or loyalty status.
+
+```js
+// Finding
+Object.keys(req.form).forEach(function (key) {
+  profile.custom[key] = req.form[key];
+});
+
+// Fix: copy only the fields you expect
+profile.custom.newsletter = req.form.newsletter === 'true';
+```
+
 ## object-query-injection
 
 **Severity:** high · **Confidence:** medium · **CWE:** CWE-943
@@ -126,6 +174,83 @@ res.redirect(req.querystring.returnUrl);
 var target = req.querystring.returnUrl;
 res.redirect(isAllowedRedirect(target) ? target : URLUtils.url('Home-Show').toString());
 ```
+
+## pii-in-logs
+
+**Severity:** medium · **Confidence:** low · **CWE:** CWE-532
+
+Finds `dw.system.Logger` calls (including loggers from `Logger.getLogger()`) whose arguments include personal or payment data: properties such as `email`, `phone`, `firstName`, `lastName`, `address1`, `postalCode`, `birthday`, `password`, or `creditCardNumber`, or whole customer, profile, address, payment instrument, order, or basket objects passed to `JSON.stringify()`. Log files are readable by anyone with Business Manager log access. Confidence is low: check whether the value is really personal data.
+
+```js
+// Finding
+Logger.info('Customer login {0}', customer.profile.email);
+
+// Fix: log an identifier
+Logger.info('Customer login {0}', customer.profile.customerNo);
+```
+
+## sfra-post-without-csrf
+
+**Severity:** high · **Confidence:** medium · **CWE:** CWE-352
+
+Finds SFRA routes that accept POST without checking a CSRF token: `server.post()` routes, and `server.use()` or `server.replace()` routes (which accept any method) that read `req.form`, when neither the route's middleware (`csrfProtection.validateRequest` or `validateAjaxRequest`) nor its handler (`CSRFProtection.validateRequest()`) checks the token. With the project index, a check that an overlay cartridge prepends counts, and routes that a later cartridge replaces are judged by the replacement.
+
+```js
+// Finding
+server.post('Subscribe', server.middleware.https, function (req, res, next) { ... });
+
+// Fix
+var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
+server.post('Subscribe', server.middleware.https, csrfProtection.validateAjaxRequest, function (req, res, next) { ... });
+```
+
+To fix a route that SFRA's `app_storefront_base` defines, prepend the check from your own cartridge:
+
+```js
+server.extend(module.superModule);
+server.prepend('AddProduct', csrfProtection.validateAjaxRequest);
+```
+
+Routes that only hand out a token (such as `CSRF-Generate`) or that are protected by a single-use token sent by email (such as a password reset confirmation) don't need the check; suppress them with a reason.
+
+## sfra-replace-drops-middleware
+
+**Severity:** high · **Confidence:** high · **CWE:** CWE-862, CWE-352
+
+Finds `server.replace()` calls in overlay cartridges that drop security middleware the replaced route had: CSRF checks, login checks (`userLoggedIn.validateLoggedIn`, `validateLoggedInAjax`), `server.middleware.https`, or the GET/POST method restriction. `server.replace()` registers the new chain with `server.use()`, so a replaced `server.post()` route accepts GET too unless you add `server.middleware.post` back. This rule needs the project index, so it runs in `b2c security scan` but not when the rules run in ESLint or oxlint without one.
+
+```js
+// Finding: the base route had server.middleware.post, https, login, and CSRF checks
+server.replace('SaveProfile', function (req, res, next) { ... });
+
+// Fix: repeat the security middleware
+server.replace(
+    'SaveProfile',
+    server.middleware.post,
+    server.middleware.https,
+    userLoggedIn.validateLoggedInAjax,
+    csrfProtection.validateAjaxRequest,
+    function (req, res, next) { ... }
+);
+```
+
+Where you only need to change the response, `server.append()` keeps the base chain.
+
+## sg-post-without-csrf
+
+**Severity:** high · **Confidence:** medium · **CWE:** CWE-352
+
+Finds SiteGenesis controller actions exposed with `guard.ensure(['post', ...])` or `guard.httpsPost()` without the `csrf` filter, and actions with no method filter whose action function handles a form submission (`handleAction()`), unless the action calls `CSRFProtection.validateRequest()` itself. Actions limited to remote includes (`include` filter) are skipped.
+
+```js
+// Finding
+exports.Submit = guard.ensure(['post', 'https'], submit);
+
+// Fix
+exports.Submit = guard.ensure(['post', 'https', 'csrf'], submit);
+```
+
+Include the CSRF token field (`dw.web.CSRFProtection.getTokenName()` and `generateToken()`) in the form that submits to the action.
 
 ## weak-crypto
 

@@ -55,6 +55,11 @@
       "types": "./dist/esm/cartridges/index.d.ts",
       "default": "./dist/esm/cartridges/index.js"
     },
+    "./project-index": {
+      "development": "./src/project-index/index.ts",
+      "types": "./dist/esm/project-index/index.d.ts",
+      "default": "./dist/esm/project-index/index.js"
+    },
     "./security": {
       "development": "./src/security/index.ts",
       "types": "./dist/esm/security/index.d.ts",

@@ -48,7 +48,7 @@ export function toSarif(
         tool: {
           driver: {
             name: 'b2c-security',
-            informationUri: 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-scanning',
+            informationUri: 'https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security',
             ...(options.toolVersion ? {version: options.toolVersion} : {}),
             rules: rules.map((r) => ({
               id: r.id,

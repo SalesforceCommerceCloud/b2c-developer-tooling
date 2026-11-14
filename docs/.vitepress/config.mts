@@ -147,7 +147,7 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
       {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Commerce Apps', link: '/guide/commerce-apps'},
-      {text: 'Security Scanning', link: '/guide/security-scanning'},
+      {text: 'Code Security', link: '/guide/code-security'},
       {text: 'Security Rules', link: '/guide/security-rules'},
       {text: 'Security', link: '/guide/security'},
       {text: 'Agent Sandboxing', link: '/guide/agent-sandboxing'},

@@ -7,11 +7,17 @@
 /*
  * Fixture-driven tests for every built-in security rule.
  *
- * Each rule has test/security/fixtures/<rule-id>/bad.js and good.js. Lines in
- * bad.js that should produce a finding end with `// expect`; good.js must
- * produce none. Every rule runs under three runners — the SDK runner, ESLint,
- * and oxlint's JS plugins — and all three must agree with the markers. Each
- * rule must also have a section in docs/guide/security-rules.md.
+ * Each rule has a directory test/security/fixtures/<rule-id>/. Every .js file
+ * under it is a fixture: lines that should produce a finding end with
+ * `// expect`, and files without markers must produce none. Fixtures can be
+ * single files (bad.js, good.js) or a project tree with cartridges (folders
+ * with a .project file); an optional project.json sets {"cartridgePath": [...]}.
+ * A project index is built from the rule's directory and passed to every
+ * runner as settings.b2cSecurity.projectIndex.
+ *
+ * Every rule runs under three runners — the SDK runner, ESLint, and oxlint's JS
+ * plugins — and all three must agree with the markers. Each rule must also
+ * have a section in docs/guide/security-rules.md.
  */
 import {expect} from 'chai';
 import {execFileSync} from 'node:child_process';
@@ -21,7 +27,8 @@ import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {build} from 'esbuild';
 import {Linter} from 'eslint';
-import {SCRIPT_RULES, runScriptRules} from '@salesforce/b2c-tooling-sdk/security';
+import {buildProjectIndex, type ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
+import {SCRIPT_RULES, SECURITY_SETTINGS_KEY, runScriptRules} from '@salesforce/b2c-tooling-sdk/security';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sdkRoot = path.resolve(here, '..', '..');
@@ -30,12 +37,21 @@ const docsPath = path.resolve(sdkRoot, '..', '..', 'docs', 'guide', 'security-ru
 
 const ruleIds = SCRIPT_RULES.map((r) => r.meta.b2c.id);
 
-function fixturePath(id: string, kind: 'bad' | 'good'): string {
-  return path.join(fixturesDir, id, `${kind}.js`);
+function listFiles(dir: string, match: (name: string) => boolean): string[] {
+  return fs
+    .readdirSync(dir, {withFileTypes: true, recursive: true})
+    .filter((d) => d.isFile() && match(d.name))
+    .map((d) => path.join(d.parentPath, d.name))
+    .sort();
 }
 
-function expectedLines(text: string): number[] {
-  return text
+function listJsFiles(dir: string): string[] {
+  return listFiles(dir, (name) => name.endsWith('.js'));
+}
+
+function expectedLines(file: string): number[] {
+  return fs
+    .readFileSync(file, 'utf8')
     .split('\n')
     .map((line, i) => (/\/\/ expect\s*$/.test(line) ? i + 1 : 0))
     .filter(Boolean);
@@ -45,14 +61,28 @@ function uniqueSorted(lines: number[]): number[] {
   return [...new Set(lines)].sort((a, b) => a - b);
 }
 
-function sdkLines(id: string, file: string): number[] {
+/** Builds the project index for a rule's fixture directory (cartridges anywhere below it). */
+function indexFor(id: string): ProjectIndex {
+  const dir = path.join(fixturesDir, id);
+  const projectJson = listFiles(dir, (name) => name === 'project.json')[0];
+  const cartridgePath = projectJson
+    ? (JSON.parse(fs.readFileSync(projectJson, 'utf8')) as {cartridgePath?: string[]}).cartridgePath
+    : undefined;
+  return buildProjectIndex({root: dir, cartridgePath});
+}
+
+function settingsFor(index: ProjectIndex): Record<string, unknown> {
+  return {[SECURITY_SETTINGS_KEY]: {projectIndex: index}};
+}
+
+function sdkLines(id: string, file: string, index: ProjectIndex): number[] {
   const rule = SCRIPT_RULES.find((r) => r.meta.b2c.id === id)!;
-  const result = runScriptRules(fs.readFileSync(file, 'utf8'), file, [rule]);
+  const result = runScriptRules(fs.readFileSync(file, 'utf8'), file, [rule], settingsFor(index));
   expect(result.parseError, `${file} should parse`).to.equal(undefined);
   return uniqueSorted(result.reports.map((r) => r.line));
 }
 
-function eslintLines(id: string, file: string): number[] {
+function eslintLines(id: string, file: string, index: ProjectIndex): number[] {
   const rule = SCRIPT_RULES.find((r) => r.meta.b2c.id === id)!;
   const linter = new Linter({configType: 'flat'});
   const messages = linter.verify(
@@ -64,6 +94,7 @@ function eslintLines(id: string, file: string): number[] {
         // The rule shape is ESLint's; the extra `meta.b2c` field is ignored by ESLint.
         plugins: {'b2c-security': {rules: {[id]: rule as unknown as never}}},
         rules: {[`b2c-security/${id}`]: 'error'},
+        settings: settingsFor(index),
       },
     ],
     file,
@@ -74,15 +105,22 @@ function eslintLines(id: string, file: string): number[] {
 }
 
 describe('security rules', () => {
-  it('every rule has an ID, fixtures, and a docs section', () => {
+  it('every rule has an ID, fixtures with and without findings, and a docs section', () => {
     const docs = fs.readFileSync(docsPath, 'utf8');
     for (const rule of SCRIPT_RULES) {
       const {id} = rule.meta.b2c;
       expect(id, 'rule IDs are kebab-case without slashes').to.match(/^[a-z][a-z\d]*(-[a-z\d]+)*$/);
-      expect(fs.existsSync(fixturePath(id, 'bad')), `fixtures/${id}/bad.js`).to.equal(true);
-      expect(fs.existsSync(fixturePath(id, 'good')), `fixtures/${id}/good.js`).to.equal(true);
-      expect(expectedLines(fs.readFileSync(fixturePath(id, 'bad'), 'utf8')), `${id} bad.js has // expect markers`).to
-        .not.be.empty;
+      const dir = path.join(fixturesDir, id);
+      expect(fs.existsSync(dir), `fixtures/${id}/`).to.equal(true);
+      const files = listJsFiles(dir);
+      expect(
+        files.some((f) => expectedLines(f).length > 0),
+        `${id} has a fixture with // expect markers`,
+      ).to.equal(true);
+      expect(
+        files.some((f) => expectedLines(f).length === 0),
+        `${id} has a fixture without findings`,
+      ).to.equal(true);
       expect(docs, `docs/guide/security-rules.md has a "## ${id}" section`).to.match(new RegExp(`^## ${id}$`, 'm'));
     }
     expect(new Set(ruleIds).size, 'rule IDs are unique').to.equal(ruleIds.length);
@@ -90,25 +128,28 @@ describe('security rules', () => {
 
   for (const id of ruleIds) {
     describe(id, () => {
-      const bad = fixturePath(id, 'bad');
-      const good = fixturePath(id, 'good');
+      const dir = path.join(fixturesDir, id);
+      const files = fs.existsSync(dir) ? listJsFiles(dir) : [];
+      let index: ProjectIndex;
 
-      it('SDK runner reports exactly the marked lines', () => {
-        expect(sdkLines(id, bad)).to.deep.equal(expectedLines(fs.readFileSync(bad, 'utf8')));
-        expect(sdkLines(id, good)).to.deep.equal([]);
+      before(() => {
+        index = indexFor(id);
       });
 
-      it('ESLint reports exactly the marked lines', () => {
-        expect(eslintLines(id, bad)).to.deep.equal(expectedLines(fs.readFileSync(bad, 'utf8')));
-        expect(eslintLines(id, good)).to.deep.equal([]);
-      });
+      for (const file of files) {
+        it(`${path.relative(dir, file)}: SDK runner and ESLint report exactly the marked lines`, () => {
+          const expected = expectedLines(file);
+          expect(sdkLines(id, file, index), 'SDK runner').to.deep.equal(expected);
+          expect(eslintLines(id, file, index), 'ESLint').to.deep.equal(expected);
+        });
+      }
     });
   }
 
   describe('oxlint JS plugin', function () {
-    this.timeout(60_000);
+    this.timeout(120_000);
     let tmp: string;
-    let results: Map<string, number[]>;
+    const results = new Map<string, number[]>();
 
     before(async () => {
       tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-security-oxlint-'));
@@ -121,33 +162,45 @@ describe('security rules', () => {
         format: 'esm',
         logLevel: 'silent',
       });
-      const config = path.join(tmp, '.oxlintrc.json');
-      fs.writeFileSync(
-        config,
-        JSON.stringify({
-          jsPlugins: [pluginFile],
-          categories: {correctness: 'off'},
-          rules: Object.fromEntries(ruleIds.map((id) => [`b2c-security/${id}`, 'error'])),
-        }),
+      const oxlint = path.join(
+        path.dirname(fileURLToPath(import.meta.resolve('oxlint/package.json'))),
+        'bin',
+        'oxlint',
       );
-      const files = ruleIds.flatMap((id) => [fixturePath(id, 'bad'), fixturePath(id, 'good')]);
-      const oxlint = path.join(path.dirname(resolvePackagePath('oxlint/package.json')), 'bin', 'oxlint');
-      let stdout: string;
-      try {
-        stdout = execFileSync(oxlint, ['-c', config, '--format', 'json', ...files], {encoding: 'utf8'});
-      } catch (error) {
-        // oxlint exits non-zero when it reports problems.
-        stdout = (error as {stdout: string}).stdout;
-      }
-      const parsed = JSON.parse(stdout) as {
-        diagnostics: {code: string; filename: string; labels: {span: {line: number}}[]}[];
-      };
-      results = new Map();
-      for (const d of parsed.diagnostics) {
-        const match = /^b2c-security\((.+)\)$/.exec(d.code);
-        if (!match) continue;
-        const key = `${match[1]}:${path.resolve(d.filename)}`;
-        results.set(key, uniqueSorted([...(results.get(key) ?? []), d.labels[0].span.line]));
+      // One oxlint run per rule, so each gets its own project index in settings.
+      for (const id of ruleIds) {
+        const config = path.join(tmp, `${id}.oxlintrc.json`);
+        fs.writeFileSync(
+          config,
+          JSON.stringify({
+            jsPlugins: [pluginFile],
+            categories: {correctness: 'off'},
+            rules: {[`b2c-security/${id}`]: 'error'},
+            settings: settingsFor(indexFor(id)),
+          }),
+        );
+        let stdout: string;
+        try {
+          stdout = execFileSync(
+            oxlint,
+            ['-c', config, '--format', 'json', ...listJsFiles(path.join(fixturesDir, id))],
+            {
+              encoding: 'utf8',
+            },
+          );
+        } catch (error) {
+          // oxlint exits non-zero when it reports problems.
+          stdout = (error as {stdout: string}).stdout;
+        }
+        const parsed = JSON.parse(stdout) as {
+          diagnostics: {code: string; filename: string; labels: {span: {line: number}}[]}[];
+        };
+        for (const d of parsed.diagnostics) {
+          const match = /^b2c-security\((.+)\)$/.exec(d.code);
+          if (!match) continue;
+          const key = `${match[1]}:${fs.realpathSync(path.resolve(d.filename))}`;
+          results.set(key, uniqueSorted([...(results.get(key) ?? []), d.labels[0].span.line]));
+        }
       }
     });
 
@@ -157,14 +210,13 @@ describe('security rules', () => {
 
     for (const id of ruleIds) {
       it(`${id} reports exactly the marked lines`, () => {
-        const bad = fixturePath(id, 'bad');
-        expect(results.get(`${id}:${bad}`) ?? []).to.deep.equal(expectedLines(fs.readFileSync(bad, 'utf8')));
-        expect(results.get(`${id}:${fixturePath(id, 'good')}`) ?? []).to.deep.equal([]);
+        const dir = path.join(fixturesDir, id);
+        for (const file of listJsFiles(dir)) {
+          expect(results.get(`${id}:${fs.realpathSync(file)}`) ?? [], path.relative(dir, file)).to.deep.equal(
+            expectedLines(file),
+          );
+        }
       });
     }
   });
 });
-
-function resolvePackagePath(specifier: string): string {
-  return import.meta.resolve(specifier).replace(/^file:\/\//, '');
-}

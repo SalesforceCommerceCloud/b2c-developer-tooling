@@ -8,7 +8,7 @@ description: Scan B2C Commerce cartridge code for security problems with b2c sec
 The `security` commands are a preview. Rules, output fields, and flags may change before they are stable.
 :::
 
-Scan cartridge code for security problems such as open redirects, object query injection, weak cryptography, and hardcoded credentials. Scans run locally, need no credentials or instance, and finish in well under a second for a typical storefront. See [Security Scanning](../guide/security-scanning.md) for an overview and [Security Rules](../guide/security-rules.md) for what each rule finds and how to fix it.
+Scan cartridge code for security problems such as open redirects, object query injection, weak cryptography, and hardcoded credentials. Scans run locally, need no credentials or instance, and finish in well under a second for a typical storefront. See [Code Security](../guide/code-security.md) for an overview and [Security Rules](../guide/security-rules.md) for what each rule finds and how to fix it.
 
 ## b2c security scan
 
@@ -28,16 +28,17 @@ b2c security scan [paths...]
 
 ### Flags
 
-| Flag                | Description                                                                                              | Default                                      |
-| ------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `--format`          | Report format: `table`, `json`, or `sarif` (for GitHub code scanning)                                    | `table`                                      |
-| `--output`          | Write the `json` or `sarif` report to this file instead of standard output                               |                                              |
-| `--severity`        | Only report findings at or above this severity: `critical`, `high`, `medium`, `low`, or `info`           | all                                          |
-| `--fail-on`         | Exit with status 1 when open findings at or above this severity remain; `none` never fails               | `low`                                        |
-| `--rule`            | Run only this rule. Repeatable.                                                                          | all rules                                    |
-| `--exclude-rule`    | Skip this rule. Repeatable.                                                                              |                                              |
-| `--baseline`        | Baseline file of accepted findings (see [`b2c security baseline`](#b2c-security-baseline))              | `.b2c-security-baseline.json` when it exists |
-| `--show-suppressed` | Also list findings that are suppressed inline or in the baseline                                         | `false`                                      |
+| Flag                             | Description                                                                                                         | Default                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `--format`                       | Report format: `table`, `json`, or `sarif` (for GitHub code scanning)                                               | `table`                                      |
+| `--output`                       | Write the `json` or `sarif` report to this file instead of standard output                                          |                                              |
+| `--severity`                     | Only report findings at or above this severity: `critical`, `high`, `medium`, `low`, or `info`                      | all                                          |
+| `--fail-on`                      | Exit with status 1 when open findings at or above this severity remain; `none` never fails                          | `low`                                        |
+| `--rule`                         | Run only this rule. Repeatable.                                                                                     | all rules                                    |
+| `--exclude-rule`                 | Skip this rule. Repeatable.                                                                                         |                                              |
+| `--baseline`                     | Baseline file of accepted findings (see [`b2c security baseline`](#b2c-security-baseline))                          | `.b2c-security-baseline.json` when it exists |
+| `--exclude-reference-cartridges` | Leave out findings in SFRA and SiteGenesis reference cartridges (see [Reference cartridges](#reference-cartridges)) | `false`                                      |
+| `--show-suppressed`              | Also list findings that are suppressed inline or in the baseline                                                    | `false`                                      |
 
 ### Examples
 
@@ -77,7 +78,15 @@ cartridges/app_custom/cartridge/scripts/helpers/subscription.js
 
 A finding is **open** unless an inline comment suppresses it or it matches the baseline. The command exits with status 1 when open findings at or above `--fail-on` remain.
 
-With `--json` (or `--format json`), the result has `findings` (each with `ruleId`, `severity`, `confidence`, `category`, `cwe`, `message`, `location`, `snippet`, `remediation`, `docsUrl`, `fingerprint`, and `suppression` or `baselined` when they apply), `errors` for files that could not be parsed, `rules`, `filesScanned`, and a `summary` with counts. With `--format sarif`, the report is SARIF 2.1.0, including `security-severity` scores that GitHub code scanning uses to rank alerts.
+With `--json` (or `--format json`), the result has `findings` (each with `ruleId`, `severity`, `confidence`, `category`, `cwe`, `message`, `location`, `snippet`, `remediation`, `docsUrl`, `fingerprint`, and `suppression`, `baselined`, or `referenceCartridge` when they apply), `errors` for files that could not be parsed, `rules`, `filesScanned`, `indexedEndpoints`, `hiddenReferenceFindings`, and a `summary` with counts. With `--format sarif`, the report is SARIF 2.1.0, including `security-severity` scores that GitHub code scanning uses to rank alerts.
+
+### Reference cartridges
+
+Findings in the cartridges that ship with SFRA (`app_storefront_base`, `bm_app_storefront_base`, `modules`) and SiteGenesis (`app_storefront_controllers`, `app_storefront_core`, `app_storefront_pipelines`) are reported and marked `[reference cartridge]` (`referenceCartridge` in JSON). They are real for any storefront that deploys those cartridges, even though you usually don't edit them: fix them from your own cartridge, for example with `server.prepend()` for a missing CSRF check, or accept them in the baseline. Use `--exclude-reference-cartridges` to leave them out.
+
+### Cartridge path
+
+Route rules compose SFRA routes along the cartridge path (`server.extend(module.superModule)` with `append`, `prepend`, and `replace`). The scanner indexes every cartridge under the current directory, including ones outside the paths you scan, and orders them by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`). Without it, cartridges are ordered by discovery with `app_storefront_base` and `modules` last; set `cartridges` when overlays aren't composed the way your site runs them.
 
 ### Suppressing a finding
 
@@ -121,11 +130,11 @@ b2c security baseline [paths...]
 
 ### Flags
 
-| Flag             | Description                     | Default                       |
-| ---------------- | ------------------------------- | ----------------------------- |
-| `--output`       | Baseline file to write          | `.b2c-security-baseline.json` |
-| `--rule`         | Include only this rule. Repeatable. | all rules                 |
-| `--exclude-rule` | Skip this rule. Repeatable.     |                               |
+| Flag             | Description                         | Default                       |
+| ---------------- | ----------------------------------- | ----------------------------- |
+| `--output`       | Baseline file to write              | `.b2c-security-baseline.json` |
+| `--rule`         | Include only this rule. Repeatable. | all rules                     |
+| `--exclude-rule` | Skip this rule. Repeatable.         |                               |
 
 ### Examples
 

@@ -86,6 +86,12 @@ export interface SecurityFinding {
   suppression?: {kind: 'inline'; reason?: string};
   /** True when the finding matches the baseline. */
   baselined?: boolean;
+  /**
+   * Set to the cartridge name when the finding is in an SFRA or SiteGenesis
+   * reference cartridge (code the project deploys but usually doesn't edit;
+   * fix it with an overlay cartridge).
+   */
+  referenceCartridge?: string;
 }
 
 /** Returns true when `severity` is at least as severe as `threshold`. */
