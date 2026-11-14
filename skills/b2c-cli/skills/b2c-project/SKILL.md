@@ -9,6 +9,8 @@ Use `b2c project` to answer questions about a project's storefront code from its
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead. Add `--json` to any command for structured output.
 
+> **MCP parity:** If the `b2c-dx-mcp` server is connected, `project_inspect` covers these commands: `aspect: "summary"` (`b2c project index`), `"endpoints"`, `"endpoint"` with `id`, `"hooks"`, and `"customApis"`.
+
 ## Get the cartridge path right first
 
 Results depend on cartridge order. The CLI uses the `cartridges` value from `dw.json` or `SFCC_CARTRIDGES`; without it, discovery order with `app_storefront_base` and `modules` last. Check the order with:
