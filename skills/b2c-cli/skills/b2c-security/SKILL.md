@@ -1,6 +1,6 @@
 ---
 name: b2c-security
-description: Scan B2C Commerce cartridge code (SFRA, SiteGenesis, custom cartridges) for security problems with the b2c CLI, triage the findings, and fix them. Use when the user asks to check code for security issues, review a cartridge for vulnerabilities, audit a storefront before launch, set up security scanning in CI, or fix findings such as open redirects, object query injection, weak crypto, hardcoded credentials, insecure cookies, or eval/dynamic require.
+description: Find and fix security problems in B2C Commerce code and site data with the b2c CLI. Covers cartridge JavaScript (SFRA, SiteGenesis, custom cartridges) and site import/export data (OCAPI settings, services.xml, preferences). Use when the user asks to check code or a site_template for security issues, asks whether a specific snippet is safe (a query or redirect built from request input, credentials in code, crypto choices), audits a storefront before launch, reviews OCAPI settings or service credentials before an import, sets up security scanning in CI, or fixes findings such as open redirects, object query injection, CSRF gaps, weak crypto, hardcoded credentials, insecure cookies, mass assignment, or the OCAPI demo client ID.
 ---
 
 # B2C Security Skill

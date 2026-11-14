@@ -1,0 +1,12 @@
+[
+  {"query": "When a shopper clicks add to cart on our SFRA site, what server-side code actually runs, and which of our cartridges does each piece come from?", "should_trigger": true},
+  {"query": "I overrode Account-Show in our custom cartridge but my change doesn't seem to take effect on the sandbox code. How do I figure out which cartridge is really serving that route?", "should_trigger": true},
+  {"query": "We have afterPOST basket hooks registered in two cartridges. Which one runs first, and could one of them be stopping the other from running?", "should_trigger": true},
+  {"query": "Since we added a loyalty cartridge, basket totals stopped calculating for orders from our headless app. Nothing errors. What in our code could be causing it?", "should_trigger": true},
+  {"query": "Where is our loyalty Custom API implemented, and is its schema.yaml wired correctly to the script?", "should_trigger": true},
+  {"query": "We're upgrading SFRA. Can you list which base controller routes our overlay cartridges replace or extend, so we know what to retest?", "should_trigger": true},
+  {"query": "Write a new SFRA controller that returns the current customer's wishlist as JSON.", "should_trigger": false},
+  {"query": "Deploy our cartridges to the sandbox and activate the code version.", "should_trigger": false},
+  {"query": "What does the dw.order.BasketMgr.getCurrentBasket() method return when there is no basket?", "should_trigger": false},
+  {"query": "Show me the error logs from the last hour on our staging instance.", "should_trigger": false}
+]

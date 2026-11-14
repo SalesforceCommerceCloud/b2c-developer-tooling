@@ -1,0 +1,12 @@
+[
+  {"query": "We're launching our SFRA storefront in two weeks. Can you go through our custom cartridges and look for security vulnerabilities before we go live?", "should_trigger": true},
+  {"query": "I'm building a custom object query from a value the shopper types into a form: CustomObjectMgr.queryCustomObjects('Subscriber', \"custom.email = '\" + email + \"'\"). Is that safe, and how should I write it?", "should_trigger": true},
+  {"query": "Our security team wants us to add static analysis for our B2C Commerce cartridges to the GitHub Actions pipeline and fail the build on high-severity issues. How do we set that up?", "should_trigger": true},
+  {"query": "A pen test report says our storefront has an open redirect on the login return URL and some routes missing CSRF protection. Help me find all the places in our cartridges that have those problems.", "should_trigger": true},
+  {"query": "Before we import our site_template folder into production, can you check the OCAPI settings and services.xml for anything that would be a security risk?", "should_trigger": true},
+  {"query": "We inherited this SiteGenesis codebase and the scan shows dozens of findings. How do we accept the existing ones so CI only fails on new issues?", "should_trigger": true},
+  {"query": "How do I configure a SLAS public client for our PWA Kit storefront so shoppers can log in?", "should_trigger": false},
+  {"query": "How do I add the CSRF token hidden input to my ISML form template so the form submits correctly?", "should_trigger": false},
+  {"query": "Run npm audit on our Node.js backend service and tell me which dependencies need upgrading.", "should_trigger": false},
+  {"query": "Can you create a new Business Manager user with the Administrator role for our new developer?", "should_trigger": false}
+]

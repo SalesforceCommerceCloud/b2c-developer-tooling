@@ -1,0 +1,28 @@
+{
+  "_v": "23.2",
+  "clients": [
+    {
+      "client_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "allowed_origins": [],
+      "resources": [
+        {
+          "resource_id": "/baskets",
+          "methods": [
+            "post"
+          ],
+          "read_attributes": "(**)",
+          "write_attributes": "(**)"
+        },
+        {
+          "resource_id": "/baskets/*",
+          "methods": [
+            "get",
+            "patch"
+          ],
+          "read_attributes": "(**)",
+          "write_attributes": "(**)"
+        }
+      ]
+    }
+  ]
+}

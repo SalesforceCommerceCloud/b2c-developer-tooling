@@ -1,0 +1,8 @@
+{
+  "hooks": [
+    {
+      "name": "dw.ocapi.shop.basket.afterPOST",
+      "script": "./hooks/basketHooks"
+    }
+  ]
+}
