@@ -9,23 +9,23 @@ description: Index and setup for the B2C Commerce MCP server, covering toolset s
 
 Read only the skill that matches the task; each links its own references.
 
-| Task | Skill |
-| --- | --- |
-| Set up a sandbox or realm: sample data, storefronts, replication | `skill://b2c-cli/b2c-setup/SKILL.md` |
-| Commerce API reads/writes (required before `scapi_search` / `scapi_execute`) | `skill://mcp/b2c-mcp-scapi/SKILL.md` |
-| Warehouse reports and SQL (required before `cip_query`) | `skill://mcp/b2c-mcp-cip/SKILL.md` |
-| Write data SCAPI cannot, e.g. promotion discount rules (required before `site_archive_import`) | `skill://mcp/b2c-mcp-site-import/SKILL.md` |
-| Configuration, credentials, access grants, wrong target | `skill://mcp/b2c-mcp-config/SKILL.md` |
-| Server-side script debugging | `skill://mcp/b2c-mcp-debugger/SKILL.md` |
-| Dashboard, Claude artifact or Cowork page showing B2C data | `skill://mcp/b2c-mcp-claude-artifacts/SKILL.md` |
-| Instance files and selected cartridge uploads | [files](references/files.md) |
-| Production incident or unknown operational signal | `skill://b2c-ops/b2c-production-triage/SKILL.md` |
-| Failed or late jobs | `skill://b2c-ops/b2c-job-health/SKILL.md` |
-| Checkout or order failures | `skill://b2c-ops/b2c-checkout-triage/SKILL.md`, `skill://b2c-ops/b2c-order-failure-triage/SKILL.md` |
-| External service (payment, tax, OMS, shipping, search) calls failing, slow or stopped | `skill://b2c-ops/b2c-integration-triage/SKILL.md` |
-| Slow or erroring storefront/API; latency, error-rate, cache or integration metrics | `skill://b2c-ops/b2c-performance-triage/SKILL.md` |
-| eCDN edge traffic: bots, scrapers, API/SLAS abuse, edge 403/429 spikes, WAF/firewall/rate-limit rules (storefront or SCAPI zone) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md` |
-| Anything else | `skill://index` |
+| Task                                                                                                                             | Skill                                                                                               |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Set up a sandbox or realm: sample data, storefronts, replication                                                                 | `skill://b2c-cli/b2c-setup/SKILL.md`                                                                |
+| Commerce API reads/writes (required before `scapi_search` / `scapi_execute`)                                                     | `skill://mcp/b2c-mcp-scapi/SKILL.md`                                                                |
+| Warehouse reports and SQL (required before `cip_query`)                                                                          | `skill://mcp/b2c-mcp-cip/SKILL.md`                                                                  |
+| Write data SCAPI cannot, e.g. promotion discount rules (required before `site_archive_import`)                                   | `skill://mcp/b2c-mcp-site-import/SKILL.md`                                                          |
+| Configuration, credentials, access grants, wrong target                                                                          | `skill://mcp/b2c-mcp-config/SKILL.md`                                                               |
+| Server-side script debugging                                                                                                     | `skill://mcp/b2c-mcp-debugger/SKILL.md`                                                             |
+| Dashboard, Claude artifact or Cowork page showing B2C data                                                                       | `skill://mcp/b2c-mcp-claude-artifacts/SKILL.md`                                                     |
+| Instance files and selected cartridge uploads                                                                                    | [files](references/files.md)                                                                        |
+| Production incident or unknown operational signal                                                                                | `skill://b2c-ops/b2c-production-triage/SKILL.md`                                                    |
+| Failed or late jobs                                                                                                              | `skill://b2c-ops/b2c-job-health/SKILL.md`                                                           |
+| Checkout or order failures                                                                                                       | `skill://b2c-ops/b2c-checkout-triage/SKILL.md`, `skill://b2c-ops/b2c-order-failure-triage/SKILL.md` |
+| External service (payment, tax, OMS, shipping, search) calls failing, slow or stopped                                            | `skill://b2c-ops/b2c-integration-triage/SKILL.md`                                                   |
+| Slow or erroring storefront/API; latency, error-rate, cache or integration metrics                                               | `skill://b2c-ops/b2c-performance-triage/SKILL.md`                                                   |
+| eCDN edge traffic: bots, scrapers, API/SLAS abuse, edge 403/429 spikes, WAF/firewall/rate-limit rules (storefront or SCAPI zone) | `skill://b2c-ops/b2c-edge-traffic-triage/SKILL.md`                                                  |
+| Anything else                                                                                                                    | `skill://index`                                                                                     |
 
 Every skill and reference file is readable as an MCP resource
 (`skill://<collection>/<skill>/<file>`) or with `skills_read({uri})`.
@@ -84,6 +84,11 @@ Use launch arguments/environment for server settings, not project `.env` or `dw.
   use `scapi_search` / `scapi_execute`: products, campaigns, promotions, jobs,
   code versions, site cartridge paths, and more. Read [the SCAPI skill](skill://mcp/b2c-mcp-scapi/SKILL.md)
   first; its task map and built-in snippets cover recurring operations.
+- Storefront code (which cartridge serves an endpoint, what middleware and handlers
+  run and in what order, overlays and `server.replace`, hook registration order,
+  Custom API wiring): `project_inspect` before reading controller files; it composes
+  routes along the configured cartridge path. Security review: `security_scan`, then
+  the [b2c-security skill](skill://b2c-cli/b2c-security/SKILL.md) to triage.
 - Custom API scaffold: `b2c scaffold generate custom-api`; no MCP equivalent.
 - API/product documentation: `docs_search` / `docs_read`.
 - Warehouse analytics: `cip_discover` for reports/metadata, `cip_query` for report

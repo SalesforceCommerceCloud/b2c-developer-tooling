@@ -183,6 +183,7 @@ import type {ServicesLoader} from '../tools/adapter.js';
 export const SERVER_INSTRUCTIONS =
   'Salesforce B2C Commerce (SFCC/Demandware) tools. Search for b2c tools whenever a task involves cartridges, code deploys, instance or Managed Runtime logs, script debugging, WebDAV files, Commerce data through SCAPI (products, orders, customers, jobs, sites), B2C docs or XSD schemas, or CIP analytics. ' +
   'Discover tool schemas before calling. Prefer dedicated tools; otherwise scapi_search/scapi_execute for Commerce APIs. ' +
+  'Storefront code questions (which cartridge serves an endpoint, what middleware runs, overrides, hook order, Custom API wiring): project_inspect before reading files; security review: security_scan. ' +
   'Skills: load them through your client when it lists them; otherwise read skill:// URIs as MCP resources or with skills_read({uri: "<URI>"}). ' +
   'SCAPI: first read skill://mcp/b2c-mcp-scapi/SKILL.md. ' +
   'Analytics: cip_discover/cip_query; skill://mcp/b2c-mcp-cip/SKILL.md. ' +

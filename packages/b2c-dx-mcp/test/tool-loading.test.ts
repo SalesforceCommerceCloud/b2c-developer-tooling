@@ -18,7 +18,7 @@ import {createMockResolvedConfig} from './test-helpers.js';
 const CODEX_PLUGIN_TOOL_BYTES = 8000;
 const CODEX_PLUGIN_TOTAL_BYTES = 64_000;
 
-const ALWAYS_LOADED = ['config_inspect', 'docs_search', 'scapi_search', 'skills_read'];
+const ALWAYS_LOADED = ['config_inspect', 'docs_search', 'project_inspect', 'scapi_search', 'skills_read'];
 
 /** Codex keeps the top 8 tool search results and Claude Code the top 5; require a margin under both. */
 const CODEX_TOP = 5;

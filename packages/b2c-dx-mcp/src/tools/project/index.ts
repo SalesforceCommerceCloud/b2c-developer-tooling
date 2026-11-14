@@ -112,6 +112,8 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
   return createToolAdapter<ProjectInspectInput, Record<string, unknown>>(
     {
       name: 'project_inspect',
+      // Entry point for most cartridge sessions: which cartridge serves a route and what runs for it.
+      alwaysLoad: true,
       effect: 'read',
       idempotent: true,
       openWorld: false,
