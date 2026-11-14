@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-14T15:24:50.672Z",
+  "generatedAt": "2026-11-14T15:34:22.832Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -190,6 +190,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.md",
       "headings": "Global Preferences Flags • Authentication • Required Scopes • Configuration • Instance Type • Custom Attributes • Assignment Grammar (write commands) • b2c preferences global list {#list-global} • Usage • Flags • Examples • b2c preferences global get {#get-global} • Usage • Arguments • Flags • Examples • b2c preferences global update {#update-global} • Usage • Arguments • Flags • Body Shape • Examples • b2c preferences site list {#list-site} • Usage • Flags • Examples • b2c preferences site get {#get-site} • Usage • Arguments • Flags • Examples • b2c preferences site update {#update-site} • Usage • Arguments • Flags • Examples • b2c preferences site search {#search-site} • Usage • Arguments • Flags • Examples • b2c preferences site preference get {#get-site-preference} • Usage • Arguments • Flags • Examples • b2c preferences site preference update {#update-site-preference} • Usage • Arguments • Flags • Body Shape • Examples",
       "preview": "Commands for reading, updating, and searching custom global and site preferences."
+    },
+    {
+      "id": "cli-project",
+      "title": "Project Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.md",
+      "headings": "b2c project endpoints • Usage • Arguments • Flags • Examples • b2c project endpoint • Usage • Example • b2c project hooks • Usage • Examples • b2c project apis • Usage • b2c project index • Usage • Examples",
+      "preview": "Inspect a B2C Commerce project's storefront code with b2c project — controller endpoints composed across the cartridge path, the middleware that runs for each, hooks in cartridge path order, and Custom APIs."
     },
     {
       "id": "cli-replications",

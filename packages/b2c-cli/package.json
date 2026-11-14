@@ -197,6 +197,9 @@
       "mrt:user": {
         "description": "View profile, reset API keys, and configure email preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#user-commands"
       },
+      "project": {
+        "description": "Inspect a project's storefront code: controller endpoints across the cartridge path, hooks, and Custom APIs"
+      },
       "sandbox": {
         "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html"
       },

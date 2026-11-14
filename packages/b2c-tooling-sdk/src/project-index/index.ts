@@ -29,6 +29,17 @@
 export {buildProjectIndex} from './build.js';
 export type {BuildProjectIndexOptions} from './build.js';
 export {droppedSecurityMiddleware, middlewareLabel, securityRole} from './labels.js';
+export {
+  HOOK_SEMANTICS,
+  acceptsFormPosts,
+  controllerEndpoints,
+  customApiGroups,
+  endpointIssues,
+  hookChains,
+  hookRegistrationIssue,
+  isApiHook,
+} from './insights.js';
+export type {CustomApiGroup, HookChain} from './insights.js';
 export type {
   EndpointKind,
   EndpointMethod,

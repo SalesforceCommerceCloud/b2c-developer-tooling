@@ -10,8 +10,16 @@
  * vscode imports) so they can be tested directly.
  */
 import {
+  HOOK_SEMANTICS,
+  acceptsFormPosts,
+  customApiGroups as sdkCustomApiGroups,
+  endpointIssues,
+  hookChains,
+  hookRegistrationIssue,
   middlewareLabel,
   securityRole,
+  type CustomApiGroup as SdkCustomApiGroup,
+  type HookChain,
   type IndexedCustomApiEndpoint,
   type IndexedEndpoint,
   type IndexedHook,
@@ -55,21 +63,9 @@ function dropped(step: RouteStep): string[] {
 // Controller endpoints
 // ---------------------------------------------------------------------------
 
-/** Whether an endpoint accepts POST, or any method while handling a form submission. */
-function acceptsFormPosts(e: IndexedEndpoint): boolean {
-  if (e.methods.includes('POST')) return true;
-  return e.methods.includes('ANY') && Boolean(e.chain?.some((m) => m.readsForm));
-}
-
-/** Problems worth flagging on an endpoint. */
+/** Problems worth flagging on an endpoint (shared with `b2c project` through the SDK). */
 export function endpointWarnings(e: IndexedEndpoint): string[] {
-  const warnings: string[] = [];
-  if (e.csrf === 'none' && acceptsFormPosts(e)) warnings.push('Accepts POST without a CSRF token check.');
-  for (const step of e.steps ?? []) {
-    const lost = dropped(step);
-    if (lost.length > 0) warnings.push(`server.replace() in ${step.cartridge} dropped the ${lost.join(', ')}.`);
-  }
-  return warnings;
+  return endpointIssues(e);
 }
 
 /** Row for a storefront endpoint: `Cart-AddProduct` with `POST · HTTPS · login · CSRF`. */
@@ -155,68 +151,34 @@ export function controllerGroups(
 // ---------------------------------------------------------------------------
 
 /** An extension point and its registrations in cartridge path order. */
-export interface HookGroup {
-  name: string;
-  kind: IndexedHook['kind'];
-  registrations: IndexedHook[];
+export interface HookGroup extends HookChain {
   row: RowModel;
 }
 
-const SYSTEM_HOOK_NOTE =
-  'System extension point: registrations run in cartridge path order. The first one that returns a value (such as a Status) skips the later registrations and the system implementation; returning nothing lets them run.';
-const CUSTOM_HOOK_NOTE = 'Custom extension point: every registration runs, whatever it returns.';
-
 /** Hook registrations grouped by extension point, in cartridge path order. */
 export function hookGroups(index: ProjectIndex): HookGroup[] {
-  const order = new Map(index.cartridges.map((c, i) => [c.name, i]));
-  const groups = new Map<string, IndexedHook[]>();
-  for (const h of index.hooks) groups.set(h.name, [...(groups.get(h.name) ?? []), h]);
-  return [...groups]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, registrations]) => {
-      registrations.sort((a, b) => (order.get(a.cartridge) ?? 0) - (order.get(b.cartridge) ?? 0));
-      const kind = registrations[0].kind;
-      const stopper = kind === 'system' ? registrations.findIndex((r) => r.returnsValue === 'yes') : -1;
-      let warning: string | undefined;
-      if (stopper >= 0) {
-        const skipped = registrations.length - stopper - 1;
-        warning =
-          `${registrations[stopper].cartridge} can return a value, which skips ` +
-          (skipped > 0 ? `${skipped} later registration${skipped > 1 ? 's' : ''} and ` : '') +
-          'the system implementation.';
-      }
-      const count = `${registrations.length} registration${registrations.length > 1 ? 's' : ''}`;
-      return {
-        name,
-        kind,
-        registrations,
-        row: {
-          label: name,
-          description: `${kind} · ${count}`,
-          ...(warning ? {warning} : {}),
-          tooltip: [name, kind === 'system' ? SYSTEM_HOOK_NOTE : CUSTOM_HOOK_NOTE, warning ?? '']
-            .filter(Boolean)
-            .join('\n\n'),
-        },
-      };
-    });
+  return hookChains(index).map((chain) => {
+    const count = `${chain.registrations.length} registration${chain.registrations.length > 1 ? 's' : ''}`;
+    return {
+      ...chain,
+      row: {
+        label: chain.name,
+        description: `${chain.kind} · ${count}`,
+        ...(chain.issue ? {warning: chain.issue} : {}),
+        tooltip: [chain.name, HOOK_SEMANTICS[chain.kind], chain.issue ?? chain.note ?? ''].filter(Boolean).join('\n\n'),
+      },
+    };
+  });
 }
 
 /** Row for one hook registration. */
 export function hookRegistrationRow(group: HookGroup, hook: IndexedHook, position: number): RowModel {
   const where = hook.relPath ? `${fileName(hook.relPath)}${hook.line ? `:${hook.line}` : ''}` : hook.script;
+  const warning = hookRegistrationIssue(group, hook);
   let detail: string | undefined;
-  let warning: string | undefined;
-  if (!hook.relPath) {
-    warning = `Script ${hook.script} not found.`;
-  } else if (group.kind === 'system') {
-    if (hook.returnsValue === 'unknown')
-      warning = `No exported function named ${hook.function} in ${fileName(hook.relPath)}.`;
-    else if (hook.returnsValue === 'yes') {
-      detail = 'returns a value';
-      warning = 'Returns a value: when it does, later registrations and the system implementation are skipped.';
-    } else detail = 'returns nothing';
-  } else if (hook.exports && hook.exports.length > 0) {
+  if (group.kind === 'system' && hook.returnsValue !== 'unknown') {
+    detail = hook.returnsValue === 'yes' ? 'returns a value' : 'returns nothing';
+  } else if (group.kind === 'custom' && hook.exports && hook.exports.length > 0) {
     // Custom extension points: the caller picks the function in HookMgr.callHook(name, functionName, ...).
     detail = `exports ${hook.exports.join(', ')}`;
   }
@@ -237,38 +199,23 @@ export function hookRegistrationRow(group: HookGroup, hook: IndexedHook, positio
 // ---------------------------------------------------------------------------
 
 /** A Custom API and its endpoints. */
-export interface CustomApiGroup {
-  api: string;
-  endpoints: IndexedCustomApiEndpoint[];
+export interface CustomApiGroup extends SdkCustomApiGroup {
   row: RowModel;
 }
 
 /** Custom API endpoints grouped by API name. */
 export function customApiGroups(index: ProjectIndex): CustomApiGroup[] {
-  const groups = new Map<string, IndexedCustomApiEndpoint[]>();
-  for (const e of index.customApis) groups.set(e.api, [...(groups.get(e.api) ?? []), e]);
-  return [...groups]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([api, endpoints]) => {
-      const cartridges = [...new Set(endpoints.map((e) => e.cartridge))];
-      const types = [...new Set(endpoints.map((e) => e.apiType).filter((t) => t !== 'unknown'))];
-      const warning =
-        cartridges.length > 1
-          ? `Defined in more than one cartridge (${cartridges.join(', ')}). Check which one is on the site's cartridge path.`
-          : undefined;
-      return {
-        api,
-        endpoints,
-        row: {
-          label: api,
-          description: [types.join('/'), cartridges.join(', ')].filter(Boolean).join(' · '),
-          ...(warning ? {warning} : {}),
-          tooltip: [`Custom API ${api}`, `Cartridge: ${cartridges.join(', ')}`, warning ?? '']
-            .filter(Boolean)
-            .join('\n'),
-        },
-      };
-    });
+  return sdkCustomApiGroups(index).map((group) => ({
+    ...group,
+    row: {
+      label: group.api,
+      description: [group.types.join('/'), group.cartridges.join(', ')].filter(Boolean).join(' · '),
+      ...(group.issue ? {warning: group.issue} : {}),
+      tooltip: [`Custom API ${group.api}`, `Cartridge: ${group.cartridges.join(', ')}`, group.issue ?? '']
+        .filter(Boolean)
+        .join('\n'),
+    },
+  }));
 }
 
 /** Row for one Custom API endpoint: `getPoints` with `GET /points · ShopperToken c_loyalty`. */

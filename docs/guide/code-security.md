@@ -46,7 +46,7 @@ Each finding has a **severity** (how bad the problem is if it's real) and a **co
 - `medium` confidence findings usually are, but the rule may not see a check made elsewhere, such as a redirect target validated in a helper module.
 - `low` confidence findings need judgment, such as whether a logged value is personal data.
 
-Read the code around a finding before changing it, then follow the fix in the [rule reference](./security-rules.md). Re-run `b2c security scan --rule <rule-id> <file>` to confirm it's gone.
+Read the code around a finding before changing it, then follow the fix in the [rule reference](./security-rules.md). For route findings, `b2c project endpoint <Controller-Action>` shows everything that runs for the endpoint and which cartridge each piece comes from (see [`b2c project`](../cli/project.md)). Re-run `b2c security scan --rule <rule-id> <file>` to confirm it's gone.
 
 ## Routes, overlays, and the cartridge path
 

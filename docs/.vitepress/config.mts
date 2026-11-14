@@ -214,6 +214,7 @@ const referenceSidebar = [
       {text: 'MRT', link: '/cli/mrt'},
       {text: 'Object Types', link: '/cli/object-types'},
       {text: 'Preferences', link: '/cli/preferences'},
+      {text: 'Project', link: '/cli/project'},
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},

@@ -88,7 +88,7 @@ The **Endpoints** view shows what your cartridges expose and what runs for each 
 - **Custom APIs**: each API's endpoints with method, path, security scheme, and scopes from `schema.yaml`, linked to the implementing function. Missing operations, missing `.public = true`, and APIs defined in more than one cartridge are flagged.
 - **Hooks**: each extension point's registrations in cartridge path order. For system extension points (`dw.*`, including OCAPI/SCAPI hooks), an implementation that returns a value skips the later registrations and the system implementation, so the view flags implementations that can return one. Custom extension points run every registration.
 
-Click any row to open the code. Use **Filter** to narrow by name and **Show Only Endpoints with Issues** to focus on warnings. The **Cartridges** view also lists each cartridge's controllers and the route statements in each file, noting when another cartridge replaces, prepends to, or appends to a route. Turn the view off with the `b2c-dx.features.endpoints` setting.
+Click any row to open the code. Use **Filter** to narrow by name and **Show Only Endpoints with Issues** to focus on warnings. The **Cartridges** view also lists each cartridge's controllers and the route statements in each file, noting when another cartridge replaces, prepends to, or appends to a route. Turn the view off with the `b2c-dx.features.endpoints` setting. The same information is available from the command line and to AI assistants with [`b2c project`](../cli/project.md).
 
 ### SCAPI API Explorer
 
