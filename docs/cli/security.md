@@ -102,8 +102,8 @@ res.redirect(target); // b2c-dx-disable-line open-redirect
 A suppression must name the rule; several rules can be listed, separated by commas or spaces. In XML site data, use an XML comment and separate the reason with a single hyphen, because XML comments can't contain `--`:
 
 ```xml
-<!-- b2c-dx-disable-next-line service-communication-log - sandbox-only service -->
-<comm-log-enabled>true</comm-log-enabled>
+<!-- b2c-dx-disable-next-line service-insecure-url - mock endpoint on the sandbox network -->
+<url>http://erp-mock.internal.example.com/orders</url>
 ```
 
 ### Notes

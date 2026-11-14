@@ -73,30 +73,3 @@ export const serviceInsecureUrl = defineMetadataRule({
     }
   },
 });
-
-export const serviceCommunicationLog = defineMetadataRule({
-  id: 'service-communication-log',
-  severity: 'medium',
-  confidence: 'medium',
-  category: 'pii',
-  cwe: ['CWE-532'],
-  description:
-    'Services in services.xml with communication logging enabled (comm-log-enabled), which writes full request and response bodies to the service log, often including personal data, tokens, or payment details.',
-  remediation:
-    'Disable communication logging except while debugging on a sandbox, and filter sensitive fields with filterLogMessage in the service callback when you need it.',
-  kinds: ['services'],
-  check(document, report) {
-    if (document.format !== 'xml') return;
-    for (const service of descendantsNamed(document.root, 'service')) {
-      const flag = childNamed(service, 'comm-log-enabled');
-      if (flag?.text === 'true') {
-        const id = service.attributes['service-id'] ?? '(unnamed)';
-        report({
-          line: flag.line,
-          column: flag.column,
-          message: `Service "${id}" logs full request and response bodies (comm-log-enabled).`,
-        });
-      }
-    }
-  },
-});

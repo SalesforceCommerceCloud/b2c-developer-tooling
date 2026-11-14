@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-14T16:00:18.026Z",
+  "generatedAt": "2026-11-14T16:15:41.250Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -359,7 +359,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.md",
-      "headings": "Run a scan • Triage findings • Routes, overlays, and the cartridge path • SFRA and SiteGenesis base cartridges • Adopt scanning on an existing codebase • Run it in CI • Use it with your AI assistant • How it works • Limitations",
+      "headings": "Run a scan • Triage findings • Routes, overlays, and the cartridge path • SFRA and SiteGenesis base cartridges • Adopt scanning on an existing codebase • Suppress findings • Run it in CI • Use it with your AI assistant • How it works • Limitations",
       "preview": "Find and fix security problems in B2C Commerce storefront code (SFRA, SiteGenesis, and custom cartridges) with b2c security scan, in the terminal, in CI with SARIF, and with your AI assistant."
     },
     {
@@ -539,7 +539,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.md",
-      "headings": "csrf-allowlist • dynamic-code • file-path-from-request • get-mutates-state • hardcoded-credentials • insecure-cookie • mass-assignment • object-query-injection • ocapi-broad-access • ocapi-demo-client-id • open-redirect • pii-in-logs • preference-secret-value • secret-attribute-not-password • service-communication-log • service-credential-password • service-insecure-url • sfra-post-without-csrf • sfra-replace-drops-middleware • sg-post-without-csrf • weak-crypto",
+      "headings": "csrf-allowlist • dynamic-code • file-path-from-request • get-mutates-state • hardcoded-credentials • insecure-cookie • mass-assignment • object-query-injection • ocapi-broad-access • ocapi-demo-client-id • open-redirect • pii-in-logs • preference-secret-value • secret-attribute-not-password • service-credential-password • service-insecure-url • sfra-post-without-csrf • sfra-replace-drops-middleware • sg-post-without-csrf • weak-crypto",
       "preview": "Reference for the rules that b2c security scan runs on B2C Commerce cartridge code, with examples and fixes for each."
     },
     {

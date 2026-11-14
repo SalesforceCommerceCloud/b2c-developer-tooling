@@ -7,7 +7,7 @@ import type {MetadataRule} from '../types.js';
 import {csrfAllowlist} from './csrf-allowlist.js';
 import {ocapiBroadAccess, ocapiDemoClientId} from './ocapi.js';
 import {preferenceSecretValue, secretAttributeNotPassword} from './secrets.js';
-import {serviceCommunicationLog, serviceCredentialPassword, serviceInsecureUrl} from './services.js';
+import {serviceCredentialPassword, serviceInsecureUrl} from './services.js';
 
 /**
  * Built-in metadata rules. To add one, create it in this directory, add it
@@ -20,7 +20,6 @@ export const METADATA_RULES: readonly MetadataRule[] = Object.freeze([
   ocapiDemoClientId,
   preferenceSecretValue,
   secretAttributeNotPassword,
-  serviceCommunicationLog,
   serviceCredentialPassword,
   serviceInsecureUrl,
 ]);

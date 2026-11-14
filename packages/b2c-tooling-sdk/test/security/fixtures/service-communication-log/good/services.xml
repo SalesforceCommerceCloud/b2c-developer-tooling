@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
-    <service service-id="payment.http">
-        <service-type>HTTP</service-type>
-        <enabled>true</enabled>
-        <comm-log-enabled>false</comm-log-enabled>
-    </service>
-</services>

@@ -6,7 +6,7 @@ description: Reference for the rules that b2c security scan runs on B2C Commerce
 
 The rules that [`b2c security scan`](../cli/security.md#b2c-security-scan) runs. List them with `b2c security rules`. To suppress a finding, add `// b2c-dx-disable-next-line <rule-id>` on the line before it.
 
-Most rules check cartridge JavaScript. Metadata rules (`csrf-allowlist`, `ocapi-*`, `preference-secret-value`, `secret-attribute-not-password`, `service-*`) check site import/export data wherever it is in the project, such as a `site_template` folder: `services.xml`, `preferences.xml`, attribute definitions (`meta/*.xml`), `csrf-whitelists.xml`, and OCAPI settings (`ocapi-settings/wapi_*_config.json`). Suppress a metadata finding with an XML comment, `<!-- b2c-dx-disable-next-line <rule-id> - reason -->` (XML comments can't contain `--`, so separate the optional reason with a single hyphen); JSON has no comments, so use the baseline.
+Most rules check cartridge JavaScript. Metadata rules (`csrf-allowlist`, `ocapi-*`, `preference-secret-value`, `secret-attribute-not-password`, `service-credential-password`, `service-insecure-url`) check site import/export data wherever it is in the project, such as a `site_template` folder: `services.xml`, `preferences.xml`, attribute definitions (`meta/*.xml`), `csrf-whitelists.xml`, and OCAPI settings (`ocapi-settings/wapi_*_config.json`). Suppress a metadata finding with an XML comment, `<!-- b2c-dx-disable-next-line <rule-id> - reason -->` (XML comments can't contain `--`, so separate the optional reason with a single hyphen); JSON has no comments, so use the baseline.
 
 Route rules understand SFRA (`server.get`/`post`/`use`, and `server.extend` with `append`, `prepend`, and `replace` across the cartridge path) and SiteGenesis (`guard.ensure` filters). The scanner builds a project index of every cartridge under the scan root, so a rule can tell, for example, that an overlay cartridge prepends a CSRF check to a base route.
 
@@ -26,7 +26,6 @@ Route rules understand SFRA (`server.get`/`post`/`use`, and `server.extend` with
 | [`pii-in-logs`](#pii-in-logs)                                     | medium   | Personal or payment data written to logs                               |
 | [`preference-secret-value`](#preference-secret-value)             | high     | Credential values in `preferences.xml`                                 |
 | [`secret-attribute-not-password`](#secret-attribute-not-password) | medium   | Secret-named attributes that aren't the password type                  |
-| [`service-communication-log`](#service-communication-log)         | medium   | Services that log full request and response bodies                     |
 | [`service-credential-password`](#service-credential-password)     | high     | Plaintext passwords in `services.xml`                                  |
 | [`service-insecure-url`](#service-insecure-url)                   | medium   | Service credentials with `http://` URLs                                |
 | [`sfra-post-without-csrf`](#sfra-post-without-csrf)               | high     | SFRA POST routes without a CSRF token check                            |
@@ -254,12 +253,6 @@ Finds custom attribute definitions (site preferences, system object extensions, 
     <type>password</type>
 </attribute-definition>
 ```
-
-## service-communication-log
-
-**Severity:** medium · **Confidence:** medium · **CWE:** CWE-532
-
-Finds services in `services.xml` with `<comm-log-enabled>true</comm-log-enabled>`, which writes full request and response bodies to the service log. Bodies often include personal data, tokens, or payment details. Enable communication logging only while debugging on a sandbox, and implement `filterLogMessage` in the service callback to mask sensitive fields when you need it.
 
 ## service-credential-password
 

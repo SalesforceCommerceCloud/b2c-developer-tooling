@@ -12,7 +12,7 @@ Code security scanning is a preview. Rules, output fields, and flags may change 
 
 - **CSRF:** SFRA and SiteGenesis POST routes without a CSRF token check, GET routes that change data, and `server.replace()` overrides that drop the CSRF, login, HTTPS, or method checks of the route they replace.
 - **Injection:** object query strings built by concatenation, file paths and upload names chosen by the client, request fields copied into persistent objects by key, and code built from strings at runtime.
-- **Site data and settings:** OCAPI settings that use the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` or grant every resource, plaintext service passwords and `http://` service URLs, communication logging, credentials in preferences, secret attributes that aren't the password type, and Business Manager CSRF exemptions.
+- **Site data and settings:** OCAPI settings that use the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` or grant every resource, plaintext service passwords and `http://` service URLs, credentials in preferences, secret attributes that aren't the password type, and Business Manager CSRF exemptions.
 - **Redirects, secrets, and data handling:** open redirects, hardcoded credentials, weak `dw.crypto` usage, cookies without Secure and HttpOnly, and personal data in logs.
 
 The scan runs locally against your working tree, needs no instance or credentials, and takes well under a second for a typical storefront. See [Security Rules](./security-rules.md) for what each rule finds and how to fix it.
@@ -91,12 +91,34 @@ b2c security scan
 
 `b2c security scan` picks up `.b2c-security-baseline.json` from the current directory automatically. Baseline entries match on the rule, the file, and the text of the line, so they survive code moving up or down; changing the line makes the finding new again. Regenerate the baseline as you fix findings.
 
-To accept a single finding in code, add a comment that names the rule. A reason after `--` is optional and appears in JSON and SARIF output:
+## Suppress findings
+
+When you've reviewed a finding and decided the code is safe, accept it so it stops being reported. There are two ways:
+
+- **Inline comment**, for a single finding you want to explain where it happens. The decision lives next to the code and shows up in code review.
+- **Baseline**, for findings you accept in bulk (see [above](#adopt-scanning-on-an-existing-codebase)), and for files that can't hold comments, such as OCAPI settings JSON.
+
+An inline comment must name the rule it suppresses. There's no way to turn off every rule for a line, so a suppression can't hide a different problem later. Use `b2c-dx-disable-next-line` on the line before the finding, or `b2c-dx-disable-line` at the end of the line:
 
 ```js
-// b2c-dx-disable-next-line hardcoded-credentials -- test fixture, not a real key
-var key = 'test_51HxQ2eKz8Y3';
+// b2c-dx-disable-next-line open-redirect -- target checked by isAllowedRedirect()
+res.redirect(target);
+
+res.redirect(target); // b2c-dx-disable-line open-redirect
 ```
+
+- Name several rules separated by commas or spaces: `// b2c-dx-disable-next-line open-redirect, dynamic-code`.
+- The reason after `--` is optional. When present, it appears in JSON output (`suppression.reason`) and in SARIF as the suppression's justification, so reviewers and GitHub code scanning can see why.
+- Rule IDs may carry the `b2c-security/` prefix, matching how the rules are named in ESLint and oxlint.
+
+In XML site data (`services.xml`, `preferences.xml`, and so on), use an XML comment. XML comments can't contain `--`, so separate the reason with a single hyphen:
+
+```xml
+<!-- b2c-dx-disable-next-line service-insecure-url - mock endpoint on the sandbox network -->
+<url>http://erp-mock.internal.example.com/orders</url>
+```
+
+Suppressed findings are still recorded: `b2c security scan --show-suppressed` lists them, and they appear in JSON and SARIF marked as suppressed. For findings in [SFRA or SiteGenesis base cartridges](#sfra-and-sitegenesis-base-cartridges), which you don't edit, use the baseline or fix them from your own cartridge rather than adding comments to the base code.
 
 ## Run it in CI
 
