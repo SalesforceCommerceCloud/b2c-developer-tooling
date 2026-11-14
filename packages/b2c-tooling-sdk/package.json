@@ -55,6 +55,11 @@
       "types": "./dist/esm/cartridges/index.d.ts",
       "default": "./dist/esm/cartridges/index.js"
     },
+    "./security": {
+      "development": "./src/security/index.ts",
+      "types": "./dist/esm/security/index.d.ts",
+      "default": "./dist/esm/security/index.js"
+    },
     "./operations/code": {
       "development": "./src/operations/code/index.ts",
       "types": "./dist/esm/operations/code/index.d.ts",
@@ -311,6 +316,7 @@
     "@salesforce/dev-config": "catalog:",
     "@types/chai": "catalog:",
     "@types/ejs": "^3.1.5",
+    "@types/estree": "^1.0.6",
     "@types/js-yaml": "4.0.9",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
@@ -320,6 +326,7 @@
     "@types/xml2js": "^0.4.14",
     "c8": "catalog:",
     "chai": "catalog:",
+    "esbuild": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",
@@ -327,6 +334,7 @@
     "mocha": "catalog:",
     "msw": "catalog:",
     "openapi-typescript": "^7.10.1",
+    "oxlint": "1.93.0",
     "prettier": "catalog:",
     "shx": "catalog:",
     "sinon": "catalog:",
@@ -352,6 +360,9 @@
     "chokidar": "5.0.0",
     "cliui": "catalog:",
     "ejs": "3.1.10",
+    "eslint-scope": "^8.4.0",
+    "eslint-visitor-keys": "^4.2.1",
+    "espree": "^10.4.0",
     "glob": "catalog:",
     "i18next": "25.7.4",
     "jiti": "2.6.1",

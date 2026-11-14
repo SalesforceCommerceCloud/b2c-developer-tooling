@@ -155,6 +155,7 @@ See [CLI command development skill](./.claude/skills/cli-command-development/SKI
 - [Testing](./.claude/skills/testing/SKILL.md) - Mocha, Chai, MSW patterns
 - [Documentation](./.claude/skills/documentation/SKILL.md) - user guides, CLI reference, API docs
 - [Review](./.claude/skills/review/SKILL.md) - reviewing a branch or pull request before merge
+- [Security rule development](./.claude/skills/security-rule-development/SKILL.md) - adding and tuning `b2c security scan` rules
 
 ## Pull Requests
 

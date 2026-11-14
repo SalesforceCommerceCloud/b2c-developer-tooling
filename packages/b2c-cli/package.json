@@ -275,6 +275,9 @@
           }
         }
       },
+      "security": {
+        "description": "[PREVIEW] Scan cartridge code for security problems"
+      },
       "preferences": {
         "description": "Commands for managing custom global and site preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/preferences.html",
         "subtopics": {

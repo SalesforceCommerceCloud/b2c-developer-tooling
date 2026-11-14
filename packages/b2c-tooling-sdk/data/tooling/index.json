@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-09T17:36:45.376Z",
+  "generatedAt": "2026-11-14T04:40:04.368Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -226,6 +226,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.md",
       "headings": "Global SCAPI Schemas Flags • Tenant Flags • Authentication Flags • Common Flags • Output Flags • Authentication • Required Scopes • Configuration • b2c scapi schemas list • Usage • Flags • Available Columns • Examples • Output • b2c scapi schemas get • Usage • Arguments • Flags • Server-side expansion • Offline fallback • Schema Collapsing • Examples • Output Formats • Notes",
       "preview": "Commands for listing and retrieving Salesforce Commerce API (SCAPI) OpenAPI schemas, with selective path, schema, and example expansion for LLM context."
+    },
+    {
+      "id": "cli-security",
+      "title": "Security Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.md",
+      "headings": "b2c security scan • Usage • Arguments • Flags • Examples • Output • Suppressing a finding • Notes • b2c security rules • Usage • b2c security baseline • Usage • Flags • Examples",
+      "preview": "Scan B2C Commerce cartridge code for security problems with b2c security scan, list the rules, and baseline existing findings."
     },
     {
       "id": "cli-setup",
@@ -505,6 +514,24 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security.md",
       "headings": "Supply Chain Security • Minimum Release Age • Trust Policy • Restricting Build Scripts • NPM Trusted Publishing • Operational Security: Safety Mode • Best Practices • For Contributors • For Users",
       "preview": "Security practices for the B2C Developer Tooling project including supply chain protections and dependency management."
+    },
+    {
+      "id": "guide-security-rules",
+      "title": "Security Rules",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.md",
+      "headings": "dynamic-code • hardcoded-credentials • insecure-cookie • object-query-injection • open-redirect • weak-crypto",
+      "preview": "Reference for the rules that b2c security scan runs on B2C Commerce cartridge code, with examples and fixes for each."
+    },
+    {
+      "id": "guide-security-scanning",
+      "title": "Security Scanning",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-scanning.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-scanning.md",
+      "headings": "Run a scan • Use it on an existing codebase • Run it in CI • How the rules work",
+      "preview": "Find security problems in B2C Commerce cartridge code with the b2c security scanner, in the terminal, in CI with SARIF, or through ESLint and oxlint."
     },
     {
       "id": "guide-sfcc-ci-migration",

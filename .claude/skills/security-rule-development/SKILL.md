@@ -1,0 +1,104 @@
+---
+name: security-rule-development
+description: Adding or changing rules for b2c security scan (the SDK security module). Use when adding a new security rule, tuning a rule's false positives or negatives from a real-world case, writing rule fixtures, or changing the rule runner, suppressions, baselines, or SARIF output.
+metadata:
+  internal: true
+---
+
+# Security Rule Development
+
+Security rules live in `packages/b2c-tooling-sdk/src/security/`. Each rule is an ESLint v9 rule, so the same object runs in three places: the SDK runner (used by `b2c security scan`, MCP, and the VS Code extension), ESLint, and oxlint's JS plugins. Tests run every rule under all three.
+
+## Add a rule
+
+1. **Create `src/security/rules/<rule-id>.ts`** with `defineScriptRule`:
+
+   ```typescript
+   import {defineScriptRule} from '../rule.js';
+   import {isRequestDerived, propertyName} from '../script/helpers.js';
+
+   export default defineScriptRule({
+     id: 'my-rule', // kebab-case, no slashes; a public contract once released
+     severity: 'medium', // critical | high | medium | low | info
+     confidence: 'medium', // how sure a finding is real; low = needs human or agent judgment
+     category: 'injection', // see SecurityCategory in types.ts
+     cwe: ['CWE-79'],
+     description: 'One sentence: what the rule finds.',
+     remediation: 'How to fix a finding.',
+     create(context) {
+       return {
+         CallExpression(node) {
+           if (propertyName(node.callee) === 'writeRaw' && isRequestDerived(node.arguments[0], context.sourceCode)) {
+             context.report({node, message: 'Specific, actionable message.'});
+           }
+         },
+       };
+     },
+   });
+   ```
+
+2. **Register it** in `src/security/rules/index.ts` (`SCRIPT_RULES`).
+3. **Add fixtures** in `test/security/fixtures/<rule-id>/`:
+   - `bad.js`: realistic code; end every line that should produce a finding with `// expect`. The finding's start line must be the marked line.
+   - `good.js`: the safe versions, including near-misses the rule must not flag. Must produce no findings.
+   - Base fixtures on real storefront code where possible (SFRA, SiteGenesis, Storefront Next cartridges).
+4. **Document it** with a `## <rule-id>` section in `docs/guide/security-rules.md` (severity, confidence, CWE, what it finds, a finding/fix example) and a row in the table at the top. Regenerate the tooling index (`pnpm --filter @salesforce/b2c-tooling-sdk run generate:tooling-index`).
+5. **Update the user skill** fix table in `skills/b2c-cli/skills/b2c-security/SKILL.md`.
+6. **Run** `pnpm --filter @salesforce/b2c-tooling-sdk exec mocha "test/security/**/*.test.ts"`. The harness checks the ID format, fixtures, docs section, and that the SDK runner, ESLint, and oxlint all report exactly the marked lines.
+7. **Add a changeset** (`@salesforce/b2c-tooling-sdk` and `@salesforce/b2c-cli`, minor for a new rule).
+
+## Rule API: what you may use
+
+Rules must run identically in all three runners, so stick to this subset:
+
+- Visitors keyed by ESTree node type, plus `'<Type>:exit'`. **No selector syntax** (`CallExpression > Identifier`).
+- `node.parent` (set on every node).
+- `context.report({node, message})`. No `messageId`, `data`, `fix`, or `suggest`.
+- `context.sourceCode.getText(node)`, `.getScope(node)`, `.getAncestors(node)`, `.ast`, `.text`.
+- `context.filename`, `context.settings`, `context.options` (no rule options are configured today).
+
+Rules must not:
+
+- **Depend on the top-level scope's `type`.** ESLint wraps CommonJS files in a `function` scope; oxlint reports `global`. Look variables up by name with `findVariable()`, which walks `scope.upper`.
+- **Keep state across files.** oxlint runs rules on worker threads. Collect per-file state in `create()` and report in `'Program:exit'`.
+- **Read the filesystem.** Cross-file facts (cartridge path, routes, hooks) will come from the SDK project index through `context.settings`.
+
+## Helpers (`src/security/script/helpers.ts`)
+
+| Helper                                         | Use                                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `requireSpecifier(node)`                       | `'dw/web/Cookie'` for `require('dw/web/Cookie')`                                          |
+| `requiredModuleOf(identifier, sourceCode)`     | The module a variable was bound to with `require`                                         |
+| `memberChain(node)` / `propertyName(node)`     | `['req', 'querystring', 'url']` / the property name of a member expression                |
+| `calleeName(call)`                             | Method or function name of a call                                                         |
+| `isRequestDerived(node, sourceCode, options)`  | Whether a value carries request input (`req.querystring`, `request.httpParameterMap`, ...), through string operations and local variables |
+| `isDynamicString(node)`                        | Concatenation, template literal with expressions, or `.concat()`                          |
+| `concatenationParts(node)`                     | Operands of a concatenation or template literal, in order                                 |
+| `collectCheckedVariables(sourceCode)`          | Variables passed to a call inside an `if`/ternary test (a light "was validated" signal)    |
+| `findVariable(scope, name)` / `assignedValues(variable)` | Resolve identifiers and the values assigned to them                            |
+
+Extend `REQUEST_SOURCES` or `PASS_THROUGH_METHODS` in `helpers.ts` when a real case shows another input source or string operation; add a fixture line that covers it.
+
+## Tuning from a real case
+
+1. Reduce the case to a few lines and add it to `bad.js` (missed finding) or `good.js` (false positive).
+2. Run the tests and watch it fail.
+3. Fix the rule or helper. Prefer narrowing by Script API or framework idiom (for example, a fixed origin in a redirect) over broad name heuristics.
+4. Scan the reference storefronts (SFRA, SiteGenesis) and check that the change adds no noise:
+
+   ```bash
+   cd path/to/storefront-reference-architecture && b2c security scan
+   ```
+
+## Severity and confidence
+
+- **Severity** is the impact if the finding is real: `critical` (remote takeover, data exposure at scale), `high` (injection, credential exposure), `medium` (redirects, weak crypto), `low` (hardening such as cookie flags), `info`.
+- **Confidence** is how often a finding is real: `high` (the pattern is the problem, such as `eval`), `medium` (usually real, sometimes validated elsewhere), `low` (needs judgment, such as "is this logged value personal data").
+
+## Other pieces
+
+- `script/runner.ts`: parses with espree (CommonJS, falling back to modules) and eslint-scope, sets `parent`, and dispatches visitors.
+- `suppressions.ts`: `b2c-dx-disable-next-line` / `b2c-dx-disable-line` comments; IDs required, `-- reason` optional.
+- `baseline.ts`: fingerprints from rule, file, and trimmed line text plus an occurrence index.
+- `sarif.ts`: SARIF 2.1.0 with `security-severity` for GitHub code scanning.
+- `eslint-plugin.ts`: the rules as an ESLint/oxlint plugin (`b2c-security/<rule-id>`); not exported from the package yet.

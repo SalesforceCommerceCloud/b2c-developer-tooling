@@ -37,6 +37,7 @@ Skills covering the major B2C CLI surfaces:
 - **`b2c-storefronts`** — Storefront Next setup across instances (create vs. import)
 - **`b2c-config`** — CLI configuration, auth, and troubleshooting
 - **`b2c-scapi-custom`** — SCAPI Custom API management
+- **`b2c-security`** — scan cartridge code for security problems and fix findings (preview)
 
 See [`skills/`](./skills/) for the full list.
 
