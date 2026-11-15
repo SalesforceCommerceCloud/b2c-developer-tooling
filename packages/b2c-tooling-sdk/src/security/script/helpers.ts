@@ -195,6 +195,8 @@ export function isRequestDerived(
     case 'CallExpression': {
       const callee = n.callee as Node;
       if (callee.type === 'MemberExpression') {
+        // JSON.parse(req.body) and similar: the parsed object carries the request input.
+        if (memberChain(callee)?.join('.') === 'JSON.parse') return recurse(n.arguments[0]);
         if (PASS_THROUGH_METHODS.has(propertyName(callee) ?? '')) {
           return recurse(callee.object) || n.arguments.some((a: AstNode) => recurse(a));
         }
@@ -206,9 +208,10 @@ export function isRequestDerived(
       return false;
     }
     case 'BinaryExpression':
-      return n.operator === '+' && (recurse(n.left) || recurse(n.right));
     case 'TemplateLiteral':
-      return n.expressions.some((e: AstNode) => recurse(e));
+      // Flatten so a long `a + '_' + b + ...` chain doesn't use up the depth budget.
+      if (n.type === 'BinaryExpression' && n.operator !== '+') return false;
+      return concatenationParts(n).some((part) => isRequestDerived(part, sourceCode, options, depth));
     case 'LogicalExpression':
       return recurse(n.left) || recurse(n.right);
     case 'ConditionalExpression':

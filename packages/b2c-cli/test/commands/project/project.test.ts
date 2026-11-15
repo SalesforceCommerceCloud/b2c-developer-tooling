@@ -115,6 +115,24 @@ describe('project', () => {
     expect(JSON.parse(fs.readFileSync(path.join(tmp, 'index.json'), 'utf8')).version).to.equal(1);
   });
 
+  it('indexes the --project-directory instead of the current directory', async () => {
+    const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-project-cwd-'));
+    try {
+      process.chdir(elsewhere);
+      const command: any = await createTestCommand(ProjectIndexCommand, hooks.getConfig(), {});
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      command.resolvedConfig.values.projectDirectory = tmp;
+      const index = await command.run();
+      expect(index.cartridges.map((c: {name: string}) => c.name)).to.include.members([
+        'app_custom',
+        'app_storefront_base',
+      ]);
+    } finally {
+      process.chdir(tmp);
+      fs.rmSync(elsewhere, {recursive: true, force: true});
+    }
+  });
+
   it('endpoints lists composed endpoints with issues and filters', async () => {
     const {endpoints} = await run<{endpoints: any[]}>(ProjectEndpoints);
     expect(endpoints.map((e) => e.id)).to.deep.equal(['Account-Save', 'Account-Subscribe']);

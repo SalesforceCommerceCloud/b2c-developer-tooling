@@ -27,7 +27,7 @@ From the root of your project:
 b2c security scan
 ```
 
-The scanner finds the cartridges under the current directory (folders with a `.project` file) and checks their server-side `.js` and `.ds` scripts, and checks site import/export data it finds (such as a `site_template` folder). Browser code under `cartridge/client/` and `cartridge/static/` is skipped. Findings are grouped by file:
+The scanner finds the cartridges under the project directory (`--project-directory`, or the current directory; folders with a `.project` file) and checks their server-side `.js` and `.ds` scripts, and checks site import/export data it finds (such as a `site_template` folder). Browser code under `cartridge/client/` and `cartridge/static/` is skipped. Findings are grouped by file:
 
 ```text
 cartridges/app_custom/cartridge/controllers/Account.js
@@ -51,7 +51,7 @@ Read the code around a finding before changing it, then follow the fix in the [r
 
 ## Routes, overlays, and the cartridge path
 
-Route rules understand SFRA controllers (`server.get`, `post`, and `use`, and `server.extend(module.superModule)` with `append`, `prepend`, and `replace`) and SiteGenesis controllers (`guard.ensure` filters). Before running rules, the scanner builds an index of every cartridge under the current directory and composes each route along the cartridge path, so it can tell that an overlay cartridge prepends a CSRF check to a base route, or that a `server.replace()` dropped one.
+Route rules understand SFRA controllers (`server.get`, `post`, and `use`, and `server.extend(module.superModule)` with `append`, `prepend`, and `replace`) and SiteGenesis controllers (`guard.ensure` filters). Before running rules, the scanner builds an index of every cartridge under the project directory and composes each route along the cartridge path, so it can tell that an overlay cartridge prepends a CSRF check to a base route, or that a `server.replace()` dropped one.
 
 Cartridges are ordered by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`). Set it to your site's cartridge path so overlays are composed the way your storefront runs them:
 
@@ -89,7 +89,7 @@ git add .b2c-security-baseline.json
 b2c security scan
 ```
 
-`b2c security scan` picks up `.b2c-security-baseline.json` from the current directory automatically. Baseline entries match on the rule, the file, and the text of the line, so they survive code moving up or down; changing the line makes the finding new again. Regenerate the baseline as you fix findings.
+`b2c security scan` picks up `.b2c-security-baseline.json` from the project directory automatically, which is also where `b2c security baseline` writes it. Baseline entries match on the rule, the file, and the text of the line, so they survive code moving up or down; changing the line makes the finding new again. Regenerate the baseline as you fix findings.
 
 ## Suppress findings
 

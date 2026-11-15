@@ -13,7 +13,7 @@ import {
   type IndexedHook,
 } from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex} from '../../utils/project/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
 
 /** One extension point in `b2c project hooks` output. */
 export interface HookChainResult extends Omit<HookChain, 'registrations'> {
@@ -53,7 +53,11 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
 
   async run(): Promise<{hooks: HookChainResult[]}> {
     const {args, flags} = await this.parse(ProjectHooks);
-    const index = this.operations.loadProjectIndex(this.resolvedConfig.values.cartridges);
+    const index = this.operations.loadProjectIndex(
+      this.resolvedConfig.values.cartridges,
+      [],
+      projectRoot(this.resolvedConfig),
+    );
     const filter = args.filter?.toLowerCase();
     const hooks = hookChains(index)
       .filter((c) => !filter || c.name.toLowerCase().includes(filter))

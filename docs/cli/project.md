@@ -4,7 +4,7 @@ description: Inspect a B2C Commerce project's storefront code with b2c project â
 
 # Project Commands
 
-Inspect the server-side entry points of a project from its source: which controller endpoints exist, what runs for each request and which cartridge it comes from, which hooks are registered and in what order, and how Custom APIs are wired. The commands read the cartridges under the current directory (folders with a `.project` file), need no instance or credentials, and support `--json` for scripts and AI assistants.
+Inspect the server-side entry points of a project from its source: which controller endpoints exist, what runs for each request and which cartridge it comes from, which hooks are registered and in what order, and how Custom APIs are wired. The commands read the cartridges under the project directory (`--project-directory`, or the current directory; folders with a `.project` file), need no instance or credentials, and support `--json` for scripts and AI assistants.
 
 Cartridges are ordered by the `cartridges` value in your configuration (`dw.json` or `SFCC_CARTRIDGES`), the same order the platform uses for `*/cartridge/...` lookups and `module.superModule`. Without it, cartridges are ordered by discovery with `app_storefront_base` and `modules` last; set `cartridges` to your site's cartridge path to see overlays composed the way your storefront runs them.
 
@@ -124,7 +124,7 @@ b2c project index [paths...]
 
 | Argument | Description                                                                       |
 | -------- | --------------------------------------------------------------------------------- |
-| `paths`  | Additional directories to search for cartridges (the current directory always is) |
+| `paths`  | Additional directories to search for cartridges (the project directory always is) |
 
 | Flag       | Description                       |
 | ---------- | --------------------------------- |

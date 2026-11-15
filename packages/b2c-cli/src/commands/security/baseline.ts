@@ -4,11 +4,13 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import fs from 'node:fs';
+import path from 'node:path';
 import {Flags} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createBaseline, scanSecurity, type SecurityBaseline} from '@salesforce/b2c-tooling-sdk/security';
 import {t, withDocs} from '../../i18n/index.js';
 import {DEFAULT_BASELINE_FILE, ruleFilterFlags} from '../../utils/security/index.js';
+import {projectRoot} from '../../utils/project/index.js';
 
 export default class SecurityBaselineCommand extends BaseCommand<typeof SecurityBaselineCommand> {
   static description = withDocs(
@@ -30,8 +32,7 @@ export default class SecurityBaselineCommand extends BaseCommand<typeof Security
     ...BaseCommand.baseFlags,
     ...ruleFilterFlags,
     output: Flags.string({
-      description: 'Baseline file to write',
-      default: DEFAULT_BASELINE_FILE,
+      description: `Baseline file to write (default: ${DEFAULT_BASELINE_FILE} in the project directory)`,
     }),
   };
 
@@ -41,10 +42,12 @@ export default class SecurityBaselineCommand extends BaseCommand<typeof Security
 
   async run(): Promise<{file: string; findings: number; baseline: SecurityBaseline}> {
     const {argv, flags} = await this.parse(SecurityBaselineCommand);
+    const root = projectRoot(this.resolvedConfig);
+    const output = flags.output ?? path.join(root, DEFAULT_BASELINE_FILE);
     let baseline: SecurityBaseline;
     try {
       const result = this.operations.scanSecurity({
-        root: process.cwd(),
+        root,
         paths: argv as string[],
         rules: flags.rule,
         excludeRules: flags['exclude-rule'],
@@ -54,7 +57,7 @@ export default class SecurityBaselineCommand extends BaseCommand<typeof Security
     } catch (error) {
       this.error((error as Error).message);
     }
-    fs.writeFileSync(flags.output, JSON.stringify(baseline, null, 2) + '\n');
+    fs.writeFileSync(output, JSON.stringify(baseline, null, 2) + '\n');
     if (!this.jsonEnabled()) {
       this.log(
         t(
@@ -62,11 +65,11 @@ export default class SecurityBaselineCommand extends BaseCommand<typeof Security
           'Wrote {{count}} finding(s) to {{file}}. Commit it so scans report only new findings.',
           {
             count: baseline.findings.length,
-            file: flags.output,
+            file: path.relative(process.cwd(), output) || output,
           },
         ),
       );
     }
-    return {file: flags.output, findings: baseline.findings.length, baseline};
+    return {file: output, findings: baseline.findings.length, baseline};
   }
 }

@@ -24,7 +24,7 @@ b2c security scan [paths...]
 
 | Argument | Description                                    | Required                               |
 | -------- | ---------------------------------------------- | -------------------------------------- |
-| `paths`  | Files or directories to scan. Accepts several. | No (defaults to the current directory) |
+| `paths`  | Files or directories to scan. Accepts several. | No (defaults to the project directory: `--project-directory`, or the current directory) |
 
 ### Flags
 
@@ -86,7 +86,7 @@ Findings in the cartridges that ship with SFRA (`app_storefront_base`, `bm_app_s
 
 ### Cartridge path
 
-Route rules compose SFRA routes along the cartridge path (`server.extend(module.superModule)` with `append`, `prepend`, and `replace`). The scanner indexes every cartridge under the current directory, including ones outside the paths you scan, and orders them by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`). Without it, cartridges are ordered by discovery with `app_storefront_base` and `modules` last; set `cartridges` when overlays aren't composed the way your site runs them.
+Route rules compose SFRA routes along the cartridge path (`server.extend(module.superModule)` with `append`, `prepend`, and `replace`). The scanner indexes every cartridge under the project directory, including ones outside the paths you scan, and orders them by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`; a colon-separated path copied from Business Manager works). Without it, cartridges are ordered by discovery with `app_storefront_base` and `modules` last; set `cartridges` when overlays aren't composed the way your site runs them.
 
 ### Suppressing a finding
 

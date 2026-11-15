@@ -48,5 +48,21 @@ function renameAfterUpload(uploaded) {
     uploaded.renameTo(new File(File.IMPEX + '/src/' + request.httpParameterMap.target.stringValue)); // expect
 }
 
+// A personalisation upload that names the stored file after several form fields.
+server.post('SaveBlob', function (req, res, next) {
+    var form = req.form;
+    var name = form.pid + '_' + form.position + '_' + form.color + '_' + form.text + '.jpg';
+    var file = new File(File.TEMP + File.SEPARATOR + name); // expect
+    res.json({saved: file.name});
+    next();
+});
+
+server.post('SaveJson', function (req, res, next) {
+    var body = JSON.parse(req.body);
+    var file = new File(new File(File.TEMP), body.fileName); // expect
+    res.json({saved: file.name});
+    next();
+});
+
 module.exports = server.exports();
 module.exports.helpers = {documented: documented, byField: byField, useNamed: useNamed, joinedPath: joinedPath, renameAfterUpload: renameAfterUpload};

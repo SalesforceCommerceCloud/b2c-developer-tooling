@@ -11,7 +11,7 @@ import {
   type IndexedCustomApiEndpoint,
 } from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex} from '../../utils/project/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
 
 type Row = IndexedCustomApiEndpoint & {implementationPath?: string; apiIssue?: string};
 
@@ -54,7 +54,11 @@ export default class ProjectApis extends BaseCommand<typeof ProjectApis> {
 
   async run(): Promise<{apis: CustomApiGroup[]}> {
     const {args, flags} = await this.parse(ProjectApis);
-    const index = this.operations.loadProjectIndex(this.resolvedConfig.values.cartridges);
+    const index = this.operations.loadProjectIndex(
+      this.resolvedConfig.values.cartridges,
+      [],
+      projectRoot(this.resolvedConfig),
+    );
     const filter = args.filter?.toLowerCase();
     const apis = customApiGroups(index)
       .map((g) => ({

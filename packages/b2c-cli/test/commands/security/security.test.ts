@@ -140,6 +140,27 @@ describe('security', () => {
       expect(output()).to.include('Baseline: .b2c-security-baseline.json');
     });
 
+    it('scans the --project-directory and writes and reads its baseline there', async () => {
+      const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-security-cwd-'));
+      try {
+        process.chdir(elsewhere);
+        const baseline: any = await createTestCommand(SecurityBaselineCommand, hooks.getConfig(), {});
+        sinon.stub(baseline, 'jsonEnabled').returns(true);
+        baseline.resolvedConfig.values.projectDirectory = tmp;
+        const written = await baseline.run();
+        expect(written.findings).to.equal(2);
+        expect(fs.realpathSync(written.file)).to.equal(fs.realpathSync(path.join(tmp, '.b2c-security-baseline.json')));
+
+        const scan = await createScan();
+        scan.resolvedConfig.values.projectDirectory = tmp;
+        const result = await scan.run();
+        expect(result.summary).to.include({open: 0, baselined: 2});
+      } finally {
+        process.chdir(tmp);
+        fs.rmSync(elsewhere, {recursive: true, force: true});
+      }
+    });
+
     it('tags reference cartridge findings and leaves them out with --exclude-reference-cartridges', async () => {
       write('cartridges/app_storefront_base/.project', '<xml/>');
       write('cartridges/app_storefront_base/cartridge/scripts/x.js', 'eval(x);');

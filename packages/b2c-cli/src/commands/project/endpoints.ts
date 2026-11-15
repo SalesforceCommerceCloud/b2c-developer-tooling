@@ -7,7 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {BaseCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {controllerEndpoints, endpointIssues} from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex} from '../../utils/project/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
 
 /** One row of `b2c project endpoints`. */
 export interface EndpointSummary {
@@ -74,7 +74,11 @@ export default class ProjectEndpoints extends BaseCommand<typeof ProjectEndpoint
 
   async run(): Promise<{endpoints: EndpointSummary[]}> {
     const {args, flags} = await this.parse(ProjectEndpoints);
-    const index = this.operations.loadProjectIndex(this.resolvedConfig.values.cartridges);
+    const index = this.operations.loadProjectIndex(
+      this.resolvedConfig.values.cartridges,
+      [],
+      projectRoot(this.resolvedConfig),
+    );
     const filter = args.filter?.toLowerCase();
     const endpoints = controllerEndpoints(index)
       .map<EndpointSummary>((e) => ({

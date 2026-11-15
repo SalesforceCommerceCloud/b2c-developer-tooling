@@ -18,6 +18,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/security';
 import {t, withDocs} from '../../i18n/index.js';
 import {loadBaseline, ruleFilterFlags} from '../../utils/security/index.js';
+import {projectRoot} from '../../utils/project/index.js';
 
 const SEVERITY_COLORS: Record<SecuritySeverity, string> = {
   critical: 'red',
@@ -102,11 +103,11 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
 
   async run(): Promise<SecurityScanResponse> {
     const {argv, flags} = await this.parse(SecurityScan);
-    const cwd = process.cwd();
+    const root = projectRoot(this.resolvedConfig);
 
     let baselineInfo: ReturnType<typeof loadBaseline>;
     try {
-      baselineInfo = loadBaseline(flags.baseline, cwd);
+      baselineInfo = loadBaseline(flags.baseline, root);
     } catch (error) {
       this.error((error as Error).message);
     }
@@ -114,7 +115,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
     let result: SecurityScanResult;
     try {
       result = this.operations.scanSecurity({
-        root: cwd,
+        root,
         paths: argv as string[],
         rules: flags.rule,
         excludeRules: flags['exclude-rule'],

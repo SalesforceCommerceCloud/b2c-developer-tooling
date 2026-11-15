@@ -8,7 +8,7 @@ import {Args, Flags, ux} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {loadProjectIndex} from '../../../utils/project/index.js';
+import {loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndexCommand> {
   static args = {
@@ -44,7 +44,11 @@ export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndex
 
   async run(): Promise<ProjectIndex> {
     const {argv, flags} = await this.parse(ProjectIndexCommand);
-    const index = this.operations.loadProjectIndex(this.resolvedConfig.values.cartridges, argv as string[]);
+    const index = this.operations.loadProjectIndex(
+      this.resolvedConfig.values.cartridges,
+      argv as string[],
+      projectRoot(this.resolvedConfig),
+    );
     if (flags.output) {
       fs.writeFileSync(flags.output, JSON.stringify(index, null, 2) + '\n');
     }

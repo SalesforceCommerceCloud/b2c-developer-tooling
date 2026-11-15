@@ -7,11 +7,21 @@ import path from 'node:path';
 import {buildProjectIndex, type ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 
 /**
- * Builds the project index for the current directory: every cartridge below it
- * (plus any extra paths), ordered by the configured `cartridges` value.
+ * Builds the project index for the project directory (`--project-directory`,
+ * else the current directory): every cartridge below it (plus any extra paths),
+ * ordered by the configured `cartridges` value.
  */
-export function loadProjectIndex(cartridgePath: string[] | undefined, extraPaths: string[] = []): ProjectIndex {
-  return buildProjectIndex({root: process.cwd(), paths: extraPaths, cartridgePath});
+export function loadProjectIndex(
+  cartridgePath: string[] | undefined,
+  extraPaths: string[] = [],
+  root: string = process.cwd(),
+): ProjectIndex {
+  return buildProjectIndex({root, paths: extraPaths, cartridgePath});
+}
+
+/** The project directory (`--project-directory` / `SFCC_PROJECT_DIRECTORY`), else the current directory. */
+export function projectRoot(config: {values: {projectDirectory?: string}}): string {
+  return path.resolve(config.values.projectDirectory || process.cwd());
 }
 
 /** A cartridge file as a path relative to the current directory, with an optional `:line`. */

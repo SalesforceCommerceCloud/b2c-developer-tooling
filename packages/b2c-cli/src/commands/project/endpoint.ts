@@ -13,7 +13,7 @@ import {
   type IndexedEndpoint,
 } from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex} from '../../utils/project/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
 
 export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint> {
   static args = {
@@ -41,7 +41,11 @@ export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint>
 
   async run(): Promise<{endpoint: IndexedEndpoint; issues: string[]}> {
     const {args} = await this.parse(ProjectEndpoint);
-    const index = this.operations.loadProjectIndex(this.resolvedConfig.values.cartridges);
+    const index = this.operations.loadProjectIndex(
+      this.resolvedConfig.values.cartridges,
+      [],
+      projectRoot(this.resolvedConfig),
+    );
     const endpoints = controllerEndpoints(index);
     const endpoint = endpoints.find((e) => e.id.toLowerCase() === args.id.toLowerCase());
     if (!endpoint) {
