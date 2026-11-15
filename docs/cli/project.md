@@ -44,7 +44,7 @@ b2c project endpoints --json
 
 ## b2c project endpoint
 
-Show what runs for one endpoint: the middleware and handlers in execution order, with the cartridge each comes from, whether it was added by `server.prepend` or `server.append`, and the file that implements each required middleware; then the statements across cartridges that built the route, including what a `server.replace()` dropped.
+Show what runs for one endpoint: the middleware and handlers in execution order, with the cartridge each comes from, whether it was added by `server.prepend` or `server.append`, and the file that implements each required middleware; then the route event listeners the chain registers with `this.on('route:BeforeComplete', ...)` (and `route:Complete` or `route:Redirect`), in the order they run, marked `conditional` when registered inside a condition; then the statements across cartridges that built the route, including what a `server.replace()` dropped. `route:BeforeComplete` listeners run after the last step and before the response is rendered, so code there runs even though it isn't in the chain.
 
 ### Usage
 
@@ -70,7 +70,7 @@ Defined by:
   server.get      app_storefront_base   .../Cart.js:535
 ```
 
-IDs are matched case-insensitively. With `--json`, the result has the full `endpoint` (with `chain` and `steps`) and its `issues`.
+IDs are matched case-insensitively. With `--json`, the result has the full `endpoint` (with `chain`, `events`, and `steps`) and its `issues`.
 
 ## b2c project hooks
 

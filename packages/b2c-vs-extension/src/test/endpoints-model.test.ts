@@ -14,6 +14,7 @@ import {
   customApiGroups,
   endpointRow,
   endpointWarnings,
+  eventRows,
   historyRows,
   hookGroups,
   hookRegistrationRow,
@@ -221,6 +222,45 @@ suite('endpoints view model', () => {
       ['server.post', 'server.replace'],
     );
     assert.strictEqual(rows[1].warning, 'Dropped the POST-only restriction, CSRF check that the replaced route had.');
+  });
+
+  test('event rows list route listeners in run order with where they were registered', () => {
+    const e = {
+      ...saveProfile,
+      events: [
+        {
+          event: 'route:BeforeComplete',
+          cartridge: 'app_storefront_base',
+          relPath: 'cartridge/controllers/Account.js',
+          line: 231,
+          step: 3,
+          conditional: true,
+        },
+        {
+          event: 'route:BeforeComplete',
+          cartridge: 'plugin_wishlists',
+          relPath: 'cartridge/controllers/Account.js',
+          line: 35,
+          step: 4,
+          via: 'append' as const,
+        },
+      ],
+    };
+    const rows = eventRows(e);
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['route:BeforeComplete', 'step 4 · app_storefront_base · conditional'],
+        ['route:BeforeComplete', 'step 5 · append · plugin_wishlists'],
+      ],
+    );
+    assert.deepStrictEqual(rows[1].location, {
+      cartridge: 'plugin_wishlists',
+      relPath: 'cartridge/controllers/Account.js',
+      line: 35,
+    });
+    assert.match(rows[0].tooltip!, /before the response is rendered/);
+    assert.deepStrictEqual(eventRows(saveProfile), []);
   });
 
   test('hook groups order registrations by cartridge path and explain system hook short-circuiting', () => {

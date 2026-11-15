@@ -51,5 +51,6 @@ export type {
   IndexedMiddleware,
   ProjectIndex,
   ReturnBehavior,
+  RouteEventListener,
   RouteStep,
 } from './types.js';

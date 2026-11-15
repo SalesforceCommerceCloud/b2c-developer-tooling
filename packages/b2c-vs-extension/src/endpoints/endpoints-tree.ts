@@ -11,6 +11,7 @@ import type {ProjectIndexService} from '../cartridges/project-index-service.js';
 import {
   absolutePath,
   chainRows,
+  eventRows,
   controllerGroups,
   customApiEndpointRow,
   customApiGroups,
@@ -33,13 +34,20 @@ export type EndpointsNode =
   | {type: 'group'; kind: GroupKind}
   | {type: 'controller'; controller: string; cartridges: string[]; endpoints: IndexedEndpoint[]}
   | {type: 'endpoint'; endpoint: IndexedEndpoint}
-  | {type: 'section'; endpoint: IndexedEndpoint; section: 'chain' | 'history'}
+  | {type: 'section'; endpoint: IndexedEndpoint; section: Section}
   | {type: 'hookGroup'; group: HookGroup}
   | {type: 'apiGroup'; group: CustomApiGroup}
   | {type: 'row'; row: RowModel; icon: string; implementation?: SourceLocation; id: string};
 
 const GROUP_LABELS: Record<GroupKind, string> = {controllers: 'Controllers', customApis: 'Custom APIs', hooks: 'Hooks'};
 const GROUP_ICONS: Record<GroupKind, string> = {controllers: 'symbol-class', customApis: 'globe', hooks: 'plug'};
+type Section = 'chain' | 'events' | 'history';
+const SECTION_LABELS: Record<Section, string> = {
+  chain: 'Runs (in order)',
+  events: 'Route event listeners',
+  history: 'Defined by',
+};
+const SECTION_ICONS: Record<Section, string> = {chain: 'list-ordered', events: 'bell', history: 'history'};
 const SECURITY_ICONS = /^(server\.middleware\.(https|get|post)|csrf\.validate|userLoggedIn\.)/;
 
 /**
@@ -104,6 +112,9 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
         }
         return [
           {type: 'section', endpoint: node.endpoint, section: 'chain'},
+          ...(node.endpoint.events?.length
+            ? [{type: 'section' as const, endpoint: node.endpoint, section: 'events' as const}]
+            : []),
           {type: 'section', endpoint: node.endpoint, section: 'history'},
         ];
       case 'section':
@@ -118,6 +129,14 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
                 : 'symbol-event',
             ...(row.implementation ? {implementation: row.implementation} : {}),
             id: `${node.endpoint.id}:chain:${i}`,
+          }));
+        }
+        if (node.section === 'events') {
+          return eventRows(node.endpoint).map((row, i) => ({
+            type: 'row',
+            row,
+            icon: 'bell',
+            id: `${node.endpoint.id}:events:${i}`,
           }));
         }
         return historyRows(node.endpoint).map((row, i) => ({
@@ -174,13 +193,15 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
         );
       }
       case 'section': {
-        const item = new vscode.TreeItem(
-          node.section === 'chain' ? 'Runs (in order)' : 'Defined by',
-          vscode.TreeItemCollapsibleState.Expanded,
-        );
+        const item = new vscode.TreeItem(SECTION_LABELS[node.section], vscode.TreeItemCollapsibleState.Expanded);
         item.id = `${node.endpoint.id}:${node.section}`;
-        item.iconPath = new vscode.ThemeIcon(node.section === 'chain' ? 'list-ordered' : 'history');
+        item.iconPath = new vscode.ThemeIcon(SECTION_ICONS[node.section]);
         if (node.section === 'history') item.description = `${node.endpoint.steps?.length ?? 0} statement(s)`;
+        if (node.section === 'events') {
+          item.description = `${node.endpoint.events?.length ?? 0} listener(s)`;
+          item.tooltip =
+            "Listeners the chain registers with this.on('route:...'). They run after the chain, in this order.";
+        }
         return item;
       }
       case 'hookGroup':

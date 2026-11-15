@@ -88,6 +88,18 @@ export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint>
       );
     }
 
+    if (endpoint.events && endpoint.events.length > 0) {
+      ux.stdout('');
+      ux.stdout(t('commands.project.endpoint.events', 'Route event listeners (after the chain, in order):'));
+      for (const e of endpoint.events) {
+        const origin = [`from step ${e.step + 1}`, e.via, e.cartridge].filter(Boolean).join(' · ');
+        const note = e.conditional ? ux.colorize('dim', '  (conditional)') : '';
+        ux.stdout(
+          `      ${e.event.padEnd(44)} ${origin.padEnd(28)} ${displayPath(index, e.cartridge, e.relPath, e.line)}${note}`,
+        );
+      }
+    }
+
     ux.stdout('');
     ux.stdout(t('commands.project.endpoint.definedBy', 'Defined by:'));
     for (const step of endpoint.steps ?? []) {

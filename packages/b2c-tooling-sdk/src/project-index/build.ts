@@ -38,6 +38,7 @@ import type {
   IndexedHook,
   IndexedJobStep,
   IndexedMiddleware,
+  RouteEventListener,
   ProjectIndex,
   RouteStep,
 } from './types.js';
@@ -283,6 +284,7 @@ function sfraEndpoint(
   relPath: string,
 ): IndexedEndpoint {
   const effective = route.chain.filter((m) => m.via !== 'append');
+  const events = routeEvents(route.chain);
   const ids = effective.map((m) => m.id);
   const methods = methodsOf(ids);
   const definition =
@@ -307,8 +309,34 @@ function sfraEndpoint(
     loginRequired: ids.some(isLoginValidator),
     csrf,
     chain: route.chain,
+    ...(events.length > 0 ? {events} : {}),
     steps: route.steps,
   };
+}
+
+const EVENT_ORDER = ['route:Start', 'route:Step', 'route:Redirect', 'route:BeforeComplete', 'route:Complete'];
+
+/** Route event listeners in the order they run: by event, then by registration (chain order). */
+function routeEvents(chain: IndexedMiddleware[]): RouteEventListener[] {
+  const events = chain.flatMap((m, step) =>
+    (m.listens ?? []).map<RouteEventListener>((l) => ({
+      event: l.event,
+      cartridge: m.cartridge,
+      relPath: m.relPath,
+      line: l.line,
+      step,
+      ...(l.conditional ? {conditional: true} : {}),
+      ...(m.via ? {via: m.via} : {}),
+    })),
+  );
+  const rank = (event: string) => {
+    const i = EVENT_ORDER.indexOf(event);
+    return i === -1 ? EVENT_ORDER.length : i;
+  };
+  return events
+    .map((e, i) => ({e, i}))
+    .sort((a, b) => rank(a.e.event) - rank(b.e.event) || a.i - b.i)
+    .map(({e}) => e);
 }
 
 function sgEndpoint(

@@ -20,10 +20,33 @@ export interface IndexedMiddleware {
   line: number;
   validatesCsrf?: boolean;
   readsForm?: boolean;
+  /** Route event listeners this inline function registers with `this.on('route:...', fn)`. */
+  listens?: Array<{event: string; line: number; conditional?: boolean}>;
   /** Set when the entry was added by server.append or server.prepend. */
   via?: 'append' | 'prepend';
   /** For required middleware: the file that implements it, when it resolves on the cartridge path. */
   source?: {cartridge: string; relPath: string};
+}
+
+/**
+ * An SFRA route event listener registered by middleware in the chain
+ * (`this.on('route:BeforeComplete', fn)`). `route:Redirect` listeners run when
+ * a step sets a redirect and the chain stops; `route:BeforeComplete` and then
+ * `route:Complete` listeners run after the last step. The platform renders
+ * the response in its own `route:Complete` listener, which runs before any
+ * registered by middleware.
+ */
+export interface RouteEventListener {
+  event: string;
+  cartridge: string;
+  relPath: string;
+  line: number;
+  /** Index into `chain` of the middleware that registers the listener. */
+  step: number;
+  /** Registered inside a condition, so it may not run on every request. */
+  conditional?: boolean;
+  /** Set when the registering middleware was added by server.append or server.prepend. */
+  via?: 'append' | 'prepend';
 }
 
 /** One statement that defined or changed an SFRA route, in the order the platform applies them. */
@@ -59,6 +82,8 @@ export interface IndexedEndpoint {
   csrf: 'in-handler' | 'middleware' | 'none' | 'not-applicable';
   /** SFRA: the composed middleware chain. */
   chain?: IndexedMiddleware[];
+  /** SFRA: route event listeners registered by the chain, in the order they run. */
+  events?: RouteEventListener[];
   /** SFRA: the statements that produced the chain, across cartridges. */
   steps?: RouteStep[];
   /** SiteGenesis: guard filters. */

@@ -44,7 +44,7 @@ describe('project', () => {
         "var server = require('server');",
         "var csrfProtection = require('*/cartridge/scripts/middleware/csrf');",
         "server.post('Save', server.middleware.https, csrfProtection.validateAjaxRequest, function (req, res, next) { next(); });",
-        "server.post('Subscribe', function (req, res, next) { next(); });",
+        "server.post('Subscribe', function (req, res, next) { if (req.form.ok) { this.on('route:BeforeComplete', function () {}); } next(); });",
         'module.exports = server.exports();',
       ].join('\n'),
     );
@@ -147,6 +147,15 @@ describe('project', () => {
       {filter: 'subscribe'},
     );
     expect(filtered.map((e) => e.id)).to.deep.equal(['Account-Subscribe']);
+  });
+
+  it('endpoint lists route event listeners after the chain', async () => {
+    const result = await run<any>(ProjectEndpoint, {}, {id: 'Account-Subscribe'}, false);
+    expect(result.endpoint.events).to.have.length(1);
+    expect(output()).to.include('Route event listeners (after the chain, in order):');
+    expect(output()).to.match(
+      /route:BeforeComplete\s+from step 2 · app_storefront_base .*Account\.js:4.*\(conditional\)/,
+    );
   });
 
   it('endpoint shows the chain and history, case-insensitively', async () => {

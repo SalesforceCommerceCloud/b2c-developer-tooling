@@ -106,6 +106,36 @@ export function chainRows(e: IndexedEndpoint): Array<RowModel & {implementation?
   });
 }
 
+const EVENT_TIMING: Record<string, string> = {
+  'route:BeforeComplete': 'Runs after the last step, before the response is rendered.',
+  'route:Complete': 'Runs after the response is rendered.',
+  'route:Redirect': 'Runs instead of the remaining steps when a step sets a redirect.',
+};
+
+/** Rows for route event listeners (`this.on('route:BeforeComplete', fn)`) registered by the chain, in the order they run. */
+export function eventRows(e: IndexedEndpoint): RowModel[] {
+  return (e.events ?? []).map((listener) => ({
+    label: listener.event,
+    description: [
+      `step ${listener.step + 1}`,
+      listener.via,
+      listener.cartridge,
+      listener.conditional ? 'conditional' : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    tooltip: [
+      `${listener.cartridge}/${listener.relPath}:${listener.line}`,
+      `Registered by step ${listener.step + 1} of the chain.`,
+      EVENT_TIMING[listener.event] ?? '',
+      listener.conditional ? 'Registered inside a condition, so it may not run on every request.' : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    location: {cartridge: listener.cartridge, relPath: listener.relPath, line: listener.line},
+  }));
+}
+
 /** Rows for the statements that built an SFRA endpoint, across cartridges. */
 export function historyRows(e: IndexedEndpoint): RowModel[] {
   return (e.steps ?? []).map((step) => {

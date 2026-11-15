@@ -39,6 +39,7 @@ In `b2c project endpoint --json`:
 
 - `endpoint.chain` is the execution order. Each entry has `id` (`csrf.validateAjaxRequest`, `server.middleware.https`, `function` for handlers), `cartridge`, `relPath`, `line`, `via` (`prepend`/`append` when another cartridge added it), and `source` (where required middleware is implemented).
 - `endpoint.steps` lists the `server.get/post/use/replace/append/prepend` statements across cartridges in the order the platform applies them; a `replace` step has `replaced` (the old chain) and `dropped` (security middleware it lost).
+- `endpoint.events` lists route event listeners registered by chain entries with `this.on('route:BeforeComplete' | 'route:Complete' | 'route:Redirect', fn)`, in the order they run. Each has `event`, `cartridge`, `relPath`, `line`, `step` (index into `chain` of the middleware that registers it), `via`, and `conditional` (registered inside a condition). `route:BeforeComplete` listeners run after the last chain step and before rendering, so code that saves data or changes the response often lives there, not in the chain itself.
 - `issues` lists problems: POST without a CSRF check, or a `server.replace()` that dropped CSRF, login, HTTPS, or the GET/POST restriction.
 
 Key SFRA facts when reasoning about routes:

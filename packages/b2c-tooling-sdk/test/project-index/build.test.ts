@@ -109,6 +109,53 @@ describe('project-index', () => {
       expect(endpoint(index.endpoints, 'Account-Page').methods).to.deep.equal(['ANY']);
     });
 
+    it('lists route event listeners in the order they run', () => {
+      write(
+        'cartridges/app_base/cartridge/controllers/Login.js',
+        [
+          "var server = require('server');",
+          "server.post('Submit', function (req, res, next) {",
+          '  if (req.form.valid) {',
+          "    this.on('route:BeforeComplete', function () {});",
+          '  }',
+          "  this.on('route:Redirect', function () {});",
+          '  [1].forEach(() => {',
+          "    this.on('route:Complete', function () {});",
+          '  });',
+          "  helper.on('route:Complete', function () {});",
+          "  function inner() { this.on('route:Complete', function () {}); }",
+          '  next();',
+          '});',
+          'module.exports = server.exports();',
+        ].join('\n'),
+      );
+      write(
+        'cartridges/app_custom/cartridge/controllers/Login.js',
+        [
+          "var server = require('server');",
+          'server.extend(module.superModule);',
+          'var submitAppend = function (req, res, next) {',
+          "  this.on('route:BeforeComplete', function () {});",
+          '  next();',
+          '};',
+          "server.append('Submit', submitAppend);",
+          'module.exports = server.exports();',
+        ].join('\n'),
+      );
+      const index = buildProjectIndex({root: dir, cartridgePath: ['app_custom', 'app_base']});
+      const submit = endpoint(index.endpoints, 'Login-Submit');
+      expect(submit.events!.map((e) => `${e.event}@${e.cartridge}:${e.line}`)).to.deep.equal([
+        'route:Redirect@app_base:6',
+        'route:BeforeComplete@app_base:4',
+        'route:BeforeComplete@app_custom:4',
+        'route:Complete@app_base:8',
+      ]);
+      expect(submit.events![1]).to.include({conditional: true, step: 1});
+      expect(submit.events![0].conditional).to.equal(undefined);
+      expect(submit.events![2]).to.include({via: 'append', step: 2});
+      expect(endpoint(index.endpoints, 'Account-Show').events).to.equal(undefined);
+    });
+
     it('uses discovery order without a cartridge path, so superModule cannot find a base to the left', () => {
       // app_base sorts before app_custom; app_custom's superModule would be to its right, so nothing is composed.
       const index = buildProjectIndex({root: dir});

@@ -40,6 +40,17 @@ export interface MiddlewareRef {
   validatesCsrf?: boolean;
   /** For inline functions: the function handles a form submission (req.form, handleAction). */
   readsForm?: boolean;
+  /** For inline functions and functions declared in the same file: route event listeners it registers with `this.on('route:...', fn)`. */
+  listens?: RouteListenerRef[];
+}
+
+/** A route event listener registered inside middleware: `this.on('route:BeforeComplete', fn)`. */
+export interface RouteListenerRef {
+  /** `route:BeforeComplete`, `route:Complete`, `route:Redirect`, ... */
+  event: string;
+  line: number;
+  /** Registered inside a condition (`if (form.valid) this.on(...)`), so it may not run on every request. */
+  conditional?: boolean;
 }
 
 /** An SFRA route statement. */
@@ -109,7 +120,14 @@ export function describeMiddleware(node: AstNode, sourceCode: ScriptSourceCode):
   const n = node as Node;
   const line = n.loc?.start.line ?? 0;
   if (n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression') {
-    return {id: 'function', line, validatesCsrf: callsCsrfValidation(n, sourceCode), readsForm: readsFormInput(n)};
+    const listens = routeListeners(n);
+    return {
+      id: 'function',
+      line,
+      validatesCsrf: callsCsrfValidation(n, sourceCode),
+      readsForm: readsFormInput(n),
+      ...(listens.length > 0 ? {listens} : {}),
+    };
   }
   const chain = memberChain(n);
   if (chain && chain.length > 0) {
@@ -125,7 +143,10 @@ export function describeMiddleware(node: AstNode, sourceCode: ScriptSourceCode):
               .at(-1)!;
       return {id: [base, ...chain.slice(1)].join('.'), line, ...(spec === 'server' ? {} : {module: spec})};
     }
-    return {id: chain.join('.'), line};
+    // A function declared in the same file (`server.append('Show', showAppend)`).
+    const local = n.type === 'Identifier' ? resolveFunction(n, sourceCode) : undefined;
+    const listens = local ? routeListeners(local) : [];
+    return {id: chain.join('.'), line, ...(listens.length > 0 ? {listens} : {})};
   }
   return {id: 'function', line};
 }
@@ -164,6 +185,55 @@ export function readsFormInput(fn: AstNode): boolean {
     if (!chain) return;
     if ((chain[0] === 'req' && chain[1] === 'form') || chain.at(-1) === 'handleAction') found = true;
   });
+  return found;
+}
+
+const CONDITIONAL_NODES = new Set([
+  'CatchClause',
+  'ConditionalExpression',
+  'DoWhileStatement',
+  'ForInStatement',
+  'ForOfStatement',
+  'ForStatement',
+  'IfStatement',
+  'LogicalExpression',
+  'SwitchCase',
+  'WhileStatement',
+]);
+
+/**
+ * Route event listeners a middleware function registers on its route with
+ * `this.on('route:<Event>', fn)`. Only `this` bound to the middleware counts:
+ * nested arrow functions share it, nested regular functions don't.
+ */
+export function routeListeners(fn: AstNode): RouteListenerRef[] {
+  const found: RouteListenerRef[] = [];
+  const visit = (node: Node, conditional: boolean): void => {
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      node.callee.object.type === 'ThisExpression' &&
+      propertyName(node.callee) === 'on'
+    ) {
+      const event = staticString(node.arguments[0]);
+      if (event?.startsWith('route:'))
+        found.push({event, line: node.loc?.start.line ?? 0, ...(conditional ? {conditional: true} : {})});
+    }
+    const nested = conditional || CONDITIONAL_NODES.has(node.type);
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'parent' || key === 'loc' || key === 'range') continue;
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (!child || typeof child !== 'object' || typeof (child as Node).type !== 'string') continue;
+        const c = child as Node;
+        if (c.type === 'FunctionExpression' || c.type === 'FunctionDeclaration') continue;
+        // A condition's test always runs; only its branches are conditional.
+        const isTest = key === 'test' || (node.type === 'LogicalExpression' && key === 'left');
+        visit(c, isTest ? conditional : nested);
+      }
+    }
+  };
+  const body = (fn as Node).body as Node | undefined;
+  if (body) visit(body, false);
   return found;
 }
 
