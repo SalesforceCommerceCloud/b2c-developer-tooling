@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {defineScriptRule} from '../rule.js';
+import {moduleConstantLookupOf, resolveStaticString} from '../script/constants.js';
 import {concatenationParts, isRequestDerived, staticString} from '../script/helpers.js';
 
 export default defineScriptRule({
@@ -13,7 +14,7 @@ export default defineScriptRule({
   category: 'injection',
   cwe: ['CWE-95'],
   description:
-    'Code built or loaded from strings at runtime: eval, new Function, or require/importScript with a computed path (a fixed directory prefix is allowed unless the rest comes from the request).',
+    'Code built or loaded from strings at runtime: eval, new Function, or require/importScript with a computed path (a fixed directory prefix, or a path built only from string constants, is allowed unless the rest comes from the request).',
   remediation:
     'Use static require paths and ordinary functions. To choose between modules at runtime, map known keys to static requires.',
   create(context) {
@@ -28,6 +29,9 @@ export default defineScriptRule({
         } else if ((callee.name === 'require' || callee.name === 'importScript') && node.arguments.length > 0) {
           const arg = node.arguments[0];
           if (staticString(arg) !== undefined) return;
+          // require(Constants.HELPER) or require(Constants.SCRIPTS + 'x') where the constants are fixed strings.
+          const lookup = moduleConstantLookupOf(context);
+          if (resolveStaticString(arg, context.sourceCode, context.filename, lookup) !== undefined) return;
           // A fixed directory prefix ('*/cartridge/experience/' + type) is a common, safe pattern
           // unless the variable part comes from the request.
           const parts = concatenationParts(arg);

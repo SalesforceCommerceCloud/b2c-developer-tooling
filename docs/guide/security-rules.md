@@ -45,7 +45,7 @@ Remove entries you no longer need, exempt a single start node rather than a whol
 
 **Severity:** high · **Confidence:** high · **CWE:** CWE-95
 
-Finds code that is built or loaded from strings at runtime: `eval()`, `Function()` or `new Function()`, and `require()` or `importScript()` with a computed path. A computed path with a fixed directory prefix, such as `require('*/cartridge/experience/' + type)`, is allowed unless the variable part comes from the request.
+Finds code that is built or loaded from strings at runtime: `eval()`, `Function()` or `new Function()`, and `require()` or `importScript()` with a computed path. A computed path with a fixed directory prefix, such as `require('*/cartridge/experience/' + type)`, is allowed unless the variable part comes from the request. A path built only from string constants is allowed too, including constants from another module on the cartridge path, such as `require(Constants.HELPER)` or `require(Constants.SCRIPTS + 'helper/Helper')` where `Constants.SCRIPTS = '~/cartridge/scripts/'` (a constant assigned more than once doesn't count).
 
 ```js
 // Finding

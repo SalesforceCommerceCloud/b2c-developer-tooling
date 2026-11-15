@@ -254,6 +254,37 @@ describe('security engine', () => {
       expect(result.rules.length).to.equal(listSecurityRules().length);
     });
 
+    it('resolves require() paths built from string constants in another cartridge', () => {
+      const write = (rel: string, text: string) => {
+        fs.mkdirSync(path.dirname(path.join(dir, rel)), {recursive: true});
+        fs.writeFileSync(path.join(dir, rel), text);
+      };
+      write('cartridges/int_lib/.project', '<xml/>');
+      write(
+        'cartridges/int_lib/cartridge/scripts/utils/Constants.js',
+        [
+          'var Constants = {};',
+          "Constants.SCRIPTS = '~/cartridge/scripts/';",
+          "Constants.HELPER = Constants.SCRIPTS + 'helper/Helper';",
+          'Constants.DYNAMIC = request.httpParameterMap.p.stringValue;',
+          'module.exports = Constants;',
+        ].join('\n'),
+      );
+      write(
+        'cartridges/app_custom/cartridge/scripts/uses.js',
+        [
+          "var Constants = require('*/cartridge/scripts/utils/Constants');",
+          'require(Constants.HELPER);',
+          "require(Constants.SCRIPTS + 'helper/Other');",
+          'require(Constants.DYNAMIC);',
+          'require(Constants.MISSING);',
+        ].join('\n'),
+      );
+      const result = scanSecurity({root: dir, rules: ['dynamic-code']});
+      const uses = result.findings.filter((f) => f.location.file.endsWith('uses.js'));
+      expect(uses.map((f) => f.location.startLine)).to.deep.equal([4, 5]);
+    });
+
     it('applies minSeverity, rule filters, and a baseline', () => {
       expect(scanSecurity({root: dir, minSeverity: 'high'}).findings.map((f) => f.ruleId)).to.deep.equal([
         'dynamic-code',

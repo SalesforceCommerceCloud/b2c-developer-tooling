@@ -11,3 +11,14 @@ function model(name) {
 }
 
 module.exports = {helpers: helpers, component: component, model: model};
+
+var Paths = {};
+Paths.SCRIPTS = '~/cartridge/scripts/';
+Paths.HELPER = Paths.SCRIPTS + 'helpers/basketHelper';
+var BASE = '*/cartridge/scripts/';
+
+function helpers() {
+  return [require(Paths.HELPER), require(Paths.SCRIPTS + 'helpers/other'), require(BASE + 'util'), require(`${BASE}x`)];
+}
+
+module.exports.helpers = helpers;

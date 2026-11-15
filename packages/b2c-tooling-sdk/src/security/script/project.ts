@@ -18,6 +18,11 @@ export const SECURITY_SETTINGS_KEY = 'b2cSecurity';
 /** The shape of `settings.b2cSecurity`. */
 export interface SecurityRuleSettings {
   projectIndex?: ProjectIndex;
+  /**
+   * Looks up a string constant exported by another module
+   * (`require(specifier)[property]`), resolved along the cartridge path.
+   */
+  moduleConstant?: (fromFile: string, specifier: string, property: string) => string | undefined;
 }
 
 /** The project index passed to rules, if any. */

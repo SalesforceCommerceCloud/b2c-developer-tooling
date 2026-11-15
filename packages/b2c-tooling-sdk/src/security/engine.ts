@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import {moduleStringConstants} from './script/constants.js';
 import {
   CartridgeResolver,
   createNodeFileSystemHost,
@@ -244,7 +245,20 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
       siteId: options.siteId,
     });
   const resolver = new CartridgeResolver(projectIndex.cartridges, createNodeFileSystemHost());
-  const settings = {[SECURITY_SETTINGS_KEY]: {projectIndex}};
+  const host = createNodeFileSystemHost();
+  const constantsCache = new Map<string, Map<string, string>>();
+  const moduleConstant = (fromFile: string, specifier: string, property: string): string | undefined => {
+    const target = resolver.resolveRequire(specifier, fromFile)?.path;
+    if (!target) return undefined;
+    let constants = constantsCache.get(target);
+    if (!constants) {
+      const text = host.readFile(target);
+      constants = text === undefined ? new Map() : moduleStringConstants(text, target);
+      constantsCache.set(target, constants);
+    }
+    return constants.get(property);
+  };
+  const settings = {[SECURITY_SETTINGS_KEY]: {projectIndex, moduleConstant}};
   const findings: SecurityFinding[] = [];
   const errors: SecurityScanError[] = [];
   let hiddenReferenceFindings = 0;

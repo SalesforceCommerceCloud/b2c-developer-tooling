@@ -21,3 +21,15 @@ function loadFromRequest() {
 }
 
 module.exports = {run: run, compile: compile, compileCall: compileCall, load: load, loadFromRequest: loadFromRequest};
+
+var Changing = {};
+Changing.PATH = '*/cartridge/scripts/a';
+Changing.PATH = '*/cartridge/scripts/b';
+var reassigned = '*/cartridge/scripts/a';
+reassigned = request.httpParameterMap.p.stringValue;
+
+function loadChanging() {
+  return [require(Changing.PATH), require(reassigned)]; // expect
+}
+
+module.exports.loadChanging = loadChanging;
