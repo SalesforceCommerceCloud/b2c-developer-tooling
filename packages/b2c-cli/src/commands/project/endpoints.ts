@@ -78,6 +78,7 @@ export default class ProjectEndpoints extends BaseCommand<typeof ProjectEndpoint
       this.resolvedConfig.values.cartridges,
       [],
       projectRoot(this.resolvedConfig),
+      this.resolvedConfig.values.siteId,
     );
     const filter = args.filter?.toLowerCase();
     const endpoints = controllerEndpoints(index)

@@ -72,6 +72,14 @@ describe('cli/config', () => {
         const config = await loadConfig({}, {projectDirectory: tempDir, workingDirectory: tempDir});
         expect(config.values.catalogs).to.deep.equal(['storefront-catalog', 'apparel-catalog']);
       });
+
+      it('lets SFCC_SITE_ID override dw.json siteId', async () => {
+        const configPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(configPath, JSON.stringify({hostname: 'example.com', siteId: 'FromFile'}));
+        process.env.SFCC_SITE_ID = 'FromEnv';
+        const config = await loadConfig({}, {configPath, projectDirectory: tempDir});
+        expect(config.values.siteId).to.equal('FromEnv');
+      });
     });
 
     it('loads config from flags only', async () => {

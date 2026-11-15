@@ -122,6 +122,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         minSeverity: flags.severity as SecuritySeverity | undefined,
         baseline: baselineInfo.baseline,
         cartridgePath: this.resolvedConfig.values.cartridges,
+        siteId: this.resolvedConfig.values.siteId,
         excludeReferenceCartridges: flags['exclude-reference-cartridges'],
       });
     } catch (error) {

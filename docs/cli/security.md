@@ -86,7 +86,7 @@ Findings in the cartridges that ship with SFRA (`app_storefront_base`, `bm_app_s
 
 ### Cartridge path
 
-Route rules compose SFRA routes along the cartridge path (`server.extend(module.superModule)` with `append`, `prepend`, and `replace`). The scanner indexes every cartridge under the project directory, including ones outside the paths you scan, and orders them by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`; a colon-separated path copied from Business Manager works). Without it, cartridges are ordered by discovery with `app_storefront_base` and `modules` last; set `cartridges` when overlays aren't composed the way your site runs them.
+Route rules compose SFRA routes along the cartridge path (`server.extend(module.superModule)` with `append`, `prepend`, and `replace`). The scanner indexes every cartridge under the project directory, including ones outside the paths you scan, and orders them by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`; a colon-separated path copied from Business Manager works). Without it, the order comes from a site's `<custom-cartridges>` from a site import file in the project (`sites/<site-id>/site.xml`, such as a site template or a dated migration or import set; the latest by its `20260901T002537-...` timestamp prefix wins). With several sites, it picks `siteId` (`SFCC_SITE_ID`) or else the site that names the most local cartridges, and otherwise from discovery with `app_storefront_base` and `modules` last. Set `cartridges` when overlays aren't composed the way your site runs them.
 
 ### Suppressing a finding
 

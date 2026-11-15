@@ -8,7 +8,7 @@ import {Args, Flags, ux} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {describeCartridgeOrder, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndexCommand> {
   static args = {
@@ -48,6 +48,7 @@ export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndex
       this.resolvedConfig.values.cartridges,
       argv as string[],
       projectRoot(this.resolvedConfig),
+      this.resolvedConfig.values.siteId,
     );
     if (flags.output) {
       fs.writeFileSync(flags.output, JSON.stringify(index, null, 2) + '\n');
@@ -72,6 +73,9 @@ export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndex
       t('commands.project.index.order', 'Cartridge path: {{path}}', {
         path: index.cartridges.map((c) => c.name).join(':') || '(none)',
       }),
+    );
+    ux.stdout(
+      t('commands.project.index.orderSource', 'Order:          {{source}}', {source: describeCartridgeOrder(index)}),
     );
     if (index.errors.length > 0) {
       ux.stdout(

@@ -170,10 +170,31 @@ export interface IndexedCartridge {
   src: string;
 }
 
+/**
+ * Where the index's cartridge order came from:
+ *
+ * - `configured`: the `cartridgePath` option (`cartridges` in dw.json or `SFCC_CARTRIDGES`).
+ * - `provided`: the caller passed ordered cartridges (for example the VS Code Cartridges view order).
+ * - `site-file`: a site's `<custom-cartridges>` in a site import file in the project
+ *   (`sites/<id>/site.xml`, the latest by migration or import set timestamp).
+ * - `discovery`: a guess: discovery order with known base cartridges last.
+ */
+export interface CartridgeOrder {
+  source: 'configured' | 'discovery' | 'provided' | 'site-file';
+  /** For `site-file`: the site whose path was used. */
+  siteId?: string;
+  /** For `site-file`: the file, relative to the project root. */
+  file?: string;
+  /** For `site-file`: other sites in the project with a different cartridge path. */
+  otherSites?: string[];
+}
+
 /** A JSON-serializable model of a B2C Commerce project's server-side entry points. */
 export interface ProjectIndex {
   version: 1;
   cartridges: IndexedCartridge[];
+  /** Where the cartridge order came from. */
+  cartridgeOrder?: CartridgeOrder;
   endpoints: IndexedEndpoint[];
   hooks: IndexedHook[];
   customApis: IndexedCustomApiEndpoint[];

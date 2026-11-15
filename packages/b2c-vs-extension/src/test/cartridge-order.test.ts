@@ -34,6 +34,22 @@ suite('cartridge order', () => {
       assert.deepStrictEqual(names(r.cartridges), ['plugin_wishlists', 'app_custom', 'app_storefront_base', 'modules']);
     });
 
+    test('uses a workspace site file over a guess, and the instance over the site file', () => {
+      const siteFile = {
+        siteId: 'RefArch',
+        cartridges: ['app_custom', 'plugin_wishlists', 'app_storefront_base'],
+        file: 'migrations/20260901T002537-x/sites/RefArch/site.xml',
+        selection: 'only' as const,
+        alternatives: [],
+      };
+      const r = resolveCartridgeOrder({discovered, siteFile});
+      assert.strictEqual(r.source, 'site-file');
+      assert.deepStrictEqual(names(r.cartridges), ['app_custom', 'plugin_wishlists', 'app_storefront_base', 'modules']);
+      assert.strictEqual(describeOrderSource(r), 'Order: RefArch site file');
+      assert.strictEqual(resolveCartridgeOrder({discovered, siteFile, instance}).source, 'instance');
+      assert.strictEqual(resolveCartridgeOrder({discovered, siteFile, configured: ['app_custom']}).source, 'config');
+    });
+
     test('uses the instance site path over a guess', () => {
       const r = resolveCartridgeOrder({discovered, instance});
       assert.strictEqual(r.source, 'instance');

@@ -78,7 +78,7 @@ Edit cartridges locally and have changes show up on your sandbox automatically. 
 
 Code sync needs only your instance hostname: start it, paste the hostname when asked, and sign in with your Account Manager account. See [Code sync with only a server](./configuration#code-sync-with-only-a-server).
 
-The **Cartridges** view lists cartridges in cartridge path order, which IntelliSense and ISML template links follow. The order comes from the order you set in the view (drag and drop), your `cartridges` configuration, or a site's cartridge path on your instance, in that order. See [cartridge order](../guide/ide-integration#script-api-intellisense).
+The **Cartridges** view lists cartridges in cartridge path order, which IntelliSense and ISML template links follow. The order comes from the order you set in the view (drag and drop), your `cartridges` configuration, a site's cartridge path on your instance, or a site's cartridge path from a `sites/<site-id>/site.xml` in the workspace (the latest migration or import set by timestamp prefix), in that order. See [cartridge order](../guide/ide-integration#script-api-intellisense).
 
 ### Endpoints
 

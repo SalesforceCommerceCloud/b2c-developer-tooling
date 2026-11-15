@@ -42,6 +42,7 @@ export {
 export type {CustomApiGroup, HookChain} from './insights.js';
 export type {
   EndpointKind,
+  CartridgeOrder,
   EndpointMethod,
   IndexedCartridge,
   IndexedCustomApiEndpoint,

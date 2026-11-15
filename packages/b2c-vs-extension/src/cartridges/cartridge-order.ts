@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {orderCartridges} from '@salesforce/b2c-tooling-sdk/cartridges';
+import {orderCartridges, type SelectedSiteCartridgePath} from '@salesforce/b2c-tooling-sdk/cartridges';
 
 /**
  * Where the Cartridges panel order came from, highest precedence first:
@@ -11,9 +11,11 @@ import {orderCartridges} from '@salesforce/b2c-tooling-sdk/cartridges';
  * - `manual`: the user reordered the panel (drag and drop or move up/down); saved per workspace.
  * - `config`: the `cartridges` value from dw.json or SFCC_CARTRIDGES.
  * - `instance`: the cartridge path of a site on the connected instance.
+ * - `site-file`: a site's `<custom-cartridges>` in a site import file in the workspace
+ *   (`sites/<id>/site.xml`, the latest by migration or import set timestamp).
  * - `guessed`: discovery order with known base cartridges (app_storefront_base, modules) last.
  */
-export type CartridgeOrderSource = 'config' | 'guessed' | 'instance' | 'manual';
+export type CartridgeOrderSource = 'config' | 'guessed' | 'instance' | 'manual' | 'site-file';
 
 /** A site cartridge path read from the instance. */
 export interface InstanceCartridgePath {
@@ -30,6 +32,7 @@ export interface CartridgeOrderInputs<T extends {name: string}> {
   manual?: readonly string[];
   configured?: readonly string[];
   instance?: InstanceCartridgePath;
+  siteFile?: SelectedSiteCartridgePath;
 }
 
 /** The resolved panel order and why. */
@@ -40,11 +43,13 @@ export interface CartridgeOrderResult<T extends {name: string}> {
   path?: readonly string[];
   /** Set when the order came from the instance. */
   instance?: InstanceCartridgePath;
+  /** Set when the order came from a site file in the workspace. */
+  siteFile?: SelectedSiteCartridgePath;
 }
 
 /**
  * Orders discovered cartridges by the highest-precedence source available:
- * manual, then config, then instance, then a guess. Cartridges that are on
+ * manual, then config, then instance, then a site file in the workspace, then a guess. Cartridges that are on
  * disk but not named by the chosen source are appended in guessed order.
  */
 export function resolveCartridgeOrder<T extends {name: string}>(
@@ -69,6 +74,14 @@ export function resolveCartridgeOrder<T extends {name: string}>(
       source: 'instance',
       path: inputs.instance.cartridges,
       instance: inputs.instance,
+    };
+  }
+  if (inputs.siteFile && inputs.siteFile.cartridges.length > 0) {
+    return {
+      cartridges: apply(inputs.siteFile.cartridges),
+      source: 'site-file',
+      path: inputs.siteFile.cartridges,
+      siteFile: inputs.siteFile,
     };
   }
   return {cartridges: orderCartridges(discovered), source: 'guessed'};
@@ -138,7 +151,9 @@ export function shiftCartridge(order: readonly string[], name: string, delta: -1
 }
 
 /** One-line description of the order source for the panel header. */
-export function describeOrderSource(result: Pick<CartridgeOrderResult<{name: string}>, 'instance' | 'source'>): string {
+export function describeOrderSource(
+  result: Pick<CartridgeOrderResult<{name: string}>, 'instance' | 'siteFile' | 'source'>,
+): string {
   switch (result.source) {
     case 'manual':
       return 'Order: reordered in this workspace';
@@ -146,6 +161,8 @@ export function describeOrderSource(result: Pick<CartridgeOrderResult<{name: str
       return 'Order: cartridges config';
     case 'instance':
       return `Order: ${result.instance?.siteId} on instance`;
+    case 'site-file':
+      return `Order: ${result.siteFile?.siteId} site file`;
     default:
       return 'Order: guessed';
   }

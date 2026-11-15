@@ -58,6 +58,7 @@ export default class ProjectApis extends BaseCommand<typeof ProjectApis> {
       this.resolvedConfig.values.cartridges,
       [],
       projectRoot(this.resolvedConfig),
+      this.resolvedConfig.values.siteId,
     );
     const filter = args.filter?.toLowerCase();
     const apis = customApiGroups(index)

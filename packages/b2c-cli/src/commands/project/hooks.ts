@@ -57,6 +57,7 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
       this.resolvedConfig.values.cartridges,
       [],
       projectRoot(this.resolvedConfig),
+      this.resolvedConfig.values.siteId,
     );
     const filter = args.filter?.toLowerCase();
     const hooks = hookChains(index)

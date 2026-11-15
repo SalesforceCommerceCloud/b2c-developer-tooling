@@ -104,7 +104,7 @@ describe('tools/project', () => {
     it('summarizes the cartridge path from configuration and counts issues', async () => {
       const out = json(await inspect.handler({}));
       expect(out.cartridgePath).to.deep.equal(['app_custom', 'app_storefront_base']);
-      expect(out.cartridgePathSource).to.equal('configuration');
+      expect(out.cartridgePathSource).to.deep.equal({source: 'configured'});
       expect(out.counts).to.deep.include({endpoints: 2, hookRegistrations: 1});
       expect(out.withIssues).to.deep.include({endpoints: 2, hooks: 1});
     });

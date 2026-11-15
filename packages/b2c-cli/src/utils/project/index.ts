@@ -15,8 +15,28 @@ export function loadProjectIndex(
   cartridgePath: string[] | undefined,
   extraPaths: string[] = [],
   root: string = process.cwd(),
+  siteId?: string,
 ): ProjectIndex {
-  return buildProjectIndex({root, paths: extraPaths, cartridgePath});
+  return buildProjectIndex({root, paths: extraPaths, cartridgePath, siteId});
+}
+
+/** One line saying where the cartridge order came from, for human-readable output. */
+export function describeCartridgeOrder(index: ProjectIndex): string {
+  const order = index.cartridgeOrder;
+  switch (order?.source) {
+    case 'configured': {
+      return 'from configuration (cartridges in dw.json or SFCC_CARTRIDGES)';
+    }
+    case 'site-file': {
+      const others = order.otherSites?.length
+        ? `; other sites with a different path: ${order.otherSites.join(', ')} (choose with SFCC_SITE_ID or siteId)`
+        : '';
+      return `from site ${order.siteId} in ${order.file}${others}`;
+    }
+    default: {
+      return 'guessed from discovery order; set cartridges in dw.json or SFCC_CARTRIDGES to match the site';
+    }
+  }
 }
 
 /** The project directory (`--project-directory` / `SFCC_PROJECT_DIRECTORY`), else the current directory. */

@@ -14,7 +14,9 @@ import {
   CartridgeResolver,
   createNodeFileSystemHost,
   discoverCartridges,
+  findSiteCartridgePaths,
   orderCartridges,
+  selectSiteCartridgePath,
   toForwardSlashes,
 } from '../cartridges/index.js';
 import type {AstNode, ScriptRule, ScriptRuleContext, ScriptRuleListener} from '../security/rule.js';
@@ -32,6 +34,7 @@ import {runScriptRules} from '../security/script/runner.js';
 import {analyzeModuleExports, type ModuleExports} from './exports.js';
 import {droppedSecurityMiddleware} from './labels.js';
 import type {
+  CartridgeOrder,
   EndpointMethod,
   IndexedCustomApiEndpoint,
   IndexedEndpoint,
@@ -53,6 +56,14 @@ export interface BuildProjectIndexOptions {
   cartridges?: CartridgeLocation[];
   /** Cartridge path order (names), applied to discovered cartridges. */
   cartridgePath?: string[];
+  /**
+   * Without `cartridgePath` or `cartridges`, order by a site cartridge path found
+   * in the project's site import files (`sites/<id>/site.xml`, the latest by
+   * migration or import set timestamp). Defaults to true.
+   */
+  detectSitePath?: boolean;
+  /** Site whose site.xml cartridge path to use; defaults to the best match. */
+  siteId?: string;
   host?: CartridgeFileSystemHost;
 }
 
@@ -86,11 +97,14 @@ const SCRIPT_EXT = ['.js', '.ds'];
  */
 export function buildProjectIndex(options: BuildProjectIndexOptions = {}): ProjectIndex {
   const host = options.host ?? createNodeFileSystemHost();
-  const cartridges = options.cartridges ?? discoverAll(options, host);
+  const {cartridges, order} = options.cartridges
+    ? {cartridges: options.cartridges, order: {source: 'provided' as const}}
+    : discoverAll(options, host);
   const resolver = new CartridgeResolver(cartridges, host);
   const index: ProjectIndex = {
     version: 1,
     cartridges: cartridges.map((c) => ({name: c.name, src: toForwardSlashes(path.resolve(c.src))})),
+    cartridgeOrder: order,
     endpoints: [],
     hooks: [],
     customApis: [],
@@ -202,7 +216,10 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
   return index;
 }
 
-function discoverAll(options: BuildProjectIndexOptions, host: CartridgeFileSystemHost): CartridgeLocation[] {
+function discoverAll(
+  options: BuildProjectIndexOptions,
+  host: CartridgeFileSystemHost,
+): {cartridges: CartridgeLocation[]; order: CartridgeOrder} {
   const roots = [options.root ?? process.cwd(), ...(options.paths ?? [])].map((r) => path.resolve(r));
   const found = new Map<string, CartridgeLocation>();
   for (const root of roots) {
@@ -211,7 +228,29 @@ function discoverAll(options: BuildProjectIndexOptions, host: CartridgeFileSyste
       : discoverCartridges(root, host);
     for (const c of list) if (!found.has(c.src)) found.set(c.src, c);
   }
-  return orderCartridges([...found.values()], options.cartridgePath);
+  const discovered = [...found.values()];
+  if (options.cartridgePath && options.cartridgePath.length > 0) {
+    return {cartridges: orderCartridges(discovered, options.cartridgePath), order: {source: 'configured'}};
+  }
+  if (options.detectSitePath !== false) {
+    const site = selectSiteCartridgePath(
+      findSiteCartridgePaths(roots[0], host),
+      discovered.map((c) => c.name),
+      options.siteId,
+    );
+    if (site) {
+      return {
+        cartridges: orderCartridges(discovered, site.cartridges),
+        order: {
+          source: 'site-file',
+          siteId: site.siteId,
+          file: toForwardSlashes(path.relative(roots[0], site.file)),
+          ...(site.alternatives.length > 0 ? {otherSites: site.alternatives} : {}),
+        },
+      };
+    }
+  }
+  return {cartridges: orderCartridges(discovered), order: {source: 'discovery'}};
 }
 
 function parseController(

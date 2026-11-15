@@ -52,6 +52,7 @@ export default class SecurityBaselineCommand extends BaseCommand<typeof Security
         rules: flags.rule,
         excludeRules: flags['exclude-rule'],
         cartridgePath: this.resolvedConfig.values.cartridges,
+        siteId: this.resolvedConfig.values.siteId,
       });
       baseline = createBaseline(result.findings);
     } catch (error) {

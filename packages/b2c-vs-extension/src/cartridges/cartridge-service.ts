@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
+import {
+  createNodeFileSystemHost,
+  findSiteCartridgePaths,
+  type SelectedSiteCartridgePath,
+  selectSiteCartridgePath,
+} from '@salesforce/b2c-tooling-sdk/cartridges';
 import {type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {createSitesBackend} from '@salesforce/b2c-tooling-sdk/operations/sites';
 
@@ -237,6 +243,21 @@ export class CartridgeService implements vscode.Disposable {
     this.options.log?.appendLine(message);
   }
 
+  /** A site cartridge path from the workspace's site import files, as a fallback below the instance. */
+  private siteFile(cwd: string | undefined): SelectedSiteCartridgePath | undefined {
+    if (!cwd || this.discovered.length === 0) return undefined;
+    try {
+      const sites = findSiteCartridgePaths(cwd, createNodeFileSystemHost());
+      return selectSiteCartridgePath(
+        sites,
+        this.discovered.map((c) => c.name),
+        this.configProvider.getConfig()?.values.siteId,
+      );
+    } catch {
+      return undefined;
+    }
+  }
+
   private reload(): void {
     const cwd = this.configProvider.getWorkingDirectory();
     // findCartridgesSafe returns [] for an empty/home/root working directory and
@@ -253,13 +274,17 @@ export class CartridgeService implements vscode.Disposable {
       manual: this.options.workspaceState?.get<string[]>(MANUAL_ORDER_KEY),
       configured: this.configProvider.getConfig()?.values.cartridges,
       instance: this.cachedInstancePath(),
+      siteFile: this.siteFile(cwd),
     });
     this.cartridges = this.orderResult.cartridges;
     this.loaded = true;
 
     // Optimistically read the instance path once per session (and after a
     // config reset) when nothing of higher precedence is set.
-    const wantsInstance = this.orderResult.source === 'instance' || this.orderResult.source === 'guessed';
+    const wantsInstance =
+      this.orderResult.source === 'instance' ||
+      this.orderResult.source === 'site-file' ||
+      this.orderResult.source === 'guessed';
     if (wantsInstance && !this.instanceLookupAttempted && this.discovered.length > 0) {
       this.instanceLookupAttempted = true;
       void this.refreshInstanceOrder(false);

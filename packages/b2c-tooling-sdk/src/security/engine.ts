@@ -68,6 +68,8 @@ export interface SecurityScanOptions {
   baseline?: SecurityBaseline;
   /** Cartridge path order (names) used to compose routes across cartridges. */
   cartridgePath?: string[];
+  /** Without `cartridgePath`: the site whose cartridge path to read from the project's site.xml files. */
+  siteId?: string;
   /** Leave out findings inside SFRA and SiteGenesis reference cartridges ({@link REFERENCE_CARTRIDGES}). */
   excludeReferenceCartridges?: boolean;
   /** A project index to use instead of building one from `root` and `paths`. */
@@ -239,6 +241,7 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
       root,
       paths: paths.filter((p) => path.resolve(p) !== root),
       cartridgePath: options.cartridgePath,
+      siteId: options.siteId,
     });
   const resolver = new CartridgeResolver(projectIndex.cartridges, createNodeFileSystemHost());
   const settings = {[SECURITY_SETTINGS_KEY]: {projectIndex}};

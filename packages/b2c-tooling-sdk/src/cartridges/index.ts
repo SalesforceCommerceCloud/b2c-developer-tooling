@@ -36,6 +36,9 @@ export type {CartridgeFileSystemHost} from './host.js';
 
 export {BASE_CARTRIDGE_RANK, orderCartridges, parseCartridgePath} from './order.js';
 
+export {findSiteCartridgePaths, selectSiteCartridgePath} from './site-paths.js';
+export type {FindSiteCartridgePathsOptions, SelectedSiteCartridgePath, SiteCartridgePathFile} from './site-paths.js';
+
 export {DEFAULT_DISCOVERY_MAX_DEPTH, DISCOVERY_IGNORED_DIRECTORIES, discoverCartridges} from './discover.js';
 export type {DiscoverCartridgesOptions, DiscoveredCartridge} from './discover.js';
 

@@ -110,6 +110,7 @@ export const FLAGLESS_ENV_VARS: readonly string[] = [
   'SFCC_LIBRARIES',
   'SFCC_ASSET_QUERY',
   'SFCC_DOCS_CATEGORIES',
+  'SFCC_SITE_ID',
 ];
 
 /** Fields that should be parsed as comma-separated arrays. */

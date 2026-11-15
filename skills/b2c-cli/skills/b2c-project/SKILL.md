@@ -13,13 +13,13 @@ Use `b2c project` to answer questions about a project's storefront code from its
 
 ## Get the cartridge path right first
 
-Results depend on cartridge order. The CLI uses the `cartridges` value from `dw.json` or `SFCC_CARTRIDGES`; without it, discovery order with `app_storefront_base` and `modules` last. Check the order with:
+Results depend on cartridge order. The CLI uses the `cartridges` value from `dw.json` or `SFCC_CARTRIDGES`; without it, a site's `<custom-cartridges>` from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix; `siteId`/`SFCC_SITE_ID` picks the site); then discovery order with `app_storefront_base` and `modules` last. Check the order and its source with:
 
 ```bash
-b2c project index        # prints "Cartridge path: a:b:c"
+b2c project index        # prints "Cartridge path: a:b:c" and "Order: from site X in <file>"
 ```
 
-If it doesn't match the site, ask the user for the site's cartridge path (or read it with `b2c sites cartridges list --site-id <site>`) and set `cartridges` in `dw.json` before drawing conclusions about overlays.
+With `--json`, `cartridgeOrder.source` is `configured`, `site-file`, or `discovery`. If the order is a guess or doesn't match the site, ask the user for the site's cartridge path (or read it with `b2c sites cartridges list --site-id <site>`) and set `cartridges` in `dw.json` before drawing conclusions about overlays.
 
 ## Endpoints and what runs for them
 

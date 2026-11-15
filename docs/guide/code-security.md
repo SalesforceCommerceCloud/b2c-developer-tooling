@@ -53,7 +53,7 @@ Read the code around a finding before changing it, then follow the fix in the [r
 
 Route rules understand SFRA controllers (`server.get`, `post`, and `use`, and `server.extend(module.superModule)` with `append`, `prepend`, and `replace`) and SiteGenesis controllers (`guard.ensure` filters). Before running rules, the scanner builds an index of every cartridge under the project directory and composes each route along the cartridge path, so it can tell that an overlay cartridge prepends a CSRF check to a base route, or that a `server.replace()` dropped one.
 
-Cartridges are ordered by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`). Set it to your site's cartridge path so overlays are composed the way your storefront runs them:
+Cartridges are ordered by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`). Without it, the scanner uses a site cartridge path from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix), then discovery order. Set it to your site's cartridge path so overlays are composed the way your storefront runs them:
 
 ```json
 {

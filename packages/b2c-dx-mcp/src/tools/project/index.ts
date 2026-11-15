@@ -51,8 +51,8 @@ interface ProjectInspectInput {
 }
 
 /** Builds the index for the project directory, ordered by that project's `cartridges` configuration. */
-function loadIndex(projectDirectory: string, cartridgePath: string[] | undefined): ProjectIndex {
-  return buildProjectIndex({root: projectDirectory, cartridgePath});
+function loadIndex(projectDirectory: string, cartridgePath: string[] | undefined, siteId?: string): ProjectIndex {
+  return buildProjectIndex({root: projectDirectory, cartridgePath, siteId});
 }
 
 /** A cartridge file as a path relative to the project directory, with an optional `:line`. */
@@ -147,8 +147,8 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
         if (aspect === 'endpoint' && !args.id)
           throw new Error('aspect "endpoint" requires id (for example Cart-AddProduct).');
         const dir = context.services.resolveProjectDirectory(args.projectDirectory).path;
-        const cartridgePath = context.services.getResolvedConfig().values.cartridges;
-        const index = loadIndex(dir, cartridgePath);
+        const {cartridges: cartridgePath, siteId} = context.services.getResolvedConfig().values;
+        const index = loadIndex(dir, cartridgePath, siteId);
         const filter = args.filter?.toLowerCase();
         const matches = (text: string) => !filter || text.toLowerCase().includes(filter);
         const endpoints = controllerEndpoints(index);
@@ -159,10 +159,10 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
           return {
             projectDirectory: dir,
             cartridgePath: index.cartridges.map((c) => c.name),
-            cartridgePathSource:
-              cartridgePath && cartridgePath.length > 0
-                ? 'configuration'
-                : 'discovery (set cartridges in dw.json to match the site)',
+            cartridgePathSource: index.cartridgeOrder,
+            ...(index.cartridgeOrder?.source === 'discovery'
+              ? {cartridgePathHint: 'Guessed order. Set cartridges in dw.json (or SFCC_CARTRIDGES) to match the site.'}
+              : {}),
             counts: {
               endpoints: endpoints.length,
               hookRegistrations: index.hooks.length,
@@ -359,6 +359,7 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
           minSeverity: args.minSeverity,
           baseline,
           cartridgePath: context.services.getResolvedConfig().values.cartridges,
+          siteId: context.services.getResolvedConfig().values.siteId,
           excludeReferenceCartridges: args.excludeReferenceCartridges,
         });
 
