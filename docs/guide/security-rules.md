@@ -290,6 +290,8 @@ server.extend(module.superModule);
 server.prepend('AddProduct', csrfProtection.validateAjaxRequest);
 ```
 
+Server-to-server callbacks (routes that read the raw request body, such as `request.httpParameterMap.requestBodyAsString` or `req.body`, and never use the shopper's customer, basket, session, or form) can't carry a shopper's CSRF token, so this rule leaves them to [webhook-without-verification](#webhook-without-verification).
+
 Routes that only hand out a token (such as `CSRF-Generate`) or that are protected by a single-use token sent by email (such as a password reset confirmation) don't need the check; suppress them with a reason.
 
 ## sfra-replace-drops-middleware
@@ -330,6 +332,33 @@ exports.Submit = guard.ensure(['post', 'https', 'csrf'], submit);
 ```
 
 Include the CSRF token field (`dw.web.CSRFProtection.getTokenName()` and `generateToken()`) in the form that submits to the action.
+
+## webhook-without-verification
+
+**Severity:** high · **Confidence:** medium · **CWE:** CWE-306, CWE-345
+
+Finds SFRA POST routes shaped like server-to-server callbacks (payment notifications, order management events, partner integrations) that don't check who is calling. A route counts as a callback when it reads the raw request body (`request.httpParameterMap.requestBodyAsString` or `req.body`) and never uses the shopper's session (`customer`, `session`, `req.currentCustomer`, `req.form`, the current basket, or `res.render`). It is reported unless a handler compares a request value with a secret (a site preference or a token), reads an `Authorization` or signature header, calls a function named like verification (`verifySignature`, `validateRequest`, `authenticate`), runs middleware named that way, or checks a CSRF token.
+
+```js
+// Finding: anyone can post a notification and change orders
+server.post('Notification', server.middleware.https, function (req, res, next) {
+  var event = JSON.parse(request.httpParameterMap.requestBodyAsString);
+  updateOrder(event);
+  ...
+});
+
+// Fix: verify the provider's signature before acting
+server.post('Notification', server.middleware.https, function (req, res, next) {
+  var body = request.httpParameterMap.requestBodyAsString;
+  if (!signatures.verify(body, req.httpHeaders.get('x-signature'), secret)) {
+    res.setStatusCode(401);
+    return next();
+  }
+  ...
+});
+```
+
+Prefer a signature over the raw body (HMAC with a secret kept in a site preference or service credential) to a shared token. Compare secrets with a constant-time check. Allowlisting the caller's IP address is not enough on its own. A JSON endpoint that the storefront's own pages call is reported too, because it has neither a caller check nor a CSRF check; add `csrfProtection.validateAjaxRequest`.
 
 ## weak-crypto
 

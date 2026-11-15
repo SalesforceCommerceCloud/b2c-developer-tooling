@@ -29,4 +29,11 @@ server.use('Page', function (req, res, next) {
   next();
 });
 
+// Server-to-server callback: left to webhook-without-verification.
+server.post('Notification', server.middleware.https, function (req, res, next) {
+  var event = JSON.parse(request.httpParameterMap.requestBodyAsString);
+  res.json({received: event.id});
+  next();
+});
+
 module.exports = server.exports();

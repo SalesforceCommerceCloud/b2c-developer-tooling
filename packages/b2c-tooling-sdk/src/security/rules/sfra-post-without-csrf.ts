@@ -6,6 +6,7 @@
 import {defineScriptRule} from '../rule.js';
 import {controllerName, endpointForStatement, isIndexedFile, projectIndexOf} from '../script/project.js';
 import {isCsrfValidator, sfraRouteCall} from '../script/routes.js';
+import {isWebhookShaped, webhookShape} from '../script/webhook.js';
 
 export default defineScriptRule({
   id: 'sfra-post-without-csrf',
@@ -14,7 +15,7 @@ export default defineScriptRule({
   category: 'csrf',
   cwe: ['CWE-352'],
   description:
-    'SFRA routes that accept POST (server.post, or server.use/server.replace routes that read form input) without csrfProtection.validateRequest or validateAjaxRequest, or a CSRFProtection.validateRequest() check in the handler.',
+    'SFRA routes that accept POST (server.post, or server.use/server.replace routes that read form input) without csrfProtection.validateRequest or validateAjaxRequest, or a CSRFProtection.validateRequest() check in the handler. Server-to-server callbacks (raw request body, no shopper session) are left to webhook-without-verification.',
   remediation:
     'Add csrfProtection.validateAjaxRequest (AJAX) or csrfProtection.validateRequest (form posts) from */cartridge/scripts/middleware/csrf to the route, and render the token with csrfProtection.generateToken on the page that submits it.',
   create(context) {
@@ -28,6 +29,8 @@ export default defineScriptRule({
         const anyMethod = !acceptsPost && !ids.includes('server.middleware.get');
         if (!acceptsPost && !(anyMethod && route.chain.some((m) => m.readsForm))) return;
         if (ids.some(isCsrfValidator) || route.chain.some((m) => m.validatesCsrf)) return;
+        // Server-to-server callbacks can't carry a shopper's CSRF token; webhook-without-verification covers them.
+        if (isWebhookShaped(webhookShape(node.arguments.slice(1), context.sourceCode))) return;
 
         const line = node.loc?.start.line ?? 0;
         if (index) {

@@ -17,6 +17,7 @@ import sfraPostWithoutCsrf from './sfra-post-without-csrf.js';
 import sfraReplaceDropsMiddleware from './sfra-replace-drops-middleware.js';
 import sgPostWithoutCsrf from './sg-post-without-csrf.js';
 import weakCrypto from './weak-crypto.js';
+import webhookWithoutVerification from './webhook-without-verification.js';
 
 /**
  * Every built-in security rule. To add a rule, create a file in this
@@ -37,4 +38,5 @@ export const SCRIPT_RULES: readonly ScriptRule[] = Object.freeze([
   sfraReplaceDropsMiddleware,
   sgPostWithoutCsrf,
   weakCrypto,
+  webhookWithoutVerification,
 ]);
