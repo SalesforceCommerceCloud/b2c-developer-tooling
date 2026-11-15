@@ -46,6 +46,15 @@ export function parseSecurityConfig(text: string, file = SECURITY_CONFIG_FILE): 
   } catch (error) {
     throw new Error(`${file}: invalid JSON (${(error as Error).message})`);
   }
+  return validateSecurityConfig(data, file);
+}
+
+/**
+ * Validates a security config object, such as the `security` key of dw.json.
+ * `source` names it in error messages.
+ */
+export function validateSecurityConfig(data: unknown, source = SECURITY_CONFIG_FILE): SecurityConfig {
+  const file = source;
   if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error(`${file}: expected an object`);
   const {ignore, rules} = data as Record<string, unknown>;
   const strings = (value: unknown, key: string): string[] | undefined => {

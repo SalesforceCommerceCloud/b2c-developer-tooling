@@ -142,6 +142,20 @@ describe('security', () => {
       expect(ignored.findings).to.have.length(0);
     });
 
+    it('uses the dw.json security settings over .b2c-security.json and validates them', async () => {
+      fs.writeFileSync(path.join(tmp, '.b2c-security.json'), JSON.stringify({rules: {'open-redirect': 'off'}}));
+      const command = await createScan([], {'fail-on': 'none'});
+      command.resolvedConfig.values.security = {rules: {'weak-crypto': 'off'}};
+      const result = await command.run();
+      expect(result.findings.map((f: {ruleId: string}) => f.ruleId)).to.deep.equal(['open-redirect']);
+      expect(result.configFile).to.equal(undefined);
+
+      const invalid = await createScan([], {'fail-on': 'none'});
+      invalid.resolvedConfig.values.security = {rules: {'weak-crypto': 'loud'}};
+      const errorStub = await runExpectingError(invalid);
+      expect(errorStub.calledWithMatch(/dw\.json "security": "rules\.weak-crypto"/)).to.equal(true);
+    });
+
     it('uses the default baseline file and reports only new findings', async () => {
       const baseline = await createTestCommand(SecurityBaselineCommand, hooks.getConfig(), {
         output: '.b2c-security-baseline.json',

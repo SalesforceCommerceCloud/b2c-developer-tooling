@@ -97,7 +97,7 @@ When you've reviewed a finding and decided the code is safe, accept it so it sto
 
 - **Inline comment**, for a single finding you want to explain where it happens. The decision lives next to the code and shows up in code review.
 - **Baseline**, for findings you accept in bulk (see [above](#adopt-scanning-on-an-existing-codebase)), and for files that can't hold comments, such as OCAPI settings JSON.
-- **Project settings** (`.b2c-security.json`), for whole rules or paths: turn a rule off, lower its severity, or leave out a cartridge, such as a Business Manager tools cartridge where a rule doesn't apply. See [Project settings](../cli/security.md#project-settings). For a single run, use `--exclude-rule` and `--ignore`.
+- **Project settings** (`.b2c-security.json`, or a `security` key in `dw.json`), for whole rules or paths: turn a rule off, lower its severity, or leave out a cartridge, such as a Business Manager tools cartridge where a rule doesn't apply. See [Project settings](../cli/security.md#project-settings). For a single run, use `--exclude-rule` and `--ignore`.
 
 An inline comment must name the rule it suppresses. There's no way to turn off every rule for a line, so a suppression can't hide a different problem later. Use `b2c-dx-disable-next-line` on the line before the finding, or `b2c-dx-disable-line` at the end of the line:
 

@@ -83,8 +83,9 @@ export interface SecurityScanOptions {
   /** A project index to use instead of building one from `root` and `paths`. */
   projectIndex?: ProjectIndex;
   /**
-   * Project security settings (rules turned off, severities, ignored paths).
-   * Defaults to `.b2c-security.json` in `root` when present; pass `false` to skip it.
+   * Project security settings (rules turned off, severities, ignored paths),
+   * for example the `security` key of dw.json. Defaults to
+   * `.b2c-security.json` in `root` when present; pass `false` to use none.
    */
   config?: SecurityConfig | false;
   /** More paths to leave out (globs relative to `root`), in addition to the config's `ignore`. */

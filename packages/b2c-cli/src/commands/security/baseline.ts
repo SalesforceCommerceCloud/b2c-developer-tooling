@@ -9,7 +9,7 @@ import {Flags} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {createBaseline, scanSecurity, type SecurityBaseline} from '@salesforce/b2c-tooling-sdk/security';
 import {t, withDocs} from '../../i18n/index.js';
-import {DEFAULT_BASELINE_FILE, ruleFilterFlags} from '../../utils/security/index.js';
+import {DEFAULT_BASELINE_FILE, ruleFilterFlags, securityConfigFromDwJson} from '../../utils/security/index.js';
 import {projectRoot} from '../../utils/project/index.js';
 
 export default class SecurityBaselineCommand extends BaseCommand<typeof SecurityBaselineCommand> {
@@ -52,6 +52,7 @@ export default class SecurityBaselineCommand extends BaseCommand<typeof Security
         rules: flags.rule,
         excludeRules: flags['exclude-rule'],
         ignore: flags.ignore,
+        config: securityConfigFromDwJson(this.resolvedConfig.values.security),
         cartridgePath: this.resolvedConfig.values.cartridges,
         siteId: this.resolvedConfig.values.siteId,
       });

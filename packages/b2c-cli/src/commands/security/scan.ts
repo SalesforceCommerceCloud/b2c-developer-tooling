@@ -17,7 +17,7 @@ import {
   type SecuritySeverity,
 } from '@salesforce/b2c-tooling-sdk/security';
 import {t, withDocs} from '../../i18n/index.js';
-import {loadBaseline, ruleFilterFlags} from '../../utils/security/index.js';
+import {loadBaseline, ruleFilterFlags, securityConfigFromDwJson} from '../../utils/security/index.js';
 import {projectRoot} from '../../utils/project/index.js';
 
 const SEVERITY_COLORS: Record<SecuritySeverity, string> = {
@@ -121,6 +121,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         rules: flags.rule,
         excludeRules: flags['exclude-rule'],
         ignore: flags.ignore,
+        config: securityConfigFromDwJson(this.resolvedConfig.values.security),
         minSeverity: flags.severity as SecuritySeverity | undefined,
         baseline: baselineInfo.baseline,
         cartridgePath: this.resolvedConfig.values.cartridges,

@@ -127,6 +127,12 @@ export interface NormalizedConfig {
   cartridges?: string[];
   /** Project-relative directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /**
+   * `b2c security scan` settings from dw.json (`security` key): ignored paths
+   * and per-rule settings, the same shape as `.b2c-security.json`. Validated
+   * when a scan runs.
+   */
+  security?: {ignore?: string[]; rules?: Record<string, unknown>};
   /** Directory names skipped at any depth when archiving cartridges for deploy (replaces the default list) */
   cartridgeIgnoreDirs?: string[];
 

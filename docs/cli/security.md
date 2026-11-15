@@ -109,7 +109,7 @@ A suppression must name the rule; several rules can be listed, separated by comm
 
 ### Project settings
 
-To turn rules off, change their severity, or leave out paths for everyone who scans the project, commit a `.b2c-security.json` in the project directory. `scan`, `baseline`, and the MCP `security_scan` tool read it.
+To turn rules off, change their severity, or leave out paths for everyone who scans the project, commit a `.b2c-security.json` in the project directory, or put the same settings under a `security` key in `dw.json` (which takes precedence over the file). `scan`, `baseline`, and the MCP `security_scan` tool read them.
 
 ```json
 {
@@ -125,6 +125,15 @@ To turn rules off, change their severity, or leave out paths for everyone who sc
 - `ignore`: globs (relative to the project directory) of files not to scan. A directory covers everything inside it.
 - `rules`: per rule ID, `"off"`, a severity, or `{"severity": ..., "ignore": [...]}` to drop that rule's findings in some paths.
 - An unknown rule ID is an error, so a typo doesn't leave a rule on unnoticed. The summary shows the settings file it used.
+
+In `dw.json`:
+
+```json
+{
+  "hostname": "my-sandbox.example.com",
+  "security": {"ignore": ["cartridges/bm_*"], "rules": {"pii-in-logs": "off"}}
+}
+```
 
 ### Notes
 

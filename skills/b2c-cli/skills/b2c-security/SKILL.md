@@ -85,7 +85,7 @@ b2c security baseline
 b2c security scan
 ```
 
-To turn a rule off, change its severity, or leave out paths for the whole project (for example a Business Manager tools cartridge), propose a committed `.b2c-security.json` rather than many inline comments; `--exclude-rule` and `--ignore` do the same for one run:
+To turn a rule off, change its severity, or leave out paths for the whole project (for example a Business Manager tools cartridge), propose a committed `.b2c-security.json` (or the same settings under `security` in dw.json) rather than many inline comments; `--exclude-rule` and `--ignore` do the same for one run:
 
 ```json
 {"ignore": ["cartridges/bm_tools"], "rules": {"pii-in-logs": "off", "weak-crypto": "low"}}

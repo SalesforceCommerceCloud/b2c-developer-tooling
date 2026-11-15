@@ -64,6 +64,7 @@ export {
   ignoredPathTest,
   loadSecurityConfig,
   parseSecurityConfig,
+  validateSecurityConfig,
 } from './config.js';
 export type {SecurityConfig, SecurityRuleSetting} from './config.js';
 export type {SecurityBaseline} from './baseline.js';

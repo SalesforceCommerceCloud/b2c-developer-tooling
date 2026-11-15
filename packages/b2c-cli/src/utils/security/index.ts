@@ -6,7 +6,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {Flags} from '@oclif/core';
-import {parseBaseline, type SecurityBaseline} from '@salesforce/b2c-tooling-sdk/security';
+import {
+  parseBaseline,
+  validateSecurityConfig,
+  type SecurityBaseline,
+  type SecurityConfig,
+} from '@salesforce/b2c-tooling-sdk/security';
 
 /** Baseline file picked up automatically from the current directory. */
 export const DEFAULT_BASELINE_FILE = '.b2c-security-baseline.json';
@@ -34,4 +39,12 @@ export function loadBaseline(file: string | undefined, cwd: string): {baseline?:
     return {};
   }
   return {baseline: parseBaseline(fs.readFileSync(candidate, 'utf8')), file: candidate};
+}
+
+/**
+ * The `security` settings from dw.json, validated, or undefined so the scan
+ * reads `.b2c-security.json` from the project directory instead.
+ */
+export function securityConfigFromDwJson(value: unknown): SecurityConfig | undefined {
+  return value === undefined ? undefined : validateSecurityConfig(value, 'dw.json "security"');
 }

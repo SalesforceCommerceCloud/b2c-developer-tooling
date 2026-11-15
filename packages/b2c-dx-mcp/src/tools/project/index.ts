@@ -29,6 +29,7 @@ import {
   SECURITY_SEVERITIES,
   parseBaseline,
   scanSecurity,
+  validateSecurityConfig,
   type SecurityBaseline,
   type SecuritySeverity,
 } from '@salesforce/b2c-tooling-sdk/security';
@@ -357,12 +358,15 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
         const baselineFile = path.join(dir, BASELINE_FILE);
         if (fs.existsSync(baselineFile)) baseline = parseBaseline(fs.readFileSync(baselineFile, 'utf8'));
 
+        const dwJsonSecurity = context.services.getResolvedConfig().values.security;
         const result = scanSecurity({
           root: dir,
           paths,
           rules: args.rules,
           excludeRules: args.excludeRules,
           ignore: args.ignore,
+          config:
+            dwJsonSecurity === undefined ? undefined : validateSecurityConfig(dwJsonSecurity, 'dw.json "security"'),
           minSeverity: args.minSeverity,
           baseline,
           cartridgePath: context.services.getResolvedConfig().values.cartridges,
