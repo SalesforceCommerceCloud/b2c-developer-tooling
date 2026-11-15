@@ -14,16 +14,21 @@ const CUSTOM = `${PROJECT}/cartridges/app_custom`;
 const BASE = `${PROJECT}/cartridges/app_storefront_base`;
 const MODULES = `${PROJECT}/cartridges/modules`;
 
-/** Fake TypeScript whose ts.sys serves an in-memory tree; directories derive from file paths. */
+/**
+ * Fake TypeScript whose ts.sys serves an in-memory tree; directories derive from file paths.
+ * Like the real ts.sys on Windows, it accepts either path separator (path.join produces backslashes there).
+ */
 function createFakeTypeScript(files: Record<string, string>) {
   const paths = Object.keys(files);
+  const slash = (p: string) => p.replace(/\\/g, '/');
   return {
     Extension: {Dts: '.d.ts', Js: '.js', Json: '.json'},
     ScriptKind: {JS: 1, Unknown: 0},
     sys: {
-      fileExists: (p: string) => Object.prototype.hasOwnProperty.call(files, p),
-      readFile: (p: string) => files[p],
-      getDirectories(dir: string) {
+      fileExists: (p: string) => Object.prototype.hasOwnProperty.call(files, slash(p)),
+      readFile: (p: string) => files[slash(p)],
+      getDirectories(input: string) {
+        const dir = slash(input);
         const prefix = dir.endsWith('/') ? dir : dir + '/';
         const names = new Set<string>();
         for (const f of paths) {

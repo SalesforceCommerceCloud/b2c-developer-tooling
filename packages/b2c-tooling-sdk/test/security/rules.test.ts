@@ -229,9 +229,10 @@ describe('security rules', () => {
         );
         let stdout: string;
         try {
+          // Run the bin script through node: Windows can't execute it directly.
           stdout = execFileSync(
-            oxlint,
-            ['-c', config, '--format', 'json', ...listJsFiles(path.join(fixturesDir, id))],
+            process.execPath,
+            [oxlint, '-c', config, '--format', 'json', ...listJsFiles(path.join(fixturesDir, id))],
             {
               encoding: 'utf8',
             },
