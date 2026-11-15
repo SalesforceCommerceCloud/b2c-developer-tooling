@@ -101,10 +101,16 @@ export function disabledRules(config: SecurityConfig | undefined): string[] {
     .map(([id]) => id);
 }
 
+function trimSlashes(pattern: string): string {
+  let end = pattern.length;
+  while (end > 0 && pattern[end - 1] === '/') end--;
+  return pattern.slice(0, end);
+}
+
 function matcher(patterns: readonly string[]): (file: string) => boolean {
   // A pattern naming a directory (`cartridges/bm_tools`) also covers the files inside it.
   const compiled = patterns
-    .map((p) => p.replace(/^\.\//, '').replace(/\/+$/, ''))
+    .map((p) => trimSlashes(p.startsWith('./') ? p.slice(2) : p))
     .flatMap((p) => [p, `${p}/**`])
     .map((p) => new Minimatch(p, {dot: true}));
   return (file) => compiled.some((m) => m.match(file));
