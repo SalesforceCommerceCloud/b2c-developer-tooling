@@ -5,7 +5,7 @@ description: Understand a B2C Commerce project's server-side code from source wi
 
 # B2C Project Skill
 
-Use `b2c project` to answer questions about a project's storefront code from its source, without an instance or credentials. It reads the cartridges under the project directory (`--project-directory`, or the current directory; folders with a `.project` file) and composes them in cartridge path order.
+Use `b2c project` (preview) to answer questions about a project's storefront code from its source, without an instance or credentials. It reads the cartridges under the project directory (`--project-directory`, or the current directory; folders with a `.project` file) and composes them in cartridge path order.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead. Add `--json` to any command for structured output.
 

@@ -22,23 +22,24 @@ b2c security scan [paths...]
 
 ### Arguments
 
-| Argument | Description                                    | Required                               |
-| -------- | ---------------------------------------------- | -------------------------------------- |
+| Argument | Description                                    | Required                                                                                |
+| -------- | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `paths`  | Files or directories to scan. Accepts several. | No (defaults to the project directory: `--project-directory`, or the current directory) |
 
 ### Flags
 
-| Flag                             | Description                                                                                                         | Default                                      |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `--format`                       | Report format: `table`, `json`, or `sarif` (for GitHub code scanning)                                               | `table`                                      |
-| `--output`                       | Write the `json` or `sarif` report to this file instead of standard output                                          |                                              |
-| `--severity`                     | Only report findings at or above this severity: `critical`, `high`, `medium`, `low`, or `info`                      | all                                          |
-| `--fail-on`                      | Exit with status 1 when open findings at or above this severity remain; `none` never fails                          | `low`                                        |
-| `--rule`                         | Run only this rule. Repeatable.                                                                                     | all rules                                    |
-| `--exclude-rule`                 | Skip this rule. Repeatable.                                                                                         |                                              |
-| `--baseline`                     | Baseline file of accepted findings (see [`b2c security baseline`](#b2c-security-baseline))                          | `.b2c-security-baseline.json` when it exists |
-| `--exclude-reference-cartridges` | Leave out findings in SFRA and SiteGenesis reference cartridges (see [Reference cartridges](#reference-cartridges)) | `false`                                      |
-| `--show-suppressed`              | Also list findings that are suppressed inline or in the baseline                                                    | `false`                                      |
+| Flag                             | Description                                                                                                          | Default                                      |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `--format`                       | Report format: `table`, `json`, or `sarif` (for GitHub code scanning)                                                | `table`                                      |
+| `--output`                       | Write the `json` or `sarif` report to this file instead of standard output                                           |                                              |
+| `--severity`                     | Only report findings at or above this severity: `critical`, `high`, `medium`, `low`, or `info`                       | all                                          |
+| `--fail-on`                      | Exit with status 1 when open findings at or above this severity remain; `none` never fails                           | `low`                                        |
+| `--rule`                         | Run only this rule. Repeatable.                                                                                      | all rules                                    |
+| `--exclude-rule`                 | Skip this rule. Repeatable.                                                                                          |                                              |
+| `--ignore`                       | Leave out files matching this glob, relative to the project directory (for example `'cartridges/bm_*'`). Repeatable. |                                              |
+| `--baseline`                     | Baseline file of accepted findings (see [`b2c security baseline`](#b2c-security-baseline))                           | `.b2c-security-baseline.json` when it exists |
+| `--exclude-reference-cartridges` | Leave out findings in SFRA and SiteGenesis reference cartridges (see [Reference cartridges](#reference-cartridges))  | `false`                                      |
+| `--show-suppressed`              | Also list findings that are suppressed inline or in the baseline                                                     | `false`                                      |
 
 ### Examples
 
@@ -106,9 +107,28 @@ A suppression must name the rule; several rules can be listed, separated by comm
 <url>http://erp-mock.internal.example.com/orders</url>
 ```
 
+### Project settings
+
+To turn rules off, change their severity, or leave out paths for everyone who scans the project, commit a `.b2c-security.json` in the project directory. `scan`, `baseline`, and the MCP `security_scan` tool read it.
+
+```json
+{
+  "ignore": ["cartridges/bm_*"],
+  "rules": {
+    "pii-in-logs": "off",
+    "weak-crypto": "low",
+    "dynamic-code": {"ignore": ["cartridges/int_legacy"]}
+  }
+}
+```
+
+- `ignore`: globs (relative to the project directory) of files not to scan. A directory covers everything inside it.
+- `rules`: per rule ID, `"off"`, a severity, or `{"severity": ..., "ignore": [...]}` to drop that rule's findings in some paths.
+- An unknown rule ID is an error, so a typo doesn't leave a rule on unnoticed. The summary shows the settings file it used.
+
 ### Notes
 
-- Legacy `.ds` scripts that use type annotations (`function f(a : String)`) can't be parsed yet and are skipped; the summary reports how many. Use `--json` to list them.
+- Files that use legacy script syntax, type annotations (`var x : String`, common in `.ds` files) or E4X XML literals (`<product/>`, `xml..child`), can't be parsed and are skipped; the summary reports how many of each. Use `--json` to list them (each error has a `reason`).
 - Rules follow common SFRA and SiteGenesis patterns and report what they can decide from one file. Treat `medium` and `low` confidence findings as prompts to review the code.
 
 ## b2c security rules
@@ -135,11 +155,12 @@ b2c security baseline [paths...]
 
 ### Flags
 
-| Flag             | Description                         | Default                       |
-| ---------------- | ----------------------------------- | ----------------------------- |
-| `--output`       | Baseline file to write              | `.b2c-security-baseline.json` |
-| `--rule`         | Include only this rule. Repeatable. | all rules                     |
-| `--exclude-rule` | Skip this rule. Repeatable.         |                               |
+| Flag             | Description                                     | Default                       |
+| ---------------- | ----------------------------------------------- | ----------------------------- |
+| `--output`       | Baseline file to write                          | `.b2c-security-baseline.json` |
+| `--rule`         | Include only this rule. Repeatable.             | all rules                     |
+| `--exclude-rule` | Skip this rule. Repeatable.                     |                               |
+| `--ignore`       | Leave out files matching this glob. Repeatable. |                               |
 
 ### Examples
 

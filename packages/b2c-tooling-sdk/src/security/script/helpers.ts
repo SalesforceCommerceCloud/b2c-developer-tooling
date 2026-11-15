@@ -176,6 +176,12 @@ export interface RequestTaintOptions {
   isSource?: (variable: AstVariable) => boolean;
 }
 
+/**
+ * How many expression and assignment hops request taint is followed, for
+ * example `JSON.parse(body)` -> `rpc.method` -> `cmd` -> `code`.
+ */
+const MAX_TAINT_DEPTH = 5;
+
 export function isRequestDerived(
   node: AstNode | null | undefined,
   sourceCode: ScriptSourceCode,
@@ -183,7 +189,7 @@ export function isRequestDerived(
   depth = 0,
 ): boolean {
   const n = node as Node | null | undefined;
-  if (!n || depth > 5) return false;
+  if (!n || depth > MAX_TAINT_DEPTH) return false;
   const recurse = (child: AstNode | null | undefined) => isRequestDerived(child, sourceCode, options, depth + 1);
 
   switch (n.type) {
@@ -197,6 +203,9 @@ export function isRequestDerived(
       if (callee.type === 'MemberExpression') {
         // JSON.parse(req.body) and similar: the parsed object carries the request input.
         if (memberChain(callee)?.join('.') === 'JSON.parse') return recurse(n.arguments[0]);
+        // A method of a request source returns request input: request.httpParameterMap.getRequestBodyAsString().
+        const receiver = memberChain(callee.object as Node);
+        if (receiver?.length === 2 && REQUEST_SOURCES[receiver[0]]?.has(receiver[1])) return true;
         if (PASS_THROUGH_METHODS.has(propertyName(callee) ?? '')) {
           return recurse(callee.object) || n.arguments.some((a: AstNode) => recurse(a));
         }

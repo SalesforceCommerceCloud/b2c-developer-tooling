@@ -35,7 +35,7 @@ export default class ProjectApis extends BaseCommand<typeof ProjectApis> {
   static description = withDocs(
     t(
       'commands.project.apis.description',
-      'List Custom API endpoints with the route, security scheme, and scopes from schema.yaml, the implementing function, and wiring problems',
+      '[PREVIEW] List Custom API endpoints with the route, security scheme, and scopes from schema.yaml, the implementing function, and wiring problems',
     ),
     '/cli/project.html#b2c-project-apis',
   );

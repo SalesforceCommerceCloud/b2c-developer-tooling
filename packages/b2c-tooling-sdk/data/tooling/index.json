@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-15T22:06:45.265Z",
+  "generatedAt": "2026-11-15T23:31:54.441Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -242,7 +242,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.md",
-      "headings": "b2c security scan • Usage • Arguments • Flags • Examples • Output • Reference cartridges • Cartridge path • Suppressing a finding • Notes • b2c security rules • Usage • b2c security baseline • Usage • Flags • Examples",
+      "headings": "b2c security scan • Usage • Arguments • Flags • Examples • Output • Reference cartridges • Cartridge path • Suppressing a finding • Project settings • Notes • b2c security rules • Usage • b2c security baseline • Usage • Flags • Examples",
       "preview": "Scan B2C Commerce cartridge code for security problems with b2c security scan, list the rules, and baseline existing findings."
     },
     {

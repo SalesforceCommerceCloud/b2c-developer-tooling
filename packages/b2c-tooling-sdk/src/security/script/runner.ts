@@ -8,6 +8,7 @@ import * as espree from 'espree';
 import {KEYS, getKeys} from 'eslint-visitor-keys';
 
 import type {AstNode, AstScope, ScriptRule, ScriptRuleListener, ScriptSourceCode} from '../rule.js';
+import type {SecuritySeverity} from '../types.js';
 
 /** A comment from the parser. */
 export interface ScriptComment {
@@ -26,6 +27,8 @@ export interface ScriptRuleReport {
   column: number;
   endLine: number;
   endColumn: number;
+  /** Overrides the rule's severity for this finding. */
+  severity?: SecuritySeverity;
 }
 
 /** The result of running script rules over one file. */
@@ -39,6 +42,29 @@ export interface ScriptRunResult {
 interface ParsedScript {
   ast: AstNode & {comments?: ScriptComment[]};
   sourceType: 'commonjs' | 'module';
+}
+
+/** Why a file could not be parsed. */
+export type ScriptParseErrorReason = 'e4x' | 'syntax' | 'type-annotations';
+
+const TYPE_ANNOTATION = [
+  /\b(?:var|let|const)\s+\w+\s*:\s*[A-Za-z_$][\w.$]*/,
+  /[(,]\s*\w+\s*:\s*[A-Za-z_$][\w.$]*\s*[,)=]/,
+  /\)\s*:\s*[A-Za-z_$][\w.$]*\s*(?:\{|$)/,
+];
+const E4X = [/\bfor\s+each\s*\(/, /\.\.[\w*]/, /::/, /<\?\s*xml/, /[=(,:]\s*<[A-Za-z]/, /\.@\w/];
+
+/**
+ * Classifies a parse failure by the line it happened on: legacy `.ds`-style
+ * type annotations (`var x : String`), E4X XML (`<product/>`, `x..y`, `ns::a`),
+ * or any other syntax error. Both legacy syntaxes run on the platform but are
+ * not standard JavaScript, so the scanner can't analyze those files.
+ */
+export function classifyParseError(text: string, line: number | undefined): ScriptParseErrorReason {
+  const source = line ? (text.split(/\r?\n/)[line - 1] ?? '') : '';
+  if (TYPE_ANNOTATION.some((re) => re.test(source))) return 'type-annotations';
+  if (E4X.some((re) => re.test(source))) return 'e4x';
+  return 'syntax';
 }
 
 /**
@@ -133,7 +159,7 @@ export function runScriptRules(
       options: [],
       settings,
       sourceCode,
-      report({node, message}) {
+      report({node, message, severity}) {
         const loc = node.loc ?? {start: {line: 1, column: 0}, end: {line: 1, column: 0}};
         reports.push({
           ruleId,
@@ -142,6 +168,7 @@ export function runScriptRules(
           column: loc.start.column + 1,
           endLine: loc.end.line,
           endColumn: loc.end.column + 1,
+          ...(severity ? {severity} : {}),
         });
       },
     });

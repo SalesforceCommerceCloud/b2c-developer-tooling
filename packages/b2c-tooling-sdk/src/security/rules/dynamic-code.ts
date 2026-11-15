@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {defineScriptRule} from '../rule.js';
+import {defineScriptRule, type AstNode} from '../rule.js';
 import {moduleConstantLookupOf, resolveStaticString} from '../script/constants.js';
 import {concatenationParts, isRequestDerived, staticString} from '../script/helpers.js';
 
@@ -14,18 +14,27 @@ export default defineScriptRule({
   category: 'injection',
   cwe: ['CWE-95'],
   description:
-    'Code built or loaded from strings at runtime: eval, new Function, or require/importScript with a computed path (a fixed directory prefix, or a path built only from string constants, is allowed unless the rest comes from the request).',
+    'Code built or loaded from strings at runtime: eval, new Function, or require/importScript with a computed path (a fixed directory prefix, or a path built only from string constants, is allowed unless the rest comes from the request). Critical when eval or Function compiles request input.',
   remediation:
     'Use static require paths and ordinary functions. To choose between modules at runtime, map known keys to static requires.',
   create(context) {
+    // Code compiled from request input is remote code execution: report it as critical.
+    const reportCode = (node: AstNode & {arguments: AstNode[]}, message: string) => {
+      const fromRequest = node.arguments.some((a) => isRequestDerived(a, context.sourceCode));
+      context.report(
+        fromRequest
+          ? {node, message: `${message} The code comes from the request.`, severity: 'critical'}
+          : {node, message},
+      );
+    };
     return {
       CallExpression(node) {
         const callee = node.callee;
         if (callee.type !== 'Identifier') return;
         if (callee.name === 'eval') {
-          context.report({node, message: 'eval() runs code built at runtime.'});
+          reportCode(node, 'eval() runs code built at runtime.');
         } else if (callee.name === 'Function') {
-          context.report({node, message: 'Function() compiles code from strings.'});
+          reportCode(node, 'Function() compiles code from strings.');
         } else if ((callee.name === 'require' || callee.name === 'importScript') && node.arguments.length > 0) {
           const arg = node.arguments[0];
           if (staticString(arg) !== undefined) return;
@@ -43,7 +52,7 @@ export default defineScriptRule({
       },
       NewExpression(node) {
         if (node.callee.type === 'Identifier' && node.callee.name === 'Function') {
-          context.report({node, message: 'new Function() compiles code from strings.'});
+          reportCode(node, 'new Function() compiles code from strings.');
         }
       },
     };

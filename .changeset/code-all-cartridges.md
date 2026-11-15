@@ -1,6 +1,6 @@
 ---
-'@salesforce/b2c-tooling-sdk': minor
-'@salesforce/b2c-cli': minor
+'@salesforce/b2c-tooling-sdk': patch
+'@salesforce/b2c-cli': patch
 ---
 
-`code deploy`, `code watch`, and `code download` accept `--all` to include every discovered cartridge when the `cartridges` config value (dw.json or `SFCC_CARTRIDGES`) lists only some of them.
+`code deploy`, `code watch`, and `code download` limit uploads to the cartridges named in `SFCC_CARTRIDGES`, as they already do for `cartridges` in dw.json. Pass `--all` to include every discovered cartridge anyway.

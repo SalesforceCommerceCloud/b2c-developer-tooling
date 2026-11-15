@@ -20,6 +20,10 @@ export const ruleFilterFlags = {
     description: 'Skip this rule (repeatable)',
     multiple: true,
   }),
+  ignore: Flags.string({
+    description: 'Leave out files matching this glob, relative to the project directory (repeatable)',
+    multiple: true,
+  }),
 };
 
 /** Reads a baseline file, or the default one in `cwd` when present. */

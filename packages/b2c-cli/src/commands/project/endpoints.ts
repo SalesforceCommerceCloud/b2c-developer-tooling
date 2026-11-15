@@ -47,7 +47,7 @@ export default class ProjectEndpoints extends BaseCommand<typeof ProjectEndpoint
   static description = withDocs(
     t(
       'commands.project.endpoints.description',
-      'List storefront controller endpoints (SFRA and SiteGenesis) with the methods they accept and their HTTPS, login, and CSRF protection, composed across the cartridge path',
+      '[PREVIEW] List storefront controller endpoints (SFRA and SiteGenesis) with the methods they accept and their HTTPS, login, and CSRF protection, composed across the cartridge path',
     ),
     '/cli/project.html#b2c-project-endpoints',
   );

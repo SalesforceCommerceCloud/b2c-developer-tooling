@@ -59,6 +59,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
     '<%= config.bin %> <%= command.id %> --severity medium --fail-on high',
     '<%= config.bin %> <%= command.id %> --format sarif --output security.sarif',
     '<%= config.bin %> <%= command.id %> --rule open-redirect --rule object-query-injection',
+    "<%= config.bin %> <%= command.id %> --exclude-rule pii-in-logs --ignore 'cartridges/bm_*'",
     '<%= config.bin %> <%= command.id %> --json',
   ];
 
@@ -119,6 +120,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         paths: argv as string[],
         rules: flags.rule,
         excludeRules: flags['exclude-rule'],
+        ignore: flags.ignore,
         minSeverity: flags.severity as SecuritySeverity | undefined,
         baseline: baselineInfo.baseline,
         cartridgePath: this.resolvedConfig.values.cartridges,
@@ -212,6 +214,13 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         }),
       );
     }
+    if (response.configFile) {
+      ux.stdout(
+        t('commands.security.scan.configUsed', 'Settings: {{file}}', {
+          file: path.relative(process.cwd(), response.configFile),
+        }),
+      );
+    }
     if (summary.baselineFile) {
       ux.stdout(
         t('commands.security.scan.baselineUsed', 'Baseline: {{file}}', {
@@ -220,13 +229,30 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
       );
     }
     if (errors.length > 0) {
-      ux.stdout(
-        t(
-          'commands.security.scan.parseErrors',
-          '{{count}} file(s) could not be parsed and were skipped (legacy .ds files with type annotations, for example). Use --json to list them.',
-          {count: errors.length},
-        ),
-      );
+      const count = (reason: string) => errors.filter((e) => e.reason === reason).length;
+      const legacy = [
+        count('type-annotations') > 0 ? `${count('type-annotations')} with type annotations` : '',
+        count('e4x') > 0 ? `${count('e4x')} with E4X XML` : '',
+      ].filter(Boolean);
+      const other = errors.length - count('type-annotations') - count('e4x');
+      if (legacy.length > 0) {
+        ux.stdout(
+          t(
+            'commands.security.scan.legacySkipped',
+            'Skipped {{count}} file(s) using legacy script syntax the scanner cannot read ({{kinds}}). Use --json to list them.',
+            {count: errors.length - other, kinds: legacy.join(', ')},
+          ),
+        );
+      }
+      if (other > 0) {
+        ux.stdout(
+          t(
+            'commands.security.scan.parseErrors',
+            '{{count}} file(s) could not be parsed and were skipped. Use --json to list them.',
+            {count: other},
+          ),
+        );
+      }
     }
     if (filesScanned === 0) {
       this.warn(

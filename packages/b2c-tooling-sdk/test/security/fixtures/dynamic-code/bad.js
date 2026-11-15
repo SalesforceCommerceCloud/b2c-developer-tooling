@@ -20,7 +20,13 @@ function loadFromRequest() {
   return require('*/cartridge/scripts/' + request.httpParameterMap.helper.stringValue); // expect
 }
 
-module.exports = {run: run, compile: compile, compileCall: compileCall, load: load, loadFromRequest: loadFromRequest};
+function evalRequest() {
+  var rpc = JSON.parse(request.httpParameterMap.getRequestBodyAsString());
+  var commands = session.privacy.commands + '; ' + rpc.method;
+  new Function(commands)(); // expect
+}
+
+module.exports = {evalRequest: evalRequest, run: run, compile: compile, compileCall: compileCall, load: load, loadFromRequest: loadFromRequest};
 
 var Changing = {};
 Changing.PATH = '*/cartridge/scripts/a';

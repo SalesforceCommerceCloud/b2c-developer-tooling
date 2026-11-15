@@ -14,12 +14,14 @@ import {
   createBaseline,
   listSecurityRules,
   parseBaseline,
+  parseSecurityConfig,
   parseSuppressions,
   scanMetadataText,
   scanSecurity,
   scanSecurityText,
   selectSecurityRules,
   toSarif,
+  type SecurityScanError,
 } from '@salesforce/b2c-tooling-sdk/security';
 
 const EVAL_LINE = 'module.exports = function (code) { return eval(code); };';
@@ -40,6 +42,27 @@ describe('security engine', () => {
       expect(scanSecurityText('function f(a : String) {}', 'x.ds', undefined, errors)).to.deep.equal([]);
       expect(errors[0].file).to.equal('x.ds');
       expect(errors[0].message).to.match(/^Could not parse/);
+    });
+
+    it('reports code compiled from request input as critical', () => {
+      const text = 'var body = request.httpParameterMap.code.stringValue;\nnew Function(body)();\neval(x);';
+      expect(scanSecurityText(text, 'a.js').map((f) => f.severity)).to.deep.equal(['critical', 'high']);
+    });
+
+    it('tells legacy type annotations and E4X apart from other parse errors', () => {
+      const errors: SecurityScanError[] = [];
+      scanSecurityText('var product : XML = null;', 'a.js', undefined, errors);
+      scanSecurityText('var x = <product id="1"/>;', 'b.js', undefined, errors);
+      scanSecurityText('var a = {b: c d};', 'c.js', undefined, errors);
+      scanSecurityText('function execute(pdict) : Number\n{ return 1; }', 'd.ds', undefined, errors);
+      scanSecurityText('for each (var item in items) {}', 'e.js', undefined, errors);
+      expect(errors.map((e) => e.reason)).to.deep.equal([
+        'type-annotations',
+        'e4x',
+        'syntax',
+        'type-annotations',
+        'e4x',
+      ]);
     });
 
     it('parses ES modules as a fallback', () => {
@@ -228,6 +251,33 @@ describe('security engine', () => {
 
     afterEach(() => {
       fs.rmSync(dir, {recursive: true, force: true});
+    });
+
+    it('applies .b2c-security.json: rules off, severity overrides, and ignored paths', () => {
+      fs.writeFileSync(
+        path.join(dir, '.b2c-security.json'),
+        JSON.stringify({ignore: ['cartridges/modules'], rules: {'dynamic-code': 'low', 'weak-crypto': 'off'}}),
+      );
+      const result = scanSecurity({root: dir});
+      expect(result.configFile).to.equal(path.join(dir, '.b2c-security.json'));
+      expect(result.rules.map((r) => r.id)).to.not.include('weak-crypto');
+      expect(result.findings.map((f) => [f.ruleId, f.severity, f.location.file])).to.deep.equal([
+        ['dynamic-code', 'low', 'cartridges/app_custom/cartridge/scripts/a.js'],
+      ]);
+      expect(scanSecurity({root: dir, config: false}).findings).to.have.length(2);
+    });
+
+    it("drops findings in a rule's ignored paths and in --ignore globs", () => {
+      const config = parseSecurityConfig(JSON.stringify({rules: {'dynamic-code': {ignore: ['cartridges/app_*/**']}}}));
+      expect(scanSecurity({root: dir, config}).findings.map((f) => f.ruleId)).to.deep.equal(['weak-crypto']);
+      expect(scanSecurity({root: dir, config: false, ignore: ['cartridges/app_custom']}).findings).to.have.length(1);
+    });
+
+    it('rejects invalid settings and unknown rule IDs', () => {
+      expect(() => parseSecurityConfig('{"rules": {"dynamic-code": "loud"}}')).to.throw(/rules\.dynamic-code/);
+      expect(() => parseSecurityConfig('{"ignore": "x"}')).to.throw(/"ignore" must be an array/);
+      fs.writeFileSync(path.join(dir, '.b2c-security.json'), '{"rules": {"no-such-rule": "off"}}');
+      expect(() => scanSecurity({root: dir})).to.throw(/Unknown security rule ID\(s\): no-such-rule/);
     });
 
     it('scans server-side scripts in cartridges only, skipping client, static, and minified files', () => {

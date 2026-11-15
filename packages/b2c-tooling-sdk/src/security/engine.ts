@@ -16,10 +16,17 @@ import {
 import {buildProjectIndex} from '../project-index/build.js';
 import type {ProjectIndex} from '../project-index/types.js';
 import {applyBaseline, fingerprintFinding, type SecurityBaseline} from './baseline.js';
+import {applyRuleSettings, disabledRules, ignoredPathTest, loadSecurityConfig, type SecurityConfig} from './config.js';
 import type {ScriptRule} from './rule.js';
 import {SCRIPT_RULES} from './rules/index.js';
 import {SECURITY_SETTINGS_KEY} from './script/project.js';
-import {runScriptRules, type ScriptComment, type ScriptRuleReport} from './script/runner.js';
+import {
+  classifyParseError,
+  runScriptRules,
+  type ScriptComment,
+  type ScriptParseErrorReason,
+  type ScriptRuleReport,
+} from './script/runner.js';
 import {METADATA_RULES} from './metadata/rules/index.js';
 import {metadataKindOfFile, runMetadataRules} from './metadata/run.js';
 import type {MetadataFileKind, MetadataRule} from './metadata/types.js';
@@ -75,12 +82,21 @@ export interface SecurityScanOptions {
   excludeReferenceCartridges?: boolean;
   /** A project index to use instead of building one from `root` and `paths`. */
   projectIndex?: ProjectIndex;
+  /**
+   * Project security settings (rules turned off, severities, ignored paths).
+   * Defaults to `.b2c-security.json` in `root` when present; pass `false` to skip it.
+   */
+  config?: SecurityConfig | false;
+  /** More paths to leave out (globs relative to `root`), in addition to the config's `ignore`. */
+  ignore?: string[];
 }
 
 /** A file that could not be analyzed. */
 export interface SecurityScanError {
   file: string;
   message: string;
+  /** For scripts: legacy type annotations, E4X XML, or another syntax error. */
+  reason?: ScriptParseErrorReason;
 }
 
 /** The result of a scan. */
@@ -97,6 +113,8 @@ export interface SecurityScanResult {
   hiddenReferenceFindings: number;
   /** Endpoints in the project index the rules used. */
   indexedEndpoints: number;
+  /** The `.b2c-security.json` file that was applied, if any. */
+  configFile?: string;
 }
 
 /** A built-in rule of either analyzer. */
@@ -230,12 +248,20 @@ function* walk(dir: string): Generator<string> {
  */
 export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanResult {
   const root = path.resolve(options.root ?? process.cwd());
-  const rules = selectSecurityRules(options.rules, options.excludeRules);
+  const loaded = options.config === undefined ? loadSecurityConfig(root) : undefined;
+  const config = options.config === false ? undefined : (options.config ?? loaded?.config);
+  const rules = selectSecurityRules(options.rules, [...(options.excludeRules ?? []), ...disabledRules(config)]);
   const scriptRules = rules.filter(isScriptRule);
   const metadataRules = rules.filter(isMetadataRule);
   const paths = options.paths && options.paths.length > 0 ? options.paths : [root];
-  const files = scriptRules.length > 0 ? collectSecurityScanFiles(paths) : [];
-  const metadataFiles = metadataRules.length > 0 ? collectMetadataFiles(paths) : [];
+  const relativeTo = (file: string) => path.relative(root, file).split(path.sep).join('/');
+  const isIgnored = ignoredPathTest(config, options.ignore);
+  const files = (scriptRules.length > 0 ? collectSecurityScanFiles(paths) : []).filter(
+    (f) => !isIgnored(relativeTo(f)),
+  );
+  const metadataFiles = (metadataRules.length > 0 ? collectMetadataFiles(paths) : []).filter(
+    (f) => !isIgnored(relativeTo(f.file)),
+  );
   const projectIndex =
     options.projectIndex ??
     buildProjectIndex({
@@ -262,7 +288,6 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
   const findings: SecurityFinding[] = [];
   const errors: SecurityScanError[] = [];
   let hiddenReferenceFindings = 0;
-  const relativeTo = (file: string) => path.relative(root, file).split(path.sep).join('/');
 
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
@@ -283,7 +308,7 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
     findings.push(...scanMetadataText(text, relativeTo(file), kind, metadataRules, errors));
   }
 
-  let result = findings;
+  let result = applyRuleSettings(findings, config);
   if (options.minSeverity) result = result.filter((f) => isAtLeastSeverity(f.severity, options.minSeverity!));
   if (options.baseline) result = applyBaseline(result, options.baseline);
 
@@ -295,6 +320,7 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
     rules: rules.map((r) => r.meta.b2c),
     hiddenReferenceFindings,
     indexedEndpoints: projectIndex.endpoints.length,
+    ...(loaded ? {configFile: loaded.file} : {}),
   };
 }
 
@@ -320,7 +346,11 @@ export function scanSecurityText(
   const scriptRules = rules.filter(isScriptRule);
   const run = runScriptRules(text, options.filename ?? file, scriptRules, options.settings);
   if (run.parseError) {
-    errors?.push({file, message: `Could not parse: ${run.parseError.message}`});
+    errors?.push({
+      file,
+      message: `Could not parse: ${run.parseError.message}`,
+      reason: classifyParseError(text, run.parseError.line),
+    });
     return [];
   }
   return toFindings(run.reports, run.comments, text, file, scriptRules);
@@ -367,7 +397,7 @@ function toFindings(
     const suppression = findSuppression(suppressions, report.ruleId, report.line);
     return {
       ruleId: report.ruleId,
-      severity: info.severity,
+      severity: report.severity ?? info.severity,
       confidence: info.confidence,
       category: info.category,
       cwe: info.cwe,

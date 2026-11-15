@@ -20,7 +20,7 @@ export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndex
   static description = withDocs(
     t(
       'commands.project.index.description',
-      'Build the project index: controller endpoints composed across the cartridge path, hooks, Custom APIs, and job steps, as JSON',
+      '[PREVIEW] Build the project index: controller endpoints composed across the cartridge path, hooks, Custom APIs, and job steps, as JSON',
     ),
     '/cli/project.html#b2c-project-index',
   );

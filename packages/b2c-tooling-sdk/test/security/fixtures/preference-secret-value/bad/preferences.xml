@@ -5,8 +5,12 @@
             <preference preference-id="paymentApiKey">sk_live_51HxQ2eKz8Y3abc</preference> <!-- expect -->
             <preference preference-id="enableNewsletter">true</preference>
         </all-instances>
-        <production>
+        <development>
             <preference preference-id="erpClientSecret">a9F3kL0pQ7zX2mN8</preference> <!-- expect -->
+        </development>
+        <production>
+            <!-- the same preference in another instance type is reported once, at its first value -->
+            <preference preference-id="erpClientSecret">Zq81mVb0Lr5Tw3Yc</preference>
         </production>
     </custom-preferences>
 </preferences>

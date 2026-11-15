@@ -93,10 +93,11 @@ b2c security scan
 
 ## Suppress findings
 
-When you've reviewed a finding and decided the code is safe, accept it so it stops being reported. There are two ways:
+When you've reviewed a finding and decided the code is safe, accept it so it stops being reported. There are three ways:
 
 - **Inline comment**, for a single finding you want to explain where it happens. The decision lives next to the code and shows up in code review.
 - **Baseline**, for findings you accept in bulk (see [above](#adopt-scanning-on-an-existing-codebase)), and for files that can't hold comments, such as OCAPI settings JSON.
+- **Project settings** (`.b2c-security.json`), for whole rules or paths: turn a rule off, lower its severity, or leave out a cartridge, such as a Business Manager tools cartridge where a rule doesn't apply. See [Project settings](../cli/security.md#project-settings). For a single run, use `--exclude-rule` and `--ignore`.
 
 An inline comment must name the rule it suppresses. There's no way to turn off every rule for a line, so a suppression can't hide a different problem later. Use `b2c-dx-disable-next-line` on the line before the finding, or `b2c-dx-disable-line` at the end of the line:
 
@@ -153,6 +154,6 @@ The scanner is also available to Node.js programs as `@salesforce/b2c-tooling-sd
 
 ## Limitations
 
-- Legacy `.ds` scripts that use type annotations (`function f(a : String)`) can't be parsed yet and are skipped; the summary reports how many.
+- Scripts that use legacy syntax, type annotations (`function f(a : String)`, common in `.ds` files) or E4X XML literals, can't be parsed and are skipped; the summary reports how many of each.
 - Rules see one file at a time plus the project index. A check made in another module, such as a redirect allowlist in a helper, isn't visible to the rule; suppress the finding with a reason.
 - ISML templates aren't scanned yet. Review `<isprint encoding="off">` and values printed into `<script>` blocks by hand; the VS Code extension warns about `encoding="off"`.

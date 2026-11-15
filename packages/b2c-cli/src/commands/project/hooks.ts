@@ -31,7 +31,7 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
   static description = withDocs(
     t(
       'commands.project.hooks.description',
-      'List hook registrations by extension point in cartridge path order, flagging system hooks that can return a value and skip later registrations',
+      '[PREVIEW] List hook registrations by extension point in cartridge path order, flagging system hooks that can return a value and skip later registrations',
     ),
     '/cli/project.html#b2c-project-hooks',
   );

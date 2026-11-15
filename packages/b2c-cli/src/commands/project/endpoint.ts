@@ -23,7 +23,7 @@ export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint>
   static description = withDocs(
     t(
       'commands.project.endpoint.description',
-      'Show what runs for one storefront endpoint: its middleware and handlers in order, the cartridge each comes from, and the statements across cartridges that built it',
+      '[PREVIEW] Show what runs for one storefront endpoint: its middleware and handlers in order, the cartridge each comes from, and the statements across cartridges that built it',
     ),
     '/cli/project.html#b2c-project-endpoint',
   );

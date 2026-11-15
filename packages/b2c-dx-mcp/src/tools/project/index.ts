@@ -118,7 +118,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
       idempotent: true,
       openWorld: false,
       description:
-        'Inspect storefront code from source, composed along the configured cartridge path: summary, SFRA/SiteGenesis ' +
+        'Inspect storefront code from source (preview), composed along the configured cartridge path: summary, SFRA/SiteGenesis ' +
         'controller endpoints with HTTPS/login/CSRF protection, what runs for one endpoint and which cartridge each step ' +
         'comes from, hook registrations in run order, and Custom API wiring. Offline; no instance needed.',
       searchHint:
@@ -289,6 +289,7 @@ interface SecurityScanInput {
   paths?: string[];
   rules?: string[];
   excludeRules?: string[];
+  ignore?: string[];
   minSeverity?: SecuritySeverity;
   excludeReferenceCartridges?: boolean;
   includeSuppressed?: boolean;
@@ -306,7 +307,7 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
       description:
         'Scan cartridge code and site data for B2C Commerce security problems (preview): CSRF gaps, overrides that drop ' +
         'security middleware, query injection, open redirects, hardcoded credentials, OCAPI demo client ID, and more. ' +
-        'Offline; honors inline suppressions and the project baseline. Triage with skill://b2c-cli/b2c-security/SKILL.md.',
+        'Offline; honors inline suppressions, the project baseline, and .b2c-security.json settings. Triage with skill://b2c-cli/b2c-security/SKILL.md.',
       searchHint:
         'security vulnerabilities csrf xss injection secrets credentials audit lint sast ocapi permissions controllers',
       toolsets: ['CARTRIDGES', 'STOREFRONTNEXT'],
@@ -319,6 +320,11 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
           .describe('Files or directories to scan, relative to projectDirectory. Defaults to the whole project.'),
         rules: z.array(z.string().min(1)).max(50).optional().describe('Run only these rule IDs.'),
         excludeRules: z.array(z.string().min(1)).max(50).optional().describe('Skip these rule IDs.'),
+        ignore: z
+          .array(z.string().min(1))
+          .max(50)
+          .optional()
+          .describe('Leave out files matching these globs (relative to projectDirectory), e.g. "cartridges/bm_*".'),
         minSeverity: z
           .enum(['critical', 'high', 'medium', 'low', 'info'])
           .optional()
@@ -356,6 +362,7 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
           paths,
           rules: args.rules,
           excludeRules: args.excludeRules,
+          ignore: args.ignore,
           minSeverity: args.minSeverity,
           baseline,
           cartridgePath: context.services.getResolvedConfig().values.cartridges,
@@ -411,8 +418,20 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
             })),
           ...(shown.length > max ? {truncated: shown.length - max} : {}),
           ...(result.errors.length > 0
-            ? {parseErrors: {count: result.errors.length, sample: result.errors.slice(0, 5)}}
+            ? {
+                parseErrors: {
+                  count: result.errors.length,
+                  byReason: Object.fromEntries(
+                    [...new Set(result.errors.map((e) => e.reason ?? 'syntax'))].map((r) => [
+                      r,
+                      result.errors.filter((e) => (e.reason ?? 'syntax') === r).length,
+                    ]),
+                  ),
+                  sample: result.errors.slice(0, 5),
+                },
+              }
             : {}),
+          ...(result.configFile ? {settingsFile: path.relative(dir, result.configFile)} : {}),
           ...(result.filesScanned === 0
             ? {note: 'No cartridge scripts or site data found under the project directory.'}
             : {}),

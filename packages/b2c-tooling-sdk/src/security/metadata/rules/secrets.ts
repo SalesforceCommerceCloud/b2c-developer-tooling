@@ -5,7 +5,10 @@
  */
 import {SECRET_NAME, looksLikeSecret} from '../../secrets.js';
 import {defineMetadataRule} from '../types.js';
-import {childNamed, descendantsNamed} from '../xml.js';
+import {childNamed, descendantsNamed, type XmlElement} from '../xml.js';
+
+/** preferences.xml groups values by instance type under these elements. */
+const INSTANCE_SCOPES = new Set(['all-instances', 'development', 'staging', 'production', 'sandbox']);
 
 export const secretAttributeNotPassword = defineMetadataRule({
   id: 'secret-attribute-not-password',
@@ -41,21 +44,36 @@ export const preferenceSecretValue = defineMetadataRule({
   category: 'secrets',
   cwe: ['CWE-798', 'CWE-312'],
   description:
-    'Site or global preference values in preferences.xml that look like credentials (a preference named like a password, secret, API key, or token with a secret-looking value).',
+    'Site or global preference values in preferences.xml that look like credentials (a preference named like a password, secret, API key, or token with a secret-looking value). Reported once per preference and file, listing the instance types that hold a value.',
   remediation:
     'Remove the value from site data in source control and set it per instance in Business Manager, using a password-type preference or a service credential. Rotate any credential that was committed.',
   kinds: ['preferences'],
   check(document, report) {
     if (document.format !== 'xml') return;
-    for (const preference of descendantsNamed(document.root, 'preference')) {
-      const id = preference.attributes['preference-id'];
-      if (id && SECRET_NAME.test(id) && looksLikeSecret(preference.text)) {
-        report({
-          line: preference.line,
-          column: preference.column,
-          message: `Preference "${id}" has a value that looks like a credential.`,
-        });
+    // The same preference repeats per instance type (development, staging, production):
+    // report it once, at its first value.
+    const byId = new Map<string, {line: number; column: number; scopes: string[]}>();
+    const visit = (element: XmlElement, scope: string) => {
+      for (const child of element.children) {
+        if (child.name === 'preference') {
+          const id = child.attributes['preference-id'];
+          if (!id || !SECRET_NAME.test(id) || !looksLikeSecret(child.text)) continue;
+          const entry = byId.get(id) ?? {line: child.line, column: child.column, scopes: []};
+          if (!entry.scopes.includes(scope)) entry.scopes.push(scope);
+          byId.set(id, entry);
+        } else {
+          visit(child, INSTANCE_SCOPES.has(child.name) ? child.name : scope);
+        }
       }
+    };
+    visit(document.root, '');
+    for (const [id, {line, column, scopes}] of byId) {
+      const where = scopes.filter(Boolean);
+      report({
+        line,
+        column,
+        message: `Preference "${id}" has a value that looks like a credential${where.length > 0 ? ` (${where.join(', ')})` : ''}.`,
+      });
     }
   },
 });

@@ -10,28 +10,28 @@ Most rules check cartridge JavaScript. Metadata rules (`csrf-allowlist`, `ocapi-
 
 Route rules understand SFRA (`server.get`/`post`/`use`, and `server.extend` with `append`, `prepend`, and `replace` across the cartridge path) and SiteGenesis (`guard.ensure` filters). The scanner builds a project index of every cartridge under the scan root, so a rule can tell, for example, that an overlay cartridge prepends a CSRF check to a base route.
 
-| Rule                                                              | Severity | Finds                                                                  |
-| ----------------------------------------------------------------- | -------- | ---------------------------------------------------------------------- |
-| [`csrf-allowlist`](#csrf-allowlist)                               | medium   | Business Manager CSRF exemptions (`csrf-whitelists.xml`)               |
-| [`dynamic-code`](#dynamic-code)                                   | high     | `eval`, `new Function`, `require` with a computed path                 |
-| [`file-path-from-request`](#file-path-from-request)               | high     | File paths and upload names chosen by the client                       |
-| [`get-mutates-state`](#get-mutates-state)                         | medium   | GET routes that store request input in a transaction                   |
-| [`hardcoded-credentials`](#hardcoded-credentials)                 | high     | Passwords, API keys, and auth headers written into code                |
-| [`insecure-cookie`](#insecure-cookie)                             | low      | Cookies without the Secure and HttpOnly flags                          |
-| [`mass-assignment`](#mass-assignment)                             | high     | Request fields copied into persistent objects by key                   |
-| [`object-query-injection`](#object-query-injection)               | high     | Object query strings built by concatenation                            |
-| [`ocapi-broad-access`](#ocapi-broad-access)                       | medium   | OCAPI clients granted every resource, or any/`http://` origins         |
-| [`ocapi-demo-client-id`](#ocapi-demo-client-id)                   | high     | OCAPI settings for the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` |
-| [`open-redirect`](#open-redirect)                                 | medium   | Redirects to a host chosen through the request                         |
-| [`pii-in-logs`](#pii-in-logs)                                     | medium   | Personal or payment data written to logs                               |
-| [`preference-secret-value`](#preference-secret-value)             | high     | Credential values in `preferences.xml`                                 |
-| [`secret-attribute-not-password`](#secret-attribute-not-password) | medium   | Secret-named attributes that aren't the password type                  |
-| [`service-credential-password`](#service-credential-password)     | high     | Plaintext passwords in `services.xml`                                  |
-| [`service-insecure-url`](#service-insecure-url)                   | medium   | Service credentials with `http://` URLs                                |
-| [`sfra-post-without-csrf`](#sfra-post-without-csrf)               | high     | SFRA POST routes without a CSRF token check                            |
-| [`sfra-replace-drops-middleware`](#sfra-replace-drops-middleware) | high     | `server.replace()` dropping security middleware                        |
-| [`sg-post-without-csrf`](#sg-post-without-csrf)                   | high     | SiteGenesis POST actions without the `csrf` filter                     |
-| [`weak-crypto`](#weak-crypto)                                     | medium   | `dw.crypto` Weak\* classes, MD5/SHA-1, DES/RC4, ECB mode               |
+| Rule                                                              | Severity                     | Finds                                                                  |
+| ----------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------- |
+| [`csrf-allowlist`](#csrf-allowlist)                               | medium                       | Business Manager CSRF exemptions (`csrf-whitelists.xml`)               |
+| [`dynamic-code`](#dynamic-code)                                   | high (critical from request) | `eval`, `new Function`, `require` with a computed path                 |
+| [`file-path-from-request`](#file-path-from-request)               | high                         | File paths and upload names chosen by the client                       |
+| [`get-mutates-state`](#get-mutates-state)                         | medium                       | GET routes that store request input in a transaction                   |
+| [`hardcoded-credentials`](#hardcoded-credentials)                 | high                         | Passwords, API keys, and auth headers written into code                |
+| [`insecure-cookie`](#insecure-cookie)                             | low                          | Cookies without the Secure and HttpOnly flags                          |
+| [`mass-assignment`](#mass-assignment)                             | high                         | Request fields copied into persistent objects by key                   |
+| [`object-query-injection`](#object-query-injection)               | high                         | Object query strings built by concatenation                            |
+| [`ocapi-broad-access`](#ocapi-broad-access)                       | medium                       | OCAPI clients granted every resource, or any/`http://` origins         |
+| [`ocapi-demo-client-id`](#ocapi-demo-client-id)                   | high                         | OCAPI settings for the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` |
+| [`open-redirect`](#open-redirect)                                 | medium                       | Redirects to a host chosen through the request                         |
+| [`pii-in-logs`](#pii-in-logs)                                     | medium                       | Personal or payment data written to logs                               |
+| [`preference-secret-value`](#preference-secret-value)             | high                         | Credential values in `preferences.xml`                                 |
+| [`secret-attribute-not-password`](#secret-attribute-not-password) | medium                       | Secret-named attributes that aren't the password type                  |
+| [`service-credential-password`](#service-credential-password)     | high                         | Plaintext passwords in `services.xml`                                  |
+| [`service-insecure-url`](#service-insecure-url)                   | medium                       | Service credentials with `http://` URLs                                |
+| [`sfra-post-without-csrf`](#sfra-post-without-csrf)               | high                         | SFRA POST routes without a CSRF token check                            |
+| [`sfra-replace-drops-middleware`](#sfra-replace-drops-middleware) | high                         | `server.replace()` dropping security middleware                        |
+| [`sg-post-without-csrf`](#sg-post-without-csrf)                   | high                         | SiteGenesis POST actions without the `csrf` filter                     |
+| [`weak-crypto`](#weak-crypto)                                     | medium                       | `dw.crypto` Weak\* classes, MD5/SHA-1, DES/RC4, ECB mode               |
 
 ## csrf-allowlist
 
@@ -45,7 +45,7 @@ Remove entries you no longer need, exempt a single start node rather than a whol
 
 **Severity:** high · **Confidence:** high · **CWE:** CWE-95
 
-Finds code that is built or loaded from strings at runtime: `eval()`, `Function()` or `new Function()`, and `require()` or `importScript()` with a computed path. A computed path with a fixed directory prefix, such as `require('*/cartridge/experience/' + type)`, is allowed unless the variable part comes from the request. A path built only from string constants is allowed too, including constants from another module on the cartridge path, such as `require(Constants.HELPER)` or `require(Constants.SCRIPTS + 'helper/Helper')` where `Constants.SCRIPTS = '~/cartridge/scripts/'` (a constant assigned more than once doesn't count).
+Finds code that is built or loaded from strings at runtime: `eval()`, `Function()` or `new Function()`, and `require()` or `importScript()` with a computed path. A computed path with a fixed directory prefix, such as `require('*/cartridge/experience/' + type)`, is allowed unless the variable part comes from the request. A path built only from string constants is allowed too, including constants from another module on the cartridge path, such as `require(Constants.HELPER)` or `require(Constants.SCRIPTS + 'helper/Helper')` where `Constants.SCRIPTS = '~/cartridge/scripts/'` (a constant assigned more than once doesn't count). When `eval()` or `Function()` compiles request input, such as a JSON-RPC body in a Business Manager terminal, the finding is `critical`.
 
 ```js
 // Finding
@@ -232,7 +232,7 @@ Logger.info('Customer login {0}', customer.profile.customerNo);
 
 **Severity:** high · **Confidence:** medium · **CWE:** CWE-798, CWE-312
 
-Finds site and global preference values in `preferences.xml` that look like credentials: a preference whose ID ends in `password`, `secret`, `apiKey`, `token`, `privateKey`, and similar, with a value that isn't empty, masked, a placeholder, or a dotted ID. Site data in source control is read by everyone with repository access and imported into every instance.
+Finds site and global preference values in `preferences.xml` that look like credentials: a preference whose ID ends in `password`, `secret`, `apiKey`, `token`, `privateKey`, and similar, with a value that isn't empty, masked, a placeholder, or a dotted ID. A preference set for several instance types (`development`, `staging`, `production`) is reported once per file, at its first value, listing those types. Site data in source control is read by everyone with repository access and imported into every instance.
 
 Remove the value from the site data and set it per instance in Business Manager, using a password-type preference or a service credential. Rotate any credential that was committed.
 

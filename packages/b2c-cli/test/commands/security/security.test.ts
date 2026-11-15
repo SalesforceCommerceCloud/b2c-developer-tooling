@@ -127,6 +127,21 @@ describe('security', () => {
       expect(errorStub.calledWithMatch(/Unknown security rule/)).to.equal(true);
     });
 
+    it('applies .b2c-security.json and --ignore, and reports legacy syntax separately', async () => {
+      fs.writeFileSync(path.join(tmp, '.b2c-security.json'), JSON.stringify({rules: {'weak-crypto': 'off'}}));
+      write('cartridges/app_custom/cartridge/scripts/legacy.ds', 'var product : XML = null;');
+      write('cartridges/app_custom/cartridge/scripts/feed.js', 'var x = <product id="1"/>;');
+      const result = await (await createScan([], {'fail-on': 'none'})).run();
+      expect(result.findings.map((f: {ruleId: string}) => f.ruleId)).to.deep.equal(['open-redirect']);
+      expect(output()).to.include('Settings: .b2c-security.json');
+      expect(output()).to.include(
+        'Skipped 2 file(s) using legacy script syntax the scanner cannot read (1 with type annotations, 1 with E4X XML).',
+      );
+
+      const ignored = await (await createScan([], {'fail-on': 'none', ignore: ['cartridges/app_custom']})).run();
+      expect(ignored.findings).to.have.length(0);
+    });
+
     it('uses the default baseline file and reports only new findings', async () => {
       const baseline = await createTestCommand(SecurityBaselineCommand, hooks.getConfig(), {
         output: '.b2c-security-baseline.json',

@@ -57,6 +57,15 @@ export {SECURITY_SETTINGS_KEY} from './script/project.js';
 export type {SecurityRuleSettings} from './script/project.js';
 
 export {applyBaseline, createBaseline, fingerprintFinding, parseBaseline} from './baseline.js';
+export {
+  SECURITY_CONFIG_FILE,
+  applyRuleSettings,
+  disabledRules,
+  ignoredPathTest,
+  loadSecurityConfig,
+  parseSecurityConfig,
+} from './config.js';
+export type {SecurityConfig, SecurityRuleSetting} from './config.js';
 export type {SecurityBaseline} from './baseline.js';
 
 export {toSarif} from './sarif.js';
@@ -79,8 +88,8 @@ export type {
   ScriptSourceCode,
 } from './rule.js';
 
-export {runScriptRules} from './script/runner.js';
-export type {ScriptComment, ScriptRuleReport, ScriptRunResult} from './script/runner.js';
+export {classifyParseError, runScriptRules} from './script/runner.js';
+export type {ScriptComment, ScriptParseErrorReason, ScriptRuleReport, ScriptRunResult} from './script/runner.js';
 
 export {SCRIPT_RULES} from './rules/index.js';
 

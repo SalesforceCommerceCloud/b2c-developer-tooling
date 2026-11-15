@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import type {SecurityRuleInfo} from './types.js';
+import type {SecurityRuleInfo, SecuritySeverity} from './types.js';
 
 /** Base URL for per-rule documentation anchors. */
 export const SECURITY_RULES_DOCS_URL =
@@ -60,6 +60,11 @@ export interface ScriptSourceCode {
 export interface ScriptReportDescriptor {
   node: AstNode;
   message: string;
+  /**
+   * Overrides the rule's severity for this finding, for example `critical`
+   * when the input comes from the request. ESLint and oxlint ignore it.
+   */
+  severity?: SecuritySeverity;
 }
 
 /** The rule context: a subset of ESLint's, supported by every runner. */
