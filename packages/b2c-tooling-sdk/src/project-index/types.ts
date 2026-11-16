@@ -53,7 +53,11 @@ export interface RouteEventListener {
 
 /** One statement that defined or changed an SFRA route, in the order the platform applies them. */
 export interface RouteStep {
-  method: 'append' | 'get' | 'post' | 'prepend' | 'replace' | 'use';
+  /**
+   * The `server.*` call, or `delegate` for a controller that defines no routes
+   * itself and passes `module` to a helper; what the helper changes isn't known.
+   */
+  method: 'append' | 'delegate' | 'get' | 'post' | 'prepend' | 'replace' | 'use';
   cartridge: string;
   relPath: string;
   line: number;

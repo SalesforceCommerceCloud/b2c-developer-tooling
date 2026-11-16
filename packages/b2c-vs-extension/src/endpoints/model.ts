@@ -147,15 +147,24 @@ export function eventRows(e: IndexedEndpoint): RowModel[] {
   }));
 }
 
+const DELEGATE_NOTE =
+  'This controller passes module to a helper, which may change the route. What the helper does is not shown.';
+
+function stepLabel(step: RouteStep): string {
+  return step.method === 'delegate' ? 'passes module to a helper' : `server.${step.method}`;
+}
+
 /** Rows for the statements that built an SFRA endpoint, across cartridges. */
 export function historyRows(e: IndexedEndpoint): RowModel[] {
   return (e.steps ?? []).map((step) => {
     const lost = dropped(step);
     return {
-      label: `server.${step.method}`,
+      label: stepLabel(step),
       description: `${fileName(step.relPath)}:${step.line} · ${step.cartridge}`,
       ...(lost.length > 0 ? {warning: `Dropped the ${lost.join(', ')} that the replaced route had.`} : {}),
-      tooltip: `${step.cartridge}/${step.relPath}:${step.line}`,
+      tooltip: [`${step.cartridge}/${step.relPath}:${step.line}`, step.method === 'delegate' ? DELEGATE_NOTE : '']
+        .filter(Boolean)
+        .join('\n'),
       location: {cartridge: step.cartridge, relPath: step.relPath, line: step.line},
     };
   });
@@ -376,8 +385,15 @@ export function controllerFiles(index: ProjectIndex, cartridge: string): Control
       if (replacedBy) notes.push(`replaced by ${replacedBy.cartridge}`);
       for (const s of later.filter((x) => x.method === 'prepend' || x.method === 'append'))
         notes.push(`${s.method}ed by ${s.cartridge}`);
+      for (const s of later.filter((x) => x.method === 'delegate')) notes.push(`may be changed by ${s.cartridge}`);
       const base = steps.slice(0, i).find((s) => s.cartridge !== cartridge);
-      if (base && (step.method === 'append' || step.method === 'prepend' || step.method === 'replace')) {
+      if (
+        base &&
+        (step.method === 'append' ||
+          step.method === 'prepend' ||
+          step.method === 'replace' ||
+          step.method === 'delegate')
+      ) {
         extendsOf.set(step.relPath, base.cartridge);
       }
       const lost = dropped(step);
@@ -389,10 +405,16 @@ export function controllerFiles(index: ProjectIndex, cartridge: string): Control
             ? 'Accepts POST without a CSRF token check.'
             : undefined;
       add(step.relPath, {
-        label: `${step.method} ${e.action}`,
+        label: step.method === 'delegate' ? `extends ${e.action} in a helper` : `${step.method} ${e.action}`,
         description: notes.join(' · '),
         ...(warning ? {warning} : {}),
-        tooltip: [`${e.id}: server.${step.method}() at line ${step.line}`, ...notes, warning ?? '']
+        tooltip: [
+          step.method === 'delegate'
+            ? `${e.id}: line ${step.line}. ${DELEGATE_NOTE}`
+            : `${e.id}: server.${step.method}() at line ${step.line}`,
+          ...notes,
+          warning ?? '',
+        ]
           .filter(Boolean)
           .join('\n'),
         location: {cartridge, relPath: step.relPath, line: step.line},
@@ -537,7 +559,13 @@ export function controllerLenses(index: ProjectIndex, file: string): ControllerL
       if (step.cartridge !== cartridge.name || step.relPath !== relPath) return;
       const others = steps.filter((s, j) => j !== i && s.cartridge !== cartridge.name);
       const later = steps.slice(i + 1).filter((s) => s.cartridge !== cartridge.name);
-      const notes = later.map((s) => `${s.method === 'replace' ? 'replaced' : `${s.method}ed`} by ${s.cartridge}`);
+      const notes = later.map((s) =>
+        s.method === 'replace'
+          ? `replaced by ${s.cartridge}`
+          : s.method === 'delegate'
+            ? `may be changed by ${s.cartridge}`
+            : `${s.method}ed by ${s.cartridge}`,
+      );
       const chain = (e.chain ?? []).length;
       lenses.push({
         line: step.line,

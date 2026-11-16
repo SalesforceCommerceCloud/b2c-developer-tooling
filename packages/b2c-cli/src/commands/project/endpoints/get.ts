@@ -104,9 +104,15 @@ export default class ProjectEndpointsGet extends BaseCommand<typeof ProjectEndpo
     ux.stdout(t('commands.project.endpoint.definedBy', 'Defined by:'));
     for (const step of endpoint.steps ?? []) {
       const lost = (step.dropped ?? []).map((id) => securityRole(id) ?? id);
-      const note = lost.length > 0 ? ux.colorize('yellow', `  dropped: ${lost.join(', ')}`) : '';
+      const note =
+        lost.length > 0
+          ? ux.colorize('yellow', `  dropped: ${lost.join(', ')}`)
+          : step.method === 'delegate'
+            ? ux.colorize('dim', '  passes module to a helper, which may change the route')
+            : '';
+      const label = step.method === 'delegate' ? 'helper' : `server.${step.method}`;
       ux.stdout(
-        `  server.${step.method.padEnd(8)} ${step.cartridge.padEnd(28)} ${displayPath(index, step.cartridge, step.relPath, step.line)}${note}`,
+        `  ${label.padEnd(15)} ${step.cartridge.padEnd(28)} ${displayPath(index, step.cartridge, step.relPath, step.line)}${note}`,
       );
     }
     return {endpoint, issues};

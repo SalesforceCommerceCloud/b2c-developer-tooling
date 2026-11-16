@@ -71,6 +71,8 @@ export interface BuildProjectIndexOptions {
 
 interface ParsedController {
   extend?: string;
+  /** Line of a call that passes `module` to another function (a delegating controller such as `helper(module, 'Show')`). */
+  delegates?: number;
   statements: Array<{method: SfraRouteMethod; name: string; line: number; chain: MiddlewareRef[]}>;
   sg: Array<{name: string; filters: string[]; line: number; validatesCsrf: boolean}>;
 }
@@ -135,16 +137,27 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
     if (cached) return cached;
     const routes = new Map<string, ComposedRoute>();
     const parsed = parse(file);
-    if (parsed?.extend && !seen.has(file)) {
+    // A controller that defines no routes itself but hands `module` to a helper
+    // (`require('*/...').extendRoutes(module, 'Show')`) usually extends
+    // `module.superModule` there. Keep the base routes instead of losing them.
+    const delegated = parsed && !parsed.extend && parsed.statements.length === 0 && parsed.delegates !== undefined;
+    const extend = parsed?.extend ?? (delegated ? 'superModule' : undefined);
+    if (parsed && extend && !seen.has(file)) {
       const base =
-        parsed.extend === 'superModule'
+        extend === 'superModule'
           ? resolver.resolveSuperModule(file)?.path
-          : parsed.extend === 'unknown'
+          : extend === 'unknown'
             ? undefined
-            : resolver.resolveRequire(parsed.extend, file)?.path;
+            : resolver.resolveRequire(extend, file)?.path;
       if (base && base !== toForwardSlashes(file)) {
+        const owner = resolver.ownerOf(file);
+        const relPath = resolver.relativePath(file) ?? path.basename(file);
         for (const [name, route] of compose(base, new Set([...seen, file]))) {
-          routes.set(name, {chain: [...route.chain], steps: [...route.steps]});
+          const steps = [...route.steps];
+          if (delegated) {
+            steps.push({method: 'delegate', cartridge: owner?.name ?? '', relPath, line: parsed.delegates ?? 0});
+          }
+          routes.set(name, {chain: [...route.chain], steps});
         }
       }
     }
@@ -278,6 +291,10 @@ function parseController(
     create(context: ScriptRuleContext): ScriptRuleListener {
       return {
         CallExpression(node: AstNode) {
+          const args = (node as {arguments?: Array<{type: string; name?: string}>}).arguments ?? [];
+          if (parsed.delegates === undefined && args.some((a) => a.type === 'Identifier' && a.name === 'module')) {
+            parsed.delegates = node.loc?.start.line ?? 0;
+          }
           const extend = sfraExtendTarget(node, context.sourceCode);
           if (extend) {
             parsed.extend ??= extend;
@@ -338,7 +355,9 @@ function sfraEndpoint(
   const ids = effective.map((m) => m.id);
   const methods = methodsOf(ids);
   const definition =
-    [...route.steps].reverse().find((s) => s.method !== 'append' && s.method !== 'prepend') ?? route.steps[0];
+    [...route.steps]
+      .reverse()
+      .find((s) => s.method !== 'append' && s.method !== 'prepend' && s.method !== 'delegate') ?? route.steps[0];
   const csrf = ids.some(isCsrfValidator)
     ? 'middleware'
     : route.chain.some((m) => m.validatesCsrf)
