@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-09T17:36:45.376Z",
+  "generatedAt": "2026-11-16T02:24:17.310Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -192,6 +192,15 @@
       "preview": "Commands for reading, updating, and searching custom global and site preferences."
     },
     {
+      "id": "cli-project",
+      "title": "Project Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.md",
+      "headings": "Cartridge order • b2c project endpoints list • Usage • Arguments • Flags • Examples • b2c project endpoints get • Usage • Example • b2c project hooks list • Usage • Examples • b2c project apis list • Usage • b2c project job-steps list • Usage • b2c project index • Usage • Examples",
+      "preview": "Inspect a B2C Commerce project's storefront code with b2c project — controller endpoints composed across the cartridge path, the middleware that runs for each, hooks in cartridge path order, Custom APIs, and custom job steps."
+    },
+    {
       "id": "cli-replications",
       "title": "Granular Replications Commands",
       "category": "tooling",
@@ -226,6 +235,15 @@
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/scapi-schemas.md",
       "headings": "Global SCAPI Schemas Flags • Tenant Flags • Authentication Flags • Common Flags • Output Flags • Authentication • Required Scopes • Configuration • b2c scapi schemas list • Usage • Flags • Available Columns • Examples • Output • b2c scapi schemas get • Usage • Arguments • Flags • Server-side expansion • Offline fallback • Schema Collapsing • Examples • Output Formats • Notes",
       "preview": "Commands for listing and retrieving Salesforce Commerce API (SCAPI) OpenAPI schemas, with selective path, schema, and example expansion for LLM context."
+    },
+    {
+      "id": "cli-security",
+      "title": "Security Commands",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/security.md",
+      "headings": "b2c security scan • Usage • Arguments • Flags • Examples • Output • Reference cartridges • Cartridge path • Suppressing a finding • Project settings • Notes • b2c security rules • Usage • b2c security baseline • Usage • Flags • Examples",
+      "preview": "Scan B2C Commerce cartridge code for security problems with b2c security scan, list the rules, and baseline existing findings."
     },
     {
       "id": "cli-setup",
@@ -332,8 +350,17 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/ci-cd.md",
-      "headings": "Overview • Authentication • Quick Start: Deploy Cartridges • Actions Reference • Root Action • Setup • Run • Code Deploy • Data Import • MRT Deploy • Job Run • WebDAV Upload • Staging Environments (Two-Factor mTLS) • CLI Flags • GitHub Actions • Patterns • Data Import Pipeline • MRT Release Deploy • Using Outputs • Version Pinning • Upgrade from Action v1 • Plugins • Logging • CI Defaults",
+      "headings": "Overview • Authentication • Quick Start: Deploy Cartridges • Actions Reference • Root Action • Setup • Run • Code Deploy • Data Import • MRT Deploy • Job Run • WebDAV Upload • Staging Environments (Two-Factor mTLS) • CLI Flags • GitHub Actions • Patterns • Data Import Pipeline • MRT Release Deploy • Using Outputs • Security Scan • Version Pinning • Upgrade from Action v1 • Plugins • Logging • CI Defaults",
       "preview": "Automate B2C Commerce code deployment, data import, MRT bundles, and job execution with the official B2C CLI GitHub Actions for CI/CD pipelines."
+    },
+    {
+      "id": "guide-code-security",
+      "title": "Code Security",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.md",
+      "headings": "Run a scan • Triage findings • Routes, overlays, and the cartridge path • SFRA and SiteGenesis base cartridges • Adopt scanning on an existing codebase • Suppress findings • Run it in CI • Use it with your AI assistant • Use it from Node.js • Limitations",
+      "preview": "Find and fix security problems in B2C Commerce storefront code (SFRA, SiteGenesis, and custom cartridges) with b2c security scan, in the terminal, in CI with SARIF, and with your AI assistant."
     },
     {
       "id": "guide-commerce-apps",
@@ -507,6 +534,15 @@
       "preview": "Security practices for the B2C Developer Tooling project including supply chain protections and dependency management."
     },
     {
+      "id": "guide-security-rules",
+      "title": "Security Rules",
+      "category": "tooling",
+      "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.html",
+      "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/security-rules.md",
+      "headings": "csrf-allowlist • dynamic-code • file-path-from-request • get-mutates-state • hardcoded-credentials • insecure-cookie • mass-assignment • object-query-injection • ocapi-broad-access • ocapi-demo-client-id • open-redirect • pii-in-logs • preference-secret-value • secret-attribute-not-password • service-credential-password • service-insecure-url • sfra-post-without-csrf • sfra-replace-drops-middleware • sg-post-without-csrf • webhook-without-verification • weak-crypto",
+      "preview": "Reference for the rules that b2c security scan runs on B2C Commerce cartridge code, with examples and fixes for each."
+    },
+    {
       "id": "guide-sfcc-ci-migration",
       "title": "Migrating from sfcc-ci",
       "category": "tooling",
@@ -584,7 +620,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/toolsets.md",
-      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs {#mrt} • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Instance files {#webdav} • Object types {#object-types} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
+      "headings": "Documentation and skills {#documentation} • SCAPI Development {#scapi} • SCAPI Code Mode {#scapi-code-mode} • Logs {#logs} • Instance logs • Managed Runtime logs {#mrt} • Debugging {#diagnostics} • Deployment {#cartridges} • Cartridge deployment • Instance files {#webdav} • Project code and security {#project} • Object types {#object-types} • Analytics reports {#cip} • Observability metrics (closed beta) {#metrics} • Configuration inspection • Toolsets for customization",
       "preview": "B2C Commerce MCP tool names, capabilities, and required access."
     },
     {
@@ -602,7 +638,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/vscode-extension/index.md",
-      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Site Archive Export • Cartridge Management and Code Watch/Upload • SCAPI API Explorer • Object Types • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
+      "headings": "Highlights • ISML and Script API Editor Support • B2C Script Debugger • Scaffolding • Sandbox Realm Explorer • Library Explorer • Site Archive Export • Cartridge Management and Code Watch/Upload • Endpoints • SCAPI API Explorer • Object Types • WebDAV Browser • Log Tailing • Active Instance Status Bar • B2C CLI Plugin Support • Next Steps",
       "preview": "The official Salesforce B2C Commerce IDE Extension for VS Code, Cursor, and other VS Code-compatible editors — code sync, sandbox management, API exploration, and debugging."
     },
     {

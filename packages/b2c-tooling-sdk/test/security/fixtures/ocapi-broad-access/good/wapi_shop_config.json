@@ -1,0 +1,10 @@
+{
+  "_v": "23.2",
+  "clients": [
+    {
+      "client_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "allowed_origins": ["https://www.example.com", "http://localhost:3000"],
+      "resources": [{"resource_id": "/baskets/*", "methods": ["get", "patch"], "read_attributes": "(**)", "write_attributes": "(**)"}]
+    }
+  ]
+}

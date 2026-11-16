@@ -23,7 +23,7 @@
     "./types/*": "./types/*"
   },
   "scripts": {
-    "build": "tsc -p .",
+    "build": "node scripts/build-plugin.mjs",
     "patch-types": "node scripts/patch-vendored-types.mjs",
     "lint": "eslint",
     "lint:agent": "eslint --quiet",
@@ -40,11 +40,13 @@
   },
   "devDependencies": {
     "@eslint/compat": "catalog:",
+    "@salesforce/b2c-tooling-sdk": "workspace:*",
     "@types/chai": "catalog:",
     "@types/mocha": "catalog:",
     "@types/node": "catalog:",
     "c8": "catalog:",
     "chai": "catalog:",
+    "esbuild": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-header": "catalog:",

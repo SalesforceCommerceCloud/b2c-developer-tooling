@@ -1,0 +1,23 @@
+{
+  "step-types": {
+    "script-module-step": [
+      {
+        "@type-id": "custom.LoyaltyExport",
+        "description": "Exports loyalty members to the loyalty provider",
+        "module": "app_custom/cartridge/scripts/jobs/loyaltyExport.js",
+        "function": "run",
+        "parameters": {
+          "parameter": [
+            {"@name": "TargetFolder", "@type": "string", "@required": "true"},
+            {"@name": "IncludeOptedOut", "@type": "boolean", "@required": "false"}
+          ]
+        }
+      },
+      {
+        "@type-id": "custom.LoyaltyCleanup",
+        "description": "Removes expired loyalty points",
+        "module": "app_custom/cartridge/scripts/jobs/loyaltyCleanup.js"
+      }
+    ]
+  }
+}

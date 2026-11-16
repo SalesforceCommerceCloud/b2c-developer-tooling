@@ -1,0 +1,17 @@
+{
+  "_v": "23.2",
+  "clients": [
+    {
+      "client_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "allowed_origins": ["*"],
+      "resources": [
+        {"resource_id": "/**", "methods": ["get", "post", "put", "patch", "delete"], "read_attributes": "(**)", "write_attributes": "(**)"}
+      ]
+    },
+    {
+      "client_id": "b1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "allowed_origins": ["http://www.example.com", "http://localhost:3000"],
+      "resources": [{"resource_id": "/products/*", "methods": ["get"], "read_attributes": "(**)", "write_attributes": ""}]
+    }
+  ]
+}

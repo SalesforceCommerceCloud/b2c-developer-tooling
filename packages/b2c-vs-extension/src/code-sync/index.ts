@@ -5,28 +5,37 @@
  */
 import * as vscode from 'vscode';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
+import type {ProjectIndexService} from '../cartridges/project-index-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CodeSyncManager} from './code-sync-manager.js';
-import {
-  CartridgeTreeProvider,
-  CartridgeItem,
-  CartridgeStepTypeItem,
-  openStepTypeDefinition,
-} from './cartridge-tree-provider.js';
+import {CartridgeTreeProvider, CartridgeItem} from './cartridge-tree-provider.js';
 import {createDeployCommand, createDeployOneCommand} from './deploy-command.js';
 import {registerCartridgeCommands, updateCodeVersionDisplay} from './cartridge-commands.js';
 import {pickCodeVersion, saveCodeVersion, showNoInstanceError} from './code-sync-setup.js';
+import {
+  CartridgeOrderDragAndDrop,
+  bindCartridgeOrderDisplay,
+  registerCartridgeOrderCommands,
+} from './cartridge-order-view.js';
+import {setCartridgeViewLabel} from './cartridge-view-labels.js';
 
 export function registerCodeSync(
   context: vscode.ExtensionContext,
   configProvider: B2CExtensionConfig,
   cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
+  indexService: ProjectIndexService,
 ): void {
   const manager = new CodeSyncManager(context.workspaceState, configProvider);
-  const treeProvider = new CartridgeTreeProvider(cartridgeService);
-  const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {treeDataProvider: treeProvider});
+  const treeProvider = new CartridgeTreeProvider(cartridgeService, indexService);
+  const treeView = vscode.window.createTreeView('b2cCartridgeExplorer', {
+    treeDataProvider: treeProvider,
+    dragAndDropController: new CartridgeOrderDragAndDrop(cartridgeService),
+    canSelectMany: false,
+  });
+  const orderDisplay = bindCartridgeOrderDisplay(treeView, cartridgeService, configProvider);
+  const orderCmds = registerCartridgeOrderCommands(cartridgeService, configProvider);
 
   // --- Core sync commands ---
 
@@ -70,7 +79,7 @@ export function registerCodeSync(
   );
 
   const refreshCmd = registerSafeCommand('b2c-dx.codeSync.refreshCartridges', () => {
-    cartridgeService.refresh();
+    cartridgeService.refresh({refetchInstance: true});
     manager.refreshCartridges(configProvider.getWorkingDirectory());
   });
 
@@ -94,31 +103,6 @@ export function registerCodeSync(
       // best-effort
     }
   });
-
-  // Jumps to the @type-id line inside the cartridge's steptypes.json. The
-  // default click on a step type node opens the module (.js) implementation;
-  // this command is the alternative offered via the right-click menu.
-  //
-  // Two invocation shapes: (a) the default-click path from
-  // `TreeItem.command.arguments` passes `(typeId, stepTypesPath)`; (b) the
-  // right-click menu path from `view/item/context` passes the TreeItem itself
-  // as the first arg. Handle both so neither is silently dropped.
-  const openStepTypeDefinitionCmd = registerSafeCommand(
-    'b2c-dx.cartridge.openStepTypeDefinition',
-    async (typeIdOrItem?: string | CartridgeStepTypeItem, stepTypesPath?: string) => {
-      let typeId: string | undefined;
-      let resolvedPath: string | undefined;
-      if (typeIdOrItem instanceof CartridgeStepTypeItem) {
-        typeId = typeIdOrItem.entry.typeId;
-        resolvedPath = typeIdOrItem.entry.stepTypesPath;
-      } else {
-        typeId = typeIdOrItem;
-        resolvedPath = stepTypesPath;
-      }
-      if (!typeId || !resolvedPath) return;
-      await openStepTypeDefinition(typeId, resolvedPath);
-    },
-  );
 
   const uploadToInstanceCmd = registerSafeCommand('b2c-dx.codeSync.uploadToInstance', async (uri?: vscode.Uri) => {
     if (!uri) return;
@@ -158,7 +142,7 @@ export function registerCodeSync(
         await manager.startWatch(instance, configProvider.getWorkingDirectory());
       }
     }
-    treeView.description = `v: ${codeVersion}`;
+    setCartridgeViewLabel(treeView, 'codeVersion', `v: ${codeVersion}`);
   });
 
   // --- Cartridge commands (download, diff, site path, code versions) ---
@@ -244,10 +228,11 @@ export function registerCodeSync(
     deployOneCmd,
     refreshCmd,
     uploadCartridgeCmd,
-    openStepTypeDefinitionCmd,
     uploadToInstanceCmd,
     selectCodeVersionCmd,
     cartridgesSub,
+    orderDisplay,
+    ...orderCmds,
     ...cartridgeCmdDisposables,
   );
 }

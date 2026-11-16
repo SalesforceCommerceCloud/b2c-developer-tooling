@@ -71,6 +71,23 @@ export function registerApiBrowser(
     },
   );
 
+  // From the Endpoints and Cartridges views: open a Custom API defined in local code in Swagger UI.
+  const openCustomApiDisposable = registerSafeCommand(
+    'b2c-dx.apiBrowser.openCustomApi',
+    async (node?: {api?: string; group?: {api: string}}) => {
+      const api = node?.group?.api ?? node?.api;
+      if (!api) return;
+      const schema = await treeProvider.findCustomApi(api);
+      if (!schema) {
+        vscode.window.showInformationMessage(
+          `Custom API ${api} is not on the connected instance. Deploy the cartridge, then check its status with "b2c scapi custom status".`,
+        );
+        return;
+      }
+      swaggerManager.openSwaggerPanel(schema);
+    },
+  );
+
   configProvider.onDidReset(() => {
     treeProvider.refresh();
   });
@@ -82,6 +99,7 @@ export function registerApiBrowser(
     helpDisposable,
     openSwaggerDisposable,
     scapiAddDisposable,
+    openCustomApiDisposable,
     swaggerManager,
   );
 }

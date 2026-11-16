@@ -56,6 +56,9 @@ b2c code deploy --delete --reload
 # deploy only specific cartridges
 b2c code deploy -c app_storefront_base -c plugin_applepay
 
+# deploy every discovered cartridge, ignoring a `cartridges` list in dw.json or SFCC_CARTRIDGES
+b2c code deploy --all
+
 # exclude specific cartridges from deployment
 b2c code deploy -x test_cartridge
 

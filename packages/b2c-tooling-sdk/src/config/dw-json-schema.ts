@@ -143,6 +143,32 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
     description:
       'Cartridge names for deploy/watch filtering and IDE discovery. Array, or a colon/comma-separated string. Env: `SFCC_CARTRIDGES`.',
   },
+  security: {
+    type: 'object',
+    description:
+      '`b2c security scan` settings: paths to leave out and per-rule settings. Takes precedence over a `.b2c-security.json` in the project directory.',
+    additionalProperties: false,
+    properties: {
+      ignore: {...stringArray, description: 'Globs (relative to the project directory) of files not to scan.'},
+      rules: {
+        type: 'object',
+        description: 'Per rule ID: `"off"`, a severity, or `{severity, ignore}`.',
+        additionalProperties: {
+          oneOf: [
+            {type: 'string', enum: ['off', 'critical', 'high', 'medium', 'low', 'info']},
+            {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                severity: {type: 'string', enum: ['critical', 'high', 'medium', 'low', 'info']},
+                ignore: stringArray,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
   'cartridge-ignore-dirs': {
     ...stringArray,
     description:

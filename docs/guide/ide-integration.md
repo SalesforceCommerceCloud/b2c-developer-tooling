@@ -27,11 +27,20 @@ You can disable the feature with the `b2c-dx.features.scriptTypes` setting (defa
 The plugin also resolves SFCC cartridge-style requires, matching runtime semantics:
 
 - `require('~/cartridge/scripts/foo')` — resolves only within the cartridge that contains the current file (the SFCC `~` shortcut for "current cartridge"). If `foo` doesn't exist there, IntelliSense reports it unresolved — same as runtime.
-- `require('*/cartridge/scripts/foo')` — walks the cartridge path with owner-first override priority (SFRA-style override).
+- `require('*/cartridge/scripts/foo')` — walks the cartridge path from left to right and uses the first cartridge that has the file, the same as the platform. That holds even when the calling file is in a cartridge further right, so an overlay cartridge's override wins over the base.
 - `require('app_storefront_base/cartridge/scripts/foo')` — resolves only within the named cartridge.
 - `require('server')`, `require('server/middleware')`, etc. — bare requires resolve against the SFRA `modules` cartridge if present (its tree is exposed at the root, not under `cartridge/scripts/`). When a `modules` cartridge is detected, the plugin also injects ambient type declarations for the SFRA `server` API (Server, Route, Request, Response, middleware, forms, querystring) so cartridge code type-checks under `checkJs: true` despite the dynamic property assignments in `modules/server.js` that TypeScript can't infer on its own.
 
-Cartridge resolution order matches your runtime cartridge path: the `cartridges` field from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, etc.) wins. When that's not set, cartridges fall back to discovery order with known base cartridges (`app_storefront_base`, `modules`) sorted last. The same ordering also drives the extension's **Cartridges** tree view.
+Resolution follows the order shown in the extension's **Cartridges** view, which also drives ISML template links. The view uses the first of these that's available:
+
+1. **An order you set in the view.** Drag a cartridge onto another to place it before that cartridge, or use **Move Up/Down in Cartridge Order** from its context menu. The order is saved for this workspace only; **Reset Cartridge Order** in the view menu goes back to the automatic order.
+2. **The `cartridges` field** from your resolved configuration (`dw.json`, `SFCC_CARTRIDGES`, `.env`, and so on).
+3. **A site's cartridge path on your instance.** The extension uses the site set in **Choose Site for Cartridge Order…** in the view menu, then the `site-id` from your configuration, and otherwise the site whose cartridge path names the most of your local cartridges (never Business Manager). It reads the path in the background only when you use client credentials, so it never opens a login page on its own; with browser sign-in, choose a site to read it. The path is cached per workspace. If it can't be read, the view falls back quietly and says why.
+4. **A guess:** discovery order with known base cartridges (`app_storefront_base`, `modules`) last.
+
+The view's description shows which source is in use, and a cartridge's tooltip shows its position. Cartridges on disk that the chosen cartridge path doesn't name are listed last and marked **not on cartridge path**.
+
+Editors that load the TypeScript plugin without the extension use the `cartridges` field from `dw.json`, then the guess.
 
 #### Custom attributes
 

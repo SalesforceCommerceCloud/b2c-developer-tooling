@@ -95,6 +95,8 @@ export interface DwJsonConfig {
   cartridges?: string | string[];
   /** Directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /** `b2c security scan` settings (same shape as `.b2c-security.json`) */
+  security?: {ignore?: string[]; rules?: Record<string, unknown>};
   /** Directory names skipped at any depth when archiving cartridges for deploy */
   cartridgeIgnoreDirs?: string[];
   /** Per-archive size limit for code deploy (e.g. `200mb`; a number is MiB) */
