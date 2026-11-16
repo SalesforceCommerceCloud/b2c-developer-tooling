@@ -30,7 +30,7 @@ export function registerCodeSync(
   configProvider: B2CExtensionConfig,
   cartridgeService: CartridgeService,
   log: vscode.OutputChannel,
-  indexService?: ProjectIndexService,
+  indexService: ProjectIndexService,
 ): void {
   const manager = new CodeSyncManager(context.workspaceState, configProvider);
   const treeProvider = new CartridgeTreeProvider(cartridgeService, indexService);

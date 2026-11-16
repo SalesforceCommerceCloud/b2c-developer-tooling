@@ -297,7 +297,7 @@
         "b2c-dx.features.endpoints": {
           "type": "boolean",
           "default": true,
-          "description": "Show the Endpoints view (controller endpoints with their middleware across cartridges, Custom APIs, and hooks) and the Controllers category in the Cartridges view."
+          "description": "Show the Endpoints view (controller endpoints with their middleware across cartridges, Custom APIs, and hooks)."
         },
         "b2c-dx.auth.usePluginSessionStore": {
           "type": "boolean",

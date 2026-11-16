@@ -280,14 +280,14 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
   private readonly cartridgesSub: vscode.Disposable;
 
-  private readonly indexSub: vscode.Disposable | undefined;
+  private readonly indexSub: vscode.Disposable;
 
   constructor(
     private readonly cartridgeService: CartridgeService,
-    private readonly indexService?: ProjectIndexService,
+    private readonly indexService: ProjectIndexService,
   ) {
     this.cartridgesSub = cartridgeService.onDidChange(() => this._onDidChangeTreeData.fire());
-    this.indexSub = indexService?.onDidChange(() => this._onDidChangeTreeData.fire());
+    this.indexSub = indexService.onDidChange(() => this._onDidChangeTreeData.fire());
   }
 
   refresh(): void {
@@ -318,13 +318,9 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
     if (element instanceof CartridgeItem) {
       return [
-        ...(this.indexService
-          ? [
-              new CartridgeCategoryItem(element.cartridge, 'controllers'),
-              new CartridgeCategoryItem(element.cartridge, 'hooks'),
-              new CartridgeCategoryItem(element.cartridge, 'customApis'),
-            ]
-          : []),
+        new CartridgeCategoryItem(element.cartridge, 'controllers'),
+        new CartridgeCategoryItem(element.cartridge, 'hooks'),
+        new CartridgeCategoryItem(element.cartridge, 'customApis'),
         new CartridgeCategoryItem(element.cartridge, 'stepTypes'),
       ];
     }
@@ -337,7 +333,7 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
       return element.file.rows.map((row, i) => new ControllerStatementItem(element.cartridge, row, i));
     }
 
-    if (element instanceof CustomApiItem && this.indexService) {
+    if (element instanceof CustomApiItem) {
       const index = this.indexService.getIndex();
       return element.group.endpoints.map(
         (e, i) =>
@@ -363,15 +359,15 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
     const cartridgeRoot = node.cartridge.src;
 
     if (node.category === 'controllers') {
-      const files = this.indexService ? controllerFiles(this.indexService.getIndex(), node.cartridge.name) : [];
+      const files = controllerFiles(this.indexService.getIndex(), node.cartridge.name);
       if (files.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'controllers')];
       return files.map((file) => new ControllerFileItem(node.cartridge, file));
     }
 
     if (node.category === 'hooks') {
-      const index = this.indexService?.getIndex();
-      const rows = index ? cartridgeHookRows(index, node.cartridge.name) : [];
-      if (!index || rows.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'hooks')];
+      const index = this.indexService.getIndex();
+      const rows = cartridgeHookRows(index, node.cartridge.name);
+      if (rows.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'hooks')];
       return rows.map(
         (row, i) =>
           new CartridgeRowItem(index, row, `cart-hook:${node.cartridge.src}:${i}`, 'symbol-function', 'cartridge-hook'),
@@ -379,9 +375,9 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
     }
 
     if (node.category === 'customApis') {
-      const index = this.indexService?.getIndex();
-      const groups = index ? cartridgeCustomApis(index, node.cartridge.name) : [];
-      if (!index || groups.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'customApis')];
+      const index = this.indexService.getIndex();
+      const groups = cartridgeCustomApis(index, node.cartridge.name);
+      if (groups.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'customApis')];
       return groups.map((group) => new CustomApiItem(index, node.cartridge, group));
     }
 
@@ -401,7 +397,7 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
   }
 
   dispose(): void {
-    this.indexSub?.dispose();
+    this.indexSub.dispose();
     this.cartridgesSub.dispose();
     this._onDidChangeTreeData.dispose();
   }
