@@ -299,6 +299,11 @@
           "default": true,
           "description": "Show the Endpoints view (controller endpoints with their middleware across cartridges, Custom APIs, and hooks)."
         },
+        "b2c-dx.endpoints.codeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a summary of each endpoint above its route statement in controller files, with a link to it in the Endpoints view. Takes effect after reloading the window."
+        },
         "b2c-dx.auth.usePluginSessionStore": {
           "type": "boolean",
           "default": false,
@@ -975,9 +980,9 @@
         "category": "B2C DX - Job Definitions"
       },
       {
-        "command": "b2c-dx.cartridge.openStepTypeDefinition",
-        "title": "Show Step Type Definition",
-        "icon": "$(go-to-file)",
+        "command": "b2c-dx.project.openRegistration",
+        "title": "Open Registration",
+        "icon": "$(json)",
         "category": "B2C DX - Cartridges"
       },
       {
@@ -1504,6 +1509,17 @@
         "command": "b2c-dx.endpoints.openImplementation",
         "title": "Open Middleware Implementation",
         "icon": "$(go-to-file)",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.endpoints.reveal",
+        "title": "Show in Endpoints View",
+        "category": "B2C DX - Endpoints"
+      },
+      {
+        "command": "b2c-dx.apiBrowser.openCustomApi",
+        "title": "Open in API Browser",
+        "icon": "$(symbol-interface)",
         "category": "B2C DX - Endpoints"
       }
     ],
@@ -2125,8 +2141,8 @@
           "group": "4_scaffold@1"
         },
         {
-          "command": "b2c-dx.cartridge.openStepTypeDefinition",
-          "when": "view == b2cCartridgeExplorer && viewItem =~ /^cartridge-step-type/",
+          "command": "b2c-dx.project.openRegistration",
+          "when": "view == b2cCartridgeExplorer && viewItem =~ /^cartridge-(hook|step-type)$/",
           "group": "navigation@1"
         },
         {
@@ -2147,6 +2163,21 @@
         {
           "command": "b2c-dx.endpoints.openImplementation",
           "when": "view == b2cEndpointsExplorer && viewItem == endpoints-row-implementation",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.project.openRegistration",
+          "when": "view == b2cEndpointsExplorer && viewItem == endpoints-row-registration",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.apiBrowser.openCustomApi",
+          "when": "config.b2c-dx.features.apiBrowser && view == b2cEndpointsExplorer && viewItem == endpoints-api",
+          "group": "navigation@1"
+        },
+        {
+          "command": "b2c-dx.apiBrowser.openCustomApi",
+          "when": "config.b2c-dx.features.apiBrowser && view == b2cCartridgeExplorer && viewItem == cartridge-custom-api",
           "group": "navigation@1"
         }
       ],
@@ -2488,7 +2519,15 @@
           "when": "false"
         },
         {
-          "command": "b2c-dx.cartridge.openStepTypeDefinition",
+          "command": "b2c-dx.project.openRegistration",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.endpoints.reveal",
+          "when": "false"
+        },
+        {
+          "command": "b2c-dx.apiBrowser.openCustomApi",
           "when": "false"
         },
         {

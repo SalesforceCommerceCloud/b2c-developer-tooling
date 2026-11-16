@@ -23,6 +23,7 @@ import {
   type IndexedCustomApiEndpoint,
   type IndexedEndpoint,
   type IndexedHook,
+  type IndexedJobStep,
   type IndexedMiddleware,
   type ProjectIndex,
   type RouteStep,
@@ -43,6 +44,8 @@ export interface RowModel {
   /** Set when the row deserves attention; shown as a warning icon and in the tooltip. */
   warning?: string;
   location?: SourceLocation;
+  /** Where the row is registered (the hooks.json or steptypes.json entry), for "Open Registration". */
+  registration?: SourceLocation;
 }
 
 /** Joins a cartridge-relative location to an absolute path using the index's cartridge list. */
@@ -209,28 +212,42 @@ export function hookGroups(index: ProjectIndex): HookGroup[] {
   });
 }
 
-/** Row for one hook registration. */
+/** Row for one hook registration. Custom hooks open the function callers name in `HookMgr.callHook()`. */
 export function hookRegistrationRow(group: HookGroup, hook: IndexedHook, position: number): RowModel {
-  const where = hook.relPath ? `${fileName(hook.relPath)}${hook.line ? `:${hook.line}` : ''}` : hook.script;
+  const called = group.kind === 'custom' ? (hook.calledFunctions ?? []) : [];
+  const target = called.find((f) => f.line !== undefined);
+  const line = target?.line ?? hook.line;
+  const where = hook.relPath ? `${fileName(hook.relPath)}${line ? `:${line}` : ''}` : hook.script;
   const warning = hookRegistrationIssue(group, hook);
   let detail: string | undefined;
   if (group.kind === 'system' && hook.returnsValue !== 'unknown') {
     detail = hook.returnsValue === 'yes' ? 'returns a value' : 'returns nothing';
-  } else if (group.kind === 'custom' && hook.exports && hook.exports.length > 0) {
+  } else if (called.length > 0) {
     // Custom extension points: the caller picks the function in HookMgr.callHook(name, functionName, ...).
+    detail = `called as ${called.map((f) => f.name).join(', ')}`;
+  } else if (group.kind === 'custom' && hook.exports && hook.exports.length > 0) {
     detail = `exports ${hook.exports.join(', ')}`;
   }
-  const subject = group.kind === 'system' ? `${hook.function}()` : 'Implementation';
+  const subject = group.kind === 'system' ? `${hook.function}()` : target ? `${target.name}()` : 'Implementation';
+  const missing = called.filter((f) => f.line === undefined).map((f) => `${f.name}()`);
   return {
     label: `${position + 1}. ${hook.cartridge}`,
     description: [where, detail].filter(Boolean).join(' · '),
     ...(warning ? {warning} : {}),
-    tooltip: [`${subject} in ${hook.scriptCartridge ?? hook.cartridge}/${hook.relPath ?? hook.script}`, warning ?? '']
+    tooltip: [
+      `${subject} in ${hook.scriptCartridge ?? hook.cartridge}/${hook.relPath ?? hook.script}`,
+      missing.length > 0 ? `Called as ${missing.join(', ')}, which this script does not export.` : '',
+      hook.registeredIn
+        ? `Registered in ${hook.cartridge}/${hook.registeredIn.relPath}${hook.registeredIn.line ? `:${hook.registeredIn.line}` : ''}`
+        : '',
+      warning ?? '',
+    ]
       .filter(Boolean)
       .join('\n'),
     ...(hook.relPath
-      ? {location: {cartridge: hook.scriptCartridge ?? hook.cartridge, relPath: hook.relPath, line: hook.line}}
+      ? {location: {cartridge: hook.scriptCartridge ?? hook.cartridge, relPath: hook.relPath, line}}
       : {}),
+    ...(hook.registeredIn ? {registration: {cartridge: hook.cartridge, ...hook.registeredIn}} : {}),
   };
 }
 
@@ -389,6 +406,106 @@ export function cartridgeCustomApis(index: ProjectIndex, cartridge: string): Cus
   return customApiGroups(index)
     .map((group) => ({...group, endpoints: group.endpoints.filter((e) => e.cartridge === cartridge)}))
     .filter((group) => group.endpoints.length > 0);
+}
+
+/** Rows for the custom job steps `cartridge` registers in steptypes.json; a click opens the step's function. */
+export function cartridgeJobStepRows(index: ProjectIndex, cartridge: string): RowModel[] {
+  return (index.jobSteps ?? [])
+    .filter((step) => step.cartridge === cartridge)
+    .sort((a, b) => a.typeId.localeCompare(b.typeId))
+    .map((step) => jobStepRow(step));
+}
+
+/** Row for one custom job step: `custom.Export` with `task · execute() · export.js:12`. */
+export function jobStepRow(step: IndexedJobStep): RowModel {
+  const impl = step.implementationFile;
+  const kind = step.kind === 'chunk-script-module-step' ? 'chunk' : 'task';
+  const where = impl ? `${fileName(impl.relPath)}${impl.line ? `:${impl.line}` : ''}` : undefined;
+  const warning = step.problems.length > 0 ? step.problems.join(' ') : undefined;
+  const params = step.parameters.map(
+    (p) => `${p.name}${p.type ? `: ${p.type}` : ''}${p.required ? ' (required)' : ''}`,
+  );
+  return {
+    label: step.typeId,
+    description: [kind, step.function ? `${step.function}()` : '', where].filter(Boolean).join(' · '),
+    ...(warning ? {warning} : {}),
+    tooltip: [
+      `${step.typeId} (${kind} step)`,
+      step.description ?? '',
+      impl ? `Implemented in ${impl.cartridge}/${impl.relPath}${impl.line ? `:${impl.line}` : ''}` : '',
+      params.length > 0 ? `Parameters: ${params.join(', ')}` : '',
+      `Registered in ${step.cartridge}/${step.registeredIn.relPath}${step.registeredIn.line ? `:${step.registeredIn.line}` : ''}`,
+      warning ?? '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    location: impl
+      ? {cartridge: impl.cartridge, relPath: impl.relPath, line: impl.line}
+      : {cartridge: step.cartridge, ...step.registeredIn},
+    registration: {cartridge: step.cartridge, ...step.registeredIn},
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Editor: code lenses on controller route statements
+// ---------------------------------------------------------------------------
+
+/** A code lens for one route statement or SiteGenesis action in a controller file. */
+export interface ControllerLens {
+  /** 1-based line of the statement. */
+  line: number;
+  endpoint: string;
+  title: string;
+  tooltip: string;
+}
+
+/**
+ * Lenses for the controller at `file` (absolute path): one per route statement
+ * or SiteGenesis action, summarizing the composed endpoint, such as
+ * `Cart-AddProduct · POST · 4 steps · appended by int_paypal`.
+ */
+export function controllerLenses(index: ProjectIndex, file: string): ControllerLens[] {
+  const normalized = file.replace(/\\/g, '/');
+  const cartridge = index.cartridges.find((c) => normalized.startsWith(`${c.src.replace(/\\/g, '/')}/`));
+  if (!cartridge) return [];
+  const relPath = normalized.slice(cartridge.src.replace(/\\/g, '/').length + 1);
+  const lenses: ControllerLens[] = [];
+  for (const e of index.endpoints) {
+    if (e.kind === 'pipeline') continue;
+    const methods = e.methods.includes('ANY') ? 'any method' : e.methods.join('/');
+    if (e.kind === 'sg-controller') {
+      if (e.cartridge !== cartridge.name || e.relPath !== relPath) continue;
+      lenses.push({
+        line: e.line,
+        endpoint: e.id,
+        title: [e.id, ...(e.filters ?? [])].join(' · '),
+        tooltip: 'Show in the Endpoints view',
+      });
+      continue;
+    }
+    const steps = e.steps ?? [];
+    steps.forEach((step, i) => {
+      if (step.cartridge !== cartridge.name || step.relPath !== relPath) return;
+      const others = steps.filter((s, j) => j !== i && s.cartridge !== cartridge.name);
+      const later = steps.slice(i + 1).filter((s) => s.cartridge !== cartridge.name);
+      const notes = later.map((s) => `${s.method === 'replace' ? 'replaced' : `${s.method}ed`} by ${s.cartridge}`);
+      const chain = (e.chain ?? []).length;
+      lenses.push({
+        line: step.line,
+        endpoint: e.id,
+        title: [e.id, methods, chain > 0 ? `${chain} step${chain === 1 ? '' : 's'}` : '', ...new Set(notes)]
+          .filter(Boolean)
+          .join(' · '),
+        tooltip: [
+          'Show what runs for this endpoint in the Endpoints view',
+          others.length > 0 ? `Also changed in: ${[...new Set(others.map((s) => s.cartridge))].join(', ')}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      });
+    });
+  }
+  return lenses.sort((a, b) => a.line - b.line);
 }
 
 /** Whether a row or any of the given rows carries a warning (for "only issues" filtering). */

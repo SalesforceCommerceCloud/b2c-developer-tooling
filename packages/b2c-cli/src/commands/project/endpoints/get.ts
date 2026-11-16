@@ -12,20 +12,20 @@ import {
   securityRole,
   type IndexedEndpoint,
 } from '@salesforce/b2c-tooling-sdk/project-index';
-import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
-export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint> {
+export default class ProjectEndpointsGet extends BaseCommand<typeof ProjectEndpointsGet> {
   static args = {
     id: Args.string({description: 'Endpoint ID (Controller-Action), for example Cart-AddProduct', required: true}),
   };
 
   static description = withDocs(
     t(
-      'commands.project.endpoint.description',
+      'commands.project.endpoints.get.description',
       '[PREVIEW] Show what runs for one storefront endpoint: its middleware and handlers in order, the cartridge each comes from, and the statements across cartridges that built it',
     ),
-    '/cli/project.html#b2c-project-endpoint',
+    '/cli/project.html#b2c-project-endpoints-get',
   );
 
   static enableJsonFlag = true;
@@ -40,7 +40,7 @@ export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint>
   protected operations = {loadProjectIndex};
 
   async run(): Promise<{endpoint: IndexedEndpoint; issues: string[]}> {
-    const {args} = await this.parse(ProjectEndpoint);
+    const {args} = await this.parse(ProjectEndpointsGet);
     const index = this.operations.loadProjectIndex(
       this.resolvedConfig.values.cartridges,
       [],
@@ -56,7 +56,7 @@ export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint>
         suggestions:
           similar.length > 0
             ? [`Did you mean: ${similar.map((e) => e.id).join(', ')}`]
-            : ['List endpoints with: b2c project endpoints'],
+            : ['List endpoints with: b2c project endpoints list'],
       });
     }
     const issues = endpointIssues(endpoint);

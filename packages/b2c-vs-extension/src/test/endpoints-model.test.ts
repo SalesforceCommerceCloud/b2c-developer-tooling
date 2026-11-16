@@ -9,9 +9,11 @@ import {
   absolutePath,
   cartridgeCustomApis,
   cartridgeHookRows,
+  cartridgeJobStepRows,
   chainRows,
   controllerFiles,
   controllerGroups,
+  controllerLenses,
   customApiEndpointRow,
   customApiGroups,
   endpointRow,
@@ -369,5 +371,81 @@ suite('endpoints view model', () => {
       ['setPoints'],
     );
     assert.deepStrictEqual(cartridgeCustomApis(index, 'app_storefront_base'), []);
+  });
+
+  test('custom hook rows open the function callers name, and every hook row links to its registration', () => {
+    const notify = {
+      ...index.hooks[2],
+      calledFunctions: [{name: 'notify', line: 7}, {name: 'missing'}],
+      registeredIn: {relPath: 'hooks.json', line: 4},
+    };
+    const [group] = hookGroups({...index, hooks: [notify]});
+    const row = hookRegistrationRow(group, notify, 0);
+    assert.strictEqual(row.description, 'n.js:7 · called as notify, missing');
+    assert.deepStrictEqual(row.location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/n.js', line: 7});
+    assert.deepStrictEqual(row.registration, {cartridge: 'app_custom', relPath: 'hooks.json', line: 4});
+    assert.match(row.tooltip ?? '', /Called as missing\(\), which this script does not export/);
+  });
+
+  test('job step rows open the implementing function and link to steptypes.json', () => {
+    const withSteps: ProjectIndex = {
+      ...index,
+      jobSteps: [
+        {
+          typeId: 'custom.Export',
+          kind: 'script-module-step',
+          cartridge: 'app_custom',
+          module: 'plugin_csrf/cartridge/scripts/export',
+          function: 'run',
+          registeredIn: {relPath: 'steptypes.json', line: 5},
+          implementationFile: {cartridge: 'plugin_csrf', relPath: 'cartridge/scripts/export.js', line: 12},
+          parameters: [{name: 'Folder', type: 'string', required: true}],
+          problems: [],
+        },
+        {
+          typeId: 'custom.Broken',
+          kind: 'chunk-script-module-step',
+          cartridge: 'app_custom',
+          module: 'app_custom/cartridge/scripts/gone',
+          registeredIn: {relPath: 'steptypes.json', line: 20},
+          parameters: [],
+          problems: ['Module app_custom/cartridge/scripts/gone not found.'],
+        },
+      ],
+    };
+    const rows = cartridgeJobStepRows(withSteps, 'app_custom');
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['custom.Broken', 'chunk'],
+        ['custom.Export', 'task · run() · export.js:12'],
+      ],
+    );
+    assert.ok(rows[0].warning);
+    assert.deepStrictEqual(rows[0].location, {cartridge: 'app_custom', relPath: 'steptypes.json', line: 20});
+    assert.deepStrictEqual(rows[1].location, {
+      cartridge: 'plugin_csrf',
+      relPath: 'cartridge/scripts/export.js',
+      line: 12,
+    });
+    assert.deepStrictEqual(rows[1].registration, {cartridge: 'app_custom', relPath: 'steptypes.json', line: 5});
+    assert.match(rows[1].tooltip ?? '', /Parameters: Folder: string \(required\)/);
+    assert.deepStrictEqual(cartridgeJobStepRows(withSteps, 'plugin_csrf'), []);
+  });
+
+  test('controller lenses summarize each route statement in a file', () => {
+    assert.deepStrictEqual(
+      controllerLenses(index, '/p/app_storefront_base/cartridge/controllers/Cart.js').map((l) => [l.line, l.title]),
+      [[60, 'Cart-AddProduct · POST · 3 steps · prepended by plugin_csrf']],
+    );
+    assert.deepStrictEqual(
+      controllerLenses(index, '/p/plugin_csrf/cartridge/controllers/Cart.js').map((l) => [l.line, l.endpoint, l.title]),
+      [[5, 'Cart-AddProduct', 'Cart-AddProduct · POST · 3 steps']],
+    );
+    assert.deepStrictEqual(
+      controllerLenses(index, '/p/app_storefront_base/cartridge/controllers/Account.js').map((l) => l.title),
+      ['Account-SaveProfile · any method · 1 step · replaced by app_custom'],
+    );
+    assert.deepStrictEqual(controllerLenses(index, '/elsewhere/Cart.js'), []);
   });
 });

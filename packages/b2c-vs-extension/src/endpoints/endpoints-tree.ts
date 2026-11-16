@@ -229,9 +229,35 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
           node.id,
           node.icon,
           vscode.TreeItemCollapsibleState.None,
-          node.implementation ? 'endpoints-row-implementation' : 'endpoints-row',
+          node.implementation
+            ? 'endpoints-row-implementation'
+            : node.row.registration
+              ? 'endpoints-row-registration'
+              : 'endpoints-row',
         );
     }
+  }
+
+  getParent(node: EndpointsNode): EndpointsNode | undefined {
+    if (node.type === 'controller') return {type: 'group', kind: 'controllers'};
+    if (node.type === 'endpoint') {
+      return this.groupChildren(this.indexService.getIndex(), 'controllers').find(
+        (n) => n.type === 'controller' && n.controller === node.endpoint.controller,
+      );
+    }
+    return undefined;
+  }
+
+  /** The tree node for an endpoint, clearing the filter or issues-only mode when they would hide it. */
+  nodeFor(id: string): EndpointsNode | undefined {
+    const endpoint = this.indexService.getIndex().endpoints.find((e) => e.id === id && e.kind !== 'pipeline');
+    if (!endpoint) return undefined;
+    if (!this.keepEndpoint(endpoint)) {
+      this.filterText = '';
+      this.issuesOnly = false;
+      this.emitter.fire(undefined);
+    }
+    return {type: 'endpoint', endpoint};
   }
 
   /** Absolute file path for a location in the current index. */

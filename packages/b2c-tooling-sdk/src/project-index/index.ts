@@ -35,11 +35,12 @@ export {
   controllerEndpoints,
   customApiGroups,
   endpointIssues,
+  endpointSummaries,
   hookChains,
   hookRegistrationIssue,
   isApiHook,
 } from './insights.js';
-export type {CustomApiGroup, HookChain} from './insights.js';
+export type {CustomApiGroup, EndpointSummary, EndpointSummaryFilter, HookChain} from './insights.js';
 export type {
   EndpointKind,
   CartridgeOrder,
@@ -49,6 +50,7 @@ export type {
   IndexedEndpoint,
   IndexedHook,
   IndexedJobStep,
+  IndexedJobStepParameter,
   IndexedMiddleware,
   ProjectIndex,
   ReturnBehavior,

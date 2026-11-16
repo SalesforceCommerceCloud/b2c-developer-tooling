@@ -10,8 +10,8 @@ import {
   type CustomApiGroup,
   type IndexedCustomApiEndpoint,
 } from '@salesforce/b2c-tooling-sdk/project-index';
-import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 type Row = IndexedCustomApiEndpoint & {implementationPath?: string; apiIssue?: string};
 
@@ -27,17 +27,17 @@ const COLUMNS: Record<string, ColumnDef<Row>> = {
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
-export default class ProjectApis extends BaseCommand<typeof ProjectApis> {
+export default class ProjectApisList extends BaseCommand<typeof ProjectApisList> {
   static args = {
     filter: Args.string({description: 'Only APIs or endpoints whose name contains this text'}),
   };
 
   static description = withDocs(
     t(
-      'commands.project.apis.description',
+      'commands.project.apis.list.description',
       '[PREVIEW] List Custom API endpoints with the route, security scheme, and scopes from schema.yaml, the implementing function, and wiring problems',
     ),
-    '/cli/project.html#b2c-project-apis',
+    '/cli/project.html#b2c-project-apis-list',
   );
 
   static enableJsonFlag = true;
@@ -53,7 +53,7 @@ export default class ProjectApis extends BaseCommand<typeof ProjectApis> {
   protected operations = {loadProjectIndex};
 
   async run(): Promise<{apis: CustomApiGroup[]}> {
-    const {args, flags} = await this.parse(ProjectApis);
+    const {args, flags} = await this.parse(ProjectApisList);
     const index = this.operations.loadProjectIndex(
       this.resolvedConfig.values.cartridges,
       [],

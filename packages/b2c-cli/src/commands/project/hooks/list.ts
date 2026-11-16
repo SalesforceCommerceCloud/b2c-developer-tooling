@@ -12,8 +12,8 @@ import {
   type HookChain,
   type IndexedHook,
 } from '@salesforce/b2c-tooling-sdk/project-index';
-import {t, withDocs} from '../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../utils/project/index.js';
+import {t, withDocs} from '../../../i18n/index.js';
+import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 /** One extension point in `b2c project hooks` output. */
 export interface HookChainResult extends Omit<HookChain, 'registrations'> {
@@ -21,7 +21,7 @@ export interface HookChainResult extends Omit<HookChain, 'registrations'> {
   registrations: Array<IndexedHook & {issue?: string}>;
 }
 
-export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
+export default class ProjectHooksList extends BaseCommand<typeof ProjectHooksList> {
   static args = {
     filter: Args.string({
       description: 'Only extension points whose name contains this text, for example "basket" or "dw.order.calculate"',
@@ -30,10 +30,10 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
 
   static description = withDocs(
     t(
-      'commands.project.hooks.description',
+      'commands.project.hooks.list.description',
       '[PREVIEW] List hook registrations by extension point in cartridge path order, flagging system hooks that can return a value and skip later registrations',
     ),
-    '/cli/project.html#b2c-project-hooks',
+    '/cli/project.html#b2c-project-hooks-list',
   );
 
   static enableJsonFlag = true;
@@ -52,7 +52,7 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
   protected operations = {loadProjectIndex};
 
   async run(): Promise<{hooks: HookChainResult[]}> {
-    const {args, flags} = await this.parse(ProjectHooks);
+    const {args, flags} = await this.parse(ProjectHooksList);
     const index = this.operations.loadProjectIndex(
       this.resolvedConfig.values.cartridges,
       [],
@@ -91,9 +91,11 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
               : h.returnsValue === 'no'
                 ? 'returns nothing'
                 : ''
-            : h.exports && h.exports.length > 0
-              ? `exports ${h.exports.join(', ')}`
-              : '';
+            : h.calledFunctions && h.calledFunctions.length > 0
+              ? `called as ${h.calledFunctions.map((f) => f.name).join(', ')}`
+              : h.exports && h.exports.length > 0
+                ? `exports ${h.exports.join(', ')}`
+                : '';
         ux.stdout(`  ${i + 1}. ${h.cartridge.padEnd(28)} ${where}${detail ? `  ${detail}` : ''}`);
         if (h.issue && h.returnsValue !== 'yes') ux.stdout(ux.colorize('yellow', `     ⚠ ${h.issue}`));
       }

@@ -18,6 +18,7 @@ import {
   controllerEndpoints,
   customApiGroups,
   endpointIssues,
+  endpointSummaries,
   hookChains,
   hookRegistrationIssue,
   middlewareLabel,
@@ -41,15 +42,28 @@ const MAX_LIST = 300;
 const DEFAULT_MAX_FINDINGS = 50;
 const BASELINE_FILE = '.b2c-security-baseline.json';
 
-type Aspect = 'customApis' | 'endpoint' | 'endpoints' | 'hooks' | 'summary';
+type Aspect = 'customApis' | 'endpoint' | 'endpoints' | 'hooks' | 'jobSteps' | 'summary';
 
 interface ProjectInspectInput {
   aspect?: Aspect;
   id?: string;
   filter?: string;
+  cartridge?: string;
+  uses?: string;
   issuesOnly?: boolean;
   projectDirectory?: string;
 }
+
+/** What each aspect returns, so an agent can pick the next call from the summary. */
+const ASPECTS: Record<Exclude<Aspect, 'summary'>, string> = {
+  endpoints:
+    'List endpoints (id, methods, cartridges that build each, middleware as written). Filter with filter, cartridge, uses.',
+  endpoint:
+    'One endpoint in full (id required): chain in run order, route event listeners, defining statements, issues.',
+  hooks: 'Hook registrations by extension point in run order, with the functions callers use and issues.',
+  customApis: 'Custom API endpoints with route, security, scopes, implementation, and wiring problems.',
+  jobSteps: 'Custom job step types from steptypes.json with parameters and implementation.',
+};
 
 /** Builds the index for the project directory, ordered by that project's `cartridges` configuration. */
 function loadIndex(projectDirectory: string, cartridgePath: string[] | undefined, siteId?: string): ProjectIndex {
@@ -122,18 +136,19 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
       idempotent: true,
       openWorld: false,
       description:
-        'Inspect storefront code from source (preview), composed along the configured cartridge path: summary, SFRA/SiteGenesis ' +
-        'controller endpoints with HTTPS/login/CSRF protection, what runs for one endpoint and which cartridge each step ' +
-        'comes from, hook registrations in run order, and Custom API wiring. Offline; no instance needed.',
+        'Inspect storefront code from source (preview), along the configured cartridge path. Start with the summary ' +
+        '(counts and what each aspect returns); list endpoints, filtered by ID, cartridge, or middleware; then get one ' +
+        'endpoint for what runs, in order, and which cartridge each step comes from. Also hooks in run order, Custom ' +
+        'APIs, and custom job steps. Offline.',
       searchHint:
-        'controller route endpoint middleware override extend replace prepend append superModule hooks hooks.json custom api rest-apis which cartridge',
+        'controller route endpoint middleware override extend replace prepend append superModule hooks hooks.json custom api rest-apis job steps steptypes.json which cartridge',
       toolsets: ['CARTRIDGES', 'STOREFRONTNEXT'],
       usesProjectContext: true,
       inputSchema: {
         aspect: z
-          .enum(['summary', 'endpoints', 'endpoint', 'hooks', 'customApis'])
+          .enum(['summary', 'endpoints', 'endpoint', 'hooks', 'customApis', 'jobSteps'])
           .optional()
-          .describe('What to return. Defaults to summary.'),
+          .describe('What to return. Defaults to summary, which lists what each aspect returns.'),
         id: z
           .string()
           .min(1)
@@ -143,8 +158,20 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
           .string()
           .min(1)
           .optional()
-          .describe('Case-insensitive substring of endpoint IDs, hook names, or API/endpoint names.'),
-        issuesOnly: z.boolean().optional().describe('Only items with issues (endpoints, hooks, customApis).'),
+          .describe(
+            'Case-insensitive substring of endpoint IDs, hook names, API/endpoint names, or job step type IDs.',
+          ),
+        cartridge: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('endpoints and jobSteps: only items this cartridge defines or changes (exact name).'),
+        uses: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('endpoints: only endpoints whose middleware contains this text, such as "userLoggedIn" or "csrf".'),
+        issuesOnly: z.boolean().optional().describe('hooks, customApis, jobSteps: only items with issues.'),
       },
       async execute(args, context) {
         const aspect = args.aspect ?? 'summary';
@@ -177,7 +204,9 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
               endpoints: endpoints.filter((e) => endpointIssues(e).length > 0).length,
               hooks: chains.filter((c) => c.issue || c.registrations.some((r) => hookRegistrationIssue(c, r))).length,
               customApiEndpoints: apis.flatMap((g) => g.endpoints).filter((e) => e.problems.length > 0).length,
+              jobSteps: index.jobSteps.filter((s) => s.problems.length > 0).length,
             },
+            aspects: ASPECTS,
             ...(index.errors.length > 0 ? {parseErrors: index.errors.slice(0, 20)} : {}),
           };
         }
@@ -199,27 +228,56 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
         }
 
         if (aspect === 'endpoints') {
-          const rows = endpoints
-            .filter((e) => matches(e.id))
-            .map((e) => {
-              const issues = endpointIssues(e);
-              return {
-                id: e.id,
-                methods: e.methods,
-                https: e.https,
-                loginRequired: e.loginRequired,
-                csrf: e.csrf,
-                cartridge: e.cartridge,
-                at: fileRef(index, dir, e.cartridge, e.relPath, e.line),
-                ...(issues.length > 0 ? {issues} : {}),
-              };
-            })
-            .filter((r) => !args.issuesOnly || r.issues);
+          const rows = endpointSummaries(index, {filter: args.filter, cartridge: args.cartridge, uses: args.uses}).map(
+            (e) => ({
+              id: e.id,
+              methods: e.methods,
+              cartridges: e.cartridges,
+              middleware: e.middleware,
+              at: fileRef(index, dir, e.cartridge, e.relPath, e.line),
+            }),
+          );
           return {
             total: rows.length,
             endpoints: rows.slice(0, MAX_LIST),
-            ...(rows.length > MAX_LIST ? {truncated: rows.length - MAX_LIST} : {}),
+            ...(rows.length > MAX_LIST
+              ? {truncated: rows.length - MAX_LIST, hint: 'Narrow with filter, cartridge, or uses.'}
+              : {}),
+            next: 'Use aspect "endpoint" with an id for what runs, protection (HTTPS, login, CSRF), and issues.',
           };
+        }
+
+        if (aspect === 'jobSteps') {
+          const steps = index.jobSteps
+            .filter(
+              (s) =>
+                matches(s.typeId) &&
+                (!args.cartridge || s.cartridge === args.cartridge) &&
+                (!args.issuesOnly || s.problems.length > 0),
+            )
+            .sort((a, b) => a.typeId.localeCompare(b.typeId))
+            .map((s) => ({
+              typeId: s.typeId,
+              kind: s.kind === 'chunk-script-module-step' ? 'chunk' : 'task',
+              cartridge: s.cartridge,
+              ...(s.description ? {description: s.description} : {}),
+              ...(s.function ? {function: s.function} : {}),
+              registeredIn: fileRef(index, dir, s.cartridge, s.registeredIn.relPath, s.registeredIn.line),
+              ...(s.implementationFile
+                ? {
+                    implementation: fileRef(
+                      index,
+                      dir,
+                      s.implementationFile.cartridge,
+                      s.implementationFile.relPath,
+                      s.implementationFile.line,
+                    ),
+                  }
+                : {module: s.module}),
+              parameters: s.parameters,
+              ...(s.problems.length > 0 ? {problems: s.problems} : {}),
+            }));
+          return {total: steps.length, jobSteps: steps.slice(0, MAX_LIST)};
         }
 
         if (aspect === 'hooks') {
@@ -231,8 +289,22 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
                 return {
                   cartridge: h.cartridge,
                   at: h.relPath ? fileRef(index, dir, h.scriptCartridge ?? h.cartridge, h.relPath, h.line) : h.script,
+                  ...(h.registeredIn
+                    ? {registeredIn: fileRef(index, dir, h.cartridge, h.registeredIn.relPath, h.registeredIn.line)}
+                    : {}),
                   ...(h.function ? {function: h.function} : {}),
-                  ...(h.exports ? {exports: h.exports} : {}),
+                  ...(h.calledFunctions
+                    ? {
+                        calledAs: h.calledFunctions.map((f) => ({
+                          name: f.name,
+                          ...(f.line && h.relPath
+                            ? {at: fileRef(index, dir, h.scriptCartridge ?? h.cartridge, h.relPath, f.line)}
+                            : {}),
+                        })),
+                      }
+                    : h.exports
+                      ? {exports: h.exports}
+                      : {}),
                   ...(chain.kind === 'system' ? {returnsValue: h.returnsValue} : {}),
                   ...(issue ? {issue} : {}),
                 };

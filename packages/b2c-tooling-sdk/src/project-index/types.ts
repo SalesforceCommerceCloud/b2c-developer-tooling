@@ -131,6 +131,13 @@ export interface IndexedHook {
   line?: number;
   /** For system hooks: whether the function returns a value. `unknown` for custom hooks. */
   returnsValue: ReturnBehavior;
+  /** The hooks.json that registers this hook, relative to `cartridge`, and the line of its entry. */
+  registeredIn?: {relPath: string; line?: number};
+  /**
+   * For custom hooks: functions callers name in `HookMgr.callHook(name, fn, ...)`
+   * across the project, with that function's line in this script when it exports it.
+   */
+  calledFunctions?: Array<{name: string; line?: number}>;
 }
 
 /** A Custom API endpoint from `rest-apis/<api>/api.json`, joined with its schema.yaml operation. */
@@ -159,12 +166,33 @@ export interface IndexedCustomApiEndpoint {
   problems: string[];
 }
 
+/** A parameter of a custom job step type. */
+export interface IndexedJobStepParameter {
+  name: string;
+  type?: string;
+  required: boolean;
+  description?: string;
+  defaultValue?: string;
+}
+
 /** A custom job step type from steptypes.json. */
 export interface IndexedJobStep {
   typeId: string;
+  /** `script-module-step` (task) or `chunk-script-module-step` (chunk). */
   kind: string;
   cartridge: string;
+  /** The `module` value as written. */
   module?: string;
+  /** For task steps: the function the platform calls (`function`, default `execute`). */
+  function?: string;
+  description?: string;
+  /** The steptypes.json that declares the step, relative to `cartridge`, and the line of its `@type-id`. */
+  registeredIn: {relPath: string; line?: number};
+  /** Resolved module file, when it exists. */
+  implementationFile?: {cartridge: string; relPath: string; line?: number};
+  parameters: IndexedJobStepParameter[];
+  /** Problems found, such as a module that doesn't resolve. */
+  problems: string[];
 }
 
 /** A cartridge in the index, in cartridge path order. */

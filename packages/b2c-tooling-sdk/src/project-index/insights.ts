@@ -35,6 +35,64 @@ export function controllerEndpoints(index: ProjectIndex): IndexedEndpoint[] {
   return index.endpoints.filter((e) => e.kind !== 'pipeline').sort((a, b) => a.id.localeCompare(b.id));
 }
 
+/**
+ * One row of an endpoint list: enough to find an endpoint and see where it
+ * comes from. Drill into one with the full {@link IndexedEndpoint}.
+ */
+export interface EndpointSummary {
+  id: string;
+  kind: 'sfra' | 'sg-controller';
+  methods: IndexedEndpoint['methods'];
+  /** The cartridge whose controller serves the endpoint. */
+  cartridge: string;
+  /** Every cartridge that defines or changes the route, in the order they apply. */
+  cartridges: string[];
+  /** Middleware as written in the route (`csrfProtection.generateToken`), in run order; SiteGenesis guard filters. */
+  middleware: string[];
+  relPath: string;
+  line: number;
+}
+
+/** Filters for {@link endpointSummaries}. All are case-insensitive substrings. */
+export interface EndpointSummaryFilter {
+  /** Text in the endpoint ID (`Cart-`). */
+  filter?: string;
+  /** A cartridge that defines or changes the route. Exact name. */
+  cartridge?: string;
+  /** Text in a middleware reference (`userLoggedIn`, `csrfProtection.validateAjaxRequest`). */
+  uses?: string;
+}
+
+/** Controller endpoints as list rows, optionally filtered by ID, cartridge, or middleware. */
+export function endpointSummaries(index: ProjectIndex, options: EndpointSummaryFilter = {}): EndpointSummary[] {
+  const filter = options.filter?.toLowerCase();
+  const uses = options.uses?.toLowerCase();
+  return controllerEndpoints(index)
+    .map<EndpointSummary>((e) => {
+      const middleware =
+        e.kind === 'sg-controller'
+          ? (e.filters ?? [])
+          : (e.chain ?? []).filter((m) => m.id !== 'function').map((m) => m.expression ?? m.id);
+      const cartridges = [...new Set([...(e.steps ?? []).map((s) => s.cartridge), e.cartridge])];
+      return {
+        id: e.id,
+        kind: e.kind as EndpointSummary['kind'],
+        methods: e.methods,
+        cartridge: e.cartridge,
+        cartridges,
+        middleware,
+        relPath: e.relPath,
+        line: e.line,
+      };
+    })
+    .filter(
+      (e) =>
+        (!filter || e.id.toLowerCase().includes(filter)) &&
+        (!options.cartridge || e.cartridges.includes(options.cartridge)) &&
+        (!uses || e.middleware.some((m) => m.toLowerCase().includes(uses))),
+    );
+}
+
 /** Registrations of one extension point, in cartridge path order. */
 export interface HookChain {
   name: string;

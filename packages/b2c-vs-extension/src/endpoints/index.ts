@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 
 import type {ProjectIndexService} from '../cartridges/project-index-service.js';
 import {registerSafeCommand} from '../safety.js';
+import {ControllerLensProvider} from './controller-lens.js';
 import {EndpointsTreeProvider, openCommand, type EndpointsNode} from './endpoints-tree.js';
 
 /** Registers the Endpoints view: controller endpoints, Custom APIs, and hooks from the project index. */
@@ -62,5 +63,22 @@ export function registerEndpoints(context: vscode.ExtensionContext, indexService
       const command = openCommand(file, node.implementation.line);
       await vscode.commands.executeCommand(command.command, ...(command.arguments ?? []));
     }),
+    registerSafeCommand('b2c-dx.endpoints.reveal', async (id?: string) => {
+      const node = id ? provider.nodeFor(id) : undefined;
+      if (!node) return;
+      updateDescription();
+      await view.reveal(node, {select: true, focus: true, expand: true});
+    }),
   );
+
+  if (vscode.workspace.getConfiguration('b2c-dx').get<boolean>('endpoints.codeLens', true)) {
+    const lenses = new ControllerLensProvider(indexService);
+    context.subscriptions.push(
+      lenses,
+      vscode.languages.registerCodeLensProvider(
+        {scheme: 'file', language: 'javascript', pattern: '**/cartridge/controllers/**'},
+        lenses,
+      ),
+    );
+  }
 }

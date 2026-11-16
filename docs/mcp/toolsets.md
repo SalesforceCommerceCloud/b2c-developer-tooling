@@ -267,10 +267,10 @@ See [file access](./security#instance-files).
 
 **Toolsets:** `CARTRIDGES`, `STOREFRONTNEXT`
 
-| Tool              | Capability                                                                                                                                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `project_inspect` | Show controller endpoints and what runs for each across the cartridge path, hooks in cartridge path order, and Custom API wiring.          |
-| `security_scan`   | Find security problems in cartridge code and site data, such as POST routes without CSRF checks and OCAPI settings for the demo client ID. |
+| Tool              | Capability                                                                                                                                          |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project_inspect` | Find controller endpoints, then show what runs for one across the cartridge path; hooks in cartridge path order, Custom APIs, and custom job steps. |
+| `security_scan`   | Find security problems in cartridge code and site data, such as POST routes without CSRF checks and OCAPI settings for the demo client ID.          |
 
 Your assistant can answer questions about your storefront code from its source: which cartridge serves an endpoint, which middleware and handlers run for it and in what order, whether an override dropped a security check, why a hook doesn't run, and where a Custom API is implemented. It can also scan the project for security problems specific to B2C Commerce and help fix them. Both tools read the cartridges and site data in your project directory and need no instance or credentials. Results follow the `cartridges` value in your configuration; set it to your site's cartridge path. The same information is available with [`b2c project`](../cli/project) and [`b2c security scan`](../cli/security); see [Code Security](../guide/code-security).
 

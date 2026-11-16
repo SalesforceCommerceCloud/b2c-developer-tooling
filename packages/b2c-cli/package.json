@@ -198,7 +198,19 @@
         "description": "View profile, reset API keys, and configure email preferences\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/mrt.html#user-commands"
       },
       "project": {
-        "description": "Inspect a project's storefront code: controller endpoints across the cartridge path, hooks, and Custom APIs"
+        "description": "Inspect a project's storefront code: controller endpoints across the cartridge path, hooks, Custom APIs, and custom job steps\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html"
+      },
+      "project:endpoints": {
+        "description": "List storefront controller endpoints and show what runs for one\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html#b2c-project-endpoints-list"
+      },
+      "project:hooks": {
+        "description": "List hook registrations in run order\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html#b2c-project-hooks-list"
+      },
+      "project:apis": {
+        "description": "List Custom API endpoints and how they are wired\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html#b2c-project-apis-list"
+      },
+      "project:job-steps": {
+        "description": "List custom job step types from steptypes.json\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html#b2c-project-job-steps-list"
       },
       "sandbox": {
         "description": "Manage On-Demand Sandboxes\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/sandbox.html"

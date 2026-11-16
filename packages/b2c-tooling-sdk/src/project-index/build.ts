@@ -40,6 +40,7 @@ import type {
   IndexedEndpoint,
   IndexedHook,
   IndexedJobStep,
+  IndexedJobStepParameter,
   IndexedMiddleware,
   RouteEventListener,
   ProjectIndex,
@@ -219,8 +220,9 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
   for (const cartridge of cartridges) {
     index.hooks.push(...readHooks(cartridge, host, resolver, exportsOf));
     index.customApis.push(...readCustomApis(cartridge, host, resolver, exportsOf));
-    index.jobSteps.push(...readJobSteps(cartridge));
+    index.jobSteps.push(...readJobSteps(cartridge, host, resolver, exportsOf));
   }
+  addCalledHookFunctions(index, cartridges, host, exportsOf);
   return index;
 }
 
@@ -484,8 +486,13 @@ function readHooks(
   const pkg = readJson(path.join(cartridge.src, 'package.json')) as {hooks?: unknown} | undefined;
   if (typeof pkg?.hooks !== 'string') return [];
   const hooksFile = path.resolve(cartridge.src, pkg.hooks);
-  const data = readJson(hooksFile) as {hooks?: Array<{name?: unknown; script?: unknown}>} | undefined;
+  const hooksText = host.readFile(hooksFile);
+  const data = (hooksText === undefined ? undefined : safeJson(hooksText)) as
+    | {hooks?: Array<{name?: unknown; script?: unknown}>}
+    | undefined;
+  const hooksRel = resolver.relativePath(hooksFile) ?? path.relative(cartridge.src, hooksFile);
   const hooks: IndexedHook[] = [];
+  let searchFrom = 0;
   for (const h of data?.hooks ?? []) {
     if (typeof h.name !== 'string' || typeof h.script !== 'string') continue;
     const found = hookScriptPath(h.script, hooksFile, host, resolver);
@@ -494,6 +501,8 @@ function readHooks(
     const exported = found ? exportsOf(found) : undefined;
     const fn = kind === 'system' ? (h.name.split('.').at(-1) ?? h.name) : undefined;
     const info = fn ? exported?.get(fn) : undefined;
+    const entryLine = hooksText === undefined ? undefined : lineOfName(hooksText, h.name, searchFrom);
+    if (entryLine) searchFrom = entryLine.offset + 1;
     hooks.push({
       name: h.name,
       kind,
@@ -505,9 +514,88 @@ function readHooks(
       ...(foundIn && foundIn !== cartridge.name ? {scriptCartridge: foundIn} : {}),
       ...(info?.line ? {line: info.line} : {}),
       returnsValue: info?.returnsValue ?? 'unknown',
+      registeredIn: {relPath: toForwardSlashes(hooksRel), ...(entryLine ? {line: entryLine.line} : {})},
     });
   }
   return hooks;
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+/** The line of the first `"<name>"` string at or after `from` in a JSON document, and its offset. */
+function lineOfName(text: string, name: string, from = 0): {line: number; offset: number} | undefined {
+  let offset = text.indexOf(JSON.stringify(name), from);
+  if (offset < 0) offset = text.indexOf(JSON.stringify(name));
+  if (offset < 0) return undefined;
+  let line = 1;
+  for (let i = 0; i < offset; i++) if (text.charCodeAt(i) === 10) line++;
+  return {line, offset};
+}
+
+const CALL_HOOK = /\bcallHook\(\s*(['"])([\w.-]+)\1\s*,\s*(['"])(\w+)\3/g;
+
+/**
+ * For custom hooks, the functions callers name in `HookMgr.callHook(name, fn, ...)`.
+ * A text scan of scripts and templates; only string-literal arguments are read.
+ */
+function addCalledHookFunctions(
+  index: ProjectIndex,
+  cartridges: readonly CartridgeLocation[],
+  host: CartridgeFileSystemHost,
+  exportsOf: (file: string) => ModuleExports | undefined,
+): void {
+  const custom = index.hooks.filter((h) => h.kind === 'custom');
+  if (custom.length === 0) return;
+  const names = new Set(custom.map((h) => h.name));
+  const called = new Map<string, Set<string>>();
+  for (const cartridge of cartridges) {
+    for (const file of walkFiles(path.join(cartridge.src, 'cartridge'), ['.js', '.ds', '.isml'])) {
+      const text = host.readFile(file);
+      if (!text?.includes('callHook')) continue;
+      for (const m of text.matchAll(CALL_HOOK)) {
+        if (!names.has(m[2])) continue;
+        called.set(m[2], (called.get(m[2]) ?? new Set()).add(m[4]));
+      }
+    }
+  }
+  for (const hook of custom) {
+    const fns = called.get(hook.name);
+    if (!fns) continue;
+    const cartridge = hook.scriptCartridge ?? hook.cartridge;
+    const root = index.cartridges.find((c) => c.name === cartridge)?.src;
+    const exported = hook.relPath && root ? exportsOf(path.join(root, hook.relPath)) : undefined;
+    hook.calledFunctions = [...fns].sort().map((name) => {
+      const line = exported?.get(name)?.line;
+      return line ? {name, line} : {name};
+    });
+  }
+}
+
+const SKIP_DIRS = new Set(['node_modules', 'static', 'client', '.git']);
+
+function walkFiles(dir: string, extensions: string[]): string[] {
+  const out: string[] = [];
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dir, {withFileTypes: true});
+  } catch {
+    return out;
+  }
+  for (const d of entries) {
+    const full = path.join(dir, d.name);
+    if (d.isDirectory()) {
+      if (!SKIP_DIRS.has(d.name)) out.push(...walkFiles(full, extensions));
+    } else if (d.isFile() && extensions.includes(path.extname(d.name))) {
+      out.push(full);
+    }
+  }
+  return out;
 }
 
 interface OpenApiOperation {
@@ -625,20 +713,99 @@ function readYaml(file: string, host: CartridgeFileSystemHost): unknown {
   }
 }
 
-function readJobSteps(cartridge: CartridgeLocation): IndexedJobStep[] {
-  const data = (readJson(path.join(cartridge.src, 'steptypes.json')) ??
-    readJson(path.join(cartridge.src, 'cartridge', 'steptypes.json'))) as
-    | {'step-types'?: Record<string, unknown>}
-    | undefined;
+function readJobSteps(
+  cartridge: CartridgeLocation,
+  host: CartridgeFileSystemHost,
+  resolver: CartridgeResolver,
+  exportsOf: (file: string) => ModuleExports | undefined,
+): IndexedJobStep[] {
+  const rootFile = path.join(cartridge.src, 'steptypes.json');
+  const files = [
+    ...(host.fileExists(rootFile) ? [rootFile] : []),
+    ...walkFiles(path.join(cartridge.src, 'cartridge'), ['.json']).filter((f) => path.basename(f) === 'steptypes.json'),
+  ];
+  return files.flatMap((file) => readStepTypesFile(file, cartridge, host, resolver, exportsOf));
+}
+
+/** Step type groups: `{script-module-step: [...], chunk-script-module-step: [...]}`, or a legacy flat array of task steps. */
+function stepTypeGroups(stepTypes: unknown): Array<[string, Array<Record<string, unknown>>]> {
+  if (Array.isArray(stepTypes)) return [['script-module-step', stepTypes]];
+  if (!stepTypes || typeof stepTypes !== 'object') return [];
+  return Object.entries(stepTypes as Record<string, unknown>).map(([kind, value]) => [
+    kind,
+    (Array.isArray(value) ? value : [value]) as Array<Record<string, unknown>>,
+  ]);
+}
+
+function readStepTypesFile(
+  file: string,
+  cartridge: CartridgeLocation,
+  host: CartridgeFileSystemHost,
+  resolver: CartridgeResolver,
+  exportsOf: (file: string) => ModuleExports | undefined,
+): IndexedJobStep[] {
+  const text = host.readFile(file);
+  const data = (text === undefined ? undefined : safeJson(text)) as {'step-types'?: unknown} | undefined;
+  const relPath = toForwardSlashes(path.relative(cartridge.src, file));
   const steps: IndexedJobStep[] = [];
-  for (const [kind, value] of Object.entries(data?.['step-types'] ?? {})) {
-    for (const s of (Array.isArray(value) ? value : [value]) as Array<Record<string, unknown>>) {
+  for (const [kind, entries] of stepTypeGroups(data?.['step-types'])) {
+    for (const s of entries) {
       if (typeof s?.['@type-id'] !== 'string') continue;
+      const typeId = s['@type-id'];
+      const module = typeof s.module === 'string' ? s.module : undefined;
+      const fn =
+        kind === 'chunk-script-module-step' ? undefined : typeof s.function === 'string' ? s.function : 'execute';
+      const problems: string[] = [];
+      let implementationFile: IndexedJobStep['implementationFile'];
+      if (module) {
+        const spec = module.replace(/^\.\//, '');
+        // `<cartridge>/cartridge/...` as in require(); older steptypes.json files omit the cartridge name.
+        const resolved =
+          resolver.resolveRequire(spec, file) ??
+          (spec.startsWith('cartridge/') ? resolver.resolveRequire(`${cartridge.name}/${spec}`, file) : undefined);
+        if (resolved?.cartridge) {
+          const line = fn ? exportsOf(resolved.path)?.get(fn)?.line : undefined;
+          implementationFile = {
+            cartridge: resolved.cartridge,
+            relPath: resolver.relativePath(resolved.path)!,
+            ...(line ? {line} : {}),
+          };
+          if (fn && exportsOf(resolved.path) && !exportsOf(resolved.path)!.has(fn)) {
+            problems.push(`Module doesn't export ${fn}().`);
+          }
+        } else {
+          problems.push(`Module ${module} not found.`);
+        }
+      } else {
+        problems.push('No module set.');
+      }
+      const params = (s.parameters as {parameter?: unknown} | undefined)?.parameter;
+      const parameters = (Array.isArray(params) ? params : params ? [params] : []).flatMap(
+        (p: Record<string, unknown>): IndexedJobStepParameter[] =>
+          typeof p?.['@name'] === 'string'
+            ? [
+                {
+                  name: p['@name'],
+                  ...(typeof p['@type'] === 'string' ? {type: p['@type']} : {}),
+                  required: p['@required'] === true || p['@required'] === 'true',
+                  ...(typeof p.description === 'string' ? {description: p.description} : {}),
+                  ...(typeof p['default-value'] === 'string' ? {defaultValue: p['default-value']} : {}),
+                },
+              ]
+            : [],
+      );
+      const entry = text === undefined ? undefined : lineOfName(text, typeId);
       steps.push({
-        typeId: s['@type-id'],
+        typeId,
         kind,
         cartridge: cartridge.name,
-        ...(typeof s.module === 'string' ? {module: s.module} : {}),
+        ...(module ? {module} : {}),
+        ...(fn ? {function: fn} : {}),
+        ...(typeof s.description === 'string' ? {description: s.description} : {}),
+        registeredIn: {relPath, ...(entry ? {line: entry.line} : {})},
+        ...(implementationFile ? {implementationFile} : {}),
+        parameters,
+        problems,
       });
     }
   }

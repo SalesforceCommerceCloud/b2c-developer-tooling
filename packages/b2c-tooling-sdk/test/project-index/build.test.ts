@@ -236,6 +236,7 @@ describe('project-index', () => {
         relPath: 'cartridge/scripts/cart/calculate.js',
         line: 1,
         returnsValue: 'no',
+        registeredIn: {relPath: 'cartridge/scripts/hooks.json', line: 1},
       },
     ]);
     expect(index.customApis).to.have.length(1);
@@ -252,6 +253,10 @@ describe('project-index', () => {
         kind: 'script-module-step',
         cartridge: 'int_api',
         module: 'int_api/cartridge/scripts/export.js',
+        function: 'execute',
+        registeredIn: {relPath: 'steptypes.json', line: 1},
+        parameters: [],
+        problems: ['Module int_api/cartridge/scripts/export.js not found.'],
       },
     ]);
   });
@@ -411,6 +416,92 @@ describe('project-index', () => {
     expect(b.relPath).to.equal('cartridge/scripts/hooks/bHooks.js');
     expect(a.scriptCartridge).to.be.undefined;
     expect(b.scriptCartridge).to.equal('app_base');
+  });
+
+  it('records hooks.json lines and the functions custom hooks are called with', () => {
+    write('plugin_a/.project');
+    write('plugin_a/package.json', JSON.stringify({hooks: './hooks.json'}));
+    write(
+      'plugin_a/hooks.json',
+      '{\n  "hooks": [\n    {"name": "app.a.event", "script": "./cartridge/scripts/aHooks"}\n  ]\n}',
+    );
+    write('plugin_a/cartridge/scripts/aHooks.js', 'exports.other = function () {};\n\nexports.track = function () {};');
+    write(
+      'plugin_a/cartridge/templates/default/x.isml',
+      "<isscript>require('dw/system/HookMgr').callHook('app.a.event', 'track', {});</isscript>",
+    );
+    const [hook] = buildProjectIndex({root: dir}).hooks;
+    expect(hook.registeredIn).to.deep.equal({relPath: 'hooks.json', line: 3});
+    expect(hook.calledFunctions).to.deep.equal([{name: 'track', line: 3}]);
+  });
+
+  it('reads custom job steps with their parameters, implementation, and problems', () => {
+    write('int_jobs/.project');
+    write(
+      'int_jobs/steptypes.json',
+      JSON.stringify(
+        {
+          'step-types': {
+            'script-module-step': [
+              {
+                '@type-id': 'custom.Export',
+                description: 'Exports orders',
+                module: 'int_jobs/cartridge/scripts/jobs/export.js',
+                function: 'run',
+                parameters: {parameter: [{'@name': 'Folder', '@type': 'string', '@required': 'true'}]},
+              },
+              {'@type-id': 'custom.Missing', module: 'int_jobs/cartridge/scripts/jobs/missing'},
+            ],
+            'chunk-script-module-step': [{'@type-id': 'custom.Chunk', module: 'cartridge/scripts/jobs/chunk'}],
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    write('int_jobs/cartridge/scripts/jobs/export.js', '// export\nexports.run = function () {};');
+    write('int_jobs/cartridge/scripts/jobs/chunk.js', 'exports.read = function () {};');
+    const steps = buildProjectIndex({root: dir}).jobSteps;
+    const exp = steps.find((s) => s.typeId === 'custom.Export')!;
+    expect(exp.implementationFile).to.deep.equal({
+      cartridge: 'int_jobs',
+      relPath: 'cartridge/scripts/jobs/export.js',
+      line: 2,
+    });
+    expect(exp.parameters).to.deep.equal([{name: 'Folder', type: 'string', required: true}]);
+    expect(exp.registeredIn.line).to.be.greaterThan(1);
+    expect(steps.find((s) => s.typeId === 'custom.Missing')!.problems[0]).to.match(/not found/);
+    const chunk = steps.find((s) => s.typeId === 'custom.Chunk')!;
+    expect(chunk.function).to.be.undefined;
+    expect(chunk.implementationFile?.relPath).to.equal('cartridge/scripts/jobs/chunk.js');
+  });
+
+  it('reads nested and legacy steptypes.json files and resolves .ds and sibling-cartridge modules', () => {
+    write('int_jobs/.project');
+    write('plugin_shared/.project');
+    write(
+      'int_jobs/cartridge/jobs/steptypes.json',
+      JSON.stringify({'step-types': [{'@type-id': 'custom.Legacy', module: 'int_jobs/cartridge/scripts/legacy'}]}),
+    );
+    write('int_jobs/cartridge/scripts/legacy.ds', 'exports.execute = function () {};');
+    write(
+      'int_jobs/steptypes.json',
+      JSON.stringify({
+        'step-types': {
+          'script-module-step': [{'@type-id': 'custom.Shared', module: 'plugin_shared/cartridge/scripts/shared.js'}],
+        },
+      }),
+    );
+    write('plugin_shared/cartridge/scripts/shared.js', 'exports.execute = function () {};');
+    const steps = buildProjectIndex({root: dir}).jobSteps;
+    const legacy = steps.find((s) => s.typeId === 'custom.Legacy')!;
+    expect(legacy.kind).to.equal('script-module-step');
+    expect(legacy.implementationFile?.relPath).to.equal('cartridge/scripts/legacy.ds');
+    expect(legacy.registeredIn.relPath).to.equal('cartridge/jobs/steptypes.json');
+    const shared = steps.find((s) => s.typeId === 'custom.Shared')!;
+    expect(shared.cartridge).to.equal('int_jobs');
+    expect(shared.implementationFile?.cartridge).to.equal('plugin_shared');
+    expect(shared.problems).to.deep.equal([]);
   });
 
   it('records controllers that cannot be parsed', () => {

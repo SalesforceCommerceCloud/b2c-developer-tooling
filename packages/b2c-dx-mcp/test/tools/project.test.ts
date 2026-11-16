@@ -109,12 +109,23 @@ describe('tools/project', () => {
       expect(out.withIssues).to.deep.include({endpoints: 2, hooks: 1});
     });
 
-    it('lists endpoints with filters', async () => {
+    it('lists the aspects it can return in the summary', async () => {
+      const out = json(await inspect.handler({}));
+      expect(out.aspects).to.have.keys('endpoints', 'endpoint', 'hooks', 'customApis', 'jobSteps');
+    });
+
+    it('lists endpoints compactly with the cartridges that build each and their middleware', async () => {
       const all = json(await inspect.handler({aspect: 'endpoints'}));
       expect(all.endpoints.map((e: {id: string}) => e.id)).to.deep.equal(['Account-Save', 'Account-Subscribe']);
-      expect(all.endpoints[0].at).to.equal('cartridges/app_custom/cartridge/controllers/Account.js:3');
-      const filtered = json(await inspect.handler({aspect: 'endpoints', filter: 'subscribe', issuesOnly: true}));
-      expect(filtered.total).to.equal(1);
+      expect(all.endpoints[0]).to.deep.include({
+        at: 'cartridges/app_custom/cartridge/controllers/Account.js:3',
+        cartridges: ['app_storefront_base', 'app_custom'],
+      });
+      expect(all.endpoints[0]).to.not.have.any.keys('csrf', 'https', 'loginRequired', 'issues');
+      expect(all.next).to.include('endpoint');
+      expect(json(await inspect.handler({aspect: 'endpoints', filter: 'subscribe'})).total).to.equal(1);
+      expect(json(await inspect.handler({aspect: 'endpoints', cartridge: 'app_custom'})).total).to.equal(1);
+      expect(json(await inspect.handler({aspect: 'endpoints', uses: 'csrf'})).total).to.equal(0);
     });
 
     it('returns the composed chain and history for one endpoint', async () => {

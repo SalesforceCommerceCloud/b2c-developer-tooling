@@ -37,6 +37,7 @@ import {registerExportTree} from './export-tree/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
 import {registerEndpoints} from './endpoints/index.js';
+import {registerOpenRegistration} from './endpoints/registration.js';
 import {ProjectIndexService} from './cartridges/project-index-service.js';
 import {registerIsml} from './isml/index.js';
 import {registerScriptTypes} from './script-types/index.js';
@@ -624,6 +625,7 @@ async function activateInner(
   // Controllers, routes, hooks, and Custom APIs across cartridges, shared by the Cartridges and Endpoints views.
   const projectIndexService = new ProjectIndexService(cartridgeService, log);
   context.subscriptions.push(projectIndexService);
+  registerOpenRegistration(context, projectIndexService);
 
   // Walkthrough context keys: drive auto-completion of the native walkthrough
   // steps. dwJsonExists tracks the per-workspace dw.json file; instanceConnected

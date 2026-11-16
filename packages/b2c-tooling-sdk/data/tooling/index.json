@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-16T00:31:21.680Z",
+  "generatedAt": "2026-11-16T02:24:17.310Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -197,8 +197,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.md",
-      "headings": "Cartridge order • b2c project endpoints • Usage • Arguments • Flags • Examples • b2c project endpoint • Usage • Example • b2c project hooks • Usage • Examples • b2c project apis • Usage • b2c project index • Usage • Examples",
-      "preview": "Inspect a B2C Commerce project's storefront code with b2c project — controller endpoints composed across the cartridge path, the middleware that runs for each, hooks in cartridge path order, and Custom APIs."
+      "headings": "Cartridge order • b2c project endpoints list • Usage • Arguments • Flags • Examples • b2c project endpoints get • Usage • Example • b2c project hooks list • Usage • Examples • b2c project apis list • Usage • b2c project job-steps list • Usage • b2c project index • Usage • Examples",
+      "preview": "Inspect a B2C Commerce project's storefront code with b2c project — controller endpoints composed across the cartridge path, the middleware that runs for each, hooks in cartridge path order, Custom APIs, and custom job steps."
     },
     {
       "id": "cli-replications",

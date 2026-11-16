@@ -115,6 +115,14 @@ export class ApiBrowserTreeDataProvider implements vscode.TreeDataProvider<ApiBr
     return [];
   }
 
+  /** The deployed Custom API schema with this name, loading schemas when needed. */
+  async findCustomApi(apiName: string): Promise<SchemaEntry | undefined> {
+    this.loaded = true;
+    const schemas = await this.loadSchemas();
+    this._onDidChangeTreeData.fire();
+    return schemas?.find((s) => s.apiFamily === 'custom' && s.apiName === apiName);
+  }
+
   private async getRootChildren(): Promise<ApiFamilyTreeItem[]> {
     if (!this.loaded) return [];
 

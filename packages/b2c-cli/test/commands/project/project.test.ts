@@ -11,11 +11,12 @@ import {expect} from 'chai';
 import {ux} from '@oclif/core';
 import {afterEach, beforeEach} from 'mocha';
 import sinon from 'sinon';
-import ProjectApis from '../../../src/commands/project/apis.js';
-import ProjectEndpoint from '../../../src/commands/project/endpoint.js';
-import ProjectEndpoints from '../../../src/commands/project/endpoints.js';
-import ProjectHooks from '../../../src/commands/project/hooks.js';
+import ProjectApis from '../../../src/commands/project/apis/list.js';
+import ProjectEndpoint from '../../../src/commands/project/endpoints/get.js';
+import ProjectEndpoints from '../../../src/commands/project/endpoints/list.js';
+import ProjectHooks from '../../../src/commands/project/hooks/list.js';
 import ProjectIndexCommand from '../../../src/commands/project/index/index.js';
+import ProjectJobSteps from '../../../src/commands/project/job-steps/list.js';
 import {createIsolatedConfigHooks, createTestCommand} from '../../helpers/test-setup.js';
 
 describe('project', () => {
@@ -80,6 +81,21 @@ describe('project', () => {
       'paths:\n  /points:\n    get:\n      operationId: getPoints\nsecurity:\n  - ShopperToken: [c_loyalty]\n',
     );
     write('cartridges/app_custom/cartridge/rest-apis/loyalty/script.js', 'exports.getPoints = function () {};');
+    write(
+      'cartridges/app_custom/steptypes.json',
+      JSON.stringify({
+        'step-types': {
+          'script-module-step': [
+            {
+              '@type-id': 'custom.Export',
+              module: 'app_custom/cartridge/scripts/jobs/export',
+              parameters: {parameter: [{'@name': 'Folder', '@type': 'string', '@required': 'true'}]},
+            },
+          ],
+        },
+      }),
+    );
+    write('cartridges/app_custom/cartridge/scripts/jobs/export.js', 'exports.execute = function () {};');
   });
 
   afterEach(() => {
@@ -109,7 +125,7 @@ describe('project', () => {
     const index = await run<any>(ProjectIndexCommand, {output: 'index.json'}, {}, false);
     expect(index.cartridges.map((c: {name: string}) => c.name)).to.deep.equal(['app_custom', 'app_storefront_base']);
     expect(output()).to.include(
-      '2 cartridge(s): 2 controller endpoint(s), 1 hook registration(s), 1 Custom API endpoint(s)',
+      '2 cartridge(s): 2 controller endpoint(s), 1 hook registration(s), 1 Custom API endpoint(s), 1 job step type(s)',
     );
     expect(output()).to.include('Cartridge path: app_custom:app_storefront_base');
     expect(JSON.parse(fs.readFileSync(path.join(tmp, 'index.json'), 'utf8')).version).to.equal(1);
@@ -133,20 +149,23 @@ describe('project', () => {
     }
   });
 
-  it('endpoints lists composed endpoints with issues and filters', async () => {
+  it('endpoints list shows each endpoint, the cartridges that build it, and its middleware', async () => {
     const {endpoints} = await run<{endpoints: any[]}>(ProjectEndpoints);
     expect(endpoints.map((e) => e.id)).to.deep.equal(['Account-Save', 'Account-Subscribe']);
     const save = endpoints[0];
-    expect(save).to.include({cartridge: 'app_custom', csrf: 'none'});
-    expect(save.issues.join(' ')).to.include('dropped the POST-only restriction, HTTPS requirement, CSRF check');
+    expect(save).to.deep.include({cartridge: 'app_custom', cartridges: ['app_storefront_base', 'app_custom']});
+    expect(save).to.not.have.any.keys('csrf', 'https', 'loginRequired', 'issues');
     expect(save.file).to.equal(path.join('cartridges', 'app_custom', 'cartridge', 'controllers', 'Account.js') + ':3');
 
-    const {endpoints: filtered} = await run<{endpoints: any[]}>(
-      ProjectEndpoints,
-      {issues: true},
-      {filter: 'subscribe'},
-    );
+    const {endpoints: filtered} = await run<{endpoints: any[]}>(ProjectEndpoints, {}, {filter: 'subscribe'});
     expect(filtered.map((e) => e.id)).to.deep.equal(['Account-Subscribe']);
+  });
+
+  it('endpoints list filters by cartridge and by middleware', async () => {
+    const {endpoints: byCartridge} = await run<{endpoints: any[]}>(ProjectEndpoints, {cartridge: 'app_custom'});
+    expect(byCartridge.map((e) => e.id)).to.deep.equal(['Account-Save']);
+    const {endpoints: byMiddleware} = await run<{endpoints: any[]}>(ProjectEndpoints, {uses: 'https'});
+    expect(byMiddleware).to.be.empty;
   });
 
   it('endpoint lists route event listeners after the chain', async () => {
@@ -188,6 +207,14 @@ describe('project', () => {
     expect(chains[0].issue).to.include('can return a value');
     expect(chains[0].registrations[0].issue).to.include('basket calculation');
     expect(chains[0].semantics).to.include('cartridge path order');
+  });
+
+  it('job-steps lists custom step types with parameters and implementation', async () => {
+    const {jobSteps} = await run<{jobSteps: any[]}>(ProjectJobSteps);
+    expect(jobSteps).to.have.length(1);
+    expect(jobSteps[0]).to.deep.include({typeId: 'custom.Export', cartridge: 'app_custom', problems: []});
+    expect(jobSteps[0].parameters[0]).to.include({name: 'Folder', required: true});
+    expect(jobSteps[0].implementationFile).to.include({relPath: 'cartridge/scripts/jobs/export.js', line: 1});
   });
 
   it('apis joins api.json with the schema and implementation', async () => {
