@@ -510,6 +510,38 @@ describe('project-index', () => {
     expect(shared.problems).to.deep.equal([]);
   });
 
+  it('keeps base routes when the leftmost controller delegates to a helper with module', () => {
+    write('app_headless/.project');
+    write('app_overlay/.project');
+    write('app_base/.project');
+    write(
+      'app_headless/cartridge/controllers/Home.js',
+      "'use strict';\n\nrequire('*/cartridge/scripts/headless').redirect(module, 'Show');\n",
+    );
+    write(
+      'app_headless/cartridge/scripts/headless.js',
+      "exports.redirect = function (m, name) { var server = require('server'); server.extend(m.superModule); m.exports = server.exports(); };",
+    );
+    write(
+      'app_overlay/cartridge/controllers/Home.js',
+      "var server = require('server');\nserver.extend(module.superModule);\nserver.replace('Show', function (req, res, next) { next(); });\nmodule.exports = server.exports();",
+    );
+    write(
+      'app_base/cartridge/controllers/Home.js',
+      "var server = require('server');\nserver.get('Show', function (req, res, next) { next(); });\nserver.get('ErrorNotFound', function (req, res, next) { next(); });\nmodule.exports = server.exports();",
+    );
+    const index = buildProjectIndex({root: dir, cartridgePath: ['app_headless', 'app_overlay', 'app_base']});
+    expect(index.endpoints.map((e) => e.id).sort()).to.deep.equal(['Home-ErrorNotFound', 'Home-Show']);
+    const show = index.endpoints.find((e) => e.id === 'Home-Show')!;
+    expect(show.cartridge, 'the last real definition serves it').to.equal('app_overlay');
+    expect(show.steps!.map((s) => `${s.cartridge}:${s.method}`)).to.deep.equal([
+      'app_base:get',
+      'app_overlay:replace',
+      'app_headless:delegate',
+    ]);
+    expect(show.steps!.at(-1)).to.include({relPath: 'cartridge/controllers/Home.js', line: 3});
+  });
+
   it('records controllers that cannot be parsed', () => {
     write('c/.project');
     write('c/cartridge/controllers/Broken.js', 'function (');
