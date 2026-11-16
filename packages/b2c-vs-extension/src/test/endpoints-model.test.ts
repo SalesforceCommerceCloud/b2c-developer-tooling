@@ -7,6 +7,8 @@ import * as assert from 'assert';
 import type {IndexedEndpoint, ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 import {
   absolutePath,
+  cartridgeCustomApis,
+  cartridgeHookRows,
   chainRows,
   controllerFiles,
   controllerGroups,
@@ -338,5 +340,34 @@ suite('endpoints view model', () => {
       '/p/app_custom/cartridge/x.js',
     );
     assert.strictEqual(absolutePath(index, {cartridge: 'nope', relPath: 'x'}), undefined);
+  });
+
+  test('cartridge hook rows list what one cartridge registers, with its place in each hook', () => {
+    const rows = cartridgeHookRows(index, 'app_custom');
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['app.custom.notify', 'n.js:1 · exports notify, handle'],
+        ['dw.ocapi.shop.basket.afterPOST', '1 of 2 · a.js:3 · returns a value'],
+        ['dw.order.calculate', './missing'],
+      ],
+    );
+    assert.ok(rows[2].warning, 'a missing script is flagged');
+    assert.deepStrictEqual(rows[1].location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/a.js', line: 3});
+    assert.deepStrictEqual(cartridgeHookRows(index, 'plugin_csrf'), []);
+  });
+
+  test('cartridge Custom APIs keep only the endpoints that cartridge defines', () => {
+    const [custom] = cartridgeCustomApis(index, 'app_custom');
+    assert.strictEqual(custom.api, 'loyalty');
+    assert.deepStrictEqual(
+      custom.endpoints.map((e) => e.endpoint),
+      ['getPoints'],
+    );
+    assert.deepStrictEqual(
+      cartridgeCustomApis(index, 'plugin_csrf')[0].endpoints.map((e) => e.endpoint),
+      ['setPoints'],
+    );
+    assert.deepStrictEqual(cartridgeCustomApis(index, 'app_storefront_base'), []);
   });
 });

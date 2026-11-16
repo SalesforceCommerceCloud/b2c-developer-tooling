@@ -357,6 +357,40 @@ export function controllerFiles(index: ProjectIndex, cartridge: string): Control
     }));
 }
 
+// ---------------------------------------------------------------------------
+// Cartridges tree: Hooks and Custom APIs categories
+// ---------------------------------------------------------------------------
+
+/**
+ * Rows for the hooks `cartridge` registers, one per registration: the hook
+ * name with its position among all registrations of that hook. Built from the
+ * same rows as the Endpoints view's Hooks group.
+ */
+export function cartridgeHookRows(index: ProjectIndex, cartridge: string): RowModel[] {
+  const rows: RowModel[] = [];
+  for (const group of hookGroups(index)) {
+    group.registrations.forEach((hook, i) => {
+      if (hook.cartridge !== cartridge) return;
+      const row = hookRegistrationRow(group, hook, i);
+      const total = group.registrations.length;
+      rows.push({
+        ...row,
+        label: group.name,
+        description: [total > 1 ? `${i + 1} of ${total}` : '', row.description].filter(Boolean).join(' · '),
+        tooltip: [group.row.tooltip, row.tooltip].filter(Boolean).join('\n\n'),
+      });
+    });
+  }
+  return rows.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/** The Custom APIs `cartridge` defines, with only that cartridge's endpoints. */
+export function cartridgeCustomApis(index: ProjectIndex, cartridge: string): CustomApiGroup[] {
+  return customApiGroups(index)
+    .map((group) => ({...group, endpoints: group.endpoints.filter((e) => e.cartridge === cartridge)}))
+    .filter((group) => group.endpoints.length > 0);
+}
+
 /** Whether a row or any of the given rows carries a warning (for "only issues" filtering). */
 export function hasWarning(...rows: RowModel[]): boolean {
   return rows.some((r) => r.warning !== undefined);

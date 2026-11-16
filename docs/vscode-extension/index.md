@@ -78,7 +78,7 @@ Edit cartridges locally and have changes show up on your sandbox automatically. 
 
 Code sync needs only your instance hostname: start it, paste the hostname when asked, and sign in with your Account Manager account. See [Code sync with only a server](./configuration#code-sync-with-only-a-server).
 
-The **Cartridges** view lists cartridges in cartridge path order, which IntelliSense and ISML template links follow. The order comes from the order you set in the view (drag and drop), your `cartridges` configuration, a site's cartridge path on your instance, or a site's cartridge path from a `sites/<site-id>/site.xml` in the workspace (the latest migration or import set by timestamp prefix), in that order. See [cartridge order](../guide/ide-integration#script-api-intellisense).
+The **Cartridges** view lists cartridges in cartridge path order, which IntelliSense and ISML template links follow. The order comes from the order you set in the view (drag and drop), your `cartridges` configuration, a site's cartridge path on your instance, or a site's cartridge path from a site import in the workspace, in that order. See [cartridge order](../cli/project.md#cartridge-order).
 
 ### Endpoints
 
@@ -88,7 +88,7 @@ The **Endpoints** view shows what your cartridges expose and what runs for each 
 - **Custom APIs**: each API's endpoints with method, path, security scheme, and scopes from `schema.yaml`, linked to the implementing function. Missing operations, missing `.public = true`, and APIs defined in more than one cartridge are flagged.
 - **Hooks**: each extension point's registrations in cartridge path order. For system extension points (`dw.*`, including OCAPI/SCAPI hooks), an implementation that returns a value skips the later registrations and the system implementation, so the view flags implementations that can return one. Custom extension points run every registration.
 
-Click any row to open the code. Use **Filter** to narrow by name and **Show Only Endpoints with Issues** to focus on warnings. The **Cartridges** view also lists each cartridge's controllers and the route statements in each file, noting when another cartridge replaces, prepends to, or appends to a route. Turn the view off with the `b2c-dx.features.endpoints` setting. The same information is available from the command line and to AI assistants with [`b2c project`](../cli/project.md).
+Click any row to open the code. Use **Filter** to narrow by name and **Show Only Endpoints with Issues** to focus on warnings. The **Cartridges** view shows the same information per cartridge: its controllers and route statements (noting when another cartridge replaces, prepends to, or appends to a route), the hooks it registers and where each falls in the run order, its Custom APIs, and its custom job steps from `steptypes.json`. Turn the view off with the `b2c-dx.features.endpoints` setting. The same information is available from the command line and to AI assistants with [`b2c project`](../cli/project.md).
 
 ### SCAPI API Explorer
 

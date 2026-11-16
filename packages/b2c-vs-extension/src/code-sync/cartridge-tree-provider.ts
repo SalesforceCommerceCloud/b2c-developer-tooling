@@ -9,19 +9,25 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import {type CartridgeOrderSource, describeOrderSource} from '../cartridges/cartridge-order.js';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
+import type {ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 import type {ProjectIndexService} from '../cartridges/project-index-service.js';
-import {openCommand} from '../endpoints/endpoints-tree.js';
-import {controllerFiles, type ControllerFile, type RowModel} from '../endpoints/model.js';
+import {applyRow, openCommand} from '../endpoints/endpoints-tree.js';
+import {
+  cartridgeCustomApis,
+  cartridgeHookRows,
+  controllerFiles,
+  customApiEndpointRow,
+  type ControllerFile,
+  type CustomApiGroup,
+  type RowModel,
+} from '../endpoints/model.js';
 
 /**
- * The Cartridges tree was originally a flat list of cartridge mappings. Per the
- * post-W-22653699 review feedback, it now expands into the cartridge contents
- * developers actually act on — hooks, job steps, and custom step types. Each
- * cartridge shows three "category" children, populated from a hand-rolled scan
- * of the cartridge folder (we don't want to depend on the full server-side
- * deploy pipeline just to render the tree).
+ * Each cartridge expands into what it contributes: controllers, hooks, and
+ * Custom APIs (from the shared project index, so they match the Endpoints
+ * view), plus custom job steps registered in `steptypes.json`.
  */
-export type CartridgeCategory = 'controllers' | 'hooks' | 'jobSteps' | 'stepTypes';
+export type CartridgeCategory = 'controllers' | 'customApis' | 'hooks' | 'stepTypes';
 
 // Extensions a cartridge script module can have. `.ds` is the legacy
 // pipeline-era script extension, still resolvable by the platform.
@@ -36,7 +42,8 @@ export type CartridgeNode =
   | CartridgeCategoryItem
   | ControllerFileItem
   | ControllerStatementItem
-  | CartridgeFileItem
+  | CartridgeRowItem
+  | CustomApiItem
   | CartridgeStepTypeItem
   | CartridgeCategoryEmptyItem;
 
@@ -80,26 +87,26 @@ export class CartridgeItem extends vscode.TreeItem {
 
 const CATEGORY_LABELS: Record<CartridgeCategory, string> = {
   controllers: 'Controllers',
+  customApis: 'Custom APIs',
   hooks: 'Hooks',
-  jobSteps: 'Job Steps',
-  stepTypes: 'Custom Step Types',
+  stepTypes: 'Custom Job Steps',
 };
 
 const CATEGORY_ICONS: Record<CartridgeCategory, string> = {
   controllers: 'symbol-class',
+  customApis: 'globe',
   hooks: 'plug',
-  jobSteps: 'list-ordered',
   stepTypes: 'symbol-method',
 };
 
 const CATEGORY_EMPTY_HINTS: Record<CartridgeCategory, {label: string; description: string}> = {
   controllers: {label: 'No controllers', description: 'Add a controller under cartridge/controllers/'},
+  customApis: {label: 'No Custom APIs', description: 'Add one under cartridge/rest-apis/'},
   hooks: {label: 'No hooks registered', description: 'Add a hooks.json to register one'},
-  jobSteps: {label: 'No job step modules found', description: 'Drop a script into cartridge/scripts/jobsteps/'},
-  stepTypes: {label: 'No custom step types registered', description: 'Add a steptypes.json in the cartridge root'},
+  stepTypes: {label: 'No custom job steps registered', description: 'Add a steptypes.json in the cartridge root'},
 };
 
-/** Grouping node beneath a cartridge ("Hooks", "Job Steps", "Custom Step Types"). */
+/** Grouping node beneath a cartridge ("Controllers", "Hooks", "Custom APIs", "Custom Job Steps"). */
 export class CartridgeCategoryItem extends vscode.TreeItem {
   readonly kind = 'category' as const;
 
@@ -131,29 +138,6 @@ export class CartridgeCategoryEmptyItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon('info');
     this.description = hint.description;
     this.contextValue = `cartridge-${category}-empty`;
-  }
-}
-
-/** Leaf node: a file inside a category (e.g. a hook script, a job-step module). */
-export class CartridgeFileItem extends vscode.TreeItem {
-  readonly kind = 'file' as const;
-
-  constructor(
-    readonly filePath: string,
-    readonly cartridgeRoot: string,
-  ) {
-    super(path.basename(filePath), vscode.TreeItemCollapsibleState.None);
-    this.id = `cart-file:${filePath}`;
-    this.description = path.relative(cartridgeRoot, filePath);
-    this.resourceUri = vscode.Uri.file(filePath);
-    this.iconPath = vscode.ThemeIcon.File;
-    this.contextValue = 'cartridge-file';
-    this.tooltip = filePath;
-    this.command = {
-      command: 'vscode.open',
-      title: 'Open',
-      arguments: [vscode.Uri.file(filePath)],
-    };
   }
 }
 
@@ -260,6 +244,34 @@ export class ControllerStatementItem extends vscode.TreeItem {
   }
 }
 
+/** A project-index row (hook registration, Custom API endpoint) under a cartridge category. */
+export class CartridgeRowItem extends vscode.TreeItem {
+  readonly kind = 'row' as const;
+
+  constructor(index: ProjectIndex, row: RowModel, id: string, icon: string, contextValue: string) {
+    super(row.label, vscode.TreeItemCollapsibleState.None);
+    applyRow(this, index, row, id, icon, contextValue);
+  }
+}
+
+/** A Custom API defined in a cartridge; expands into its endpoints. */
+export class CustomApiItem extends vscode.TreeItem {
+  readonly kind = 'customApi' as const;
+
+  constructor(
+    index: ProjectIndex,
+    readonly cartridge: CartridgeMapping,
+    readonly group: CustomApiGroup,
+  ) {
+    super(group.api, vscode.TreeItemCollapsibleState.Collapsed);
+    applyRow(this, index, group.row, `cart-api:${cartridge.src}:${group.api}`, 'globe', 'cartridge-custom-api');
+    this.description = group.types.join('/');
+    if (group.endpoints.some((e) => e.problems.length > 0)) {
+      this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'));
+    }
+  }
+}
+
 export type CartridgeTreeItem = CartridgeNode;
 
 export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeNode> {
@@ -306,9 +318,13 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
     if (element instanceof CartridgeItem) {
       return [
-        ...(this.indexService ? [new CartridgeCategoryItem(element.cartridge, 'controllers')] : []),
-        new CartridgeCategoryItem(element.cartridge, 'hooks'),
-        new CartridgeCategoryItem(element.cartridge, 'jobSteps'),
+        ...(this.indexService
+          ? [
+              new CartridgeCategoryItem(element.cartridge, 'controllers'),
+              new CartridgeCategoryItem(element.cartridge, 'hooks'),
+              new CartridgeCategoryItem(element.cartridge, 'customApis'),
+            ]
+          : []),
         new CartridgeCategoryItem(element.cartridge, 'stepTypes'),
       ];
     }
@@ -321,13 +337,27 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
       return element.file.rows.map((row, i) => new ControllerStatementItem(element.cartridge, row, i));
     }
 
+    if (element instanceof CustomApiItem && this.indexService) {
+      const index = this.indexService.getIndex();
+      return element.group.endpoints.map(
+        (e, i) =>
+          new CartridgeRowItem(
+            index,
+            customApiEndpointRow(e),
+            `cart-api-endpoint:${element.cartridge.src}:${element.group.api}:${i}`,
+            'symbol-method',
+            'cartridge-custom-api-endpoint',
+          ),
+      );
+    }
+
     return [];
   }
 
   /**
-   * Enumerates the children for a category. Hooks come from `hooks.json`
-   * registrations; job-step files from `cartridge/scripts/jobsteps/`; custom
-   * step types from any `steptypes.json` in the cartridge root or under it.
+   * Enumerates the children for a category. Controllers, hooks, and Custom
+   * APIs come from the project index; custom job steps from any
+   * `steptypes.json` in the cartridge root or under it.
    */
   private async getCategoryChildren(node: CartridgeCategoryItem): Promise<CartridgeNode[]> {
     const cartridgeRoot = node.cartridge.src;
@@ -339,15 +369,20 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
     }
 
     if (node.category === 'hooks') {
-      const files = await collectHookFiles(cartridgeRoot);
-      if (files.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'hooks')];
-      return files.map((file) => new CartridgeFileItem(file, cartridgeRoot));
+      const index = this.indexService?.getIndex();
+      const rows = index ? cartridgeHookRows(index, node.cartridge.name) : [];
+      if (!index || rows.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'hooks')];
+      return rows.map(
+        (row, i) =>
+          new CartridgeRowItem(index, row, `cart-hook:${node.cartridge.src}:${i}`, 'symbol-function', 'cartridge-hook'),
+      );
     }
 
-    if (node.category === 'jobSteps') {
-      const files = await collectJobStepFiles(cartridgeRoot);
-      if (files.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'jobSteps')];
-      return files.map((file) => new CartridgeFileItem(file, cartridgeRoot));
+    if (node.category === 'customApis') {
+      const index = this.indexService?.getIndex();
+      const groups = index ? cartridgeCustomApis(index, node.cartridge.name) : [];
+      if (!index || groups.length === 0) return [new CartridgeCategoryEmptyItem(node.cartridge, 'customApis')];
+      return groups.map((group) => new CustomApiItem(index, node.cartridge, group));
     }
 
     const entries = await collectStepTypeEntries(cartridgeRoot);
@@ -379,85 +414,6 @@ async function pathExists(target: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-/**
- * Scans for hook implementations declared in any `hooks.json` under the
- * cartridge, then resolves each registered script. Returns unique absolute paths
- * sorted by relative location for stable rendering.
- */
-async function collectHookFiles(cartridgeRoot: string): Promise<string[]> {
-  const results = new Set<string>();
-  const hooksJsonFiles = await findFiles(cartridgeRoot, (name) => name === 'hooks.json');
-
-  for (const hooksJson of hooksJsonFiles) {
-    try {
-      const raw = await fs.readFile(hooksJson, 'utf-8');
-      const parsed = JSON.parse(raw) as {hooks?: Array<{script?: string}>};
-      const dir = path.dirname(hooksJson);
-      for (const hook of parsed.hooks ?? []) {
-        if (!hook.script) continue;
-        const resolved = await resolveHookScript(cartridgeRoot, dir, hook.script);
-        if (resolved) results.add(resolved);
-      }
-    } catch {
-      // hooks.json that fails to parse just falls out of the tree; not surfaced
-      // as an error because malformed dev-time files are common during edits.
-    }
-  }
-
-  return [...results].sort();
-}
-
-/**
- * Hook `script` paths are typically cartridge-rooted (the BM convention is
- * `<asterisk>/cartridge/scripts/hooks/foo`, where `<asterisk>` stands for the
- * containing cartridge). Resolve them either as workspace cartridge paths or
- * directory-relative paths.
- */
-async function resolveHookScript(
-  cartridgeRoot: string,
-  hooksJsonDir: string,
-  script: string,
-): Promise<string | undefined> {
-  const cartridgeName = path.basename(cartridgeRoot);
-  // Strip optional leading "*/" wildcard and "<cartridgeName>/" prefix.
-  let rel = script.replace(/^\*\//, '');
-  if (rel.startsWith(`${cartridgeName}/`)) rel = rel.slice(cartridgeName.length + 1);
-
-  const candidates = [
-    path.join(cartridgeRoot, rel),
-    path.join(hooksJsonDir, rel),
-    // Extension-major order so a .js hook wins over a .ds one in either
-    // directory, matching how the platform resolves the reference.
-    ...SCRIPT_EXTENSIONS.flatMap((ext) => [
-      `${path.join(cartridgeRoot, rel)}${ext}`,
-      `${path.join(hooksJsonDir, rel)}${ext}`,
-    ]),
-  ];
-
-  for (const candidate of candidates) {
-    if (await pathExists(candidate)) return candidate;
-  }
-  return undefined;
-}
-
-/**
- * Scans for job step modules in the conventional `cartridge/scripts/jobsteps/`
- * directory. Falls back to globbing the whole cartridge if that directory
- * doesn't exist (some cartridges put steps under custom folders).
- */
-async function collectJobStepFiles(cartridgeRoot: string): Promise<string[]> {
-  const conventional = path.join(cartridgeRoot, 'cartridge', 'scripts', 'jobsteps');
-  if (await pathExists(conventional)) {
-    return findFiles(conventional, isScriptFile);
-  }
-
-  // Fallback: any file under cartridge/scripts whose path contains "jobstep".
-  const scriptsDir = path.join(cartridgeRoot, 'cartridge', 'scripts');
-  if (!(await pathExists(scriptsDir))) return [];
-  const all = await findFiles(scriptsDir, isScriptFile);
-  return all.filter((file) => file.toLowerCase().includes('jobstep'));
 }
 
 /**

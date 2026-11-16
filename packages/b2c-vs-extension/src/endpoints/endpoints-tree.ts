@@ -280,18 +280,33 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
     state: vscode.TreeItemCollapsibleState,
     contextValue: string,
   ): vscode.TreeItem {
-    const item = new vscode.TreeItem(row.label, state);
-    item.id = id;
-    item.description = row.description;
-    item.tooltip = row.tooltip;
-    item.contextValue = contextValue;
-    item.iconPath = row.warning
-      ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'))
-      : new vscode.ThemeIcon(icon);
-    const file = row.location ? absolutePath(index, row.location) : undefined;
-    if (file && row.location) item.command = openCommand(file, row.location.line);
-    return item;
+    return applyRow(new vscode.TreeItem(row.label, state), index, row, id, icon, contextValue);
   }
+}
+
+/**
+ * Fills a tree item from a row: description, tooltip, a warning icon when the
+ * row has a warning, and a click that opens the row's location. Shared by the
+ * Endpoints and Cartridges views so the same data looks and behaves the same.
+ */
+export function applyRow<T extends vscode.TreeItem>(
+  item: T,
+  index: ProjectIndex,
+  row: RowModel,
+  id: string,
+  icon: string,
+  contextValue: string,
+): T {
+  item.id = id;
+  item.description = row.description;
+  item.tooltip = row.tooltip;
+  item.contextValue = contextValue;
+  item.iconPath = row.warning
+    ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('problemsWarningIcon.foreground'))
+    : new vscode.ThemeIcon(icon);
+  const file = row.location ? absolutePath(index, row.location) : undefined;
+  if (file && row.location) item.command = openCommand(file, row.location.line);
+  return item;
 }
 
 /** A command that opens a file at a 1-based line. */
