@@ -10,7 +10,15 @@ The `project` commands are a preview. Output fields, including `--json` output, 
 
 Inspect the server-side entry points of a project from its source: which controller endpoints exist, what runs for each request and which cartridge it comes from, which hooks are registered and in what order, and how Custom APIs are wired. The commands read the cartridges under the project directory (`--project-directory`, or the current directory; folders with a `.project` file), need no instance or credentials, and support `--json` for scripts and AI assistants.
 
-Cartridges are ordered by the `cartridges` value in your configuration (`dw.json` or `SFCC_CARTRIDGES`), the same order the platform uses for `*/cartridge/...` lookups and `module.superModule`. Without it, the order comes from a site's `<custom-cartridges>` from a site import file in the project (`sites/<site-id>/site.xml`, such as a site template or a dated migration or import set; the latest by its `20260901T002537-...` timestamp prefix wins). With several sites, it picks `siteId` (`SFCC_SITE_ID`) or else the site that names the most local cartridges. Otherwise cartridges are ordered by discovery with `app_storefront_base` and `modules` last. `b2c project index` prints which source it used; set `cartridges` to your site's cartridge path to see overlays composed the way your storefront runs them.
+### Cartridge order
+
+Results follow your cartridge path, the same order the platform uses for `*/cartridge/...` requires and `module.superModule`. The order comes from the first of these that's available:
+
+1. The `cartridges` value in `dw.json` or `SFCC_CARTRIDGES`.
+2. A site's cartridge path from a site import in the project (`sites/<site-id>/site.xml`, for example in a site template or a migration). When there are several, the newest one is used. With several sites, set `siteId` (or `SFCC_SITE_ID`) to choose one.
+3. The order the cartridges are found on disk, with `app_storefront_base` and `modules` last.
+
+`b2c project index` shows which one it used. For accurate results, set `cartridges` to your site's cartridge path.
 
 ## b2c project endpoints
 
@@ -48,7 +56,11 @@ b2c project endpoints --json
 
 ## b2c project endpoint
 
-Show what runs for one endpoint: the middleware and handlers in execution order, with the cartridge each comes from, whether it was added by `server.prepend` or `server.append`, and the file that implements each required middleware; then the route event listeners the chain registers with `this.on('route:BeforeComplete', ...)` (and `route:Complete` or `route:Redirect`), in the order they run, marked `conditional` when registered inside a condition; then the statements across cartridges that built the route, including what a `server.replace()` dropped. `route:BeforeComplete` listeners run after the last step and before the response is rendered, so code there runs even though it isn't in the chain.
+Show what runs for one endpoint:
+
+- **Runs:** the middleware and handlers in order, the cartridge each comes from, whether `server.prepend` or `server.append` added it, and where each middleware is implemented.
+- **Route event listeners:** code registered with `this.on('route:BeforeComplete', ...)` (or `route:Complete`, `route:Redirect`), in the order it runs, marked `conditional` when it's registered only in some cases. `route:BeforeComplete` listeners run after the last step, just before the response is rendered, so they're easy to miss when reading the route.
+- **Defined by:** the statements across cartridges that built the route, including what a `server.replace()` removed.
 
 ### Usage
 

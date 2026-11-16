@@ -51,9 +51,9 @@ Read the code around a finding before changing it, then follow the fix in the [r
 
 ## Routes, overlays, and the cartridge path
 
-Route rules understand SFRA controllers (`server.get`, `post`, and `use`, and `server.extend(module.superModule)` with `append`, `prepend`, and `replace`) and SiteGenesis controllers (`guard.ensure` filters). Before running rules, the scanner builds an index of every cartridge under the project directory and composes each route along the cartridge path, so it can tell that an overlay cartridge prepends a CSRF check to a base route, or that a `server.replace()` dropped one.
+Route rules understand SFRA controllers (`server.get`, `post`, and `use`, and `server.extend(module.superModule)` with `append`, `prepend`, and `replace`) and SiteGenesis controllers (`guard.ensure` filters). They look at each route the way your storefront serves it, across all your cartridges, so they can tell that an overlay cartridge adds a CSRF check to a base route, or that a `server.replace()` removed one.
 
-Cartridges are ordered by the `cartridges` value from your configuration (`dw.json` or `SFCC_CARTRIDGES`). Without it, the scanner uses a site cartridge path from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix), then discovery order. Set it to your site's cartridge path so overlays are composed the way your storefront runs them:
+That depends on cartridge order. Set `cartridges` in `dw.json` (or `SFCC_CARTRIDGES`) to your site's cartridge path so overlays combine the way your storefront runs them; see [cartridge order](../cli/project.md#cartridge-order) for what's used when it isn't set:
 
 ```json
 {
@@ -110,7 +110,6 @@ res.redirect(target); // b2c-dx-disable-line open-redirect
 
 - Name several rules separated by commas or spaces: `// b2c-dx-disable-next-line open-redirect, dynamic-code`.
 - The reason after `--` is optional. When present, it appears in JSON output (`suppression.reason`) and in SARIF as the suppression's justification, so reviewers and GitHub code scanning can see why.
-- Rule IDs may carry the `b2c-security/` prefix, matching how the rules are named in ESLint and oxlint.
 
 In XML site data (`services.xml`, `preferences.xml`, and so on), use an XML comment. XML comments can't contain `--`, so separate the reason with a single hyphen:
 
@@ -146,11 +145,9 @@ steps:
 
 The `b2c-security` [agent skill](./agent-skills.md) teaches assistants to run the scan, triage findings by confidence, explain the impact, and apply the fixes from the rule reference. Install the `b2c-cli` skills and ask, for example, "check my cartridges for security issues".
 
-## How it works
+## Use it from Node.js
 
-Rules are [ESLint](https://eslint.org/) rules over the JavaScript syntax tree; the CLI runs them without needing ESLint installed. They know Script API and storefront idioms: `require('dw/...')` modules, `req.querystring`, `req.form`, and `request.httpParameterMap` as request input, SFRA middleware such as `csrfProtection.validateAjaxRequest`, and SiteGenesis guard filters. Within a file, rules follow values through local variables; across files, they use the project index described above.
-
-The scanner is also available to Node.js programs as `@salesforce/b2c-tooling-sdk/security`, and the project index as `@salesforce/b2c-tooling-sdk/project-index`. See the [API reference](../api/).
+The scanner is also available to Node.js programs as `@salesforce/b2c-tooling-sdk/security`. See the [API reference](../api/).
 
 ## Limitations
 

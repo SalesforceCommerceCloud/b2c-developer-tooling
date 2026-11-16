@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-15T23:31:54.441Z",
+  "generatedAt": "2026-11-16T00:31:21.680Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -197,7 +197,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/project.md",
-      "headings": "b2c project endpoints • Usage • Arguments • Flags • Examples • b2c project endpoint • Usage • Example • b2c project hooks • Usage • Examples • b2c project apis • Usage • b2c project index • Usage • Examples",
+      "headings": "Cartridge order • b2c project endpoints • Usage • Arguments • Flags • Examples • b2c project endpoint • Usage • Example • b2c project hooks • Usage • Examples • b2c project apis • Usage • b2c project index • Usage • Examples",
       "preview": "Inspect a B2C Commerce project's storefront code with b2c project — controller endpoints composed across the cartridge path, the middleware that runs for each, hooks in cartridge path order, and Custom APIs."
     },
     {
@@ -359,7 +359,7 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/guide/code-security.md",
-      "headings": "Run a scan • Triage findings • Routes, overlays, and the cartridge path • SFRA and SiteGenesis base cartridges • Adopt scanning on an existing codebase • Suppress findings • Run it in CI • Use it with your AI assistant • How it works • Limitations",
+      "headings": "Run a scan • Triage findings • Routes, overlays, and the cartridge path • SFRA and SiteGenesis base cartridges • Adopt scanning on an existing codebase • Suppress findings • Run it in CI • Use it with your AI assistant • Use it from Node.js • Limitations",
       "preview": "Find and fix security problems in B2C Commerce storefront code (SFRA, SiteGenesis, and custom cartridges) with b2c security scan, in the terminal, in CI with SARIF, and with your AI assistant."
     },
     {
