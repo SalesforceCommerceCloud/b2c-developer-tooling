@@ -68,11 +68,16 @@ const addProduct: IndexedEndpoint = {
   chain: [
     {
       ...mw('csrf.validateAjaxRequest', 'plugin_csrf', 5),
+      expression: 'csrfProtection.validateAjaxRequest',
       relPath: 'cartridge/controllers/Cart.js',
       via: 'prepend',
-      source: {cartridge: 'app_storefront_base', relPath: 'cartridge/scripts/middleware/csrf.js'},
+      source: {cartridge: 'app_storefront_base', relPath: 'cartridge/scripts/middleware/csrf.js', line: 36},
     },
-    {...mw('server.middleware.post', 'app_storefront_base', 60), relPath: 'cartridge/controllers/Cart.js'},
+    {
+      ...mw('server.middleware.post', 'app_storefront_base', 60),
+      expression: 'server.middleware.post',
+      relPath: 'cartridge/controllers/Cart.js',
+    },
     {...mw('function', 'app_storefront_base', 60), relPath: 'cartridge/controllers/Cart.js'},
   ],
   steps: [
@@ -199,20 +204,23 @@ suite('endpoints view model', () => {
     });
   });
 
-  test('chain rows use readable names, show where each step came from, and link implementations', () => {
+  test('chain rows show the code as written, the cartridge it comes from, and link to the function', () => {
     const rows = chainRows(addProduct);
     assert.deepStrictEqual(
       rows.map((r) => [r.label, r.description]),
       [
-        ['CSRF check (AJAX)', 'prepend · plugin_csrf'],
-        ['POST only', 'app_storefront_base'],
+        ['csrfProtection.validateAjaxRequest', 'prepend · app_storefront_base'],
+        ['server.middleware.post', 'app_storefront_base'],
         ['Handler (Cart.js:60)', 'app_storefront_base'],
       ],
     );
     assert.deepStrictEqual(rows[0].implementation, {
       cartridge: 'app_storefront_base',
       relPath: 'cartridge/scripts/middleware/csrf.js',
+      line: 36,
     });
+    assert.match(rows[0].tooltip ?? '', /CSRF check \(AJAX\)/);
+    assert.match(rows[0].tooltip ?? '', /Used in plugin_csrf\/cartridge\/controllers\/Cart\.js:5/);
   });
 
   test('history rows flag what a replace dropped', () => {

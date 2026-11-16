@@ -78,12 +78,11 @@ export default class ProjectEndpoint extends BaseCommand<typeof ProjectEndpoint>
     ux.stdout('');
     ux.stdout(t('commands.project.endpoint.runs', 'Runs (in order):'));
     for (const [i, m] of (endpoint.chain ?? []).entries()) {
-      const label =
-        m.id === 'function'
-          ? 'Handler'
-          : `${middlewareLabel(m.id)}${middlewareLabel(m.id) === m.id ? '' : ` (${m.id})`}`;
+      const code = m.expression ?? m.id;
+      const known = middlewareLabel(m.id);
+      const label = m.id === 'function' ? 'Handler' : `${code}${known === m.id ? '' : ` — ${known}`}`;
       const origin = [m.via, m.cartridge].filter(Boolean).join(' · ');
-      const impl = m.source ? `  → ${displayPath(index, m.source.cartridge, m.source.relPath)}` : '';
+      const impl = m.source ? `  → ${displayPath(index, m.source.cartridge, m.source.relPath, m.source.line)}` : '';
       ux.stdout(
         `  ${String(i + 1).padStart(2)}. ${label.padEnd(44)} ${origin.padEnd(28)} ${displayPath(index, m.cartridge, m.relPath, m.line)}${impl}`,
       );

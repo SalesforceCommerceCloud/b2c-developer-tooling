@@ -33,6 +33,8 @@ export interface MiddlewareRef {
    * `function` for inline functions.
    */
   id: string;
+  /** The reference as written in the route, such as `csrfProtection.generateToken`. Unset for inline functions. */
+  expression?: string;
   line: number;
   /** For required middleware: the module specifier it was required from (`*\/cartridge/scripts/middleware/csrf`). */
   module?: string;
@@ -141,12 +143,17 @@ export function describeMiddleware(node: AstNode, sourceCode: ScriptSourceCode):
               .replace(/\.(js|ds)$/, '')
               .split('/')
               .at(-1)!;
-      return {id: [base, ...chain.slice(1)].join('.'), line, ...(spec === 'server' ? {} : {module: spec})};
+      return {
+        id: [base, ...chain.slice(1)].join('.'),
+        expression: chain.join('.'),
+        line,
+        ...(spec === 'server' ? {} : {module: spec}),
+      };
     }
     // A function declared in the same file (`server.append('Show', showAppend)`).
     const local = n.type === 'Identifier' ? resolveFunction(n, sourceCode) : undefined;
     const listens = local ? routeListeners(local) : [];
-    return {id: chain.join('.'), line, ...(listens.length > 0 ? {listens} : {})};
+    return {id: chain.join('.'), expression: chain.join('.'), line, ...(listens.length > 0 ? {listens} : {})};
   }
   return {id: 'function', line};
 }

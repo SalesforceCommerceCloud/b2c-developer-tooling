@@ -88,20 +88,28 @@ export function endpointRow(e: IndexedEndpoint): RowModel {
 /** Rows for what runs for an SFRA endpoint, in execution order. */
 export function chainRows(e: IndexedEndpoint): Array<RowModel & {implementation?: SourceLocation}> {
   return (e.chain ?? []).map((m: IndexedMiddleware) => {
-    const label = m.id === 'function' ? `Handler (${fileName(m.relPath)}:${m.line})` : middlewareLabel(m.id);
-    const description = [m.via, m.cartridge].filter(Boolean).join(' · ');
+    const label = m.id === 'function' ? `Handler (${fileName(m.relPath)}:${m.line})` : (m.expression ?? m.id);
+    // Show the cartridge the code comes from: the implementing module for required middleware.
+    const fromCartridge = m.source?.cartridge ?? m.cartridge;
+    const description = [m.via, fromCartridge].filter(Boolean).join(' · ');
+    const known = m.id === 'function' ? undefined : middlewareLabel(m.id);
     return {
       label,
       description,
       tooltip: [
-        m.id === 'function' ? 'Inline handler' : m.id,
-        `${m.cartridge}/${m.relPath}:${m.line}`,
+        m.id === 'function' ? 'Inline handler' : known && known !== m.id ? known : '',
+        m.source
+          ? `Implemented in ${m.source.cartridge}/${m.source.relPath}${m.source.line ? `:${m.source.line}` : ''}`
+          : '',
+        `Used in ${m.cartridge}/${m.relPath}:${m.line}`,
         m.via ? `Added by server.${m.via}()` : '',
       ]
         .filter(Boolean)
         .join('\n'),
       location: {cartridge: m.cartridge, relPath: m.relPath, line: m.line},
-      ...(m.source ? {implementation: {cartridge: m.source.cartridge, relPath: m.source.relPath}} : {}),
+      ...(m.source
+        ? {implementation: {cartridge: m.source.cartridge, relPath: m.source.relPath, line: m.source.line}}
+        : {}),
     };
   });
 }
@@ -217,10 +225,12 @@ export function hookRegistrationRow(group: HookGroup, hook: IndexedHook, positio
     label: `${position + 1}. ${hook.cartridge}`,
     description: [where, detail].filter(Boolean).join(' · '),
     ...(warning ? {warning} : {}),
-    tooltip: [`${subject} in ${hook.cartridge}/${hook.relPath ?? hook.script}`, warning ?? '']
+    tooltip: [`${subject} in ${hook.scriptCartridge ?? hook.cartridge}/${hook.relPath ?? hook.script}`, warning ?? '']
       .filter(Boolean)
       .join('\n'),
-    ...(hook.relPath ? {location: {cartridge: hook.cartridge, relPath: hook.relPath, line: hook.line}} : {}),
+    ...(hook.relPath
+      ? {location: {cartridge: hook.scriptCartridge ?? hook.cartridge, relPath: hook.relPath, line: hook.line}}
+      : {}),
   };
 }
 

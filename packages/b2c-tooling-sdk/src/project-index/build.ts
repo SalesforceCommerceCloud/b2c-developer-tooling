@@ -118,6 +118,15 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
     return parsedCache.get(file);
   };
 
+  const exportsCache = new Map<string, ModuleExports | undefined>();
+  const exportsOf = (file: string): ModuleExports | undefined => {
+    if (!exportsCache.has(file)) {
+      const text = host.readFile(file);
+      exportsCache.set(file, text === undefined ? undefined : analyzeModuleExports(text, file));
+    }
+    return exportsCache.get(file);
+  };
+
   const composedCache = new Map<string, Map<string, ComposedRoute>>();
   const compose = (file: string, seen: Set<string>): Map<string, ComposedRoute> => {
     const cached = composedCache.get(file);
@@ -143,8 +152,15 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
       const entries = s.chain.map<IndexedMiddleware>((m) => {
         const {module, ...rest} = m;
         const resolved = module ? resolver.resolveRequire(module, file) : undefined;
+        // The exported function's line: `csrfProtection.generateToken` -> `generateToken` in the resolved module.
+        const exportName = rest.expression?.includes('.') ? rest.expression.split('.').at(-1) : undefined;
+        const exportLine = resolved && exportName ? exportsOf(resolved.path)?.get(exportName)?.line : undefined;
         const source = resolved?.cartridge
-          ? {cartridge: resolved.cartridge, relPath: resolver.relativePath(resolved.path)!}
+          ? {
+              cartridge: resolved.cartridge,
+              relPath: resolver.relativePath(resolved.path)!,
+              ...(exportLine ? {line: exportLine} : {}),
+            }
           : undefined;
         return {...rest, cartridge: owner?.name ?? '', relPath, ...(source ? {source} : {})};
       });
@@ -200,14 +216,6 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
     }
   }
 
-  const exportsCache = new Map<string, ModuleExports | undefined>();
-  const exportsOf = (file: string): ModuleExports | undefined => {
-    if (!exportsCache.has(file)) {
-      const text = host.readFile(file);
-      exportsCache.set(file, text === undefined ? undefined : analyzeModuleExports(text, file));
-    }
-    return exportsCache.get(file);
-  };
   for (const cartridge of cartridges) {
     index.hooks.push(...readHooks(cartridge, host, resolver, exportsOf));
     index.customApis.push(...readCustomApis(cartridge, host, resolver, exportsOf));
@@ -452,6 +460,21 @@ function readJson(file: string): unknown {
   }
 }
 
+/**
+ * The file a hooks.json `script` points to. `~/` (this cartridge) and `*\/`
+ * (cartridge path) work as in `require()`; other paths are relative to hooks.json.
+ */
+function hookScriptPath(
+  script: string,
+  hooksFile: string,
+  host: CartridgeFileSystemHost,
+  resolver: CartridgeResolver,
+): string | undefined {
+  if (script.startsWith('~/') || script.startsWith('*/')) return resolver.resolveRequire(script, hooksFile)?.path;
+  const base = path.resolve(path.dirname(hooksFile), script);
+  return [base, ...SCRIPT_EXT.map((e) => base + e)].find((f) => host.fileExists(f));
+}
+
 function readHooks(
   cartridge: CartridgeLocation,
   host: CartridgeFileSystemHost,
@@ -465,8 +488,8 @@ function readHooks(
   const hooks: IndexedHook[] = [];
   for (const h of data?.hooks ?? []) {
     if (typeof h.name !== 'string' || typeof h.script !== 'string') continue;
-    const base = path.resolve(path.dirname(hooksFile), h.script);
-    const found = [base, ...SCRIPT_EXT.map((e) => base + e)].find((f) => host.fileExists(f));
+    const found = hookScriptPath(h.script, hooksFile, host, resolver);
+    const foundIn = found ? resolver.ownerOf(found)?.name : undefined;
     const kind = h.name.startsWith('dw.') ? 'system' : 'custom';
     const exported = found ? exportsOf(found) : undefined;
     const fn = kind === 'system' ? (h.name.split('.').at(-1) ?? h.name) : undefined;
@@ -479,6 +502,7 @@ function readHooks(
       cartridge: cartridge.name,
       script: h.script,
       ...(found ? {relPath: resolver.relativePath(found)} : {}),
+      ...(foundIn && foundIn !== cartridge.name ? {scriptCartridge: foundIn} : {}),
       ...(info?.line ? {line: info.line} : {}),
       returnsValue: info?.returnsValue ?? 'unknown',
     });

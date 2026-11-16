@@ -14,6 +14,8 @@ export type EndpointKind = 'pipeline' | 'sfra' | 'sg-controller';
 export interface IndexedMiddleware {
   /** See MiddlewareRef.id: `csrf.validateAjaxRequest`, `server.middleware.post`, `function`, ... */
   id: string;
+  /** The reference as written in the route, such as `csrfProtection.generateToken`. Unset for inline functions. */
+  expression?: string;
   cartridge: string;
   /** Path relative to the cartridge directory, with forward slashes. */
   relPath: string;
@@ -25,7 +27,7 @@ export interface IndexedMiddleware {
   /** Set when the entry was added by server.append or server.prepend. */
   via?: 'append' | 'prepend';
   /** For required middleware: the file that implements it, when it resolves on the cartridge path. */
-  source?: {cartridge: string; relPath: string};
+  source?: {cartridge: string; relPath: string; line?: number};
 }
 
 /**
@@ -121,8 +123,10 @@ export interface IndexedHook {
   cartridge: string;
   /** Script path as written in hooks.json. */
   script: string;
-  /** Resolved script file relative to the cartridge, when it exists. */
+  /** Resolved script file relative to its cartridge, when it exists. */
   relPath?: string;
+  /** The cartridge the script resolved to, when it isn't `cartridge` (a `*\/cartridge/...` script). */
+  scriptCartridge?: string;
   /** Line of the system hook's function in the script, when found. */
   line?: number;
   /** For system hooks: whether the function returns a value. `unknown` for custom hooks. */

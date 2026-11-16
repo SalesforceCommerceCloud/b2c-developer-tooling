@@ -83,7 +83,7 @@ export default class ProjectHooks extends BaseCommand<typeof ProjectHooks> {
       if (chain.issue) ux.stdout(ux.colorize('yellow', `  ⚠ ${chain.issue}`));
       if (chain.note) ux.stdout(ux.colorize('dim', `  ${chain.note}`));
       for (const [i, h] of chain.registrations.entries()) {
-        const where = h.relPath ? displayPath(index, h.cartridge, h.relPath, h.line) : h.script;
+        const where = h.relPath ? displayPath(index, h.scriptCartridge ?? h.cartridge, h.relPath, h.line) : h.script;
         const detail =
           chain.kind === 'system'
             ? h.returnsValue === 'yes'

@@ -366,7 +366,7 @@ describe('project-index', () => {
 
   it('resolves where required middleware is implemented and records what replace dropped', () => {
     write('app_base/.project');
-    write('app_base/cartridge/scripts/middleware/csrf.js', 'exports.validateAjaxRequest = function () {};');
+    write('app_base/cartridge/scripts/middleware/csrf.js', '// csrf\n\nexports.validateAjaxRequest = function () {};');
     write(
       'app_base/cartridge/controllers/A.js',
       "var server = require('server'); var csrf = require('*/cartridge/scripts/middleware/csrf');\nserver.post('B', server.middleware.https, csrf.validateAjaxRequest, function () {});\nmodule.exports = server.exports();",
@@ -381,7 +381,36 @@ describe('project-index', () => {
     const replace = b.steps!.find((s) => s.method === 'replace')!;
     expect(replace.dropped).to.deep.equal(['server.middleware.https', 'csrf.validateAjaxRequest']);
     const csrf = replace.replaced!.find((m) => m.id === 'csrf.validateAjaxRequest')!;
-    expect(csrf.source).to.deep.equal({cartridge: 'app_base', relPath: 'cartridge/scripts/middleware/csrf.js'});
+    expect(csrf.source).to.deep.equal({
+      cartridge: 'app_base',
+      relPath: 'cartridge/scripts/middleware/csrf.js',
+      line: 3,
+    });
+    expect(csrf.expression).to.equal('csrf.validateAjaxRequest');
+  });
+
+  it('resolves ~/ and */ hook scripts like require()', () => {
+    write('plugin_a/.project');
+    write('plugin_a/package.json', JSON.stringify({hooks: './hooks.json'}));
+    write(
+      'plugin_a/hooks.json',
+      JSON.stringify({
+        hooks: [
+          {name: 'app.a.event', script: '~/cartridge/scripts/hooks/aHooks'},
+          {name: 'app.b.event', script: '*/cartridge/scripts/hooks/bHooks'},
+        ],
+      }),
+    );
+    write('plugin_a/cartridge/scripts/hooks/aHooks.js', 'exports.event = function () {};');
+    write('app_base/.project');
+    write('app_base/cartridge/scripts/hooks/bHooks.js', 'exports.event = function () {};');
+    const index = buildProjectIndex({root: dir, cartridgePath: ['plugin_a', 'app_base']});
+    const a = index.hooks.find((h) => h.name === 'app.a.event')!;
+    const b = index.hooks.find((h) => h.name === 'app.b.event')!;
+    expect(a.relPath).to.equal('cartridge/scripts/hooks/aHooks.js');
+    expect(b.relPath).to.equal('cartridge/scripts/hooks/bHooks.js');
+    expect(a.scriptCartridge).to.be.undefined;
+    expect(b.scriptCartridge).to.equal('app_base');
   });
 
   it('records controllers that cannot be parsed', () => {

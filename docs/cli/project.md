@@ -77,10 +77,10 @@ Cart-AddCoupon (SFRA)
   Accepts:    GET · HTTPS required · login not required · CSRF middleware
 
 Runs (in order):
-   1. GET only (server.middleware.get)               app_storefront_base   .../Cart.js:535
-   2. HTTPS required (server.middleware.https)       app_storefront_base   .../Cart.js:537
-   3. CSRF check (AJAX) (csrf.validateAjaxRequest)   app_storefront_base   .../Cart.js:538  → .../scripts/middleware/csrf.js
-   4. Handler                                        app_storefront_base   .../Cart.js:539
+   1. server.middleware.get — GET only                          app_storefront_base   .../Cart.js:535
+   2. server.middleware.https — HTTPS required                  app_storefront_base   .../Cart.js:537
+   3. csrfProtection.validateAjaxRequest — CSRF check (AJAX)    app_storefront_base   .../Cart.js:538  → .../scripts/middleware/csrf.js:36
+   4. Handler                                                   app_storefront_base   .../Cart.js:539
 
 Defined by:
   server.get      app_storefront_base   .../Cart.js:535

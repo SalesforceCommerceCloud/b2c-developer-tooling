@@ -91,7 +91,10 @@ function endpointDetail(index: ProjectIndex, dir: string, e: IndexedEndpoint) {
             at: fileRef(index, dir, m.cartridge, m.relPath, m.line),
             ...(m.via ? {via: m.via} : {}),
             ...(m.validatesCsrf ? {validatesCsrf: true} : {}),
-            ...(m.source ? {implementation: fileRef(index, dir, m.source.cartridge, m.source.relPath)} : {}),
+            ...(m.expression ? {expression: m.expression} : {}),
+            ...(m.source
+              ? {implementation: fileRef(index, dir, m.source.cartridge, m.source.relPath, m.source.line)}
+              : {}),
           })),
         }
       : {}),
@@ -227,7 +230,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
                 const issue = hookRegistrationIssue(chain, h);
                 return {
                   cartridge: h.cartridge,
-                  at: h.relPath ? fileRef(index, dir, h.cartridge, h.relPath, h.line) : h.script,
+                  at: h.relPath ? fileRef(index, dir, h.scriptCartridge ?? h.cartridge, h.relPath, h.line) : h.script,
                   ...(h.function ? {function: h.function} : {}),
                   ...(h.exports ? {exports: h.exports} : {}),
                   ...(chain.kind === 'system' ? {returnsValue: h.returnsValue} : {}),
