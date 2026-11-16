@@ -173,19 +173,35 @@ export class ControllerStatementItem extends vscode.TreeItem {
   }
 }
 
+/** A row that can expand into child rows, such as a custom hook's called functions and their call sites. */
+export interface NestedRow extends RowModel {
+  children?: NestedRow[];
+  icon?: string;
+}
+
 /** A project-index row (hook registration, Custom API endpoint) under a cartridge category. */
 export class CartridgeRowItem extends vscode.TreeItem {
   readonly kind = 'row' as const;
 
   constructor(
-    index: ProjectIndex,
-    readonly row: RowModel,
+    readonly index: ProjectIndex,
+    readonly row: NestedRow,
     id: string,
     icon: string,
     contextValue: string,
   ) {
-    super(row.label, vscode.TreeItemCollapsibleState.None);
+    super(
+      row.label,
+      row.children?.length ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
+    );
     applyRow(this, index, row, id, icon, contextValue);
+  }
+
+  childItems(): CartridgeRowItem[] {
+    return (this.row.children ?? []).map(
+      (child, i) =>
+        new CartridgeRowItem(this.index, child, `${this.id}:${i}`, child.icon ?? 'symbol-function', 'cartridge-row'),
+    );
   }
 }
 
@@ -266,6 +282,10 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
 
     if (element instanceof ControllerFileItem) {
       return element.file.rows.map((row, i) => new ControllerStatementItem(element.cartridge, row, i));
+    }
+
+    if (element instanceof CartridgeRowItem) {
+      return element.childItems();
     }
 
     if (element instanceof CustomApiItem) {

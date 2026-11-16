@@ -20,6 +20,7 @@ import {
   endpointWarnings,
   eventRows,
   historyRows,
+  hookFunctionRows,
   hookGroups,
   hookRegistrationRow,
 } from '../endpoints/model.js';
@@ -373,18 +374,49 @@ suite('endpoints view model', () => {
     assert.deepStrictEqual(cartridgeCustomApis(index, 'app_storefront_base'), []);
   });
 
-  test('custom hook rows open the function callers name, and every hook row links to its registration', () => {
+  test('custom hook registrations list each called function with its call sites', () => {
     const notify = {
       ...index.hooks[2],
-      calledFunctions: [{name: 'notify', line: 7}, {name: 'missing'}],
+      calledFunctions: [
+        {
+          name: 'notify',
+          line: 7,
+          callers: [
+            {cartridge: 'app_custom', relPath: 'cartridge/controllers/Order.js', line: 12},
+            {cartridge: 'app_custom', relPath: 'cartridge/templates/default/a.isml', line: 3},
+          ],
+        },
+        {name: 'missing', callers: [{cartridge: 'plugin_csrf', relPath: 'cartridge/scripts/b.js', line: 9}]},
+      ],
       registeredIn: {relPath: 'hooks.json', line: 4},
     };
     const [group] = hookGroups({...index, hooks: [notify]});
     const row = hookRegistrationRow(group, notify, 0);
-    assert.strictEqual(row.description, 'n.js:7 · called as notify, missing');
-    assert.deepStrictEqual(row.location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/n.js', line: 7});
+    assert.strictEqual(row.description, 'n.js:1 · exports notify, handle');
+    assert.deepStrictEqual(row.location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/n.js', line: 1});
     assert.deepStrictEqual(row.registration, {cartridge: 'app_custom', relPath: 'hooks.json', line: 4});
-    assert.match(row.tooltip ?? '', /Called as missing\(\), which this script does not export/);
+
+    const [fnNotify, fnMissing] = hookFunctionRows(notify);
+    assert.strictEqual(fnNotify.label, 'notify()');
+    assert.strictEqual(fnNotify.description, 'n.js:7 · 2 callers');
+    assert.deepStrictEqual(fnNotify.location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/n.js', line: 7});
+    assert.deepStrictEqual(
+      fnNotify.callers.map((c) => [c.label, c.description]),
+      [
+        ['Order.js:12', 'app_custom'],
+        ['a.isml:3', 'app_custom'],
+      ],
+    );
+    assert.match(fnMissing.warning ?? '', /does not export missing\(\)/);
+
+    const [cartRow] = cartridgeHookRows({...index, hooks: [notify]}, 'app_custom');
+    assert.deepStrictEqual(
+      cartRow.children?.map((c) => [c.label, c.children.length]),
+      [
+        ['notify()', 2],
+        ['missing()', 1],
+      ],
+    );
   });
 
   test('job step rows open the implementing function and link to steptypes.json', () => {

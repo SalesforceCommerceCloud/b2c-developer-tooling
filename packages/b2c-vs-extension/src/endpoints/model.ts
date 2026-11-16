@@ -212,31 +212,24 @@ export function hookGroups(index: ProjectIndex): HookGroup[] {
   });
 }
 
-/** Row for one hook registration. Custom hooks open the function callers name in `HookMgr.callHook()`. */
+/** Row for one hook registration: opens the script; custom hooks list the functions callers use as children. */
 export function hookRegistrationRow(group: HookGroup, hook: IndexedHook, position: number): RowModel {
-  const called = group.kind === 'custom' ? (hook.calledFunctions ?? []) : [];
-  const target = called.find((f) => f.line !== undefined);
-  const line = target?.line ?? hook.line;
-  const where = hook.relPath ? `${fileName(hook.relPath)}${line ? `:${line}` : ''}` : hook.script;
+  const where = hook.relPath ? `${fileName(hook.relPath)}${hook.line ? `:${hook.line}` : ''}` : hook.script;
   const warning = hookRegistrationIssue(group, hook);
   let detail: string | undefined;
   if (group.kind === 'system' && hook.returnsValue !== 'unknown') {
     detail = hook.returnsValue === 'yes' ? 'returns a value' : 'returns nothing';
-  } else if (called.length > 0) {
-    // Custom extension points: the caller picks the function in HookMgr.callHook(name, functionName, ...).
-    detail = `called as ${called.map((f) => f.name).join(', ')}`;
   } else if (group.kind === 'custom' && hook.exports && hook.exports.length > 0) {
+    // Custom extension points: the caller picks the function in HookMgr.callHook(name, functionName, ...).
     detail = `exports ${hook.exports.join(', ')}`;
   }
-  const subject = group.kind === 'system' ? `${hook.function}()` : target ? `${target.name}()` : 'Implementation';
-  const missing = called.filter((f) => f.line === undefined).map((f) => `${f.name}()`);
+  const subject = group.kind === 'system' ? `${hook.function}()` : 'Implementation';
   return {
     label: `${position + 1}. ${hook.cartridge}`,
     description: [where, detail].filter(Boolean).join(' · '),
     ...(warning ? {warning} : {}),
     tooltip: [
       `${subject} in ${hook.scriptCartridge ?? hook.cartridge}/${hook.relPath ?? hook.script}`,
-      missing.length > 0 ? `Called as ${missing.join(', ')}, which this script does not export.` : '',
       hook.registeredIn
         ? `Registered in ${hook.cartridge}/${hook.registeredIn.relPath}${hook.registeredIn.line ? `:${hook.registeredIn.line}` : ''}`
         : '',
@@ -245,10 +238,53 @@ export function hookRegistrationRow(group: HookGroup, hook: IndexedHook, positio
       .filter(Boolean)
       .join('\n'),
     ...(hook.relPath
-      ? {location: {cartridge: hook.scriptCartridge ?? hook.cartridge, relPath: hook.relPath, line}}
+      ? {location: {cartridge: hook.scriptCartridge ?? hook.cartridge, relPath: hook.relPath, line: hook.line}}
       : {}),
     ...(hook.registeredIn ? {registration: {cartridge: hook.cartridge, ...hook.registeredIn}} : {}),
   };
+}
+
+/** A function the project calls on a custom hook, with the call sites that name it. */
+export interface HookFunctionRow extends RowModel {
+  callers: RowModel[];
+}
+
+/**
+ * Rows for the functions the project names in `HookMgr.callHook(hook, fn, ...)`
+ * for one custom hook registration. Each opens the function in the hook script
+ * and lists the call sites as children; functions the script doesn't export are flagged.
+ */
+export function hookFunctionRows(hook: IndexedHook): HookFunctionRow[] {
+  const script = hook.scriptCartridge ?? hook.cartridge;
+  return (hook.calledFunctions ?? []).map((fn) => {
+    const count = fn.callers.length;
+    const warning =
+      fn.line === undefined && hook.relPath ? `${fileName(hook.relPath)} does not export ${fn.name}().` : undefined;
+    return {
+      label: `${fn.name}()`,
+      description: [
+        fn.line !== undefined && hook.relPath ? `${fileName(hook.relPath)}:${fn.line}` : '',
+        `${count} caller${count === 1 ? '' : 's'}`,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      ...(warning ? {warning} : {}),
+      tooltip: [
+        `HookMgr.callHook('${hook.name}', '${fn.name}', ...)`,
+        hook.relPath ? `Implemented in ${script}/${hook.relPath}${fn.line ? `:${fn.line}` : ''}` : '',
+        warning ?? '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      ...(hook.relPath ? {location: {cartridge: script, relPath: hook.relPath, line: fn.line}} : {}),
+      callers: fn.callers.map((c) => ({
+        label: `${fileName(c.relPath)}:${c.line}`,
+        description: c.cartridge,
+        tooltip: `${c.cartridge}/${c.relPath}:${c.line}`,
+        location: {cartridge: c.cartridge, relPath: c.relPath, line: c.line},
+      })),
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -383,18 +419,31 @@ export function controllerFiles(index: ProjectIndex, cartridge: string): Control
  * name with its position among all registrations of that hook. Built from the
  * same rows as the Endpoints view's Hooks group.
  */
-export function cartridgeHookRows(index: ProjectIndex, cartridge: string): RowModel[] {
-  const rows: RowModel[] = [];
+export function cartridgeHookRows(
+  index: ProjectIndex,
+  cartridge: string,
+): Array<RowModel & {children?: Array<RowModel & {icon: string; children: Array<RowModel & {icon: string}>}>}> {
+  const rows: ReturnType<typeof cartridgeHookRows> = [];
   for (const group of hookGroups(index)) {
     group.registrations.forEach((hook, i) => {
       if (hook.cartridge !== cartridge) return;
       const row = hookRegistrationRow(group, hook, i);
       const total = group.registrations.length;
+      const functions = group.kind === 'custom' ? hookFunctionRows(hook) : [];
       rows.push({
         ...row,
         label: group.name,
         description: [total > 1 ? `${i + 1} of ${total}` : '', row.description].filter(Boolean).join(' · '),
         tooltip: [group.row.tooltip, row.tooltip].filter(Boolean).join('\n\n'),
+        ...(functions.length > 0
+          ? {
+              children: functions.map(({callers, ...fn}) => ({
+                ...fn,
+                icon: 'symbol-method',
+                children: callers.map((c) => ({...c, icon: 'call-incoming'})),
+              })),
+            }
+          : {}),
       });
     });
   }

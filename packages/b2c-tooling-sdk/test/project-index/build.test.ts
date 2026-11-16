@@ -432,7 +432,13 @@ describe('project-index', () => {
     );
     const [hook] = buildProjectIndex({root: dir}).hooks;
     expect(hook.registeredIn).to.deep.equal({relPath: 'hooks.json', line: 3});
-    expect(hook.calledFunctions).to.deep.equal([{name: 'track', line: 3}]);
+    expect(hook.calledFunctions).to.deep.equal([
+      {
+        name: 'track',
+        line: 3,
+        callers: [{cartridge: 'plugin_a', relPath: 'cartridge/templates/default/x.isml', line: 1}],
+      },
+    ]);
   });
 
   it('reads custom job steps with their parameters, implementation, and problems', () => {

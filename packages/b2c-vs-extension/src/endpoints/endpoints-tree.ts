@@ -21,6 +21,7 @@ import {
   hasWarning,
   historyRows,
   hookGroups,
+  hookFunctionRows,
   hookRegistrationRow,
   type CustomApiGroup,
   type HookGroup,
@@ -37,7 +38,7 @@ export type EndpointsNode =
   | {type: 'section'; endpoint: IndexedEndpoint; section: Section}
   | {type: 'hookGroup'; group: HookGroup}
   | {type: 'apiGroup'; group: CustomApiGroup}
-  | {type: 'row'; row: RowModel; icon: string; implementation?: SourceLocation; id: string};
+  | {type: 'row'; row: RowModel; icon: string; implementation?: SourceLocation; id: string; children?: EndpointsNode[]};
 
 const GROUP_LABELS: Record<GroupKind, string> = {controllers: 'Controllers', customApis: 'Custom APIs', hooks: 'Hooks'};
 const GROUP_ICONS: Record<GroupKind, string> = {controllers: 'symbol-class', customApis: 'globe', hooks: 'plug'};
@@ -146,17 +147,38 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
           id: `${node.endpoint.id}:history:${i}`,
         }));
       case 'hookGroup':
-        return node.group.registrations.map((hook, i) => ({
-          type: 'row',
-          row: hookRegistrationRow(node.group, hook, i),
-          icon: 'symbol-function',
-          id: `hook:${node.group.name}:${i}`,
-        }));
+        return node.group.registrations.map((hook, i) => {
+          const id = `hook:${node.group.name}:${i}`;
+          const functions = node.group.kind === 'custom' ? hookFunctionRows(hook) : [];
+          return {
+            type: 'row',
+            row: hookRegistrationRow(node.group, hook, i),
+            icon: 'symbol-function',
+            id,
+            ...(functions.length > 0
+              ? {
+                  children: functions.map(
+                    ({callers, ...fn}, j): EndpointsNode => ({
+                      type: 'row',
+                      row: fn,
+                      icon: 'symbol-method',
+                      id: `${id}:${j}`,
+                      children: callers.map(
+                        (c, k): EndpointsNode => ({type: 'row', row: c, icon: 'call-incoming', id: `${id}:${j}:${k}`}),
+                      ),
+                    }),
+                  ),
+                }
+              : {}),
+          };
+        });
       case 'apiGroup':
         return node.group.endpoints
           .map((e) => customApiEndpointRow(e))
           .filter((row) => !this.issuesOnly || hasWarning(row))
           .map((row, i) => ({type: 'row', row, icon: 'symbol-method', id: `api:${node.group.api}:${i}`}));
+      case 'row':
+        return node.children ?? [];
       default:
         return [];
     }
@@ -228,7 +250,7 @@ export class EndpointsTreeProvider implements vscode.TreeDataProvider<EndpointsN
           node.row,
           node.id,
           node.icon,
-          vscode.TreeItemCollapsibleState.None,
+          node.children?.length ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
           node.implementation
             ? 'endpoints-row-implementation'
             : node.row.registration

@@ -38,6 +38,8 @@ import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
 
+/** Call sites listed per called hook function; `callers` has the full count. */
+const MAX_CALLERS = 5;
 const MAX_LIST = 300;
 const DEFAULT_MAX_FINDINGS = 50;
 const BASELINE_FILE = '.b2c-security-baseline.json';
@@ -299,8 +301,13 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
                           name: f.name,
                           ...(f.line && h.relPath
                             ? {at: fileRef(index, dir, h.scriptCartridge ?? h.cartridge, h.relPath, f.line)}
-                            : {}),
+                            : {exported: false}),
+                          callers: f.callers.length,
+                          calledFrom: f.callers
+                            .slice(0, MAX_CALLERS)
+                            .map((c) => fileRef(index, dir, c.cartridge, c.relPath, c.line)),
                         })),
+                        ...(h.exports ? {exports: h.exports} : {}),
                       }
                     : h.exports
                       ? {exports: h.exports}

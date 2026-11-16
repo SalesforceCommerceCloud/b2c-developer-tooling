@@ -97,9 +97,9 @@ IDs are matched case-insensitively. With `--json`, the result has the full `endp
 List hook registrations by extension point, in cartridge path order.
 
 - **System extension points** (`dw.*`, including OCAPI/SCAPI hooks such as `dw.ocapi.shop.basket.afterPOST`): registrations run in cartridge path order, and the first one that returns a value (such as a `Status`) skips the later registrations and the system implementation. The command flags OCAPI/SCAPI hooks that can return a value, and any system hook that would skip later registrations. When the last registration of another system hook (such as `dw.order.calculate`) returns a value, it is noted as replacing the system implementation.
-- **Custom extension points**: every registration runs, whatever it returns. The caller chooses the function (`HookMgr.callHook(name, functionName, ...)`), so the command shows the functions the project calls (`called as ...`), or the script's exported functions when no call is found.
+- **Custom extension points**: every registration runs, whatever it returns. The caller chooses the function (`HookMgr.callHook(name, functionName, ...)`), so the command lists the script's exported functions, then each function the project calls with its line and number of callers.
 
-With `--json`, each registration includes `registeredIn` (the `hooks.json` file and line) and, for custom hooks, `calledFunctions`.
+With `--json`, each registration includes `registeredIn` (the `hooks.json` file and line) and, for custom hooks, `calledFunctions` (each function the project calls, with its line and call sites).
 
 ### Usage
 

@@ -48,6 +48,7 @@ export type {
   IndexedCartridge,
   IndexedCustomApiEndpoint,
   IndexedEndpoint,
+  HookCaller,
   IndexedHook,
   IndexedJobStep,
   IndexedJobStepParameter,

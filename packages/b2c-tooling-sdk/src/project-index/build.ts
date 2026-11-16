@@ -36,6 +36,7 @@ import {droppedSecurityMiddleware} from './labels.js';
 import type {
   CartridgeOrder,
   EndpointMethod,
+  HookCaller,
   IndexedCustomApiEndpoint,
   IndexedEndpoint,
   IndexedHook,
@@ -553,26 +554,34 @@ function addCalledHookFunctions(
   const custom = index.hooks.filter((h) => h.kind === 'custom');
   if (custom.length === 0) return;
   const names = new Set(custom.map((h) => h.name));
-  const called = new Map<string, Set<string>>();
+  // hook name -> function name -> call sites
+  const called = new Map<string, Map<string, HookCaller[]>>();
   for (const cartridge of cartridges) {
     for (const file of walkFiles(path.join(cartridge.src, 'cartridge'), ['.js', '.ds', '.isml'])) {
       const text = host.readFile(file);
       if (!text?.includes('callHook')) continue;
       for (const m of text.matchAll(CALL_HOOK)) {
         if (!names.has(m[2])) continue;
-        called.set(m[2], (called.get(m[2]) ?? new Set()).add(m[4]));
+        const byFn = called.get(m[2]) ?? new Map<string, HookCaller[]>();
+        called.set(m[2], byFn);
+        const caller: HookCaller = {
+          cartridge: cartridge.name,
+          relPath: toForwardSlashes(path.relative(cartridge.src, file)),
+          line: text.slice(0, m.index).split('\n').length,
+        };
+        byFn.set(m[4], [...(byFn.get(m[4]) ?? []), caller]);
       }
     }
   }
   for (const hook of custom) {
-    const fns = called.get(hook.name);
-    if (!fns) continue;
+    const byFn = called.get(hook.name);
+    if (!byFn) continue;
     const cartridge = hook.scriptCartridge ?? hook.cartridge;
     const root = index.cartridges.find((c) => c.name === cartridge)?.src;
     const exported = hook.relPath && root ? exportsOf(path.join(root, hook.relPath)) : undefined;
-    hook.calledFunctions = [...fns].sort().map((name) => {
+    hook.calledFunctions = [...byFn.keys()].sort().map((name) => {
       const line = exported?.get(name)?.line;
-      return line ? {name, line} : {name};
+      return {name, ...(line ? {line} : {}), callers: byFn.get(name)!};
     });
   }
 }

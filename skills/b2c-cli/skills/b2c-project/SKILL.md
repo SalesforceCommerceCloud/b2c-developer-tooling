@@ -60,7 +60,7 @@ b2c project hooks list --issues --json
 ```
 
 - **System extension points** (`dw.*`, including OCAPI/SCAPI hooks): registrations run in cartridge path order. The first one that **returns a value** (such as a `Status`) skips the later registrations **and** the system implementation; returning nothing lets them run. An OCAPI/SCAPI hook that returns `Status.OK` skips the system implementation, including basket calculation. `returnsValue: "yes"` on a registration means some path returns a value.
-- **Custom extension points**: every registration runs, whatever it returns. The caller picks the function (`HookMgr.callHook(name, functionName, ...)`), so registrations list `calledFunctions` (the functions the project calls, with their lines) and `exports` instead of a fixed function. `registeredIn` is the `hooks.json` file and line.
+- **Custom extension points**: every registration runs, whatever it returns. The caller picks the function (`HookMgr.callHook(name, functionName, ...)`), so registrations list `exports` and `calledFunctions` (each function the project calls, with its line and `callers`, the call sites) instead of a fixed function. `registeredIn` is the `hooks.json` file and line.
 
 When a hook "doesn't fire", look for an earlier registration (to its left on the cartridge path) that returns a value. Fix by returning nothing unless the intent is to stop processing.
 

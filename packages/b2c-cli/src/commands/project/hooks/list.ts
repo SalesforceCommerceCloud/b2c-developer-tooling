@@ -91,12 +91,15 @@ export default class ProjectHooksList extends BaseCommand<typeof ProjectHooksLis
               : h.returnsValue === 'no'
                 ? 'returns nothing'
                 : ''
-            : h.calledFunctions && h.calledFunctions.length > 0
-              ? `called as ${h.calledFunctions.map((f) => f.name).join(', ')}`
-              : h.exports && h.exports.length > 0
-                ? `exports ${h.exports.join(', ')}`
-                : '';
+            : h.exports && h.exports.length > 0
+              ? `exports ${h.exports.join(', ')}`
+              : '';
         ux.stdout(`  ${i + 1}. ${h.cartridge.padEnd(28)} ${where}${detail ? `  ${detail}` : ''}`);
+        for (const fn of h.calledFunctions ?? []) {
+          const callers = `${fn.callers.length} caller${fn.callers.length === 1 ? '' : 's'}`;
+          const at = fn.line ? `line ${fn.line}` : 'not exported';
+          ux.stdout(`       ${`${fn.name}()`.padEnd(30)} ${at} · ${callers}`);
+        }
         if (h.issue && h.returnsValue !== 'yes') ux.stdout(ux.colorize('yellow', `     ⚠ ${h.issue}`));
       }
       ux.stdout('');

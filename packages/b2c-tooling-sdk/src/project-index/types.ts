@@ -134,10 +134,17 @@ export interface IndexedHook {
   /** The hooks.json that registers this hook, relative to `cartridge`, and the line of its entry. */
   registeredIn?: {relPath: string; line?: number};
   /**
-   * For custom hooks: functions callers name in `HookMgr.callHook(name, fn, ...)`
-   * across the project, with that function's line in this script when it exports it.
+   * For custom hooks: each function the project names in `HookMgr.callHook(name, fn, ...)`,
+   * with its line in this script when the script exports it and the call sites that use it.
    */
-  calledFunctions?: Array<{name: string; line?: number}>;
+  calledFunctions?: Array<{name: string; line?: number; callers: HookCaller[]}>;
+}
+
+/** A `HookMgr.callHook()` call site. */
+export interface HookCaller {
+  cartridge: string;
+  relPath: string;
+  line: number;
 }
 
 /** A Custom API endpoint from `rest-apis/<api>/api.json`, joined with its schema.yaml operation. */
