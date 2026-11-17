@@ -65,7 +65,7 @@ Releases are tagged with the Storefront Next template version they target, such 
 git clone --branch v1.4.0 --depth 1 https://github.com/SalesforceCommerceCloud/storefront-datasets.git
 ```
 
-`b2c job import` accepts a directory, so you do not need to zip a dataset first. Add `--split` if the upload is too large for one import. On an instance that already has sites, review the dataset's `preferences.xml` and other top-level files before you import it.
+The import commands below use the `./storefront-datasets` directory this clone creates. `b2c job import` accepts a directory, so you do not need to zip a dataset first. Add `--split` if the upload is too large for one import. On an instance that already has sites, review the dataset's `preferences.xml` and other top-level files before you import it.
 
 ## Set Up a Sandbox
 
@@ -83,6 +83,12 @@ b2c sites list
 
 # Create a Storefront Next storefront for the site
 b2c mrt project create "Market Street" --site MarketStreet --mrt-backend scapi
+```
+
+A new sandbox reports `started` before SCAPI serves its tenant. For roughly 10 to 20 minutes, SCAPI calls for the tenant return `404 Could not find requested resource`, even with a valid token. This is not an API client problem: a tenant filter of `<realm>_sbx` already covers new sandboxes. `b2c job import` and `b2c job run` fall back to WebDAV and OCAPI, so you can load data right away. Commands that need SCAPI, such as `b2c mrt project create --mrt-backend scapi`, must wait. Poll until the tenant answers:
+
+```bash
+until b2c sites list -i my-sandbox --api-backend scapi >/dev/null 2>&1; do sleep 30; done
 ```
 
 The Foundations, Market Street, and Beauty Next datasets include a `Reindex` job. For other sites, run the system search index jobs; see [system jobs with custom request bodies](/cli/jobs#system-jobs-with-custom-request-bodies).
