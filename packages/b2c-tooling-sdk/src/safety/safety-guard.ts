@@ -24,6 +24,7 @@ import {
   describeSafetyLevel,
 } from './safety-middleware.js';
 import type {SafetyAction, SafetyEvaluation, SafetyOperation, SafetyRule} from './types.js';
+import {isReadOnlySearch} from './read-only-searches.js';
 
 /** Regex to extract job ID from SCAPI and OCAPI job execution URLs. */
 const JOB_EXECUTION_PATTERN = /\/jobs\/([^/]+)\/executions/;
@@ -54,38 +55,82 @@ function matchGlob(value: string, pattern: string): boolean {
  * Check if a rule matches an operation.
  */
 function ruleMatchesOperation(rule: SafetyRule, operation: SafetyOperation): boolean {
+  return ruleMatch(rule, operation) === 'yes';
+}
+
+/**
+ * Whether a rule matches. `maybe` is returned only when `parameterized` is set and the
+ * rule's `job` matcher can't be decided because the job ID is a path parameter.
+ */
+function ruleMatch(rule: SafetyRule, operation: SafetyOperation, parameterized = false): 'maybe' | 'no' | 'yes' {
+  const result = (value: boolean) => (value ? 'yes' : 'no');
+
   // Command matcher
   if (rule.command !== undefined) {
-    if (!operation.commandId) return false;
-    return matchGlob(operation.commandId, rule.command);
+    if (!operation.commandId) return 'no';
+    return result(matchGlob(operation.commandId, rule.command));
   }
 
   // Job matcher
   if (rule.job !== undefined) {
     const jobId = operation.jobId ?? (operation.path ? extractJobIdFromPath(operation.path) : undefined);
-    if (!jobId) return false;
-    return matchGlob(jobId, rule.job);
+    if (!jobId) return 'no';
+    if (parameterized && /^\{[^}]+\}$/.test(jobId)) return 'maybe';
+    return result(matchGlob(jobId, rule.job));
   }
 
-  // HTTP method + path matcher
+  // HTTP matchers: every matcher the rule sets must match.
+  let matchers = 0;
+  if (rule.operationId !== undefined) {
+    matchers++;
+    if (!operation.operationId || !matchGlob(operation.operationId, rule.operationId)) return 'no';
+  }
+  if (rule.api !== undefined) {
+    matchers++;
+    if (!operation.api || !matchGlob(operation.api, rule.api)) return 'no';
+  }
+  if (rule.readOnlySearch !== undefined) {
+    matchers++;
+    const search = Boolean(operation.method && operation.path && isReadOnlySearch(operation.method, operation.path));
+    if (search !== rule.readOnlySearch) return 'no';
+  }
   if (rule.path !== undefined) {
-    if (!operation.path) return false;
-    if (!matchGlob(operation.path, rule.path)) return false;
-    // If method is specified, it must also match
-    if (rule.method !== undefined) {
-      if (!operation.method) return false;
-      return matchGlob(operation.method.toUpperCase(), rule.method.toUpperCase());
-    }
-    return true;
+    matchers++;
+    if (!operation.path || !matchGlob(operation.path, rule.path)) return 'no';
   }
-
-  // Method-only matcher (no path)
   if (rule.method !== undefined) {
-    if (!operation.method) return false;
-    return matchGlob(operation.method.toUpperCase(), rule.method.toUpperCase());
+    matchers++;
+    if (!operation.method || !matchGlob(operation.method.toUpperCase(), rule.method.toUpperCase())) return 'no';
   }
 
-  // Rule has no matchers — does not match anything
+  // A rule with no matchers does not match anything.
+  return result(matchers > 0);
+}
+
+/**
+ * Whether a safety config blocks every request to an operation, whatever its
+ * path parameters. Used to hide operations a program can never call.
+ *
+ * `operation.path` is the path template with parameters as `{name}`
+ * placeholders. Rules are matched against the template, so a rule that names a
+ * specific parameter value (rather than `*`) doesn't make an operation visible.
+ * Job rules are the exception: when the job ID is a parameter, a job rule that
+ * allows or confirms any job keeps the operation visible. Temporary allows are
+ * not considered.
+ */
+export function isOperationAlwaysBlocked(config: SafetyConfig, operation: SafetyOperation): boolean {
+  for (const rule of config.rules ?? []) {
+    const match = ruleMatch(rule, operation, true);
+    if (match === 'no') continue;
+    if (match === 'maybe') {
+      if (rule.action !== 'block') return false;
+      continue;
+    }
+    return rule.action === 'block';
+  }
+  if (operation.method && operation.path && checkLevelViolation(operation.method, operation.path, config.level)) {
+    return !config.confirm;
+  }
   return false;
 }
 
@@ -278,7 +323,8 @@ export class SafetyGuard {
     }
     const method = operation.method ?? 'unknown';
     const path = operation.path ?? 'unknown';
-    return `${method} ${path} matched safety rule (action: ${rule.action})`;
+    const operationId = operation.operationId ? ` (${operation.operationId})` : '';
+    return `${method} ${path}${operationId} matched safety rule (action: ${rule.action})`;
   }
 
   /**

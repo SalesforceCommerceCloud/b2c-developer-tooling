@@ -35,6 +35,7 @@ const ALLOWED_FIELDS: (keyof NormalizedConfig)[] = [
   'realm',
   'importSetExclude',
   'cartridgeIgnoreDirs',
+  'maxArchiveSize',
 ];
 
 /**
@@ -54,6 +55,7 @@ interface PackageJsonB2CConfig {
   realm?: string;
   importSetExclude?: string[];
   cartridgeIgnoreDirs?: string[];
+  maxArchiveSize?: string | number;
   [key: string]: unknown;
 }
 

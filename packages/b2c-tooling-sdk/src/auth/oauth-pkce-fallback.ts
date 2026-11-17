@@ -148,6 +148,11 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
     this.implicit?.invalidateToken();
   }
 
+  /** The cached PKCE access token, if still usable, without refreshing or signing in. */
+  getCachedTokenResponse(): AccessTokenResponse | undefined {
+    return this.useImplicit ? undefined : this.pkce.getCachedTokenResponse();
+  }
+
   private warnAndSwitch(error: PkceGrantUnsupportedError): void {
     this.useImplicit = true;
     getLogger().warn(
@@ -204,7 +209,9 @@ export class PkceWithImplicitFallbackStrategy implements UserAuthStrategy {
  * {@link PkceWithImplicitFallbackStrategy}.
  */
 export function createUserAuthStrategy(config: PkceOAuthConfig): UserAuthStrategy {
-  if (isPkceFallbackDisabled()) {
+  // The implicit fallback needs its own loopback server, browser and file store, so it can't honor
+  // a host-delivered redirect, a non-interactive host, or a host session backend.
+  if (isPkceFallbackDisabled() || config.authorize || config.interactive === false || config.sessionBackend) {
     return new PkceOAuthStrategy(config);
   }
   return new PkceWithImplicitFallbackStrategy(config);

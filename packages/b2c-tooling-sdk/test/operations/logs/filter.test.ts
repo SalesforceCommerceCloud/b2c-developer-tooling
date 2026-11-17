@@ -15,6 +15,7 @@ import {
   parseRelativeTime,
   parseSinceTime,
   type LogEntry,
+  InvalidTimeError,
 } from '@salesforce/b2c-tooling-sdk/operations/logs';
 
 describe('operations/logs/filter', () => {
@@ -92,7 +93,13 @@ describe('operations/logs/filter', () => {
     });
 
     it('throws TypeError for invalid input', () => {
-      expect(() => parseSinceTime('garbage', now)).to.throw(TypeError, /Invalid --since value: "garbage"/);
+      expect(() => parseSinceTime('garbage', now)).to.throw(TypeError, /^Invalid time: "garbage"/);
+      try {
+        parseSinceTime('garbage', now);
+      } catch (error) {
+        expect(error).to.be.instanceOf(InvalidTimeError);
+        expect((error as InvalidTimeError).value).to.equal('garbage');
+      }
       expect(() => parseSinceTime('not-a-date', now)).to.throw(TypeError);
       expect(() => parseSinceTime('2026-99-99', now)).to.throw(TypeError);
     });

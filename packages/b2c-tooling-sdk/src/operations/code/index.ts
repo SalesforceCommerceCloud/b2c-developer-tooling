@@ -91,8 +91,15 @@ export type {ScapiScriptsBackendConfig} from './scapi-scripts-backend.js';
 export type {ScriptsBackend, CodeVersionInfo} from './scripts-types.js';
 
 // Deployment
-export {findAndDeployCartridges, uploadCartridges, deleteCartridges, DEFAULT_CARTRIDGE_IGNORE_DIRS} from './deploy.js';
-export type {DeployOptions, DeployResult, UploadOptions, UploadProgressInfo} from './deploy.js';
+export {
+  findAndDeployCartridges,
+  uploadCartridges,
+  deleteCartridges,
+  DEFAULT_CARTRIDGE_IGNORE_DIRS,
+  UNZIP_WAIT,
+} from './deploy.js';
+export type {DeployOptions, DeployResult, UploadOptions, UploadPlanInfo, UploadProgressInfo} from './deploy.js';
+export {DEFAULT_MAX_ARCHIVE_BYTES, formatBytes, maxArchiveBytesFromConfig} from './archive.js';
 
 // Download
 export {downloadCartridges, downloadSingleCartridge} from './download.js';

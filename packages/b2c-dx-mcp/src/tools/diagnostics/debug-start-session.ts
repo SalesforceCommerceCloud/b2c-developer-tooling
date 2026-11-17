@@ -11,12 +11,7 @@ import type {Services} from '../../services.js';
 import type {ServerContext} from '../../server-context.js';
 import {createToolAdapter, jsonResult} from '../adapter.js';
 import type {ProjectContextInput} from '../project-context.js';
-import {
-  DebugSessionManager,
-  createSourceMapper,
-  type DebugSessionCallbacks,
-  type SdapiScriptThread,
-} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {DebugSessionManager, createSourceMapper} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import {findCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
 import {getRegistry} from './session-registry.js';
 
@@ -87,29 +82,14 @@ export function createDebugStartSessionTool(
 
         const sourceMapper = createSourceMapper(cartridges);
 
-        const callbacks: DebugSessionCallbacks = {
-          onThreadStopped(thread: SdapiScriptThread) {
-            const entry = registry.findByHostAndClientId(hostname, clientId);
-            if (!entry) return;
-            while (entry.haltWaiters.length > 0) {
-              const waiter = entry.haltWaiters.shift()!;
-              clearTimeout(waiter.timer);
-              waiter.resolve(thread);
-            }
-          },
-        };
-
-        const manager = new DebugSessionManager(
-          {
-            hostname,
-            username,
-            password,
-            clientId,
-            cartridgeRoots: cartridges,
-            selfSignedApi: context.services.getResolvedConfig().values.selfSignedApi,
-          },
-          callbacks,
-        );
+        const manager = new DebugSessionManager({
+          hostname,
+          username,
+          password,
+          clientId,
+          cartridgeRoots: cartridges,
+          selfSignedApi: context.services.getResolvedConfig().values.selfSignedApi,
+        });
 
         await manager.connect();
 

@@ -19,6 +19,12 @@ Use the returned hostname, site, tenant, and other configured values. Report
 missing values rather than inventing them. Inspection does not verify remote
 credentials or connectivity.
 
+`hostname` must be the Business Manager host (sandboxes:
+`<realm>-<NNN>.dx.commercecloud.salesforce.com`), not a storefront or Default
+Domain host (`*.my.commercecloud.salesforce.com`). Storefront hosts are subject
+to eCDN rate limits and firewall rules, and on sandboxes they serve only the
+storefront. If the configured hostname is a storefront host, tell the user.
+
 Reading `dw.json` manually is usually unnecessary: it may not be the selected
 file or contain the effective values. Avoid dumping configuration files or the
 environment to discover credentials. Inspect source files only for a requested

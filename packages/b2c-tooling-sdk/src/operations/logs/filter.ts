@@ -36,12 +36,34 @@ export function parseRelativeTime(timeStr: string): null | number {
 }
 
 /**
+ * Thrown by {@link parseSinceTime} for a value that is neither a relative time
+ * nor a date. The message names no option; callers can prefix their own
+ * (`--since`, `from`) with {@link InvalidTimeError.describe}.
+ */
+export class InvalidTimeError extends TypeError {
+  /** The value that could not be parsed. */
+  readonly value: string;
+
+  constructor(value: string) {
+    super(InvalidTimeError.describe(value));
+    this.name = 'InvalidTimeError';
+    this.value = value;
+  }
+
+  /** The error message, optionally naming the option the value came from. */
+  static describe(value: string, option?: string): string {
+    return `Invalid ${option ? `${option} value` : 'time'}: "${value}". Use relative time (e.g., "5m", "1h", "2d") or ISO 8601 (e.g., "2026-01-25T10:00:00")`;
+  }
+}
+
+/**
  * Parses a `since` value into a Date object.
  * Supports:
  * - Relative times: "5m", "1h", "2d"
  * - ISO 8601: "2026-01-25T10:00:00"
  *
  * @param sinceStr - The value to parse
+ * @throws InvalidTimeError when the value is neither
  * @param now - Reference time for relative values (defaults to the current time).
  *   Injectable so callers that resolve several bounds together, or that need
  *   deterministic behavior in tests, can pin a single "now".
@@ -54,9 +76,7 @@ export function parseSinceTime(sinceStr: string, now: Date = new Date()): Date {
 
   const date = new Date(sinceStr);
   if (Number.isNaN(date.getTime())) {
-    throw new TypeError(
-      `Invalid --since value: "${sinceStr}". Use relative time (e.g., "5m", "1h", "2d") or ISO 8601 (e.g., "2026-01-25T10:00:00")`,
-    );
+    throw new InvalidTimeError(sinceStr);
   }
 
   return date;

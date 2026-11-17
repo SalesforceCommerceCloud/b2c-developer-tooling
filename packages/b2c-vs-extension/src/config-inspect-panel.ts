@@ -100,6 +100,7 @@ export function renderConfigInspectPanel(model: ConfigInspection | undefined, er
       <td class="value">
         ${display}
         ${!r.sensitive && r.value ? `<button class="copy-btn" data-copy="${escapeHtml(r.value)}" title="Copy value">${copySvg}</button>` : ''}
+        ${r.warning ? `<div class="value-warning">${escapeHtml(r.warning)}</div>` : ''}
       </td>
       <td class="source"><span class="src-pill"${r.location ? ` title="${escapeHtml(r.location)}"` : ''} style="--src-color:${sourceColor(r.source)}"><span class="dot"></span>${srcLabel}</span></td>
     </tr>`;
@@ -291,6 +292,7 @@ function inspectStyles(): string {
   return `
     .context-list { margin: 0; padding: 4px 16px 8px 32px; line-height: 1.7; }
     .context-list.warnings li { color: var(--vscode-editorWarning-foreground); }
+    .value-warning { margin-top: 4px; font-family: var(--vscode-font-family); font-size: 0.8rem; color: var(--vscode-editorWarning-foreground); word-break: normal; }
     .ignored { padding: 4px 16px 12px; }
     .ignored summary { cursor: pointer; color: var(--vscode-descriptionForeground); margin-bottom: 8px; }
     :root {

@@ -44,7 +44,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a storefront.
-         * @description Queues deletion of the storefront. Returns immediately with the storefront resource in the delete_in_progress setup status. Poll the storefront by ID to track deletion progress.
+         * @description Queues deletion of the storefront. Returns immediately with the storefront resource in the delete_in_progress setup status. Poll the storefront by ID to track deletion progress. By default, the storefront and all its downstream resources — Managed Runtime (MRT) environments and deployments, the Account Manager/SLAS client, and eCDN routing — are deleted. Each downstream resource can be preserved by setting its corresponding `delete*` query parameter to `false`.
          */
         delete: operations["deleteStorefront"];
         options?: never;
@@ -267,6 +267,12 @@ export interface components {
         organizationId: string;
         /** @description The storefront identifier. Must consist only of lowercase letters, numbers, and hyphens, with no leading or trailing hyphens. */
         storefrontId: string;
+        /** @description Whether to delete the storefront's Managed Runtime (MRT) environments and deployments along with the storefront. Defaults to `true`, which tears down MRT resources. Set to `false` to preserve MRT resources after the storefront is removed. */
+        deleteMrtEnv: boolean;
+        /** @description Whether to delete the storefront's Account Manager / SLAS (Shopper Login and API Access Service) client along with the storefront. Defaults to `true`, which deletes the AM/SLAS client. Set to `false` to preserve the AM/SLAS client after the storefront is removed. */
+        deleteAmSlasClients: boolean;
+        /** @description Whether to delete the storefront's eCDN routing along with the storefront. Defaults to `true`, which deletes eCDN routing. Set to `false` to preserve eCDN routing after the storefront is removed. */
+        deleteEcdnRouting: boolean;
     };
     requestBodies: never;
     headers: never;
@@ -365,7 +371,14 @@ export interface operations {
     };
     deleteStorefront: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Whether to delete the storefront's Managed Runtime (MRT) environments and deployments along with the storefront. Defaults to `true`, which tears down MRT resources. Set to `false` to preserve MRT resources after the storefront is removed. */
+                deleteMrtEnv?: components["parameters"]["deleteMrtEnv"];
+                /** @description Whether to delete the storefront's Account Manager / SLAS (Shopper Login and API Access Service) client along with the storefront. Defaults to `true`, which deletes the AM/SLAS client. Set to `false` to preserve the AM/SLAS client after the storefront is removed. */
+                deleteAmSlasClients?: components["parameters"]["deleteAmSlasClients"];
+                /** @description Whether to delete the storefront's eCDN routing along with the storefront. Defaults to `true`, which deletes eCDN routing. Set to `false` to preserve eCDN routing after the storefront is removed. */
+                deleteEcdnRouting?: components["parameters"]["deleteEcdnRouting"];
+            };
             header?: never;
             path: {
                 /** @description The B2C Commerce organization identifier, e.g. `f_ecom_zzxy_prd`. */

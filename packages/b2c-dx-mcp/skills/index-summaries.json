@@ -15,10 +15,12 @@
   "b2c-cli/b2c-metrics": "CLI Metrics API (closed beta): request volume, latency, errors, cache, and integration health.",
   "b2c-cli/b2c-object-types": "System object attribute definitions and groups: list, create, update, export, and apply metadata.",
   "b2c-cli/b2c-mrt": "Managed Runtime: deploy bundles, manage projects, environments, env vars, and redirects.",
+  "b2c-cli/b2c-project": "What runs for an endpoint across cartridges, overlay composition, hook order, and Custom API wiring.",
   "b2c-cli/b2c-replication": "Automate staging-to-production code and data replication with a custom job.",
   "b2c-cli/b2c-sandbox": "Create, list, start, stop, and manage on-demand sandboxes.",
   "b2c-cli/b2c-scapi-custom": "Check custom SCAPI endpoint registration; debug 404 or endpoint-not-found errors.",
   "b2c-cli/b2c-scapi-schemas": "Browse SCAPI OpenAPI specs: endpoints, request/response shapes, and versions.",
+  "b2c-cli/b2c-security": "Scan cartridge code and site data for B2C Commerce security problems, triage findings, and fix them.",
   "b2c-cli/b2c-site-import-export": "Author, validate, import, and verify site archives and metadata XML; export data.",
   "b2c-cli/b2c-setup": "Set up a sandbox or realm: sample datasets, indexes, code, Storefront Next, and replication.",
   "b2c-cli/b2c-sites": "List sites and status, and view or edit site and Business Manager cartridge paths.",
@@ -73,6 +75,7 @@
   "storefront-next/sfnext-scapi": "Storefront Next SCAPI clients: typing c_ attributes and adding custom API clients.",
   "storefront-next/sfnext-security": "Storefront Next security headers, CSP and contributors, Turnstile, and cookie domain.",
   "storefront-next/sfnext-seo": "Storefront Next SEO: meta tags, JSON-LD, canonical and hreflang, and SEO URL routes.",
+  "storefront-next/sfnext-site-audit": "Storefront Next pre-launch site audit: Playhouse runs, rules, and a go/no-go dashboard.",
   "storefront-next/sfnext-state-management": "Choose Storefront Next state: loader data, URL, cookies, optimistic UI, or context.",
   "storefront-next/sfnext-testing": "Storefront Next tests: Vitest, loader/action tests, Storybook stories, and e2e pointers.",
   "storefront-next/sfnext-theming": "Rebrand Storefront Next: colors, shape tokens, fonts, logo, and contrast checks.",
@@ -89,5 +92,6 @@
   "mcp/b2c-mcp-config": "MCP configuration, authentication, and access grants for setup or wrong-target issues.",
   "mcp/b2c-mcp-debugger": "MCP debugger workflow: breakpoint capture, request triggering, inspection, and cleanup.",
   "mcp/b2c-mcp-scapi": "Read before scapi_search or scapi_execute: SCAPI contracts, requests, and Safety Mode.",
-  "mcp/b2c-mcp-server": "MCP setup and index: toolset selection, which tool to use, and the skill catalog."
+  "mcp/b2c-mcp-server": "MCP setup and index: toolset selection, which tool to use, and the skill catalog.",
+  "mcp/b2c-mcp-site-import": "Read before site_archive_import: import XML for data SCAPI cannot write, e.g. discount rules."
 }

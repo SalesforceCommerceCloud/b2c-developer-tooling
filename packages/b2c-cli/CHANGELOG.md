@@ -1,5 +1,44 @@
 # @salesforce/b2c-cli
 
+## 2.15.0
+
+### Minor Changes
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - `b2c mrt bundle deploy`/`save` and `createBundle`/`createBundleV2` no longer guess default `ssrOnly`/`ssrShared` patterns (which produced `Files not found in bundle archive: ssr.js, ssr.mjs` for streaming builds). Both lists must now come from the build's `.mrt/config.json` (now also read for v1 uploads), `config.server.*`, or `--ssr-only`/`--ssr-shared` (`--ssr-shared '[]'` for none); otherwise the command fails with an error naming the missing list. The `DEFAULT_SSR_ONLY`/`DEFAULT_SSR_SHARED` exports are removed. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+### Patch Changes
+
+- [#859](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/859) [`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57) - Warn when `hostname` is a storefront Default Domain host (`*.my.commercecloud.salesforce.com`) instead of the Business Manager host. Storefront hosts sit behind eCDN rate limits and firewall rules. `b2c setup inspect`, MCP `config_inspect` and the VS Code Resolved Config panel show the warning and suggest the `.dx` host for sandboxes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#770](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/770) [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c) - Deprecate `b2c mrt bundle upload-v2`: it now prints a warning and shares `b2c mrt bundle deploy --v2`'s flags, `--mrt-backend` routing and config resolution, while staying upload-only (an environment is ignored) and keeping its `--json` result shape. `b2c mrt bundle deploy` gains `--dependencies` and `--cc-override` for v2 uploads, so nothing from `upload-v2` is lost — switch scripts to `b2c mrt bundle deploy --v2`. (Thanks [@kieran-sf](https://github.com/kieran-sf)!)
+
+- Updated dependencies [[`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57), [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4), [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1)]:
+  - @salesforce/b2c-tooling-sdk@2.15.0
+
+## 2.14.0
+
+### Minor Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - Plugins can redact more from CLI log output, such as deeply nested secrets or tokens inside messages, with the new `b2c:log-redaction` hook. Logs are unchanged unless a plugin uses it. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d)]:
+  - @salesforce/b2c-tooling-sdk@2.14.0
+
+## 2.13.0
+
+### Minor Changes
+
+- [#849](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/849) [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78) - `code deploy` now handles very large code versions: cartridges are streamed to disk instead of memory and split into archives of up to 200 MiB (set with `--max-archive-size`, `max-archive-size` in `dw.json`, or `SFCC_MAX_ARCHIVE_SIZE`). Dropped uploads are retried, a dropped connection during server-side unzip no longer fails the deploy, and 413 errors explain whether the archive was too large or the sandbox is stopped. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#850](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/850) [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c) - Refreshed the Developer Center guides and Salesforce Help content behind `b2c docs search`/`read` and the MCP docs tools. Search descriptions for guides and Help knowledge articles are now drawn from the whole page, so details far down a page, such as Managed Runtime bundle limits and allowed content types, are findable. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`047f623`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/047f6234c5446c3d6c651f113c1c6e60c6dc8fc8), [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2), [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c), [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c), [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78), [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2)]:
+  - @salesforce/b2c-tooling-sdk@2.13.0
+
 ## 2.12.1
 
 ### Patch Changes

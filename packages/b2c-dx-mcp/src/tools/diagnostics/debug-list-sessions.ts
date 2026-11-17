@@ -51,7 +51,7 @@ export function createDebugListSessionsTool(
                 .getKnownThreads()
                 .filter((t) => t.status === 'halted')
                 .map((t) => t.id),
-              breakpoints: entry.breakpoints.map((bp) => projectBreakpoint(bp, entry.sourceMapper)),
+              breakpoints: entry.manager.getBreakpoints().map((bp) => projectBreakpoint(bp, entry.sourceMapper)),
               session_cookie: dwsid ? {name: 'dwsid', value: dwsid} : null,
               created_at: new Date(entry.createdAt).toISOString(),
               last_activity_at: new Date(entry.lastActivityAt).toISOString(),

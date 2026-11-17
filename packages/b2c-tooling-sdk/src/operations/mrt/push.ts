@@ -22,7 +22,7 @@ import {
 } from '../../clients/storefront-deployments.js';
 import {getLogger} from '../../logging/logger.js';
 import {createBundle, createBundleV2} from './bundle.js';
-import type {CreateBundleOptions, Bundle, BundleV2, CreateBundleV2Options} from './bundle.js';
+import type {CreateBundleOptions, Bundle, BundleV2, BundleV2Metadata, CreateBundleV2Options} from './bundle.js';
 import {
   buildScapiDeploymentsClient,
   createDeployment,
@@ -998,6 +998,8 @@ export interface PushMrtBundleBackendOptions {
   configPath?: string;
   /** v2 match mode (v2 uploads only). */
   matchMode?: BundleV2['matchMode'];
+  /** Bundle metadata (dependencies, ccOverrides) written into the v2 in-archive config (v2 uploads only). */
+  bundleMetadata?: BundleV2Metadata;
   /**
    * Use the v2 bundle format/endpoint. SCAPI is always v2 (this flag is
    * redundant there). Legacy defaults to v1; set this to route the legacy push
@@ -1071,6 +1073,7 @@ export async function pushMrtBundle(options: PushMrtBundleBackendOptions): Promi
     rootDir,
     configPath,
     matchMode,
+    bundleMetadata,
     v2,
     origin,
     onFallback,
@@ -1097,6 +1100,7 @@ export async function pushMrtBundle(options: PushMrtBundleBackendOptions): Promi
           rootDir,
           configPath,
           matchMode,
+          bundleMetadata,
         });
         const uploaded = await uploadBundleScapi(scapiConnection!, {storefrontId: projectSlug, bundle});
 
@@ -1145,8 +1149,8 @@ export async function pushMrtBundle(options: PushMrtBundleBackendOptions): Promi
           throw new Error(LEGACY_AUTH_REQUIRED_MESSAGE);
         }
 
-        // Legacy v2 opt-in: build+upload via the v2 endpoint (same as the
-        // `upload-v2` command), then deploy the resulting bundle separately —
+        // Legacy v2 opt-in: build+upload via the v2 endpoint (the same path the
+        // deprecated `upload-v2` command takes), then deploy the resulting bundle separately —
         // the v2 endpoint is upload-only, so a target requires a follow-up
         // deploy call. `rootDir`/`configPath`/`matchMode` take effect here.
         if (v2) {
@@ -1160,6 +1164,7 @@ export async function pushMrtBundle(options: PushMrtBundleBackendOptions): Promi
             rootDir,
             configPath,
             matchMode,
+            bundleMetadata,
           });
           const client = createMrtClient({origin: origin || DEFAULT_MRT_ORIGIN}, legacyAuth);
           const uploaded = await uploadBundleV2(client, projectSlug, bundle);

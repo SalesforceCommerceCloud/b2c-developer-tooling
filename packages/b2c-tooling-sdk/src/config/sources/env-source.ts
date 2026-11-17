@@ -69,6 +69,7 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_CARTRIDGES: 'cartridges',
   SFCC_IMPORT_SET_EXCLUDE: 'importSetExclude',
   SFCC_CARTRIDGE_IGNORE_DIRS: 'cartridgeIgnoreDirs',
+  SFCC_MAX_ARCHIVE_SIZE: 'maxArchiveSize',
   SFCC_CATALOGS: 'catalogs',
   SFCC_LIBRARIES: 'libraries',
   SFCC_ASSET_QUERY: 'assetQuery',
@@ -97,6 +98,20 @@ const ENV_VAR_MAP: Record<string, keyof NormalizedConfig> = {
   SFCC_MRT_BACKEND: 'mrtBackend',
   MRT_BACKEND: 'mrtBackend',
 };
+
+/**
+ * Variables with no CLI flag behind them. CLI commands read other `SFCC_*`
+ * variables through oclif flag `env:` mappings, so {@link loadConfig} in
+ * `cli/config` reads these through an {@link EnvSource} limited to them.
+ */
+export const FLAGLESS_ENV_VARS: readonly string[] = [
+  'SFCC_CARTRIDGES',
+  'SFCC_CATALOGS',
+  'SFCC_LIBRARIES',
+  'SFCC_ASSET_QUERY',
+  'SFCC_DOCS_CATEGORIES',
+  'SFCC_SITE_ID',
+];
 
 /** Fields that should be parsed as comma-separated arrays. */
 const ARRAY_FIELDS = new Set<keyof NormalizedConfig>([
@@ -150,8 +165,9 @@ function readEnvironmentConfig(
     if (BOOLEAN_FIELDS.has(configField)) {
       (config as Record<string, unknown>)[configField] = value === 'true' || value === '1';
     } else if (ARRAY_FIELDS.has(configField)) {
+      // A cartridge path is also written colon-separated, as in Business Manager.
       (config as Record<string, unknown>)[configField] = value
-        .split(',')
+        .split(configField === 'cartridges' ? /[,:]/ : ',')
         .map((s) => s.trim())
         .filter(Boolean) as string[] | AuthMethod[];
     } else {

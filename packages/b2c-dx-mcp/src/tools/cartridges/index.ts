@@ -23,6 +23,7 @@ import {
   createScriptsBackend,
   findAndDeployCartridges,
   getActiveCodeVersion,
+  maxArchiveBytesFromConfig,
 } from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {DeployResult, DeployOptions, CodeVersion} from '@salesforce/b2c-tooling-sdk/operations/code';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
@@ -197,6 +198,7 @@ function createCartridgeDeployTool(
             exclude: args.exclude,
             reload: args.reload,
             ignoreDirs: context.services.getResolvedConfig().values.cartridgeIgnoreDirs,
+            maxArchiveBytes: maxArchiveBytesFromConfig(context.services.getResolvedConfig().values.maxArchiveSize),
           };
 
           // Log all computed variables before deploying

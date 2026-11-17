@@ -16,14 +16,15 @@ const SUPPORTED_HOOKS = [
   'b2c:http-middleware',
   'b2c:auth-middleware',
   'b2c:auth-session-store',
+  'b2c:log-redaction',
 ] as const;
 
 /**
  * Union type of all supported hook names in the plugin system.
  *
  * Represents any of the hook names that the plugin discovery system recognizes:
- * `b2c:config-sources`, `b2c:http-middleware`, `b2c:auth-middleware`, or
- * `b2c:auth-session-store`.
+ * `b2c:config-sources`, `b2c:http-middleware`, `b2c:auth-middleware`,
+ * `b2c:auth-session-store`, or `b2c:log-redaction`.
  */
 export type SupportedHookName = (typeof SUPPORTED_HOOKS)[number];
 
@@ -110,7 +111,7 @@ function resolvePluginName(entry: unknown): string | undefined {
  * `package.json` -> `oclif.hooks` -> returns `DiscoveredPlugin[]`.
  *
  * Only hooks matching `b2c:config-sources`, `b2c:http-middleware`,
- * `b2c:auth-middleware`, and `b2c:auth-session-store` are included.
+ * `b2c:auth-middleware`, `b2c:auth-session-store`, and `b2c:log-redaction` are included.
  */
 export function discoverPlugins(options: PluginDiscoveryOptions = {}): DiscoveredPlugin[] {
   const {logger} = options;

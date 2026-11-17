@@ -18,7 +18,7 @@ import {createMockResolvedConfig} from './test-helpers.js';
 const CODEX_PLUGIN_TOOL_BYTES = 8000;
 const CODEX_PLUGIN_TOTAL_BYTES = 64_000;
 
-const ALWAYS_LOADED = ['config_inspect', 'docs_search', 'scapi_search', 'skills_read'];
+const ALWAYS_LOADED = ['config_inspect', 'docs_search', 'project_inspect', 'scapi_search', 'skills_read'];
 
 /** Codex keeps the top 8 tool search results and Claude Code the top 5; require a margin under both. */
 const CODEX_TOP = 5;
@@ -37,7 +37,9 @@ const SEARCH_CASES: Array<[query: string, tool: string]> = [
   ['debug script on instance', 'debug_start_session'],
   ['inspect variables at breakpoint', 'debug_inspect'],
   ['download a file from webdav', 'webdav_get'],
-  ['upload import xml to impex', 'webdav_put'],
+  ['upload a file to impex', 'webdav_put'],
+  ['import promotions xml site archive', 'site_archive_import'],
+  ['add a discount rule to a promotion', 'site_archive_import'],
   ['list files in impex folder', 'webdav_list'],
   ['save site export zip locally', 'webdav_get_to_file'],
   ['validate my catalog xml against schema', 'validate_xml_schema'],
@@ -47,6 +49,10 @@ const SEARCH_CASES: Array<[query: string, tool: string]> = [
   ['managed runtime logs for pwa kit storefront', 'mrt_logs_watch'],
   ['storefront next server logs', 'mrt_logs_watch'],
   ['api response time latency metrics', 'metrics_get'],
+  ['what middleware runs for Cart-AddProduct', 'project_inspect'],
+  ['which cartridge registers this hook', 'project_inspect'],
+  ['check my cartridges for security issues', 'security_scan'],
+  ['find csrf problems in my controllers', 'security_scan'],
   ['custom attributes on product object type', 'object_types_describe'],
   ['enum values of a system object attribute', 'object_types_describe'],
   ['get product by id via shopper api', 'scapi_execute'],

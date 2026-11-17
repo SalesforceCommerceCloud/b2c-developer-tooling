@@ -21,7 +21,7 @@ describe('code deploy', () => {
     return createTestCommand(CodeDeploy, hooks.getConfig(), flags, args);
   }
 
-  function stubCommon(command: any) {
+  function stubCommon(command: any, values: Record<string, unknown> = {}) {
     const instance = {config: {hostname: 'example.com', codeVersion: 'v1'}};
     const scriptsBackend = {
       name: 'ocapi' as const,
@@ -35,7 +35,9 @@ describe('code deploy', () => {
     sinon.stub(command, 'hasOAuthCredentials').returns(true);
     sinon.stub(command, 'log').returns(void 0);
     sinon.stub(command, 'warn').returns(void 0);
-    sinon.stub(command, 'resolvedConfig').get(() => ({values: {hostname: 'example.com', codeVersion: 'v1'}}));
+    sinon
+      .stub(command, 'resolvedConfig')
+      .get(() => ({values: {hostname: 'example.com', codeVersion: 'v1', ...values}}));
     sinon.stub(command, 'instance').get(() => instance);
     sinon.stub(command, 'scriptsBackend').get(() => scriptsBackend);
     return {instance, scriptsBackend};
@@ -103,6 +105,45 @@ describe('code deploy', () => {
     expect(result).to.deep.include({codeVersion: 'v1', activated: true, reloaded: true});
     expect(afterHooksStub.calledOnce).to.be.true;
     expect(afterHooksStub.firstCall.args[1]).to.deep.include({success: true});
+  });
+
+  it('passes the configured archive size limit and logs split progress', async () => {
+    const command: any = await createCommand({}, {cartridgePath: '.'});
+    stubCommon(command, {maxArchiveSize: '100mb'});
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    sinon.stub(command, 'findCartridgesWithProviders').resolves([{name: 'c1', src: '/tmp/c1', dest: 'c1'}]);
+
+    const uploadStub = sinon.stub().callsFake(async (_instance, _cartridges, options) => {
+      options.onPlan({parts: 2, maxBytes: 100 * 1024 * 1024, estimatedBytes: 150 * 1024 * 1024, fileCount: 10});
+      options.onProgress({phase: 'uploading', elapsedSeconds: 0, part: 1, parts: 2, bytes: 1024 * 1024});
+    });
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
+
+    await command.run();
+
+    expect(uploadStub.firstCall.args[2].maxArchiveBytes).to.equal(100 * 1024 * 1024);
+    const logged = command.log.getCalls().map((c: sinon.SinonSpyCall) => String(c.args[0]));
+    expect(logged.some((l: string) => l.includes('2 archives of up to 100.0 MiB'))).to.be.true;
+    expect(logged.some((l: string) => l.includes('[1/2]') && l.includes('1.0 MiB'))).to.be.true;
+  });
+
+  it('errors on an invalid archive size limit before uploading', async () => {
+    const command: any = await createCommand({}, {cartridgePath: '.'});
+    stubCommon(command, {maxArchiveSize: 'huge'});
+
+    sinon.stub(command, 'runBeforeHooks').resolves({skip: false});
+    sinon.stub(command, 'runAfterHooks').resolves(void 0);
+    sinon.stub(command, 'findCartridgesWithProviders').resolves([{name: 'c1', src: '/tmp/c1', dest: 'c1'}]);
+    const uploadStub = sinon.stub().resolves(void 0);
+    command.operations = {...command.operations, uploadCartridges: uploadStub};
+    const errorStub = sinon.stub(command, 'error').throws(new Error('Expected error'));
+
+    await expectError(() => command.run());
+
+    expect(errorStub.firstCall.args[0]).to.include('Invalid size');
+    expect(uploadStub.called).to.be.false;
   });
 
   it('calls activate after deploy when --activate is set', async () => {

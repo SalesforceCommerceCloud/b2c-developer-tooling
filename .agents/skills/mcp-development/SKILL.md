@@ -34,10 +34,12 @@ description: Develop B2C MCP tools, resources, workflow skills, and runbooks. Us
 For skill/runbook content, read [workflow authoring](references/workflows.md).
 For packaging and protocol details, read [the catalog contract](../../../packages/b2c-dx-mcp/docs/skills.md).
 
-Native skill changes use an agent-plugin changeset; the MCP's bundled
-`workspace:*` dependency automatically triggers an MCP patch release. Keep it in
-`dependencies` and `bundledDependencies`, not `devDependencies`. MCP-specific
-skills and collection changes need an MCP changeset. Every bundled skill needs a
+Native skill changes use an agent-plugin changeset; the SDK's bundled
+`workspace:*` dependency automatically triggers an SDK patch release, which
+cascades to the MCP and CLI. Keep it in the SDK's `dependencies` and
+`bundledDependencies`, not `devDependencies`. The skill bundle is built and
+shipped by the SDK (`data/guidance`), so MCP-specific skills and collection
+changes need an SDK changeset. Every bundled skill needs a
 short `skill://index` line in `packages/b2c-dx-mcp/skills/index-summaries.json`;
 add one when you add a skill (a test enforces this).
 
@@ -78,7 +80,7 @@ The server implements the `io.modelcontextprotocol/skills` extension
 generated per-file digests. Skill `name` equals its directory (MCP skills use
 the `b2c-mcp-` prefix). Reference other skills by name or `skill://` URI, never
 by relative path; link tooling docs to `.md` pages with their docs ID for
-`docs_read`. `generate:guidance` enforces these rules; see
+`docs_read`. The SDK `generate:guidance` script enforces these rules; see
 [MCP skill authoring](../../../packages/b2c-dx-mcp/docs/skills.md).
 
 ## Tool effects

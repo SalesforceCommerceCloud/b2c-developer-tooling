@@ -127,8 +127,17 @@ export interface NormalizedConfig {
   cartridges?: string[];
   /** Project-relative directory paths to exclude recursively from import-set source discovery */
   importSetExclude?: string[];
+  /**
+   * `b2c security scan` settings from dw.json (`security` key): ignored paths
+   * and per-rule settings, the same shape as `.b2c-security.json`. Validated
+   * when a scan runs.
+   */
+  security?: {ignore?: string[]; rules?: Record<string, unknown>};
   /** Directory names skipped at any depth when archiving cartridges for deploy (replaces the default list) */
   cartridgeIgnoreDirs?: string[];
+
+  /** Per-archive size limit for code deploy, e.g. `200mb` (bare number is MiB); kept as a string and parsed at use */
+  maxArchiveSize?: string;
 
   // Content
   /** Default content library ID for content export/list commands */
@@ -243,6 +252,7 @@ export type ConfigWarningCode =
   | 'CLIENT_ID_MISMATCH'
   | 'SLAS_CLIENT_ID_MISMATCH'
   | 'TENANT_MISMATCH'
+  | 'STOREFRONT_HOSTNAME'
   | 'DEPRECATED_FIELD'
   | 'MISSING_REQUIRED'
   | 'SOURCE_ERROR';

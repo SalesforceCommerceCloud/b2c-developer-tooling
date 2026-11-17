@@ -15,7 +15,7 @@ const gitignorePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 headerPlugin.rules.header.meta.schema = false;
 
 export default [
-  {ignores: ['**/node_modules/**', 'build/**', 'coverage/**', 'config.server.ts']},
+  {ignores: ['**/node_modules/**', 'build/**', 'coverage/**']},
   includeIgnoreFile(gitignorePath),
   ...tseslint.configs.recommended,
   prettierPlugin,

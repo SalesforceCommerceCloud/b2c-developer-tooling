@@ -24,6 +24,67 @@ import type {
 
 const DEFAULT_POLL_INTERVAL = 500;
 const DEFAULT_KEEPALIVE_INTERVAL = 15_000;
+const MIN_POLL_INTERVAL = 100;
+const MIN_KEEPALIVE_INTERVAL = 1000;
+/** The server resumes a halted thread after 60s without a reset. */
+const HALT_TIMEOUT = 60_000;
+
+/** Environment variable overriding the thread polling interval (ms). */
+export const DEBUG_POLL_INTERVAL_ENV = 'SFCC_DEBUG_POLL_INTERVAL';
+/** Environment variable overriding the keepalive/reset interval (ms). */
+export const DEBUG_KEEPALIVE_INTERVAL_ENV = 'SFCC_DEBUG_KEEPALIVE_INTERVAL';
+
+/**
+ * Resolve the effective poll and keepalive intervals in milliseconds.
+ *
+ * Precedence: explicit config value, then the `SFCC_DEBUG_POLL_INTERVAL` /
+ * `SFCC_DEBUG_KEEPALIVE_INTERVAL` environment variables, then the defaults
+ * (500ms / 15000ms). Values below the minimum (100ms poll, 1000ms keepalive)
+ * are raised to the minimum; non-numeric values fall back to the default.
+ */
+export function resolveDebugIntervals(
+  config: Pick<DebugSessionConfig, 'keepaliveInterval' | 'pollInterval'> = {},
+  env: NodeJS.ProcessEnv = process.env,
+): {keepaliveInterval: number; pollInterval: number} {
+  return {
+    pollInterval: resolveInterval(
+      config.pollInterval,
+      env[DEBUG_POLL_INTERVAL_ENV],
+      DEBUG_POLL_INTERVAL_ENV,
+      DEFAULT_POLL_INTERVAL,
+      MIN_POLL_INTERVAL,
+    ),
+    keepaliveInterval: resolveInterval(
+      config.keepaliveInterval,
+      env[DEBUG_KEEPALIVE_INTERVAL_ENV],
+      DEBUG_KEEPALIVE_INTERVAL_ENV,
+      DEFAULT_KEEPALIVE_INTERVAL,
+      MIN_KEEPALIVE_INTERVAL,
+    ),
+  };
+}
+
+function resolveInterval(
+  configured: number | undefined,
+  envValue: string | undefined,
+  envName: string,
+  fallback: number,
+  minimum: number,
+): number {
+  let value: number | undefined;
+  if (typeof configured === 'number' && Number.isFinite(configured)) {
+    value = configured;
+  } else if (envValue !== undefined && envValue.trim() !== '') {
+    const parsed = Number(envValue);
+    if (Number.isFinite(parsed)) {
+      value = parsed;
+    } else {
+      getLogger().warn(`Ignoring ${envName}=${envValue}: expected a number of milliseconds`);
+    }
+  }
+  if (value === undefined) return fallback;
+  return Math.max(minimum, Math.round(value));
+}
 
 export class DebugSessionManager {
   readonly client: SdapiClient;
@@ -32,11 +93,14 @@ export class DebugSessionManager {
   private readonly logger = getLogger();
 
   private pollTimer?: ReturnType<typeof setInterval>;
+  private pollInFlight = false;
   private keepaliveTimer?: ReturnType<typeof setInterval>;
 
   /** Last known thread states keyed by thread id */
   private knownThreads = new Map<number, SdapiScriptThread>();
   private connected = false;
+  private currentBreakpoints: SdapiBreakpoint[] = [];
+  private haltWaiters = new Set<{resolve: (thread: SdapiScriptThread) => void; reject: (error: Error) => void}>();
 
   constructor(config: DebugSessionConfig, callbacks: DebugSessionCallbacks = {}) {
     this.config = config;
@@ -67,15 +131,27 @@ export class DebugSessionManager {
     this.connected = true;
 
     try {
+      const {keepaliveInterval, pollInterval} = resolveDebugIntervals(this.config);
+      if (keepaliveInterval >= HALT_TIMEOUT) {
+        this.logger.warn(
+          `Debugger keepalive interval ${keepaliveInterval}ms is not below the 60s halt timeout; halted threads may resume on their own`,
+        );
+      }
+
       // Start keepalive timer
-      const keepaliveInterval = this.config.keepaliveInterval ?? DEFAULT_KEEPALIVE_INTERVAL;
       this.keepaliveTimer = setInterval(() => void this.keepalive(), keepaliveInterval);
 
-      // Start thread poller
-      const pollInterval = this.config.pollInterval ?? DEFAULT_POLL_INTERVAL;
-      this.pollTimer = setInterval(() => void this.pollThreads(), pollInterval);
+      // Start thread poller. Skips a tick while the previous request is still
+      // in flight so slow responses don't stack up concurrent requests.
+      this.pollTimer = setInterval(() => {
+        if (this.pollInFlight) return;
+        this.pollInFlight = true;
+        void this.pollThreads().finally(() => {
+          this.pollInFlight = false;
+        });
+      }, pollInterval);
 
-      this.logger.debug('Script debugger connected');
+      this.logger.debug({keepaliveInterval, pollInterval}, 'Script debugger connected');
 
       this.callbacks.onConnected?.(this.config.hostname);
     } catch (err) {
@@ -97,6 +173,7 @@ export class DebugSessionManager {
    */
   async disconnect(): Promise<void> {
     this.stopTimers();
+    this.rejectHaltWaiters(new Error('Debug session ended'));
 
     if (this.connected) {
       try {
@@ -108,6 +185,7 @@ export class DebugSessionManager {
     }
 
     this.knownThreads.clear();
+    this.currentBreakpoints = [];
     this.logger.debug('Script debugger disconnected');
     this.callbacks.onDisconnected?.();
   }
@@ -117,8 +195,71 @@ export class DebugSessionManager {
    */
   async setBreakpoints(breakpoints: BreakpointInput[]): Promise<SdapiBreakpoint[]> {
     await this.client.deleteBreakpoints();
-    if (breakpoints.length === 0) return [];
-    return this.client.setBreakpoints(breakpoints);
+    this.currentBreakpoints = [];
+    if (breakpoints.length > 0) this.currentBreakpoints = await this.client.setBreakpoints(breakpoints);
+    return this.getBreakpoints();
+  }
+
+  /**
+   * Add breakpoints to the current set; existing breakpoints at the same script
+   * and line are replaced.
+   */
+  async addBreakpoints(breakpoints: BreakpointInput[]): Promise<SdapiBreakpoint[]> {
+    const key = (bp: BreakpointInput) => `${bp.script_path}:${bp.line_number}`;
+    const added = new Set(breakpoints.map((bp) => key(bp)));
+    return this.setBreakpoints([
+      ...this.currentBreakpoints
+        .filter((bp) => !added.has(key(bp)))
+        .map(
+          (bp): BreakpointInput => ({
+            script_path: bp.script_path,
+            line_number: bp.line_number,
+            condition: bp.condition,
+          }),
+        ),
+      ...breakpoints,
+    ]);
+  }
+
+  /** Breakpoints set by the last {@link setBreakpoints} or {@link addBreakpoints}. */
+  getBreakpoints(): SdapiBreakpoint[] {
+    return [...this.currentBreakpoints];
+  }
+
+  /**
+   * Wait for a thread to halt. Resolves at once with an already halted thread,
+   * otherwise with the next thread to halt, or `null` after `timeoutMs`.
+   * Rejects when the session is not connected or disconnects, the debugger is disabled, or `signal` aborts.
+   */
+  async waitForHalt(timeoutMs: number, signal?: AbortSignal): Promise<null | SdapiScriptThread> {
+    signal?.throwIfAborted();
+    if (!this.connected) throw new Error('Debug session is not connected');
+    const halted = this.getKnownThreads().find((thread) => thread.status === 'halted');
+    if (halted) return halted;
+    return new Promise((resolve, reject) => {
+      const finish = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
+        this.haltWaiters.delete(waiter);
+      };
+      const waiter = {
+        resolve(thread: SdapiScriptThread) {
+          finish();
+          resolve(thread);
+        },
+        reject(error: Error) {
+          finish();
+          reject(error);
+        },
+      };
+      const onAbort = () => waiter.reject(signal!.reason instanceof Error ? signal!.reason : new Error('Aborted'));
+      const timer = setTimeout(() => {
+        finish();
+        resolve(null);
+      }, timeoutMs);
+      signal?.addEventListener('abort', onAbort, {once: true});
+      this.haltWaiters.add(waiter);
+    });
   }
 
   /**
@@ -182,6 +323,15 @@ export class DebugSessionManager {
     }
   }
 
+  private notifyHalted(thread: SdapiScriptThread): void {
+    for (const waiter of [...this.haltWaiters]) waiter.resolve(thread);
+    this.callbacks.onThreadStopped?.(thread);
+  }
+
+  private rejectHaltWaiters(error: Error): void {
+    for (const waiter of [...this.haltWaiters]) waiter.reject(error);
+  }
+
   private async keepalive(): Promise<void> {
     try {
       await this.client.resetThreads();
@@ -222,14 +372,14 @@ export class DebugSessionManager {
           this.knownThreads.set(thread.id, thread);
           if (thread.status === 'halted') {
             this.logThreadHalted(thread);
-            this.callbacks.onThreadStopped?.(thread);
+            this.notifyHalted(thread);
           }
         } else if (previous.status !== thread.status) {
           // State changed
           this.knownThreads.set(thread.id, thread);
           if (thread.status === 'halted') {
             this.logThreadHalted(thread);
-            this.callbacks.onThreadStopped?.(thread);
+            this.notifyHalted(thread);
           } else {
             this.logger.debug(`Thread ${thread.id} resumed`);
             this.callbacks.onThreadContinued?.(thread.id);
@@ -238,7 +388,7 @@ export class DebugSessionManager {
           // Still halted but at a different location (hit another breakpoint or stepped)
           this.knownThreads.set(thread.id, thread);
           this.logThreadHalted(thread);
-          this.callbacks.onThreadStopped?.(thread);
+          this.notifyHalted(thread);
         } else {
           this.knownThreads.set(thread.id, thread);
         }
@@ -258,6 +408,7 @@ export class DebugSessionManager {
         this.logger.warn('Debugger was disabled externally');
         this.stopTimers();
         this.connected = false;
+        this.rejectHaltWaiters(new Error('The script debugger was disabled'));
         this.callbacks.onDebuggerDisabled?.();
       } else {
         this.logger.debug({error}, 'Thread poll error');

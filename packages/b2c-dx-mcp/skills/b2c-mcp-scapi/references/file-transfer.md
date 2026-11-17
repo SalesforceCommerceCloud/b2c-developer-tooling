@@ -8,6 +8,6 @@ Example: `site/seo/v1` `uploadCustomSitemapAndTriggerSitemapGeneration` (the API
 multipart file, so custom sitemap upload cannot run here.
 
 Split the work: run any JSON steps of the flow (submit, status, delete) in code mode and give the user the IDs
-and status. Move the file with an HTTP client outside MCP using a token from
-`auth.accountManager({scopes, scapi: true})` ([tokens](tokens.md)) with the operation's scopes, or use Business
-Manager. Never try another code-mode route.
+and status. Move the file with an HTTP client outside MCP using a token from CLI
+`b2c auth token` with the operation's scopes and the tenant scope (the error lists the `--auth-scope` flags), or use
+Business Manager. Never try another code-mode route.

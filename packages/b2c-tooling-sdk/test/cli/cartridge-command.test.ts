@@ -83,6 +83,25 @@ describe('cli/cartridge-command', () => {
       expect(options.include).to.be.undefined;
       expect(options.exclude).to.be.undefined;
     });
+
+    const setConfigCartridges = (names: string[]) => {
+      (command as unknown as {resolvedConfig: {values: {cartridges: string[]}}}).resolvedConfig.values.cartridges =
+        names;
+    };
+
+    it('falls back to the cartridges config value', async () => {
+      stubParse(command, {}, {cartridgePath: '.'});
+      await command.init();
+      setConfigCartridges(['app_custom']);
+      expect(command.testCartridgeOptions.include).to.deep.equal(['app_custom']);
+    });
+
+    it('ignores the cartridges config value with --all', async () => {
+      stubParse(command, {all: true}, {cartridgePath: '.'});
+      await command.init();
+      setConfigCartridges(['app_custom']);
+      expect(command.testCartridgeOptions.include).to.be.undefined;
+    });
   });
 
   describe('collectCartridgeProviders', () => {

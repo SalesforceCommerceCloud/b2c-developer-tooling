@@ -13,6 +13,12 @@ import {findCartridgesSafe} from '../workspace-discovery.js';
 
 const DEBUG_TYPE = 'b2c-script';
 
+/** Reads a numeric b2c-dx setting; 0 or unset means "use the env var or SDK default". */
+function positiveSetting(key: string): number | undefined {
+  const value = vscode.workspace.getConfiguration('b2c-dx').get<number>(key);
+  return typeof value === 'number' && value > 0 ? value : undefined;
+}
+
 class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
   constructor(private readonly configProvider: B2CExtensionConfig) {}
 
@@ -58,6 +64,9 @@ class B2CDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
       clientId: 'b2c-vs-extension',
       cartridgeRoots: cartridges,
       selfSignedApi: values.selfSignedApi,
+      // launch.json pollInterval/keepaliveInterval override these in the adapter.
+      pollInterval: positiveSetting('debugger.pollInterval'),
+      keepaliveInterval: positiveSetting('debugger.keepaliveInterval'),
     };
 
     const adapter = new B2CScriptDebugAdapter(sessionConfig);

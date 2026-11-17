@@ -13,7 +13,12 @@
  */
 export {SdapiClient, SdapiError, createSdapiClient} from './sdapi-client.js';
 export type {SdapiClientConfig} from './sdapi-client.js';
-export {DebugSessionManager} from './debug-session.js';
+export {
+  DebugSessionManager,
+  DEBUG_KEEPALIVE_INTERVAL_ENV,
+  DEBUG_POLL_INTERVAL_ENV,
+  resolveDebugIntervals,
+} from './debug-session.js';
 export {B2CScriptDebugAdapter} from './dap-adapter.js';
 export {createSourceMapper} from './source-mapping.js';
 export type {SourceMapper} from './source-mapping.js';

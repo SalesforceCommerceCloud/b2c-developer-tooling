@@ -76,6 +76,8 @@ const API_KEY = process.env.ANTHROPIC_API_KEY;
 const CONCURRENCY = Number(process.env.DOCS_ENRICH_CONCURRENCY || 3);
 const MAX_ATTEMPTS = 6;
 const SUMMARY_MAX = 200;
+// ~15k tokens; covers ~98% of guides in full and trims only the outlier reference pages.
+const EXCERPT_MAX = 60_000;
 
 function resolveContentDir(): string {
   const configured = process.env.GUIDES_CONTENT_DIR;
@@ -98,14 +100,18 @@ function walkMarkdown(dir: string): string[] {
   return out;
 }
 
-/** Cleans markdown to a compact plain-text excerpt for the model. */
+/**
+ * Cleans markdown to compact plain text for the model. Sends the whole page so
+ * keywords can cover sections far below the intro (e.g. a "Constraints" section
+ * at the end of an overview); only the few very large reference pages hit the cap.
+ */
 function toExcerpt(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 1800);
+    .slice(0, EXCERPT_MAX);
 }
 
 function collectSources(contentDir: string): GuideSource[] {
@@ -181,19 +187,22 @@ const SHARED_RULES =
   'phrasings of the goal or problem as someone would ask it (e.g. "reset forgotten password", "sign ' +
   'JWT instead of shared secret"). Favor terms NOT already in the title; skip generic terms like "B2C ' +
   'Commerce" or "documentation" and near-duplicates.\n' +
+  '- Cover the whole doc, not just its opening: when it has a limits, constraints, quotas, supported ' +
+  'types, or requirements section, include keywords for those facts (e.g. "bundle size limit", ' +
+  '"allowed content types"), since agents often search for exactly those.\n' +
   '- Use ONLY facts in the provided content; do not invent APIs or features.\n' +
   '- Output ONLY the JSON object {"summary": string, "keywords": string[]}: no prose, no code fences.';
 
 const GUIDES_SYSTEM_PROMPT =
   'You write search-index metadata for Salesforce B2C Commerce developer documentation (Developer ' +
-  'Center guides). Given one doc (title + text excerpt), write a summary of what it lets a developer ' +
+  'Center guides). Given one doc (title + full text), write a summary of what it lets a developer ' +
   'do and the search keywords for it.\n' +
   PURPOSE +
   SHARED_RULES;
 
 const HELP_KB_SYSTEM_PROMPT =
   'You write search-index metadata for Salesforce B2C Commerce Help knowledge articles, read by ' +
-  'developers, administrators, and AI coding agents. Given one article (title + text excerpt), write a ' +
+  'developers, administrators, and AI coding agents. Given one article (title + full text), write a ' +
   'summary of the problem, question, or task it addresses (with its key answer when short) and the ' +
   'search keywords for it; include exact error strings when present.\n' +
   PURPOSE +

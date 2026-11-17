@@ -11,6 +11,7 @@ import {Writable} from 'node:stream';
 import pino from 'pino';
 import pretty from 'pino-pretty';
 import type {LogDestination, Logger, LoggerOptions} from './types.js';
+import {applyLogRedactors} from './redaction.js';
 
 const REDACT_FIELDS = [
   'password',
@@ -87,6 +88,8 @@ function createPinoLogger(options: LoggerOptions): Logger {
     formatters: {
       level: (label) => ({level: label}),
     },
+    // Registered redactors (see ./redaction.ts); a no-op until one is registered.
+    hooks: {streamWrite: applyLogRedactors},
   };
 
   if (options.redact !== false) {

@@ -49,7 +49,7 @@ describe('lib/skills', () => {
     config = await Config.load({root: fileURLToPath(new URL('../..', import.meta.url))});
   });
 
-  it('loads the bundled skills (run: pnpm --filter @salesforce/b2c-cli run generate:guidance)', () => {
+  it('loads the bundled skills (run: pnpm --filter @salesforce/b2c-tooling-sdk run generate:guidance)', () => {
     expect(catalog, 'bundled skills').to.not.equal(undefined);
     expect(has('b2c-cli/b2c-code')).to.equal(true);
   });

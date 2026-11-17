@@ -5,6 +5,7 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {JobCommand} from '@salesforce/b2c-tooling-sdk/cli';
+import {parseByteSize} from '@salesforce/b2c-tooling-sdk/utils';
 import {createJobsCompatibilityBackend, type JobsCompatibilityBackend} from '@salesforce/b2c-tooling-sdk/compat';
 import {
   siteArchiveImport,
@@ -33,30 +34,6 @@ interface StorefrontImportResult {
 }
 
 type JobImportResult = SiteArchiveImportResult | SiteArchiveImportResult[] | StorefrontImportResult;
-
-/**
- * Parses a human-friendly size string into bytes. A bare number is interpreted
- * as mebibytes (the default unit); suffixes `b`, `kb`, `mb`, `gb` (and their
- * `kib`/`mib`/`gib` forms) are also accepted, case-insensitively.
- */
-function parseSize(input: string): number {
-  const match = /^\s*(\d+(?:\.\d+)?)\s*(b|kb|kib|mb|mib|gb|gib)?\s*$/i.exec(input);
-  if (!match) {
-    throw new Error(`Invalid size: "${input}". Use e.g. 190, 190mb, or 512kb.`);
-  }
-  const value = Number(match[1]);
-  const unit = (match[2] ?? 'mb').toLowerCase();
-  const multipliers: Record<string, number> = {
-    b: 1,
-    kb: 1024,
-    kib: 1024,
-    mb: 1024 * 1024,
-    mib: 1024 * 1024,
-    gb: 1024 * 1024 * 1024,
-    gib: 1024 * 1024 * 1024,
-  };
-  return Math.floor(value * multipliers[unit]);
-}
 
 export default class JobImport extends JobCommand<typeof JobImport> {
   static args = {
@@ -599,7 +576,7 @@ export default class JobImport extends JobCommand<typeof JobImport> {
     try {
       // Fall back to the flag default when unset (e.g. in unit tests that
       // construct flags directly and bypass oclif defaults).
-      return parseSize(maxSizeRaw ?? '190mb');
+      return parseByteSize(maxSizeRaw ?? '190mb');
     } catch (error) {
       this.error(error instanceof Error ? error.message : String(error));
     }

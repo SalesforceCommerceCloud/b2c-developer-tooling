@@ -21,7 +21,7 @@ import {createDebugSetBreakpointsTool} from '../../../src/tools/diagnostics/debu
 import {createDebugWaitForStopTool} from '../../../src/tools/diagnostics/debug-wait-for-stop.js';
 import {createDebugCaptureAtBreakpointTool} from '../../../src/tools/diagnostics/debug-capture-at-breakpoint.js';
 import {createDebugStartSessionTool} from '../../../src/tools/diagnostics/debug-start-session.js';
-import {DebugSessionManager} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {DebugSessionManager, type SdapiScriptThread} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {SourceMapper} from '@salesforce/b2c-tooling-sdk/operations/debug';
 import type {ToolResult} from '../../../src/utils/index.js';
 import type {ProjectContextInput} from '../../../src/tools/project-context.js';
@@ -41,7 +41,7 @@ function getResultText(result: ToolResult): string {
 type MockDebugSessionManager = InstanceType<typeof DebugSessionManager>;
 
 function createMockManager(overrides?: Record<string, unknown>): MockDebugSessionManager {
-  return {
+  const manager = {
     client: {
       getThread: sinon.stub().resolves({
         id: 1,
@@ -83,8 +83,38 @@ function createMockManager(overrides?: Record<string, unknown>): MockDebugSessio
     stepOut: sinon.stub().resolves(),
     getKnownThreads: sinon.stub().returns([]),
     getSessionCookie: sinon.stub().returns('dwsid-value-123'),
+    getBreakpoints: sinon.stub().returns([]),
     ...overrides,
   } as unknown as MockDebugSessionManager;
+  // Mirror DebugSessionManager: waitForHalt resolves with a known halted thread or the next halt.
+  const halts: Array<(thread: SdapiScriptThread) => void> = [];
+  const known = manager.getKnownThreads as () => SdapiScriptThread[];
+  const mock = manager as unknown as Record<string, unknown>;
+  mock.emitHalt ??= (thread: SdapiScriptThread) => {
+    for (const resolve of halts.splice(0)) resolve(thread);
+  };
+  mock.waitForHalt ??= (timeoutMs: number) => {
+    const halted = known().find((thread) => thread.status === 'halted');
+    if (halted) return Promise.resolve(halted);
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(null), timeoutMs);
+      halts.push((thread) => {
+        clearTimeout(timer);
+        resolve(thread);
+      });
+    });
+  };
+  if (!mock.addBreakpoints) {
+    mock.addBreakpoints = sinon
+      .stub()
+      .callsFake((added: unknown[]) =>
+        (mock.setBreakpoints as (bps: unknown[]) => Promise<unknown>)([
+          ...(mock.getBreakpoints as () => unknown[])(),
+          ...added,
+        ]),
+      );
+  }
+  return manager;
 }
 
 function createMockSourceMapper(): SourceMapper {
@@ -221,7 +251,9 @@ describe('tools/diagnostics', () => {
           },
         },
       });
-      entry.breakpoints = [{id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'}];
+      (entry.manager.getBreakpoints as sinon.SinonStub).returns([
+        {id: 1, line_number: 42, script_path: '/app_test/cartridge/controllers/Cart.js'},
+      ]);
 
       const tool = createDebugListSessionsTool(loadServices, serverContext);
       const result = await tool.handler({});
@@ -799,9 +831,7 @@ describe('tools/diagnostics', () => {
 
       // Simulate thread halt via the waiter mechanism
       setTimeout(() => {
-        const waiter = entry.haltWaiters.shift()!;
-        clearTimeout(waiter.timer);
-        waiter.resolve({
+        (entry.manager as unknown as {emitHalt(t: unknown): void}).emitHalt({
           id: 7,
           status: 'halted',
           call_stack: [
@@ -1139,9 +1169,7 @@ describe('tools/diagnostics', () => {
       });
 
       setTimeout(() => {
-        const waiter = entry.haltWaiters.shift()!;
-        clearTimeout(waiter.timer);
-        waiter.resolve({
+        (entry.manager as unknown as {emitHalt(t: unknown): void}).emitHalt({
           id: 9,
           status: 'halted',
           call_stack: [
@@ -1357,36 +1385,6 @@ describe('tools/diagnostics', () => {
 
       const sessions = serverContext.debugSessions.listSessions();
       expect(sessions[0].clientId).to.match(/^b2c-dx-mcp-/);
-    });
-
-    it('should resolve halt waiters via onThreadStopped callback', async () => {
-      const tool = createDebugStartSessionTool(loadServices, serverContext);
-      await tool.handler({projectDirectory: tmpDir});
-
-      const entry = serverContext.debugSessions.listSessions()[0];
-      // Register a halt waiter
-      const halted = new Promise<number>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('timeout')), 1000);
-        entry.haltWaiters.push({
-          resolve(t) {
-            clearTimeout(timer);
-            resolve(t.id);
-          },
-          reject,
-          timer,
-        });
-      });
-
-      // Fire the callback registered by start_session
-      const callbacks = (entry.manager as unknown as {callbacks: {onThreadStopped: (t: unknown) => void}}).callbacks;
-      callbacks.onThreadStopped({
-        id: 42,
-        status: 'halted',
-        call_stack: [],
-      });
-
-      const id = await halted;
-      expect(id).to.equal(42);
     });
   });
 });

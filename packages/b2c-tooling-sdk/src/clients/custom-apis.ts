@@ -217,6 +217,35 @@ export function tenantIdFromSandboxHostname(hostname: string): string | undefine
   return `${match[1]}_${match[2]}`.toLowerCase();
 }
 
+/**
+ * The Salesforce-managed Default Domain, such as `abcd-stg.my.commercecloud.salesforce.com` or
+ * `abcd-001.sbx.my.commercecloud.salesforce.com`. It fronts the storefront through eCDN.
+ */
+const DEFAULT_DOMAIN_HOSTNAME_REGEX = /(?:^|\.)my\.commercecloud\.salesforce\.com$/i;
+
+/**
+ * Whether a hostname is the storefront Default Domain rather than a Business Manager host.
+ *
+ * Default Domain traffic passes through eCDN zones whose rate limits and firewall rules are meant
+ * for shoppers, and on On-Demand Sandboxes it serves only the storefront.
+ *
+ * @example
+ * isDefaultDomainHostname('abcd-001.sbx.my.commercecloud.salesforce.com') // Returns true
+ * isDefaultDomainHostname('abcd-001.dx.commercecloud.salesforce.com')     // Returns false
+ */
+export function isDefaultDomainHostname(hostname: string): boolean {
+  return DEFAULT_DOMAIN_HOSTNAME_REGEX.test(hostname.trim());
+}
+
+/**
+ * The Business Manager host for a sandbox Default Domain hostname, when it can be derived
+ * (`abcd-001.my…` or `abcd-001.sbx.my…` → `abcd-001.dx.commercecloud.salesforce.com`).
+ */
+export function sandboxHostnameFromDefaultDomain(hostname: string): string | undefined {
+  const match = hostname.trim().match(/^([a-z\d]{4})-(\d{3})\.(?:sbx\.)?my\.commercecloud\.salesforce\.com$/i);
+  return match ? `${match[1]}-${match[2]}.dx.commercecloud.salesforce.com`.toLowerCase() : undefined;
+}
+
 /** Sandbox tenant IDs are a four-character realm and a three-digit instance number. */
 const SANDBOX_TENANT_ID_REGEX = /^([a-z\d]{4})_(\d{3})$/i;
 

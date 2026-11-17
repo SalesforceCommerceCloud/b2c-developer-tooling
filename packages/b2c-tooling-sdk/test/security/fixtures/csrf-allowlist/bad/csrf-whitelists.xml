@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<csrf-whitelists xmlns="http://www.demandware.com/xml/impex/csrfwhitelists/2017-02-09">
+    <pipelines>
+        <pipeline name="CustomBMExtension"/> <!-- expect -->
+        <pipeline name="ImportTool" start-node="Upload"/> <!-- expect -->
+    </pipelines>
+    <user-agents>
+        <development>
+            <user-agent>IntegrationTestAgent</user-agent>
+        </development>
+        <production>
+            <user-agent>PartnerSync/1.0</user-agent> <!-- expect -->
+        </production>
+        <user-agent>LegacyAgent</user-agent> <!-- expect -->
+    </user-agents>
+</csrf-whitelists>

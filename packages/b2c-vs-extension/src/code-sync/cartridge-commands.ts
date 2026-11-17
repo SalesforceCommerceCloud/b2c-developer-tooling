@@ -18,6 +18,7 @@ import type {B2CExtensionConfig} from '../config-provider.js';
 import {registerSafeCommand} from '../safety.js';
 import {CartridgeItem, type CartridgeTreeItem, type CartridgeTreeProvider} from './cartridge-tree-provider.js';
 import {getActivationCandidates} from './code-version-actions.js';
+import {setCartridgeViewLabel} from './cartridge-view-labels.js';
 
 function getInstance(configProvider: B2CExtensionConfig): B2CInstance | undefined {
   const instance = configProvider.getInstance();
@@ -261,7 +262,7 @@ function createListCodeVersionsCommand(
           async () => {
             const activation = await scriptsBackend.activateCodeVersion(versionId);
             activationAlreadyActive = activation.alreadyActive;
-            treeView.description = `v: ${versionId}`;
+            setCartridgeViewLabel(treeView, 'codeVersion', `v: ${versionId}`);
           },
         );
         vscode.window.showInformationMessage(
@@ -361,7 +362,7 @@ function createActivateCodeVersionCommand(
         async () => {
           const activation = await scriptsBackend.activateCodeVersion(picked.version.id!);
           activationAlreadyActive = activation.alreadyActive;
-          treeView.description = `v: ${picked.version.id}`;
+          setCartridgeViewLabel(treeView, 'codeVersion', `v: ${picked.version.id}`);
         },
       );
       outputChannel.appendLine(
@@ -394,20 +395,20 @@ export async function updateCodeVersionDisplay(
   // Prefer the locally configured code version (no OCAPI needed)
   const configuredVersion = config?.values.codeVersion;
   if (configuredVersion) {
-    treeView.description = `v: ${configuredVersion}`;
+    setCartridgeViewLabel(treeView, 'codeVersion', `v: ${configuredVersion}`);
     return;
   }
 
   // Fall back to backend discovery (SCAPI or OCAPI based on apiBackend) if available
   if (!instance) {
-    treeView.description = '';
+    setCartridgeViewLabel(treeView, 'codeVersion', undefined);
     return;
   }
   try {
     const active = await createScriptsBackendFromExtension(instance).getActiveCodeVersion();
-    treeView.description = active?.id ? `v: ${active.id}` : '';
+    setCartridgeViewLabel(treeView, 'codeVersion', active?.id ? `v: ${active.id}` : undefined);
   } catch {
-    treeView.description = '';
+    setCartridgeViewLabel(treeView, 'codeVersion', undefined);
   }
 }
 

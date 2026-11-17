@@ -7,6 +7,7 @@ import {expect} from 'chai';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import * as zlib from 'node:zlib';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
 import {createMrtClient, DEFAULT_MRT_ORIGIN} from '@salesforce/b2c-tooling-sdk/clients';
@@ -1037,6 +1038,29 @@ describe('operations/mrt/push', () => {
       expect(result.deployed).to.be.false;
       expect(result.warnings).to.deep.equal(['heads up']);
       expect(deployCalled).to.be.false;
+    });
+
+    it('writes bundleMetadata into the in-archive config of a legacy v2 push', async () => {
+      let archiveText = '';
+      server.use(
+        http.post(`${DEFAULT_BASE_URL}/api/v2/projects/:projectSlug/bundles/`, async ({request}) => {
+          const form = await request.formData();
+          const archive = form.get('bundle') as Blob;
+          archiveText = zlib.gunzipSync(Buffer.from(await archive.arrayBuffer())).toString('utf8');
+          return HttpResponse.json({id: 656, message: 'legacy v2', warnings: []}, {status: 201});
+        }),
+      );
+
+      await pushMrtBundle(
+        pushOptions({
+          preference: 'legacy',
+          v2: true,
+          bundleMetadata: {dependencies: {react: '18.0.0'}, ccOverrides: ['plugin-a']},
+        }),
+      );
+
+      expect(archiveText).to.include('"dependencies":{"react":"18.0.0"}');
+      expect(archiveText).to.include('"ccOverrides":["plugin-a"]');
     });
   });
 });

@@ -4,14 +4,17 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 /**
- * Access to the agent skills bundled with the CLI (`content/guidance`, built by
- * `scripts/generate-guidance.ts`) and the mapping from command topics to skills.
+ * Access to the agent skills bundled with the SDK (the agent plugin collections
+ * of `loadBundledGuidanceCatalog()`) and the mapping from command topics to skills.
  *
  * Skills are the maintained source of workflow guidance; help output and
  * `b2c docs skill` point at them instead of duplicating that guidance.
  */
-import {fileURLToPath} from 'node:url';
-import {GuidanceCatalog} from '@salesforce/b2c-tooling-sdk/guidance';
+import {
+  PLUGIN_GUIDANCE_COLLECTIONS,
+  loadBundledGuidanceCatalog,
+  type GuidanceCatalog,
+} from '@salesforce/b2c-tooling-sdk/guidance';
 
 /** Collection used when a skill name or topic is given without a collection. */
 export const DEFAULT_SKILL_COLLECTION = 'b2c-cli';
@@ -43,7 +46,7 @@ let catalog: GuidanceCatalog | null | undefined;
 export function loadSkillCatalog(): GuidanceCatalog | undefined {
   if (catalog === undefined) {
     try {
-      catalog = new GuidanceCatalog(fileURLToPath(new URL('../../content/guidance/', import.meta.url)));
+      catalog = loadBundledGuidanceCatalog({collections: PLUGIN_GUIDANCE_COLLECTIONS});
     } catch {
       catalog = null;
     }

@@ -19,8 +19,8 @@ pnpm --filter @salesforce/b2c-dx-mcp run test:agent
 ```
 
 If the sync adds or renames a skill, add its `cap-dev/<skill>` line to
-`packages/b2c-dx-mcp/skills/index-summaries.json` (the tests fail until you do). Commit the refreshed files with an `@salesforce/b2c-dx-mcp` patch changeset so the update ships in
-the next MCP release.
+`packages/b2c-dx-mcp/skills/index-summaries.json` (the tests fail until you do). Commit the refreshed files with an `@salesforce/b2c-tooling-sdk` patch changeset so the update ships in
+the next SDK release (and, through it, the MCP).
 
 The sync copies only Markdown, because the MCP serves only Markdown. It skips the upstream
 `evals/`, `scripts/`, and `assets/` folders. Links into the upstream `shared/` folder are rewritten

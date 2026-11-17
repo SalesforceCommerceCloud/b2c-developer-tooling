@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
-import {reloadCodeVersion, uploadCartridges} from '@salesforce/b2c-tooling-sdk/operations/code';
+import {
+  maxArchiveBytesFromConfig,
+  reloadCodeVersion,
+  uploadCartridges,
+} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as vscode from 'vscode';
 import type {B2CExtensionConfig} from '../config-provider.js';
 import {findCartridgesSafe} from '../workspace-discovery.js';
@@ -91,6 +95,7 @@ export function createDeployCommand(
           progress.report({message: 'Uploading cartridges...'});
           await uploadCartridges(instance, selectedCartridges, {
             ignoreDirs: configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+            maxArchiveBytes: maxArchiveBytesFromConfig(configProvider.getConfig()?.values.maxArchiveSize),
           });
 
           if (token.isCancellationRequested) {
@@ -228,6 +233,7 @@ export function createDeployOneCommand(
         try {
           await uploadCartridges(instance, [toDeploy], {
             ignoreDirs: configProvider.getConfig()?.values.cartridgeIgnoreDirs,
+            maxArchiveBytes: maxArchiveBytesFromConfig(configProvider.getConfig()?.values.maxArchiveSize),
           });
           outputChannel.appendLine(`Deployed "${toDeploy.name}" to "${codeVersion}"`);
           outputChannel.appendLine(`--- Deploy single complete ---`);

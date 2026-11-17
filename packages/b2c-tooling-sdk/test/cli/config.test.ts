@@ -40,6 +40,48 @@ class MockConfigSource implements ConfigSource {
 
 describe('cli/config', () => {
   describe('loadConfig', () => {
+    describe('variables without a CLI flag', () => {
+      let tempDir: string;
+
+      beforeEach(() => {
+        isolateConfig();
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-flagless-env-'));
+      });
+      afterEach(() => {
+        restoreConfig();
+        fs.rmSync(tempDir, {recursive: true, force: true});
+      });
+
+      it('reads SFCC_CARTRIDGES as a colon- or comma-separated cartridge path', async () => {
+        process.env.SFCC_CARTRIDGES = 'app_custom:int_payment,app_storefront_base';
+        const config = await loadConfig({}, {projectDirectory: tempDir, workingDirectory: tempDir});
+        expect(config.values.cartridges).to.deep.equal(['app_custom', 'int_payment', 'app_storefront_base']);
+      });
+
+      it('lets SFCC_CARTRIDGES override dw.json cartridges', async () => {
+        const configPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(configPath, JSON.stringify({hostname: 'example.com', cartridges: ['app_from_file']}));
+        process.env.SFCC_CARTRIDGES = 'app_from_env';
+        const config = await loadConfig({}, {configPath, projectDirectory: tempDir});
+        expect(config.values.cartridges).to.deep.equal(['app_from_env']);
+        expect(config.values.hostname).to.equal('example.com');
+      });
+
+      it('reads SFCC_CATALOGS', async () => {
+        process.env.SFCC_CATALOGS = 'storefront-catalog, apparel-catalog';
+        const config = await loadConfig({}, {projectDirectory: tempDir, workingDirectory: tempDir});
+        expect(config.values.catalogs).to.deep.equal(['storefront-catalog', 'apparel-catalog']);
+      });
+
+      it('lets SFCC_SITE_ID override dw.json siteId', async () => {
+        const configPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(configPath, JSON.stringify({hostname: 'example.com', siteId: 'FromFile'}));
+        process.env.SFCC_SITE_ID = 'FromEnv';
+        const config = await loadConfig({}, {configPath, projectDirectory: tempDir});
+        expect(config.values.siteId).to.equal('FromEnv');
+      });
+    });
+
     it('loads config from flags only', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'test.demandware.net',
@@ -476,6 +518,49 @@ describe('cli/config', () => {
       ).to.deep.equal(['node_modules', 'build']);
       expect(extractInstanceFlags({'cartridge-ignore-dirs': ['']}).cartridgeIgnoreDirs).to.deep.equal([]);
       expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.be.undefined;
+    });
+
+    describe('SFCC_CARTRIDGE_IGNORE_DIRS', () => {
+      beforeEach(() => isolateConfig());
+      afterEach(() => restoreConfig());
+
+      it('is used when --cartridge-ignore-dirs is not passed', () => {
+        process.env.SFCC_CARTRIDGE_IGNORE_DIRS = 'node_modules, build';
+        expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.deep.equal(['node_modules', 'build']);
+      });
+
+      it('treats an empty value as an empty list', () => {
+        process.env.SFCC_CARTRIDGE_IGNORE_DIRS = '';
+        expect(extractInstanceFlags({}).cartridgeIgnoreDirs).to.deep.equal([]);
+      });
+
+      it('is overridden by the flag', () => {
+        process.env.SFCC_CARTRIDGE_IGNORE_DIRS = 'build';
+        expect(extractInstanceFlags({'cartridge-ignore-dirs': ['dist']}).cartridgeIgnoreDirs).to.deep.equal(['dist']);
+      });
+    });
+
+    describe('SFCC_MAX_ARCHIVE_SIZE', () => {
+      beforeEach(() => isolateConfig());
+      afterEach(() => restoreConfig());
+
+      it('is used when --max-archive-size is not passed', () => {
+        process.env.SFCC_MAX_ARCHIVE_SIZE = '150mb';
+        expect(extractInstanceFlags({}).maxArchiveSize).to.equal('150mb');
+      });
+
+      it('is overridden by the flag and ignored when empty', () => {
+        process.env.SFCC_MAX_ARCHIVE_SIZE = '150mb';
+        expect(extractInstanceFlags({'max-archive-size': '1gb'}).maxArchiveSize).to.equal('1gb');
+        process.env.SFCC_MAX_ARCHIVE_SIZE = '';
+        expect(extractInstanceFlags({}).maxArchiveSize).to.be.undefined;
+      });
+    });
+
+    it('maps --max-archive-size as a string', () => {
+      expect(extractInstanceFlags({'max-archive-size': '150mb'}).maxArchiveSize).to.equal('150mb');
+      expect(extractInstanceFlags({'max-archive-size': 200}).maxArchiveSize).to.equal('200');
+      expect(extractInstanceFlags({}).maxArchiveSize).to.be.undefined;
     });
 
     it('includes OAuth flags', () => {

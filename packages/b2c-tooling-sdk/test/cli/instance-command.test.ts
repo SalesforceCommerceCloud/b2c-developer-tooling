@@ -262,6 +262,20 @@ describe('cli/instance-command', () => {
       expect(webdavCommand.oauthStrategyCalls).to.equal(0);
       expect(webdavCommand.testHasOAuthCredentials()).to.equal(false);
     });
+
+    it('fails clearly when OCAPI or SCAPI is called with the built-in client', async () => {
+      stubParse(command, {
+        server: 'test.demandware.net',
+        'client-id': 'project-client',
+        'client-secret': 'project-secret',
+        'default-client': true,
+      });
+      await command.init();
+
+      const instance = command.testInstance();
+      expect(() => instance.ocapi).to.throw(/can't access/);
+      expect(command.oauthStrategyCalls).to.equal(0);
+    });
   });
 
   describe('createContext', () => {

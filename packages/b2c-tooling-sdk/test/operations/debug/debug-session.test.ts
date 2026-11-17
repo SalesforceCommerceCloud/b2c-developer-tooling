@@ -7,7 +7,11 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {DebugSessionManager, type DebugSessionConfig} from '@salesforce/b2c-tooling-sdk/operations/debug';
+import {
+  DebugSessionManager,
+  resolveDebugIntervals,
+  type DebugSessionConfig,
+} from '@salesforce/b2c-tooling-sdk/operations/debug';
 
 const TEST_HOST = 'test.demandware.net';
 const BASE_URL = `https://${TEST_HOST}/s/-/dw/debugger/v2_0`;
@@ -141,6 +145,101 @@ describe('operations/debug/debug-session', () => {
     });
   });
 
+  describe('breakpoint tracking', () => {
+    it('adds breakpoints to the current set, replacing the same script and line', async () => {
+      const sent: unknown[] = [];
+      server.use(
+        http.delete(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})),
+        http.post(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})),
+        http.delete(`${BASE_URL}/breakpoints`, () => new HttpResponse(null, {status: 204})),
+        http.post(`${BASE_URL}/breakpoints`, async ({request}) => {
+          const body = (await request.json()) as {breakpoints: Array<{line_number: number; script_path: string}>};
+          sent.push(body.breakpoints);
+          return HttpResponse.json({
+            _v: '2.0',
+            breakpoints: body.breakpoints.map((bp, index) => ({id: index + 1, ...bp})),
+          });
+        }),
+      );
+      const session = new DebugSessionManager(makeConfig());
+      await session.connect();
+      await session.setBreakpoints([{line_number: 10, script_path: '/a.js'}]);
+      const result = await session.addBreakpoints([
+        {line_number: 20, script_path: '/b.js'},
+        {line_number: 10, script_path: '/a.js', condition: 'x > 1'},
+      ]);
+      expect(result.map((bp) => `${bp.script_path}:${bp.line_number}`)).to.deep.equal(['/b.js:20', '/a.js:10']);
+      expect(session.getBreakpoints()).to.deep.equal(result);
+      expect(sent).to.have.length(2);
+
+      server.use(http.delete(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})));
+      await session.disconnect();
+      expect(session.getBreakpoints()).to.deep.equal([]);
+    });
+  });
+
+  describe('waitForHalt', () => {
+    const halted = {id: 7, status: 'halted', call_stack: []};
+
+    function connectWithThreads(threads: () => unknown[]) {
+      server.use(
+        http.delete(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})),
+        http.post(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})),
+        http.get(`${BASE_URL}/threads`, () => HttpResponse.json({_v: '2.0', script_threads: threads()})),
+      );
+      return new DebugSessionManager(makeConfig({pollInterval: 10}));
+    }
+
+    it('resolves with the next halted thread and times out with null', async () => {
+      let threads: unknown[] = [];
+      const session = connectWithThreads(() => threads);
+      await session.connect();
+      expect(await session.waitForHalt(30)).to.equal(null);
+      setTimeout(() => {
+        threads = [halted];
+      }, 20);
+      expect((await session.waitForHalt(5000))?.id).to.equal(7);
+      // Already halted: resolves at once.
+      expect((await session.waitForHalt(1))?.id).to.equal(7);
+      await session.disconnect();
+    });
+
+    it('rejects pending waits when the session disconnects or the signal aborts', async () => {
+      const session = connectWithThreads(() => []);
+      await session.connect();
+      const ended = session.waitForHalt(5000);
+      await session.disconnect();
+      let error: unknown;
+      try {
+        await ended;
+      } catch (caught) {
+        error = caught;
+      }
+      expect((error as Error).message).to.equal('Debug session ended');
+
+      await session.connect();
+      const controller = new AbortController();
+      const aborted = session.waitForHalt(5000, controller.signal);
+      controller.abort(new Error('cancelled'));
+      error = undefined;
+      try {
+        await aborted;
+      } catch (caught) {
+        error = caught;
+      }
+      expect((error as Error).message).to.equal('cancelled');
+      await session.disconnect();
+
+      error = undefined;
+      try {
+        await session.waitForHalt(5000);
+      } catch (caught) {
+        error = caught;
+      }
+      expect((error as Error).message).to.equal('Debug session is not connected');
+    });
+  });
+
   describe('execution control', () => {
     it('forwards resume to SDAPI client', async () => {
       server.use(
@@ -157,6 +256,34 @@ describe('operations/debug/debug-session', () => {
 
       server.use(http.delete(`${BASE_URL}/client`, () => new HttpResponse(null, {status: 204})));
       await session.disconnect();
+    });
+  });
+
+  describe('resolveDebugIntervals', () => {
+    it('uses defaults when nothing is configured', () => {
+      expect(resolveDebugIntervals({}, {})).to.deep.equal({pollInterval: 500, keepaliveInterval: 15_000});
+    });
+
+    it('reads SFCC_DEBUG_* environment variables', () => {
+      const env = {SFCC_DEBUG_POLL_INTERVAL: '2000', SFCC_DEBUG_KEEPALIVE_INTERVAL: '20000'};
+      expect(resolveDebugIntervals({}, env)).to.deep.equal({pollInterval: 2000, keepaliveInterval: 20_000});
+    });
+
+    it('prefers explicit config over environment variables', () => {
+      const env = {SFCC_DEBUG_POLL_INTERVAL: '2000', SFCC_DEBUG_KEEPALIVE_INTERVAL: '20000'};
+      expect(resolveDebugIntervals({pollInterval: 750, keepaliveInterval: 5000}, env)).to.deep.equal({
+        pollInterval: 750,
+        keepaliveInterval: 5000,
+      });
+    });
+
+    it('clamps to minimums and ignores non-numeric values', () => {
+      expect(resolveDebugIntervals({pollInterval: 1, keepaliveInterval: 10}, {})).to.deep.equal({
+        pollInterval: 100,
+        keepaliveInterval: 1000,
+      });
+      const env = {SFCC_DEBUG_POLL_INTERVAL: 'fast', SFCC_DEBUG_KEEPALIVE_INTERVAL: ''};
+      expect(resolveDebugIntervals({}, env)).to.deep.equal({pollInterval: 500, keepaliveInterval: 15_000});
     });
   });
 });

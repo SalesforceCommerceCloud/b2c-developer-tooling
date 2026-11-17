@@ -35,7 +35,7 @@ export interface HttpTransportOptions {
    * MRT requests. Development aid for local servers; dw.json key `selfsigned-api`.
    * @internal
    */
-  readonly selfSignedApi?: boolean;
+  readonly selfSignedApi?: boolean | undefined;
 }
 
 /** A `fetch` function for SDK API requests. */

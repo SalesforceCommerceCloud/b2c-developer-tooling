@@ -7,7 +7,7 @@
 import {expect} from 'chai';
 import {http, HttpResponse} from 'msw';
 import {setupServer} from 'msw/node';
-import {OAuthStrategy, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
+import {AccountManagerTokenError, OAuthStrategy, decodeJWT} from '@salesforce/b2c-tooling-sdk/auth';
 
 const AM_HOST = 'account.demandware.com';
 const AM_URL = `https://${AM_HOST}/dwsso/oauth2/access_token`;
@@ -234,6 +234,20 @@ describe('auth/oauth', () => {
           expect(error.message).to.include('401');
         }
       });
+      it('throws AccountManagerTokenError with status and OAuth error code', async () => {
+        server.use(http.post(AM_URL, () => HttpResponse.json({error: 'invalid_scope'}, {status: 400})));
+        const strategy = new OAuthStrategy({clientId: 'typed-error-client', clientSecret: 'secret'});
+
+        const error = await strategy.getTokenResponse().then(
+          () => undefined,
+          (error_: unknown) => error_,
+        );
+        expect(error).to.be.instanceOf(AccountManagerTokenError);
+        const tokenError = error as AccountManagerTokenError;
+        expect(tokenError.status).to.equal(400);
+        expect(tokenError.oauthError).to.equal('invalid_scope');
+        expect(tokenError.message).to.match(/^Failed to get access token: 400 /);
+      });
     });
 
     describe('token caching', () => {
@@ -267,6 +281,22 @@ describe('auth/oauth', () => {
         const token2 = await strategy.getTokenResponse();
         expect(requestCount).to.equal(1); // No additional request
         expect(token2.accessToken).to.equal(token1.accessToken);
+      });
+
+      it('requests a new token after the client secret changes', async () => {
+        let requestCount = 0;
+        server.use(
+          http.post(AM_URL, () => {
+            requestCount++;
+            return HttpResponse.json({access_token: createMockJWT({sub: 'rotated'}), expires_in: 1800, scope: 'a'});
+          }),
+        );
+        const config = {clientId: 'test-client-rotated', scopes: ['a']};
+        await new OAuthStrategy({...config, clientSecret: 'old-secret'}).getTokenResponse();
+        await new OAuthStrategy({...config, clientSecret: 'old-secret'}).getTokenResponse();
+        expect(requestCount).to.equal(1);
+        await new OAuthStrategy({...config, clientSecret: 'new-secret'}).getTokenResponse();
+        expect(requestCount).to.equal(2);
       });
 
       it('should invalidate and refetch token when invalidateToken is called', async () => {

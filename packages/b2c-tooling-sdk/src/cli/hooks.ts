@@ -37,6 +37,7 @@ import type {ConfigSource, ResolveConfigOptions} from '../config/types.js';
 import type {HttpMiddlewareProvider} from '../clients/middleware-registry.js';
 import type {AuthMiddlewareProvider} from '../auth/middleware.js';
 import type {AuthSessionBackend} from '../auth/session-store.js';
+import type {LogRedactor} from '../logging/redaction.js';
 
 /**
  * Options passed to the `b2c:config-sources` hook.
@@ -406,6 +407,62 @@ export interface AuthSessionStoreHookResult {
  */
 export type AuthSessionStoreHook = Hook<'b2c:auth-session-store'>;
 
+// ============================================================================
+// Log Redaction Hook
+// ============================================================================
+
+/**
+ * Options passed to the `b2c:log-redaction` hook.
+ */
+export interface LogRedactionHookOptions {
+  /** All parsed CLI flags from the current command (read-only). */
+  flags?: Record<string, unknown>;
+  /** Index signature for oclif hook compatibility */
+  [key: string]: unknown;
+}
+
+/**
+ * Result returned by the `b2c:log-redaction` hook.
+ */
+export interface LogRedactionHookResult {
+  /** Redactors applied to every log entry, after the built-in redaction. */
+  redactors?: LogRedactor[];
+}
+
+/**
+ * Hook type for `b2c:log-redaction`.
+ *
+ * Implement this hook to remove more from log output than the built-in
+ * redaction does, for example secrets at any depth or tokens inside messages.
+ * Called during command initialization, before other plugin hooks run, so
+ * their log entries are redacted too.
+ *
+ * ## Plugin Registration
+ *
+ * ```json
+ * {
+ *   "oclif": {
+ *     "hooks": {
+ *       "b2c:log-redaction": "./dist/hooks/log-redaction.js"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * ```typescript
+ * import type { LogRedactionHook } from '@salesforce/b2c-tooling-sdk/cli';
+ * import { deepLogRedactor } from '@salesforce/b2c-tooling-sdk/logging';
+ *
+ * const hook: LogRedactionHook = async function() {
+ *   return { redactors: [deepLogRedactor] };
+ * };
+ *
+ * export default hook;
+ * ```
+ */
+export type LogRedactionHook = Hook<'b2c:log-redaction'>;
+
 // Re-export B2C lifecycle types for convenience
 export type {
   B2COperationType,
@@ -449,6 +506,10 @@ declare module '@oclif/core' {
     'b2c:auth-session-store': {
       options: AuthSessionStoreHookOptions;
       return: AuthSessionStoreHookResult;
+    };
+    'b2c:log-redaction': {
+      options: LogRedactionHookOptions;
+      return: LogRedactionHookResult;
     };
     'b2c:operation-lifecycle': {
       options: import('./lifecycle.js').B2COperationLifecycleHookOptions;

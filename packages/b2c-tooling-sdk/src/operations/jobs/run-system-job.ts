@@ -98,6 +98,11 @@ export interface SystemJobSpec {
   waitOptions?: WaitForJobOptions;
   /** Human-readable verb for error messages, e.g. `'execute import job'`. */
   failVerb: string;
+  /**
+   * Cancels the start request and the wait. A job that already started keeps
+   * running on the instance. Defaults to `waitOptions.signal`.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -173,7 +178,7 @@ async function runScapiSystemJob(
 }
 
 async function startScapiJob(client: ReturnType<typeof createScapiJobsClient>, tenantId: string, spec: SystemJobSpec) {
-  return scapiExecuteJob(client, spec.jobId, {body: spec.body, tenantId});
+  return scapiExecuteJob(client, spec.jobId, {body: spec.body, tenantId, signal: jobSignal(spec)});
 }
 
 async function finishScapiJob(
@@ -188,10 +193,10 @@ async function finishScapiJob(
 
   try {
     const final = await waitForJobExecution(
-      (jobId, executionId) => scapiGetJobExecution(client, jobId, executionId, tenantId),
+      (jobId, executionId, signal) => scapiGetJobExecution(client, jobId, executionId, tenantId, signal),
       spec.jobId,
       started.id,
-      spec.waitOptions,
+      {...spec.waitOptions, signal: jobSignal(spec)},
     );
     return mapCanonicalToOcapiExecution(final);
   } catch (error) {
@@ -212,9 +217,11 @@ async function finishScapiJob(
 async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Promise<JobExecution> {
   let execution: JobExecution;
 
+  const signal = jobSignal(spec);
   const {data, error} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
     params: {path: {job_id: spec.jobId}},
     body: spec.body as unknown as string,
+    signal,
   });
 
   if (
@@ -225,6 +232,7 @@ async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Pr
     const {data: retryData, error: retryError} = await instance.ocapi.POST('/jobs/{job_id}/executions', {
       params: {path: {job_id: spec.jobId}},
       body: {parameters: spec.parameters} as unknown as string,
+      signal,
     });
 
     if (retryError || !retryData) {
@@ -246,5 +254,9 @@ async function runOcapiSystemJob(instance: B2CInstance, spec: SystemJobSpec): Pr
     return execution;
   }
 
-  return waitForJob(instance, spec.jobId, execution.id!, spec.waitOptions);
+  return waitForJob(instance, spec.jobId, execution.id!, {...spec.waitOptions, signal});
+}
+
+function jobSignal(spec: SystemJobSpec): AbortSignal | undefined {
+  return spec.signal ?? spec.waitOptions?.signal;
 }

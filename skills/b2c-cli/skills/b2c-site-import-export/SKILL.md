@@ -17,8 +17,9 @@ defaults. Use `--project-directory` outside the target project. Inspect with
 values normally make credential flags and manual `dw.json` reads unnecessary.
 For resolution issues, use `b2c-cli:b2c-config`.
 
-No dedicated MCP archive-transfer tool exists. Use the CLI for XML imports and
-exports, including settings absent from SCAPI contracts. MCP `scapi_execute` can
+Use the CLI for XML imports and exports, including settings absent from SCAPI
+contracts. Without a terminal, MCP `site_archive_import` imports XML given as text
+(`skill://mcp/b2c-mcp-site-import/SKILL.md`); it does not export. MCP `scapi_execute` can
 manage supported Admin fields; a metadata record alone does not prove that
 promotion discounts or targeting rules are configured.
 

@@ -18,7 +18,12 @@ import {ALL_AUTH_METHODS} from '../auth/types.js';
 import {resolveConfig, type NormalizedConfig, type ConfigSource, type ResolvedB2CConfig} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
 import {readEnvFile} from '../config/project-environment.js';
-import {STOREFRONT_NEXT_ENV_VAR_MAP, StorefrontNextEnvSource} from '../config/sources/env-source.js';
+import {
+  EnvSource,
+  FLAGLESS_ENV_VARS,
+  STOREFRONT_NEXT_ENV_VAR_MAP,
+  StorefrontNextEnvSource,
+} from '../config/sources/env-source.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
@@ -40,6 +45,24 @@ function toList(value: unknown): string[] | undefined {
     .map((item) => item.trim())
     .filter(Boolean);
   return items.length > 0 ? items : undefined;
+}
+
+/**
+ * `--cartridge-ignore-dirs`, falling back to `SFCC_CARTRIDGE_IGNORE_DIRS`.
+ *
+ * Env vars for deploy flags are read here rather than through the flag so every
+ * command that resolves instance config honors them, including CLIs that define
+ * their own copy of the flag. An explicitly empty flag or env value means "ignore nothing".
+ */
+function resolveCartridgeIgnoreDirs(flag: unknown): string[] | undefined {
+  const value = flag ?? process.env.SFCC_CARTRIDGE_IGNORE_DIRS;
+  return value === undefined ? undefined : (toList(value) ?? []);
+}
+
+/** `--max-archive-size`, falling back to `SFCC_MAX_ARCHIVE_SIZE`; empty means unset. */
+function resolveMaxArchiveSize(flag: unknown): string | undefined {
+  const value = flag ?? process.env.SFCC_MAX_ARCHIVE_SIZE;
+  return value === undefined || value === '' ? undefined : String(value);
 }
 
 /**
@@ -155,9 +178,8 @@ export function extractInstanceFlags(flags: ParsedFlags): Partial<NormalizedConf
     username: flags.username as string | undefined,
     password: flags.password as string | undefined,
     importSetExclude: toList(flags['import-set-exclude']),
-    // An explicitly empty --cartridge-ignore-dirs means "ignore nothing".
-    cartridgeIgnoreDirs:
-      flags['cartridge-ignore-dirs'] === undefined ? undefined : (toList(flags['cartridge-ignore-dirs']) ?? []),
+    cartridgeIgnoreDirs: resolveCartridgeIgnoreDirs(flags['cartridge-ignore-dirs']),
+    maxArchiveSize: resolveMaxArchiveSize(flags['max-archive-size']),
     // TLS/mTLS options
     certificate: flags.certificate as string | undefined,
     certificatePassphrase: flags.passphrase as string | undefined,
@@ -326,7 +348,7 @@ export async function loadConfig(
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,
     overrideOrigins: describeOverrideOrigins(flags, options.envFile),
-    sourcesBefore: pluginSources.before,
+    sourcesBefore: [...createFlaglessEnvSource(pluginSources.before), ...(pluginSources.before ?? [])],
     sourcesAfter: [...(pluginSources.after ?? []), createStorefrontNextSource(options.envFile)],
   });
 
@@ -373,6 +395,17 @@ function describeOverrideOrigins(
     }
   }
   return origins;
+}
+
+/**
+ * Reads the toolkit variables that have no CLI flag (such as `SFCC_CARTRIDGES`)
+ * from the environment, unless the caller already supplies an {@link EnvSource}
+ * (as `setup inspect` does). Variables with flags come in through the flags.
+ */
+function createFlaglessEnvSource(before: ConfigSource[] | undefined): ConfigSource[] {
+  if (before?.some((source) => source instanceof EnvSource && source.name === 'EnvSource')) return [];
+  const env = Object.fromEntries(FLAGLESS_ENV_VARS.map((name) => [name, process.env[name]]));
+  return [new EnvSource(env)];
 }
 
 /**

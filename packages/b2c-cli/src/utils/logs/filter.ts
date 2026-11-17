@@ -13,4 +13,5 @@ export {
   parseLogTimestamp,
   parseRelativeTime,
   parseSinceTime,
+  InvalidTimeError,
 } from '@salesforce/b2c-tooling-sdk/operations/logs';

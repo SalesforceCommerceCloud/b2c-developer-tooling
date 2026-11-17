@@ -203,6 +203,7 @@ describe('guidance over real stdio', function () {
       'b2c-mcp-debugger',
       'b2c-mcp-scapi',
       'b2c-mcp-server',
+      'b2c-mcp-site-import',
       'b2c-setup',
       'skill-index',
     ]);
@@ -248,6 +249,7 @@ describe('guidance over real stdio', function () {
       'b2c-mcp-debugger',
       'b2c-mcp-scapi',
       'b2c-mcp-server',
+      'b2c-mcp-site-import',
       'b2c-setup',
     ]);
     for (const skill of skills) {

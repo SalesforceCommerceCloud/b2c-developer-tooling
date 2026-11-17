@@ -88,6 +88,20 @@ Edit cartridges locally and have changes show up on your sandbox automatically. 
 
 Code sync needs only your instance hostname: start it, paste the hostname when asked, and sign in with your Account Manager account. See [Code sync with only a server](./configuration#code-sync-with-only-a-server).
 
+The **Cartridges** view lists cartridges in cartridge path order, which IntelliSense and ISML template links follow. The order comes from the order you set in the view (drag and drop), your `cartridges` configuration, a site's cartridge path on your instance, or a site's cartridge path from a site import in the workspace, in that order. See [cartridge order](../cli/project.md#cartridge-order).
+
+### Endpoints
+
+The **Endpoints** view shows what your cartridges expose and what runs for each request, using the same cartridge order as the **Cartridges** view:
+
+- **Controllers**: every SFRA and SiteGenesis controller endpoint (`Cart-AddProduct`) with the methods it accepts and whether it requires HTTPS, a logged-in customer, and a CSRF token. Expand an SFRA endpoint to see the middleware and handlers that run, in order and with the cartridge each comes from; the route event listeners they register with `this.on('route:BeforeComplete', ...)`, which run after the chain; and the `server.get`/`post`/`append`/`prepend`/`replace` statements across cartridges that built it. Endpoints that accept POST without a CSRF check, or whose `server.replace()` dropped security middleware, are marked with a warning.
+- **Custom APIs**: each API's endpoints with method, path, security scheme, and scopes from `schema.yaml`, linked to the implementing function. Missing operations, missing `.public = true`, and APIs defined in more than one cartridge are flagged.
+- **Hooks**: each extension point's registrations in cartridge path order. For system extension points (`dw.*`, including OCAPI/SCAPI hooks), an implementation that returns a value skips the later registrations and the system implementation, so the view flags implementations that can return one. Custom extension points run every registration.
+
+Click any row to open the code. Use **Filter** to narrow by name and **Show Only Endpoints with Issues** to focus on warnings. The **Cartridges** view shows the same information per cartridge: its controllers and route statements (noting when another cartridge replaces, prepends to, or appends to a route), the hooks it registers and where each falls in the run order, its Custom APIs, and its custom job steps from `steptypes.json`. Custom job steps open the function that runs. Custom hooks expand into the functions the project calls (from `HookMgr.callHook()`), each opening the function and listing its call sites; right-click one and choose **Open Registration** to jump to its `hooks.json` or `steptypes.json` entry. Right-click a Custom API and choose **Open in API Browser** to try it on the connected instance once it's deployed.
+
+In controller files, a line above each route statement summarizes the endpoint (its methods, how many steps run, and which cartridges change it). Click it to show the endpoint in the Endpoints view. Turn it off with the `b2c-dx.endpoints.codeLens` setting. Turn the view off with the `b2c-dx.features.endpoints` setting. The same information is available from the command line and to AI assistants with [`b2c project`](../cli/project.md).
+
 ### SCAPI API Explorer
 
 Explore every SCAPI API your instance exposes and try requests against them in a built-in Swagger UI. Authentication is handled for you using the same credentials your CLI already has.

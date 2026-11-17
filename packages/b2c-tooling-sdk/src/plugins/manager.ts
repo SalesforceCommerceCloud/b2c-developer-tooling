@@ -16,6 +16,9 @@ import type {ConfigSourcesHookResult} from '../cli/hooks.js';
 import type {HttpMiddlewareHookResult} from '../cli/hooks.js';
 import type {AuthMiddlewareHookResult} from '../cli/hooks.js';
 import type {AuthSessionStoreHookResult} from '../cli/hooks.js';
+import type {LogRedactionHookResult} from '../cli/hooks.js';
+import type {LogRedactor} from '../logging/redaction.js';
+import {globalLogRedactorRegistry} from '../logging/redaction.js';
 import {discoverPlugins, type PluginDiscoveryOptions} from './discovery.js';
 import {createHookContext, invokeHook} from './loader.js';
 
@@ -49,6 +52,7 @@ export class B2CPluginManager {
   private _sourcesAfter: ConfigSource[] = [];
   private _httpMiddleware: HttpMiddlewareProvider[] = [];
   private _authMiddleware: AuthMiddlewareProvider[] = [];
+  private _logRedactors: LogRedactor[] = [];
   private _authSessionBackend?: AuthSessionBackend;
   private _authSessionBackendPlugin?: string;
   private readonly logger?: Logger;
@@ -62,8 +66,8 @@ export class B2CPluginManager {
   /**
    * Discovers installed plugins and invokes their hooks.
    *
-   * Collects config sources, HTTP middleware, auth middleware providers, and
-   * the auth session store.
+   * Collects config sources, HTTP middleware, auth middleware providers, log
+   * redactors, and the auth session store.
    */
   async initialize(hookOptions?: PluginHookOptions): Promise<void> {
     if (this._initialized) return;
@@ -129,6 +133,19 @@ export class B2CPluginManager {
             for (const provider of result.providers) {
               this.logger?.debug(`Collected auth middleware provider: ${provider.name} (from ${plugin.name})`);
             }
+          }
+        }
+      }
+
+      // Log redaction hook
+      if (plugin.hooks['b2c:log-redaction']) {
+        for (const hookPath of plugin.hooks['b2c:log-redaction']) {
+          const absPath = path.resolve(plugin.packageDir, hookPath);
+          const options = {flags: hookOptions?.flags ?? {}};
+          const result = await invokeHook<LogRedactionHookResult>(absPath, context, options, this.logger);
+          for (const redactor of result?.redactors ?? []) {
+            this._logRedactors.push(redactor);
+            this.logger?.debug(`Collected log redactor: ${redactor.name} (from ${plugin.name})`);
           }
         }
       }
@@ -216,6 +233,7 @@ export class B2CPluginManager {
    * - HTTP middleware is available to all SDK client factories via {@link globalMiddlewareRegistry}
    * - Auth middleware is available to OAuth strategies via {@link globalAuthMiddlewareRegistry}
    * - Config sources are available to {@link resolveConfig} via {@link globalConfigSourceRegistry}
+   * - Log redactors apply to SDK log output via {@link globalLogRedactorRegistry}
    */
   applyMiddleware(): void {
     if (this._middlewareApplied) return;
@@ -229,6 +247,11 @@ export class B2CPluginManager {
     for (const provider of this._authMiddleware) {
       globalAuthMiddlewareRegistry.register(provider);
       this.logger?.debug(`Registered auth middleware provider: ${provider.name}`);
+    }
+
+    for (const redactor of this._logRedactors) {
+      globalLogRedactorRegistry.register(redactor);
+      this.logger?.debug(`Registered log redactor: ${redactor.name}`);
     }
 
     for (const source of [...this._sourcesBefore, ...this._sourcesAfter]) {

@@ -49,8 +49,7 @@ __pycache__/
 .sf/
 
 # Generated offline guidance; rebuilt from authored skills and MCP guides.
-/packages/b2c-dx-mcp/content/guidance/
-/packages/b2c-cli/content/guidance/
+/packages/b2c-tooling-sdk/data/guidance/
 
 # Release notes: published history refresh and rendered Markdown (seed is committed).
 /docs/.vitepress/releases/live.json*

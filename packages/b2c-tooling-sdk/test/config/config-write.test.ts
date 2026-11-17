@@ -278,6 +278,7 @@ describe('config/config-write', () => {
         'api-backend': 'ocapi',
         'mrt-backend': 'scapi',
         safety: '{"level":"NO_DELETE"}',
+        security: '{"rules":{"pii-in-logs":"off"}}',
         libraries: '["lib"]',
         hostname: 'h.example.com',
         'tenant-id': 'zzpq_019',

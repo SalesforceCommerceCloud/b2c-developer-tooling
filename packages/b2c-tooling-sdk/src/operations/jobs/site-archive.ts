@@ -37,6 +37,11 @@ export interface SiteArchiveImportOptions {
   /** Wait options for job completion */
   waitOptions?: WaitForJobOptions;
   /**
+   * Cancels the upload, the job start and the wait. A job that already started
+   * keeps running on the instance, and an uploaded archive is left in place.
+   */
+  signal?: AbortSignal;
+  /**
    * Optional list of paths or glob patterns to include in the archive when
    * importing from a directory. Each entry may be:
    * - An absolute path under the root directory
@@ -133,6 +138,8 @@ export async function siteArchiveImport(
   options: SiteArchiveImportOptions & {archiveName?: string} = {},
 ): Promise<SiteArchiveImportResult> {
   const {keepArchive = false, wait = true, waitOptions, archiveName, paths, maxBytes, onOversize} = options;
+  const signal = options.signal ?? waitOptions?.signal;
+  signal?.throwIfAborted();
 
   let zipFilename: string;
   let needsUpload = true;
@@ -210,7 +217,7 @@ export async function siteArchiveImport(
   }
 
   if (needsUpload && archiveContent) {
-    await instance.webdav.put(uploadPath, archiveContent as Buffer, 'application/zip');
+    await instance.webdav.put(uploadPath, archiveContent as Buffer, 'application/zip', {signal});
   }
 
   // Execute the import job (SCAPI when configured, OCAPI fallback in auto).
@@ -222,6 +229,7 @@ export async function siteArchiveImport(
     wait,
     waitOptions,
     failVerb: 'execute import job',
+    signal,
   });
 
   // Clean up archive if not keeping (only when we waited for completion)

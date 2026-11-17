@@ -9,7 +9,12 @@ import {fileURLToPath} from 'node:url';
 import {join, dirname, resolve} from 'node:path';
 import {Client, InMemoryTransport} from '@modelcontextprotocol/client';
 import {expect} from 'chai';
-import {GuidanceCatalog, type GuidanceManifest, type GuidanceRead} from '@salesforce/b2c-tooling-sdk/guidance';
+import {
+  BUNDLED_GUIDANCE_DIR,
+  GuidanceCatalog,
+  type GuidanceManifest,
+  type GuidanceRead,
+} from '@salesforce/b2c-tooling-sdk/guidance';
 import {z} from 'zod';
 import {B2CDxMcpServer} from '../src/server.js';
 import {createToolAdapter, jsonResult} from '../src/tools/adapter.js';
@@ -22,7 +27,7 @@ import type {Telemetry} from '@salesforce/b2c-tooling-sdk/telemetry';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(packageRoot, '../..');
-const bundleRoot = join(packageRoot, 'content/guidance');
+const bundleRoot = BUNDLED_GUIDANCE_DIR;
 
 describe('guidance distribution and result contracts', () => {
   it('discovers operational runbooks without adding featured resources', () => {

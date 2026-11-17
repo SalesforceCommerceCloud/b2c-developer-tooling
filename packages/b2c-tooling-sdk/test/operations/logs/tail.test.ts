@@ -439,6 +439,31 @@ Stack trace line 2
       };
     }
 
+    it('throws the abort reason instead of skipping files when cancelled', async () => {
+      const controller = new AbortController();
+      server.use(
+        http.all(`${BASE_URL}/*`, ({request}) => {
+          if (request.method === 'PROPFIND') {
+            return new HttpResponse(
+              generatePropfindXml([{name: 'error-blade1-20250125.log', size: 10, date: new Date()}]),
+              {status: 207, headers: {'Content-Type': 'application/xml'}},
+            );
+          }
+          controller.abort(new Error('stopped by user'));
+          return new HttpResponse('[2025-01-25 10:30:45.123 GMT] ERROR x\n', {status: 200});
+        }),
+      );
+
+      const error = await getRecentLogs(createMockInstance() as never, {
+        prefixes: ['error'],
+        signal: controller.signal,
+      }).then(
+        () => undefined,
+        (error_: Error) => error_,
+      );
+      expect(error?.message).to.equal('stopped by user');
+    });
+
     it('returns recent log entries', async () => {
       const now = new Date();
       // Multi-line log content with two complete entries

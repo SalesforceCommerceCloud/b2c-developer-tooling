@@ -6,6 +6,7 @@
 
 import type {SchemaListItem} from '../clients/scapi-schemas.js';
 import {loadScapiSchemas, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
+import {describeScapiSchemas, type ScapiAuthType} from './authentication.js';
 
 /**
  * Sections the Schemas API can add to a contract through its `expand` query parameter.
@@ -207,4 +208,20 @@ export async function listScapiSchemasWithFallback(
       warning: `Live schema listing unavailable (${reason(error)}). Listing the bundled corpus. ${BUNDLED_LIMITS}`,
     };
   }
+}
+
+const bundledByAuth: Partial<Record<ScapiAuthType, ScapiSchemaDocument[]>> = {};
+
+/**
+ * Bundled SCAPI contracts, optionally limited to operations of one authentication type.
+ *
+ * `authType: 'admin'` returns only Admin (Account Manager-authenticated) operations, and
+ * drops APIs with none; this is the set the MCP server uses for `schemas: 'bundled'`
+ * Admin work. Without `authType` it returns every bundled contract, like
+ * `loadScapiSchemas`. Results are cached per process.
+ */
+export function loadBundledScapiDocuments(options: {authType?: ScapiAuthType} = {}): ScapiSchemaDocument[] {
+  if (!options.authType) return loadScapiSchemas();
+  bundledByAuth[options.authType] ??= describeScapiSchemas(loadScapiSchemas(), options.authType);
+  return bundledByAuth[options.authType]!;
 }

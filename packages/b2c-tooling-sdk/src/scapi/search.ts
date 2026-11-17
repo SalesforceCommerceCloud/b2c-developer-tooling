@@ -5,7 +5,10 @@
  */
 
 import {createRankedIndex} from '../search/ranking.js';
-import {SCAPI_METHODS, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
+import {SCAPI_METHODS, scapiFullPath, type ApiDocument, type ScapiSchemaDocument} from './catalog.js';
+import type {SafetyConfig} from '../safety/index.js';
+import {toOrganizationId} from '../clients/custom-apis.js';
+import {filterScapiDocumentsBySafety} from './safety-filter.js';
 
 /** One ranked operation; `path` and `method` index `spec.paths` directly. */
 export interface ScapiOperationMatch {
@@ -26,6 +29,14 @@ export interface ScapiOperationSearchOptions {
   limit?: number;
 }
 
+/** Options for building a search index. */
+export interface ScapiOperationIndexOptions {
+  /** Leave out operations this safety policy always blocks (see `filterScapiDocumentsBySafety`). */
+  safety?: SafetyConfig;
+  /** Organization ID used to evaluate path rules that name a specific organization. */
+  organizationId?: string;
+}
+
 interface IndexedOperation {
   api: string;
   method: string;
@@ -39,10 +50,7 @@ interface IndexedOperation {
   otherVersions: string[];
 }
 
-/** Code-mode paths are prefixed with the API id; custom API contracts omit their organization segment. */
-export function scapiFullPath(document: ScapiSchemaDocument, path: string): string {
-  return `/${document.entry.id}${document.entry.apiFamily === 'custom' ? '/organizations/{organizationId}' : ''}${path}`;
-}
+export {scapiFullPath} from './catalog.js';
 
 const words = (value: string) =>
   value
@@ -62,9 +70,17 @@ const versionNumber = (version: string) => Number.parseInt(version.replaceAll(/\
  * Rank operations by summary, operationId, tags, path and description so prose such as "gift certificate balance"
  * finds operations a regex over ids would miss. Versions of one API collapse into the newest.
  */
-export function createScapiOperationSearch(documents: readonly ScapiSchemaDocument[]) {
+export function createScapiOperationSearch(
+  documents: readonly ScapiSchemaDocument[],
+  indexOptions: ScapiOperationIndexOptions = {},
+) {
   const operations = new Map<string, IndexedOperation>();
-  for (const document of documents) {
+  const visible = filterScapiDocumentsBySafety(
+    [...documents],
+    indexOptions.safety,
+    indexOptions.organizationId ? toOrganizationId(indexOptions.organizationId) : undefined,
+  );
+  for (const document of visible) {
     const {apiFamily, apiName, apiVersion} = document.entry;
     for (const [path, item] of Object.entries(document.schema.paths ?? {}) as [string, ApiDocument][]) {
       for (const method of SCAPI_METHODS) {
@@ -131,7 +147,7 @@ export function createScapiOperationSearch(documents: readonly ScapiSchemaDocume
 export function searchScapiOperations(
   documents: readonly ScapiSchemaDocument[],
   query: string,
-  options?: ScapiOperationSearchOptions,
+  options?: ScapiOperationSearchOptions & ScapiOperationIndexOptions,
 ): ScapiOperationMatch[] {
-  return createScapiOperationSearch(documents)(query, options);
+  return createScapiOperationSearch(documents, options)(query, options);
 }

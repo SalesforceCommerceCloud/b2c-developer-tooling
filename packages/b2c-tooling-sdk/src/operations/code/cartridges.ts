@@ -6,6 +6,7 @@
 import {globSync, globIterateSync} from 'glob';
 import fs from 'node:fs';
 import path from 'node:path';
+import {DISCOVERY_IGNORED_DIRECTORIES} from '../../cartridges/discover.js';
 import {getLogger} from '../../logging/logger.js';
 
 /**
@@ -84,16 +85,7 @@ export function findCartridges(directory?: string, options: FindCartridgesOption
   // root is broad (e.g. an MCP server's working directory).
   const globOptions = {
     cwd: searchDir,
-    ignore: [
-      '**/node_modules/**',
-      '**/.git/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      '**/.cache/**',
-      '**/tmp/**',
-      '**/temp/**',
-    ],
+    ignore: [...DISCOVERY_IGNORED_DIRECTORIES].map((d) => `**/${d}/**`),
     // maxDepth is only forwarded when set so unbounded callers keep prior behavior.
     ...(options.maxDepth === undefined ? {} : {maxDepth: options.maxDepth}),
   };

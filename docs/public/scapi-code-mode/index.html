@@ -341,7 +341,7 @@ sequenceDiagram
     </div>
     <div class="grid" style="gap:1.4vh">
       <div class="card teal"><h3>scapi_search</h3><p>Find the right operation: run code over the OpenAPI contracts (<code>spec</code>) for operationId, path, inputs, auth and scopes. Offline by default. Can't make requests. Want the raw OpenAPI document instead? <code>scapi_schemas_list</code> fetches it live.</p></div>
-      <div class="card teal"><h3>scapi_execute</h3><p>Same sandbox plus <code>scapi.request</code>, <code>auth</code>, <code>codemode</code>. Governed by Safety Mode.</p></div>
+      <div class="card teal"><h3>scapi_execute</h3><p>Same sandbox plus <code>scapi.request</code>, <code>auth.slas</code> (with SLAS config), <code>codemode</code>. Governed by Safety Mode.</p></div>
       <div class="card"><h3>scapi_snippet_save</h3><p>Keep a finished run as a reusable <code>user/…</code> snippet. We ship <code>builtin/</code> ones for common workflows; the agent can read and adapt them, not just run them as-is.</p></div>
     </div>
   </div>
@@ -351,7 +351,7 @@ sequenceDiagram
     <li><b>Improvements (not built yet).</b> (1) The Schemas API returns no operation <code>summary</code>/<code>description</code> or <code>info.description</code> (verified raw over HTTP, 61 APIs / 671 operations); the published specs have them, e.g. <code>createBasket</code>'s one-open-basket rule and the 400 "Customer Baskets Quota Exceeded" message. Plan: overlay published prose onto the bundled contracts by <code>operationId</code>; the bundled Shopper Products is also stale (1.12.0 vs 1.13.1 live). (2) A <code>spec.search(query)</code> helper using MiniSearch (as docs and Cloudflare's <code>cf cli search</code> do) over operationId words, path, API name, parameters and the restored prose; rebuilt for <code>schemas:"live"</code>, with the bundled prose overlaid by operationId. Cloudflare's Code Mode search is plain JS over the spec, so this would go beyond it. The Admin API published specs source is still open.</li>
     <li><code>scapi_snippet_save</code> is a footnote; mention, don't dwell. Nine built-ins ship (create-product; campaign-promotions, failed-job-triage, job-execution-review/inspect, code-version-inspect, site-cartridge-inspect, cors-preferences-update, category-rules-run). <code>codemode.describe(name)</code> returns the source, so the agent can read it and tweak it; <code>codemode.run(name, input)</code> is optional, not required.</li>
     <li>Same <code>search</code> + <code>execute</code> shape Cloudflare popularized, pointed at SCAPI's OpenAPI contracts.</li>
-    <li>The only exits from the function are <code>scapi.request</code>, <code>auth.*</code> and <code>codemode.*</code>.</li>
+    <li>The only exits from the function are <code>scapi.request</code>, <code>auth.slas</code> and <code>codemode.*</code>.</li>
     <li>This is the bridge from skills to code mode: the tool descriptions say it, and a missing <code>skillRead</code> returns <code>SCAPI_SKILL_REQUIRED</code> with the URI to read. It is an honor-system gate (the server can't verify the read), but it reliably routes the agent through the skill. Skill gate: the model must read <code>skill://mcp/b2c-mcp-scapi/SKILL.md</code> and pass <code>skillRead: true</code> before either tool works.</li>
     <li><code>{organizationId}</code> is a placeholder; the parent substitutes the configured tenant and rejects any other org.</li></ul></aside>
 </section>
@@ -447,7 +447,7 @@ flowchart LR
   </div>
   <p class="dim mt" style="font-size:2.1vh">The source says it plainly: "local execution, not a security sandbox." The threat model is a cooperative agent that makes mistakes.</p>
   <aside class="notes"><h4>Notes</h4><ul>
-    <li>Be upfront: network blocking is a JS-level override. I believe <code>--permission</code> doesn't cover raw <code>https</code> modules; <b>not tested</b>. The credential story holds anyway: nothing sensitive is in the worker. Exception: tokens the agent explicitly exports with <code>auth.*</code>.</li>
+    <li>Be upfront: network blocking is a JS-level override. I believe <code>--permission</code> doesn't cover raw <code>https</code> modules; <b>not tested</b>. The credential story holds anyway: nothing sensitive is in the worker. Exception: shopper tokens the agent explicitly exports with <code>auth.slas()</code> (only when SLAS is configured). Account Manager tokens are never exported.</li>
     <li>Denied access surfaces as <code>SCAPI_RUNTIME_RESTRICTED</code> with advice to use terminal/file tools instead.</li></ul></aside>
 </section>
 <section class="slide">
@@ -484,7 +484,7 @@ flowchart LR
   }
 }</pre>
   <aside class="notes"><h4>Notes</h4><ul>
-    <li>Every request goes through one per-request <code>SafetyGuard</code> in the parent; an approval never exempts a concurrent or later request. Escape hatch: <code>auth.accountManager()</code> / <code>auth.slas()</code> can export a token for an external client, and that use is <b>outside</b> Safety Mode.</li>
+    <li>Every request goes through one per-request <code>SafetyGuard</code> in the parent; an approval never exempts a concurrent or later request. Escape hatch: <code>auth.slas()</code> can export a shopper token for an external client, and that use is <b>outside</b> Safety Mode. Admin tokens come only from <code>b2c auth token</code>.</li>
     <li>Same config format for CLI, IDE extension and MCP. Code mode needs no extra setup.</li>
     <li>POST-based searches (e.g. job-execution-search) need an explicit <code>allow</code> under READ_ONLY.</li>
     <li>This example: reads flow, product PUTs prompt, everything else that writes is blocked.</li></ul></aside>

@@ -496,6 +496,48 @@ describe('config/resolver', () => {
         expect(warnings.map((w) => w.code)).to.deep.equal(['TENANT_MISMATCH']);
       });
 
+      it('warns when hostname is a storefront Default Domain and suggests the sandbox BM host', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.sbx.my.commercecloud.salesforce.com'}),
+        ]);
+
+        const {warnings} = await resolver.resolve();
+
+        expect(warnings.map((w) => w.code)).to.deep.equal(['STOREFRONT_HOSTNAME']);
+        expect(warnings[0].message).to.include('zzpq-013.dx.commercecloud.salesforce.com');
+        expect(warnings[0].details).to.include({
+          field: 'hostname',
+          suggestion: 'zzpq-013.dx.commercecloud.salesforce.com',
+        });
+      });
+
+      it('warns about a production Default Domain without guessing a BM host', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {
+            hostname: 'production.example.com',
+            webdavHostname: 'abcd-prd.my.commercecloud.salesforce.com',
+          }),
+        ]);
+
+        const {warnings} = await resolver.resolve();
+
+        expect(warnings.map((w) => w.code)).to.deep.equal(['STOREFRONT_HOSTNAME']);
+        expect(warnings[0].details).to.deep.equal({
+          field: 'webdavHostname',
+          hostname: 'abcd-prd.my.commercecloud.salesforce.com',
+        });
+      });
+
+      it('does not warn for Business Manager hostnames', async () => {
+        const resolver = new ConfigResolver([
+          new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com'}),
+        ]);
+
+        const {warnings} = await resolver.resolve();
+
+        expect(warnings).to.be.empty;
+      });
+
       it('compares the configured tenantId case-insensitively', async () => {
         const resolver = new ConfigResolver([
           new MockSource('dw', {hostname: 'zzpq-013.dx.commercecloud.salesforce.com', tenantId: 'ZZPQ_013'}),

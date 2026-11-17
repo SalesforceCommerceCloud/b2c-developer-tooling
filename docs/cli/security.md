@@ -1,0 +1,180 @@
+---
+description: Scan B2C Commerce cartridge code for security problems with b2c security scan, list the rules, and baseline existing findings.
+---
+
+# Security Commands
+
+::: warning Preview
+The `security` commands are a preview. Rules, output fields, and flags may change before they are stable.
+:::
+
+Scan cartridge code for security problems such as open redirects, object query injection, weak cryptography, and hardcoded credentials. Scans run locally, need no credentials or instance, and finish in well under a second for a typical storefront. See [Code Security](../guide/code-security.md) for an overview and [Security Rules](../guide/security-rules.md) for what each rule finds and how to fix it.
+
+## b2c security scan
+
+Scan the server-side scripts in your cartridges and the site data in your project. Directories are searched for cartridges (folders with a `.project` file); inside them, `.js` and `.ds` files are scanned except under `cartridge/client/`, `cartridge/static/`, and `node_modules/`, and except minified files. Directories are also searched for site import/export data, such as a `site_template` folder: `services.xml`, `preferences.xml`, attribute definitions, `csrf-whitelists.xml`, and OCAPI settings (`ocapi-settings/wapi_*_config.json`). Files you name directly are always scanned.
+
+### Usage
+
+```bash
+b2c security scan [paths...]
+```
+
+### Arguments
+
+| Argument | Description                                    | Required                                                                                |
+| -------- | ---------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `paths`  | Files or directories to scan. Accepts several. | No (defaults to the project directory: `--project-directory`, or the current directory) |
+
+### Flags
+
+| Flag                             | Description                                                                                                          | Default                                      |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `--format`                       | Report format: `table`, `json`, or `sarif` (for GitHub code scanning)                                                | `table`                                      |
+| `--output`                       | Write the `json` or `sarif` report to this file instead of standard output                                           |                                              |
+| `--severity`                     | Only report findings at or above this severity: `critical`, `high`, `medium`, `low`, or `info`                       | all                                          |
+| `--fail-on`                      | Exit with status 1 when open findings at or above this severity remain; `none` never fails                           | `low`                                        |
+| `--rule`                         | Run only this rule. Repeatable.                                                                                      | all rules                                    |
+| `--exclude-rule`                 | Skip this rule. Repeatable.                                                                                          |                                              |
+| `--ignore`                       | Leave out files matching this glob, relative to the project directory (for example `'cartridges/bm_*'`). Repeatable. |                                              |
+| `--baseline`                     | Baseline file of accepted findings (see [`b2c security baseline`](#b2c-security-baseline))                           | `.b2c-security-baseline.json` when it exists |
+| `--exclude-reference-cartridges` | Leave out findings in SFRA and SiteGenesis reference cartridges (see [Reference cartridges](#reference-cartridges))  | `false`                                      |
+| `--show-suppressed`              | Also list findings that are suppressed inline or in the baseline                                                     | `false`                                      |
+
+### Examples
+
+```bash
+# Scan every cartridge under the current directory
+b2c security scan
+
+# Scan one cartridge
+b2c security scan cartridges/app_custom
+
+# Report medium and above, and fail CI only for high and critical findings
+b2c security scan --severity medium --fail-on high
+
+# Write SARIF for GitHub code scanning
+b2c security scan --format sarif --output security.sarif
+
+# Run specific rules
+b2c security scan --rule open-redirect --rule object-query-injection
+
+# Machine-readable output
+b2c security scan --json
+```
+
+### Output
+
+Findings are grouped by file, with line and column, severity, rule, and message, followed by a summary:
+
+```text
+cartridges/app_custom/cartridge/controllers/Account.js
+  42:18   medium  open-redirect            Redirect destination can be chosen through the request; this allows redirects to other sites.
+
+cartridges/app_custom/cartridge/scripts/helpers/subscription.js
+  17:60   high    object-query-injection   The query string passed to queryCustomObject() is built by concatenation; pass values as {0}-style query arguments instead.
+
+2 open finding(s) (1 high, 1 medium) in 214 file(s); 0 suppressed, 0 baselined.
+```
+
+A finding is **open** unless an inline comment suppresses it or it matches the baseline. The command exits with status 1 when open findings at or above `--fail-on` remain.
+
+With `--json` (or `--format json`), the result has `findings` (each with `ruleId`, `severity`, `confidence`, `category`, `cwe`, `message`, `location`, `snippet`, `remediation`, `docsUrl`, `fingerprint`, and `suppression`, `baselined`, or `referenceCartridge` when they apply), `errors` for files that could not be parsed, `rules`, `filesScanned`, `indexedEndpoints`, `hiddenReferenceFindings`, and a `summary` with counts. With `--format sarif`, the report is SARIF 2.1.0, including `security-severity` scores that GitHub code scanning uses to rank alerts.
+
+### Reference cartridges
+
+Findings in the cartridges that ship with SFRA (`app_storefront_base`, `bm_app_storefront_base`, `modules`) and SiteGenesis (`app_storefront_controllers`, `app_storefront_core`, `app_storefront_pipelines`) are reported and marked `[reference cartridge]` (`referenceCartridge` in JSON). They are real for any storefront that deploys those cartridges, even though you usually don't edit them: fix them from your own cartridge, for example with `server.prepend()` for a missing CSRF check, or accept them in the baseline. Use `--exclude-reference-cartridges` to leave them out.
+
+### Cartridge path
+
+Route rules combine SFRA routes across your cartridges (`server.extend(module.superModule)` with `append`, `prepend`, and `replace`), using every cartridge in the project directory, even when you scan only some paths. Set `cartridges` in `dw.json` (or `SFCC_CARTRIDGES`; a colon-separated path copied from Business Manager works) to your site's cartridge path. See [cartridge order](./project.md#cartridge-order) for what's used when it isn't set.
+
+### Suppressing a finding
+
+To accept a finding in code, add a comment that names the rule on the line before it, or at the end of the line. A reason after `--` is optional and appears in JSON and SARIF output.
+
+```js
+// b2c-dx-disable-next-line open-redirect -- target checked by isAllowedRedirect()
+res.redirect(target);
+
+res.redirect(target); // b2c-dx-disable-line open-redirect
+```
+
+A suppression must name the rule; several rules can be listed, separated by commas or spaces. In XML site data, use an XML comment and separate the reason with a single hyphen, because XML comments can't contain `--`:
+
+```xml
+<!-- b2c-dx-disable-next-line service-insecure-url - mock endpoint on the sandbox network -->
+<url>http://erp-mock.internal.example.com/orders</url>
+```
+
+### Project settings
+
+To turn rules off, change their severity, or leave out paths for everyone who scans the project, commit a `.b2c-security.json` in the project directory, or put the same settings under a `security` key in `dw.json` (which takes precedence over the file). `scan`, `baseline`, and the MCP `security_scan` tool read them.
+
+```json
+{
+  "ignore": ["cartridges/bm_*"],
+  "rules": {
+    "pii-in-logs": "off",
+    "weak-crypto": "low",
+    "dynamic-code": {"ignore": ["cartridges/int_legacy"]}
+  }
+}
+```
+
+- `ignore`: globs (relative to the project directory) of files not to scan. A directory covers everything inside it.
+- `rules`: per rule ID, `"off"`, a severity, or `{"severity": ..., "ignore": [...]}` to drop that rule's findings in some paths.
+- An unknown rule ID is an error, so a typo doesn't leave a rule on unnoticed. The summary shows the settings file it used.
+
+In `dw.json`:
+
+```json
+{
+  "hostname": "my-sandbox.example.com",
+  "security": {"ignore": ["cartridges/bm_*"], "rules": {"pii-in-logs": "off"}}
+}
+```
+
+### Notes
+
+- Files that use legacy script syntax, type annotations (`var x : String`, common in `.ds` files) or E4X XML literals (`<product/>`, `xml..child`), can't be parsed and are skipped; the summary reports how many of each. Use `--json` to list them (each error has a `reason`).
+- Rules follow common SFRA and SiteGenesis patterns and report what they can decide from one file. Treat `medium` and `low` confidence findings as prompts to review the code.
+
+## b2c security rules
+
+List the rules that `b2c security scan` runs, with severity, category, CWE, and a description.
+
+### Usage
+
+```bash
+b2c security rules [--json]
+```
+
+## b2c security baseline
+
+Record the current findings in a baseline file so later scans report only new findings. Use this to adopt scanning on an existing codebase: commit the baseline, fix findings over time, and regenerate it as you go. Findings suppressed inline are not recorded.
+
+Baseline entries match on the rule, the file, and the text of the line, so they survive code moving up or down. Editing the line makes the finding new again.
+
+### Usage
+
+```bash
+b2c security baseline [paths...]
+```
+
+### Flags
+
+| Flag             | Description                                     | Default                       |
+| ---------------- | ----------------------------------------------- | ----------------------------- |
+| `--output`       | Baseline file to write                          | `.b2c-security-baseline.json` |
+| `--rule`         | Include only this rule. Repeatable.             | all rules                     |
+| `--exclude-rule` | Skip this rule. Repeatable.                     |                               |
+| `--ignore`       | Leave out files matching this glob. Repeatable. |                               |
+
+### Examples
+
+```bash
+# Accept today's findings, then scan for new ones
+b2c security baseline
+b2c security scan
+```

@@ -13,7 +13,7 @@
  *
  * @module operations/jobs/wait-canonical
  */
-import type {WaitForJobOptions, WaitForJobPollInfo} from './run.js';
+import {pollSleep, type WaitForJobOptions, type WaitForJobPollInfo} from './run.js';
 import type {JobExecutionInfo} from './types.js';
 
 /**
@@ -38,13 +38,13 @@ export class CanonicalJobExecutionError extends Error {
  * {@link JobExecutionError} on failure or `Error` on timeout.
  */
 export async function waitForJobExecution(
-  getExecution: (jobId: string, executionId: string) => Promise<JobExecutionInfo>,
+  getExecution: (jobId: string, executionId: string, signal?: AbortSignal) => Promise<JobExecutionInfo>,
   jobId: string,
   executionId: string,
   options: WaitForJobOptions = {},
 ): Promise<JobExecutionInfo> {
-  const {pollIntervalSeconds = 3, timeoutSeconds = 0, onPoll} = options;
-  const sleepFn = options.sleep ?? defaultSleep;
+  const {pollIntervalSeconds = 3, timeoutSeconds = 0, onPoll, signal} = options;
+  const sleepFn = pollSleep(options.sleep, signal);
   const startTime = Date.now();
   const pollIntervalMs = pollIntervalSeconds * 1000;
   const timeoutMs = timeoutSeconds * 1000;
@@ -58,7 +58,7 @@ export async function waitForJobExecution(
       throw new Error(`Timeout waiting for job ${jobId} execution ${executionId}`);
     }
 
-    const execution = await getExecution(jobId, executionId);
+    const execution = await getExecution(jobId, executionId, signal);
     const currentStatus = execution.executionStatus;
     const pollInfo: WaitForJobPollInfo = {jobId, executionId, elapsedSeconds, status: currentStatus};
     onPoll?.(pollInfo);
@@ -73,8 +73,4 @@ export async function waitForJobExecution(
 
     await sleepFn(pollIntervalMs);
   }
-}
-
-async function defaultSleep(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }

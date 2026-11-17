@@ -15,6 +15,11 @@ import {PkceWithImplicitFallbackStrategy} from '../auth/oauth-pkce-fallback.js';
 import {JwtOAuthStrategy} from '../auth/oauth-jwt.js';
 import {StatefulOAuthStrategy} from '../auth/stateful-oauth-strategy.js';
 import {getDefaultPublicClientId, getLegacyImplicitPublicClientId} from '../defaults.js';
+import {
+  getAccountManagerRoleDisplayName,
+  readAccountManagerClaims,
+  type AccountManagerClaims,
+} from '../auth/account-manager-claims.js';
 
 /** Account Manager role: User Administrator */
 const AM_USER_ADMIN = 'User Administrator';
@@ -126,7 +131,7 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
     const isAuthError = AUTH_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
 
     if (isAuthError) {
-      const suggestion = this.getAuthErrorSuggestion();
+      const suggestion = await this.getAuthErrorSuggestion();
       if (suggestion) {
         err.message = `${err.message}\n\n${suggestion}`;
       }
@@ -138,22 +143,19 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
   /**
    * Builds a contextual suggestion message based on the auth method and AM subtopic.
    */
-  private getAuthErrorSuggestion(): string | undefined {
+  private async getAuthErrorSuggestion(): Promise<string | undefined> {
     const subtopic = this.getAmSubtopic();
     const authMethod = this.authMethodUsed;
 
     if (!subtopic) return undefined;
 
-    // Try to get current JWT roles for client-credentials / stateful (avoid triggering browser for implicit)
+    // Name the roles the current token actually carries. Only tokens already in hand are read, so
+    // building the suggestion never opens a browser or starts a new sign-in.
     let rolesInfo = '';
-    if ((authMethod === 'client-credentials' || authMethod === 'stateful') && this._authStrategy) {
-      try {
-        // getJWT() is async but we only want cached token info — use synchronous check
-        // The token should already be cached if we got far enough to receive an auth error
-        rolesInfo = this.getJwtRolesInfo();
-      } catch {
-        // Token may be expired or unavailable, skip roles info
-      }
+    try {
+      rolesInfo = await this.getJwtRolesInfo();
+    } catch {
+      // Token may be expired or unavailable; suggest without role details.
     }
 
     if (authMethod === 'client-credentials' || authMethod === 'stateful') {
@@ -161,7 +163,7 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
     }
 
     if (authMethod === 'user' || authMethod === 'implicit') {
-      return this.getImplicitSuggestion(subtopic);
+      return this.getImplicitSuggestion(subtopic, rolesInfo);
     }
 
     return undefined;
@@ -182,17 +184,37 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
   }
 
   /**
-   * Attempts to extract roles from the cached JWT token synchronously.
+   * Describes the Account Manager roles in the token the command already holds, or `''` when no
+   * token is available without user interaction.
    */
-  private getJwtRolesInfo(): string {
-    // Access the strategy's internal token cache via getJWT()
-    // This is best-effort — if no token is cached, we skip
-    if (!this._authStrategy) return '';
+  private async getJwtRolesInfo(): Promise<string> {
+    const claims = await this.getCurrentClaims();
+    if (!claims) return '';
+    if (claims.roles.length === 0) {
+      return 'Your current token carries no Account Manager roles.';
+    }
+    const names = claims.roles.map((role) => {
+      const display = getAccountManagerRoleDisplayName(role);
+      return display === role ? role : `${display} (${role})`;
+    });
+    return `Your current token has these roles: ${names.join(', ')}.`;
+  }
 
-    // We can't call async getJWT() here, but we can check if OAuthStrategy has a cached token
-    // by looking at the strategy type. For now, we'll return empty and let the suggestion
-    // work without role details.
-    return '';
+  private async getCurrentClaims(): Promise<AccountManagerClaims | undefined> {
+    const strategy = this._authStrategy;
+    if (!strategy) return undefined;
+    let accessToken: string | undefined;
+    if (strategy instanceof PkceOAuthStrategy || strategy instanceof PkceWithImplicitFallbackStrategy) {
+      accessToken = strategy.getCachedTokenResponse()?.accessToken;
+    } else if (
+      strategy instanceof OAuthStrategy ||
+      strategy instanceof JwtOAuthStrategy ||
+      strategy instanceof StatefulOAuthStrategy
+    ) {
+      // Non-interactive: the cached token, or at worst a new client token.
+      accessToken = (await strategy.getTokenResponse()).accessToken;
+    }
+    return accessToken ? readAccountManagerClaims(accessToken) : undefined;
   }
 
   /**
@@ -227,23 +249,24 @@ export abstract class AmCommand<T extends typeof Command> extends OAuthCommand<T
   /**
    * Suggestion for implicit auth failures.
    */
-  private getImplicitSuggestion(subtopic: string): string {
+  private getImplicitSuggestion(subtopic: string, rolesInfo = ''): string {
+    const suffix = rolesInfo ? `\n${rolesInfo}` : '';
     switch (subtopic) {
       case 'users':
       case 'roles':
         return (
           `Suggestion: Your user account needs the "${AM_ACCOUNT_ADMIN}" or "${AM_USER_ADMIN}" role ` +
-          `to manage users and roles.`
+          `to manage users and roles.${suffix}`
         );
       case 'clients':
         return (
           `Suggestion: Your user account needs the "${AM_ACCOUNT_ADMIN}" or "${AM_API_ADMIN}" role ` +
-          `to manage API clients.`
+          `to manage API clients.${suffix}`
         );
       case 'orgs':
-        return `Suggestion: Your user account needs the "${AM_ACCOUNT_ADMIN}" role to manage organizations.`;
+        return `Suggestion: Your user account needs the "${AM_ACCOUNT_ADMIN}" role to manage organizations.${suffix}`;
       default:
-        return `Suggestion: Verify your user account has the appropriate Account Manager role.`;
+        return `Suggestion: Verify your user account has the appropriate Account Manager role.${suffix}`;
     }
   }
 }

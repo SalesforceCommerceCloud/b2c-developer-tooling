@@ -5,7 +5,6 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import JSZip from 'jszip';
 import type {B2CInstance} from '../../instance/index.js';
 import {getLogger} from '../../logging/logger.js';
 import {findCartridges, type CartridgeMapping, type FindCartridgesOptions} from './cartridges.js';
@@ -14,6 +13,16 @@ import {OcapiScriptsBackend} from './ocapi-scripts-backend.js';
 import type {ScriptsBackend} from './scripts-types.js';
 import {UNZIP_TIMEOUT_MS} from './constants.js';
 import {NetworkError, describeNetworkErrorKind} from '../../errors/network-error.js';
+import {HTTPError} from '../../errors/http-error.js';
+import {
+  DEFAULT_MAX_ARCHIVE_BYTES,
+  collectArchiveEntries,
+  createArchiveTempDir,
+  formatBytes,
+  planArchiveParts,
+  writeArchive,
+  type ArchivePart,
+} from './archive.js';
 
 const UNZIP_BODY = new URLSearchParams({method: 'UNZIP'}).toString();
 
@@ -40,6 +49,24 @@ export interface UploadProgressInfo {
   phase: 'archiving' | 'uploading' | 'unzipping' | 'cleanup';
   /** Seconds elapsed since the current phase started */
   elapsedSeconds: number;
+  /** 1-based archive part this phase belongs to (when the deploy is split) */
+  part?: number;
+  /** Total number of archive parts */
+  parts?: number;
+  /** Size of the current archive part in bytes (uploading phase) */
+  bytes?: number;
+}
+
+/** Plan summary passed to the upload onPlan callback. */
+export interface UploadPlanInfo {
+  /** Number of archive parts that will be uploaded */
+  parts: number;
+  /** Per-part size limit in bytes */
+  maxBytes: number;
+  /** Estimated total archive bytes across all parts */
+  estimatedBytes: number;
+  /** Number of files across all parts */
+  fileCount: number;
 }
 
 /**
@@ -53,6 +80,14 @@ export interface UploadOptions {
    * {@link DEFAULT_CARTRIDGE_IGNORE_DIRS}; pass `[]` to archive everything.
    */
   ignoreDirs?: readonly string[];
+  /**
+   * Maximum size in bytes of one uploaded archive (default
+   * {@link DEFAULT_MAX_ARCHIVE_BYTES}). Larger deploys are split into several
+   * archives, each uploaded and unzipped into the same code version.
+   */
+  maxArchiveBytes?: number;
+  /** Called once the archive plan is known, before the first upload */
+  onPlan?: (plan: UploadPlanInfo) => void;
 }
 
 export interface DeployOptions extends FindCartridgesOptions {
@@ -68,6 +103,8 @@ export interface DeployOptions extends FindCartridgesOptions {
   onProgress?: UploadOptions['onProgress'];
   /** Directory names to skip inside each cartridge (see {@link UploadOptions.ignoreDirs}) */
   ignoreDirs?: UploadOptions['ignoreDirs'];
+  /** Per-archive size limit (see {@link UploadOptions.maxArchiveBytes}) */
+  maxArchiveBytes?: UploadOptions['maxArchiveBytes'];
 }
 
 /**
@@ -82,34 +119,6 @@ export interface DeployResult {
   activated: boolean;
   /** Whether the code version was reloaded after deploy */
   reloaded: boolean;
-}
-
-/**
- * Recursively adds a directory to a JSZip instance.
- */
-async function addDirectoryToZip(
-  zip: JSZip,
-  dirPath: string,
-  zipPath: string,
-  ignoreDirs: ReadonlySet<string>,
-): Promise<void> {
-  const entries = await fs.promises.readdir(dirPath, {withFileTypes: true});
-
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    const entryZipPath = path.join(zipPath, entry.name);
-
-    if (entry.isDirectory()) {
-      if (ignoreDirs.has(entry.name)) {
-        getLogger().debug({path: fullPath}, `Skipping ignored directory ${fullPath}`);
-        continue;
-      }
-      await addDirectoryToZip(zip, fullPath, entryZipPath, ignoreDirs);
-    } else if (entry.isFile()) {
-      const content = await fs.promises.readFile(fullPath);
-      zip.file(entryZipPath, content);
-    }
-  }
 }
 
 /**
@@ -159,24 +168,231 @@ export async function deleteCartridges(instance: B2CInstance, cartridges: Cartri
 }
 
 /**
+ * Server-side unzip timing. Exported for tests.
+ *
+ * - `requestTimeoutMs`: how long one unzip request may take at minimum. A
+ *   200 MiB part normally unzips in well under a minute, and some instances
+ *   drop requests that run longer than that.
+ * - `bytesPerSecond`: a conservative unzip rate; archives above the default
+ *   limit get proportionally longer per request (measured rates are several
+ *   times faster).
+ * - `intervalMs`: after a request drops, how often to ask again.
+ * - `timeoutMs`: how long to keep asking. The server holds its unzip lock for
+ *   at most 30 minutes.
+ */
+export const UNZIP_WAIT = {
+  requestTimeoutMs: UNZIP_TIMEOUT_MS,
+  bytesPerSecond: 4 * 1024 * 1024,
+  intervalMs: 10_000,
+  timeoutMs: 30 * 60_000,
+};
+
+/**
+ * How many more unzip requests may drop after the first one before deploy
+ * gives up. Each dropped request may have started an extraction, so this caps
+ * how many times one part can be extracted.
+ */
+const UNZIP_MAX_DROPS = 2;
+
+/** How many times to send one archive part before giving up on a dropped connection. */
+const PUT_ATTEMPTS = 3;
+
+/** Progress helper: fires immediately (0s) then every 5s until stopped. */
+const PROGRESS_INTERVAL_MS = 5_000;
+function startProgress(
+  onProgress: UploadOptions['onProgress'],
+  info: Omit<UploadProgressInfo, 'elapsedSeconds'>,
+): () => void {
+  const start = Date.now();
+  onProgress?.({...info, elapsedSeconds: 0});
+  if (!onProgress) return () => {};
+  const interval = setInterval(() => {
+    onProgress({...info, elapsedSeconds: Math.round((Date.now() - start) / 1000)});
+  }, PROGRESS_INTERVAL_MS);
+  return () => clearInterval(interval);
+}
+
+/**
+ * Builds the error for a rejected archive upload. A 413 means either the
+ * archive is over the instance's request size limit or (for a small archive)
+ * the sandbox is stopped, so say which one is likely.
+ */
+function uploadRejected(error: HTTPError, bytes: number, maxBytes: number): Error {
+  if (error.response.status !== 413) return error;
+  const size = formatBytes(bytes);
+  if (bytes > 50 * 1024 * 1024) {
+    return new HTTPError(
+      `Upload of a ${size} deploy archive was rejected as too large (413). ` +
+        `Lower the archive size limit (currently ${formatBytes(maxBytes)}) so the deploy is split into smaller parts.`,
+      error.response,
+      'PUT',
+    );
+  }
+  return new HTTPError(
+    `Upload of a ${size} deploy archive was rejected (413). The sandbox may be stopped or unavailable.`,
+    error.response,
+    'PUT',
+  );
+}
+
+/**
+ * Uploads one archive file, retrying when the connection drops mid-transfer.
+ * Re-sending a PUT is safe: it replaces the partial file.
+ */
+async function putArchive(
+  instance: B2CInstance,
+  remotePath: string,
+  file: string,
+  bytes: number,
+  maxBytes: number,
+): Promise<void> {
+  const logger = getLogger();
+  for (let attempt = 1; ; attempt++) {
+    try {
+      // A Blob backed by the file streams from disk and can be re-read on retry.
+      const body = await fs.openAsBlob(file, {type: 'application/zip'});
+      await instance.webdav.put(remotePath, body, 'application/zip');
+      return;
+    } catch (error) {
+      if (error instanceof HTTPError) throw uploadRejected(error, bytes, maxBytes);
+      if (!(error instanceof NetworkError) || attempt >= PUT_ATTEMPTS) {
+        if (error instanceof NetworkError) {
+          const {summary, hint} = describeNetworkErrorKind(error.kind);
+          throw new NetworkError(
+            `Upload of a ${formatBytes(bytes)} deploy archive failed after ${attempt} attempts: ${summary}. ${hint} ` +
+              `Some instances drop long uploads; lower the archive size limit (currently ${formatBytes(maxBytes)}) ` +
+              `to upload in smaller parts.`,
+            {
+              kind: error.kind,
+              operation: 'upload of cartridge archive',
+              host: instance.config.hostname,
+              cause: error.cause,
+            },
+          );
+        }
+        throw error;
+      }
+      logger.warn(
+        {remotePath, attempt, kind: error.kind},
+        `Upload of ${remotePath} dropped (${error.kind}); retrying (attempt ${attempt + 1} of ${PUT_ATTEMPTS})`,
+      );
+    }
+  }
+}
+
+/** Outcome of one unzip request. */
+type UnzipAttempt = 'done' | 'locked' | 'dropped';
+
+/**
+ * Sends one unzip request. The server runs each extraction under a lock on
+ * the archive, so while one is running another request returns 423 (Locked)
+ * without starting a second extraction. A broken archive returns 500.
+ */
+async function requestUnzip(instance: B2CInstance, zipPath: string, timeoutMs: number): Promise<UnzipAttempt> {
+  let response: Response;
+  try {
+    response = await instance.webdav.request(zipPath, {
+      method: 'POST',
+      body: UNZIP_BODY,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    if (error instanceof NetworkError) return 'dropped';
+    throw error;
+  }
+  if (response.status === 423) {
+    await response.body?.cancel();
+    return 'locked';
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    const reason =
+      response.status === 500 ? ' The server could not extract the archive; it may be damaged or invalid.' : '';
+    throw new Error(`Failed to unzip ${zipPath}: ${response.status} ${response.statusText}.${reason} ${text}`.trim());
+  }
+  await response.body?.cancel();
+  return 'done';
+}
+
+/**
+ * Unzips an uploaded archive part on the server.
+ *
+ * Normally this is one request. If it times out or the connection drops, the
+ * server keeps extracting, so this asks again every few seconds:
+ * - 423 (Locked) means the extraction is still running; keep waiting.
+ * - Success means the archive is extracted. If the first extraction had
+ *   already finished, the server extracts the part again, which writes the
+ *   same files.
+ * - A failed status (such as 500) stops the deploy.
+ *
+ * Requests that drop again are capped at {@link UNZIP_MAX_DROPS} so a part is
+ * never extracted over and over.
+ */
+async function unzipArchive(instance: B2CInstance, zipPath: string, partLabel: string, bytes: number): Promise<void> {
+  const logger = getLogger();
+  // Allow larger archives (a raised limit) proportionally more time.
+  const timeoutMs = Math.max(UNZIP_WAIT.requestTimeoutMs, Math.ceil(bytes / UNZIP_WAIT.bytesPerSecond) * 1000);
+  if ((await requestUnzip(instance, zipPath, timeoutMs)) === 'done') return;
+
+  logger.warn(
+    {zipPath},
+    `Server-side unzip of ${partLabel} did not respond within ${Math.round(timeoutMs / 1000)}s; ` +
+      `checking whether the server is still extracting it`,
+  );
+  const deadline = Date.now() + UNZIP_WAIT.timeoutMs;
+  let drops = 0;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, UNZIP_WAIT.intervalMs));
+    const attempt = await requestUnzip(instance, zipPath, timeoutMs);
+    if (attempt === 'done') {
+      logger.warn({zipPath}, `Server-side unzip of ${partLabel} finished`);
+      return;
+    }
+    if (attempt === 'locked') {
+      logger.debug({zipPath}, 'Unzip still running on the server (423 Locked)');
+      continue;
+    }
+    drops++;
+    if (drops > UNZIP_MAX_DROPS) break;
+    logger.warn({zipPath, drops}, `Unzip request for ${partLabel} dropped again; retrying`);
+  }
+  throw new NetworkError(
+    `Server-side unzip of ${partLabel} did not finish: ` +
+      (drops > UNZIP_MAX_DROPS
+        ? 'the unzip request kept timing out or dropping. '
+        : `the server was still extracting it after ${Math.round(UNZIP_WAIT.timeoutMs / 60_000)} minutes. `) +
+      `The server may still be extracting it; verify the code version before re-deploying. ` +
+      `Lowering the archive size limit makes each unzip shorter. The uploaded archive remains at "${zipPath}".`,
+    {kind: 'timeout', operation: 'server-side unzip of cartridge archive', host: instance.config.hostname},
+  );
+}
+
+/**
  * Uploads cartridges to an instance via WebDAV.
  *
  * This is a low-level upload function that:
- * 1. Creates a zip archive of the cartridges
- * 2. Uploads it to WebDAV
- * 3. Unzips on the server
- * 4. Cleans up the temporary zip file
+ * 1. Plans one or more zip archives, each under `maxArchiveBytes`
+ * 2. For each archive: streams it to a temporary file, uploads it (retrying
+ *    dropped uploads), unzips it on the server into the code version, and
+ *    deletes the uploaded archive
+ *
+ * Archives are written to disk rather than held in memory, so large code
+ * versions don't need large amounts of RAM. When the server-side unzip
+ * request drops or times out, this waits for the server to finish instead of
+ * failing (see the unzip retry rules on `UNZIP_WAIT`).
  *
  * Requires `instance.config.codeVersion` to be set.
  *
  * @param instance - B2C instance to upload to
  * @param cartridges - Cartridge mappings to upload
+ * @param options - Progress callbacks, ignored directories, and the archive size limit
  * @throws Error if code version not set or upload fails
  *
  * @example
  * ```typescript
  * const cartridges = findCartridges('./cartridges');
- * await uploadCartridges(instance, cartridges);
+ * await uploadCartridges(instance, cartridges, {maxArchiveBytes: 200 * 1024 * 1024});
  * ```
  */
 export async function uploadCartridges(
@@ -196,113 +412,76 @@ export async function uploadCartridges(
   }
 
   const webdav = instance.webdav;
-  const now = Date.now();
-  const uploadPath = `Cartridges/_sync-${now}.zip`;
   const onProgress = options?.onProgress;
-
-  // Progress helper: fires immediately (0s) then every 5s until stopped
-  const PROGRESS_INTERVAL_MS = 5_000;
-  function startProgress(phase: UploadProgressInfo['phase']): () => void {
-    const start = Date.now();
-    onProgress?.({phase, elapsedSeconds: 0});
-    if (!onProgress) return () => {};
-    const interval = setInterval(() => {
-      onProgress({phase, elapsedSeconds: Math.round((Date.now() - start) / 1000)});
-    }, PROGRESS_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }
-
-  // Create zip archive
-  onProgress?.({phase: 'archiving', elapsedSeconds: 0});
-  logger.debug('Creating cartridge archive...');
-  const zip = new JSZip();
+  const maxBytes = options?.maxArchiveBytes ?? DEFAULT_MAX_ARCHIVE_BYTES;
   const ignoreDirs = new Set(options?.ignoreDirs ?? DEFAULT_CARTRIDGE_IGNORE_DIRS);
+  const deployId = `${Date.now()}`;
 
-  for (const c of cartridges) {
-    await addDirectoryToZip(zip, c.src, path.join(codeVersion, c.dest), ignoreDirs);
-  }
-
-  const buffer = await zip.generateAsync({
-    type: 'nodebuffer',
-    compression: 'DEFLATE',
-    compressionOptions: {level: 9},
+  // Plan archives
+  onProgress?.({phase: 'archiving', elapsedSeconds: 0});
+  logger.debug('Planning cartridge archives...');
+  const entries = await collectArchiveEntries(cartridges, codeVersion, {ignoreDirs});
+  const parts: ArchivePart[] = planArchiveParts(entries, maxBytes);
+  options?.onPlan?.({
+    parts: parts.length,
+    maxBytes,
+    estimatedBytes: parts.reduce((sum, p) => sum + p.estimatedBytes, 0),
+    fileCount: entries.length,
   });
-  logger.debug({size: buffer.length}, `Archive created: ${buffer.length} bytes`);
+  logger.debug({parts: parts.length, files: entries.length}, `Planned ${parts.length} archive part(s)`);
 
-  // Upload archive
-  let stopProgress = startProgress('uploading');
-  logger.debug({uploadPath}, 'Uploading archive...');
+  const tempDir = await createArchiveTempDir();
   try {
-    await webdav.put(uploadPath, buffer, 'application/zip');
-  } finally {
-    stopProgress();
-  }
-  logger.debug('Archive uploaded');
+    for (const [i, part] of parts.entries()) {
+      const partInfo = parts.length > 1 ? {part: i + 1, parts: parts.length} : {};
+      const suffix = parts.length > 1 ? `-${i + 1}` : '';
+      const zipName = `_sync-${deployId}${suffix}.zip`;
+      const zipPath = `Cartridges/${zipName}`;
+      const partLabel = parts.length > 1 ? `archive part ${i + 1} of ${parts.length}` : 'the cartridge archive';
 
-  // Unzip on server. Single attempt — deliberately NOT retried on a network drop.
-  //
-  // The unzip is a synchronous WebDAV POST with no server-side job handle, so a
-  // dropped connection is only a client-side observation: it tells us our socket
-  // died, not whether the backend is still extracting the archive. Re-issuing
-  // UNZIP could start a SECOND extraction concurrently with one still in progress,
-  // racing writes into the same Cartridges/<version>/ directory and corrupting the
-  // code version. So on a drop we surface a clear, actionable error that warns the
-  // extraction may still be running, and we leave the uploaded archive in place so
-  // the user can verify and decide — we never silently re-run.
-  stopProgress = startProgress('unzipping');
-  logger.debug('Unzipping archive on server...');
-  let response: Response;
-  try {
-    response = await webdav.request(uploadPath, {
-      method: 'POST',
-      body: UNZIP_BODY,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      signal: AbortSignal.timeout(UNZIP_TIMEOUT_MS),
-    });
-    stopProgress();
-  } catch (error) {
-    stopProgress();
-    // Enrich network failures with deploy-specific context and an explicit
-    // warning that the server-side extraction may still be in progress.
-    if (error instanceof NetworkError) {
-      const {summary, hint} = describeNetworkErrorKind(error.kind);
-      throw new NetworkError(
-        `Server-side unzip of cartridge archive failed: ${summary}. ${hint} ` +
-          `Note: the connection dropped, but the server may still be extracting the archive — ` +
-          `do not assume the deploy failed. The uploaded archive remains at "${uploadPath}". ` +
-          `Wait for any in-progress extraction to finish and verify the code version before re-deploying.`,
-        {
-          kind: error.kind,
-          operation: 'server-side unzip of cartridge archive',
-          host: instance.config.hostname,
-          cause: error.cause,
-        },
-      );
+      // Archive
+      if (i > 0) onProgress?.({phase: 'archiving', elapsedSeconds: 0, ...partInfo});
+      const archive = await writeArchive(part.entries, path.join(tempDir, zipName));
+      logger.debug({size: archive.bytes, part: i + 1}, `Archive created: ${archive.bytes} bytes`);
+      if (archive.bytes > maxBytes) {
+        logger.warn(
+          {bytes: archive.bytes, maxBytes},
+          `Archive part ${i + 1} is ${formatBytes(archive.bytes)}, over the ${formatBytes(maxBytes)} limit (size estimate was low)`,
+        );
+      }
+
+      // Upload
+      let stopProgress = startProgress(onProgress, {phase: 'uploading', bytes: archive.bytes, ...partInfo});
+      try {
+        await putArchive(instance, zipPath, archive.path, archive.bytes, maxBytes);
+      } finally {
+        stopProgress();
+      }
+      await fs.promises.rm(archive.path, {force: true});
+
+      // Unzip
+      stopProgress = startProgress(onProgress, {phase: 'unzipping', ...partInfo});
+      try {
+        await unzipArchive(instance, zipPath, partLabel, archive.bytes);
+      } finally {
+        stopProgress();
+      }
+      logger.debug({zipPath}, 'Archive unzipped');
+
+      // Delete the uploaded archive (best-effort)
+      onProgress?.({phase: 'cleanup', elapsedSeconds: 0, ...partInfo});
+      try {
+        await webdav.delete(zipPath);
+      } catch (error) {
+        logger.warn({error, uploadPath: zipPath}, 'Failed to clean up temporary archive (non-fatal)');
+      }
     }
-    throw error;
-  }
-
-  // Check response status (non-throwing error from server)
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to unzip archive: ${response.status} ${response.statusText} - ${text}`);
-  }
-  logger.debug('Archive unzipped');
-
-  // Delete temporary archive (best-effort cleanup)
-  onProgress?.({phase: 'cleanup', elapsedSeconds: 0});
-  try {
-    await webdav.delete(uploadPath);
-    logger.debug('Temporary archive deleted');
-  } catch (error) {
-    // Log warning but don't fail deployment - the code is already deployed
-    logger.warn({error, uploadPath}, 'Failed to clean up temporary archive (non-fatal)');
+  } finally {
+    await fs.promises.rm(tempDir, {recursive: true, force: true});
   }
 
   logger.debug(
-    {server: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length},
+    {server: instance.config.hostname, codeVersion, cartridgeCount: cartridges.length, parts: parts.length},
     `Uploaded ${cartridges.length} cartridges to ${instance.config.hostname}`,
   );
 }
@@ -377,7 +556,11 @@ export async function findAndDeployCartridges(
   }
 
   // Upload cartridges
-  await uploadCartridges(instance, cartridges, {onProgress: options.onProgress, ignoreDirs: options.ignoreDirs});
+  await uploadCartridges(instance, cartridges, {
+    onProgress: options.onProgress,
+    ignoreDirs: options.ignoreDirs,
+    maxArchiveBytes: options.maxArchiveBytes,
+  });
 
   // Optionally activate or reload
   let activated = false;

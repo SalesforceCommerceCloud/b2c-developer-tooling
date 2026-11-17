@@ -4,6 +4,8 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import {readFileSync} from 'node:fs';
+
 /**
  * Shared flag-parsing and error-classification helpers for the MRT bundle
  * commands (`deploy`, `upload-v2`). Kept in one place so the two commands
@@ -47,6 +49,22 @@ export function parseSsrParams(params: string[]): Record<string, string> {
     result[key] = value;
   }
   return result;
+}
+
+/**
+ * Parses the --dependencies flag. Accepts an inline JSON object, or a path to a
+ * JSON file when prefixed with '@' (e.g. '@./deps.json').
+ */
+export function parseDependencies(value: string): Record<string, unknown> {
+  let raw = value.trim();
+  if (raw.startsWith('@')) {
+    raw = readFileSync(raw.slice(1), 'utf8');
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('Invalid --dependencies: expected a JSON object');
+  }
+  return parsed as Record<string, unknown>;
 }
 
 /** Patterns that indicate a 403/authorization error, typically caused by an invalid project ID */

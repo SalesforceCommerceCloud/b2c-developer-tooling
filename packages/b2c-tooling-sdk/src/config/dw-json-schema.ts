@@ -143,6 +143,32 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
     description:
       'Cartridge names for deploy/watch filtering and IDE discovery. Array, or a colon/comma-separated string. Env: `SFCC_CARTRIDGES`.',
   },
+  security: {
+    type: 'object',
+    description:
+      '`b2c security scan` settings: paths to leave out and per-rule settings. Takes precedence over a `.b2c-security.json` in the project directory.',
+    additionalProperties: false,
+    properties: {
+      ignore: {...stringArray, description: 'Globs (relative to the project directory) of files not to scan.'},
+      rules: {
+        type: 'object',
+        description: 'Per rule ID: `"off"`, a severity, or `{severity, ignore}`.',
+        additionalProperties: {
+          oneOf: [
+            {type: 'string', enum: ['off', 'critical', 'high', 'medium', 'low', 'info']},
+            {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                severity: {type: 'string', enum: ['critical', 'high', 'medium', 'low', 'info']},
+                ignore: stringArray,
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
   'cartridge-ignore-dirs': {
     ...stringArray,
     description:
@@ -150,6 +176,11 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
   },
   'auto-upload': {type: 'boolean', description: 'Automatically upload code changes from the VS Code extension.'},
   'content-library': {type: 'string', description: 'Default library for content list/export.'},
+  'max-archive-size': {
+    oneOf: [{type: 'string'}, {type: 'number'}],
+    description:
+      'Per-archive size limit for code deploy, e.g. `200mb` (default `200mb`; bare number is MiB). Larger deploys are split into several archives uploaded into the same code version. Env: `SFCC_MAX_ARCHIVE_SIZE`.',
+  },
   catalogs: {...stringArray, description: 'Catalog IDs for WebDAV browsing. Env: `SFCC_CATALOGS`.'},
   libraries: {
     type: 'array',
@@ -222,6 +253,15 @@ export const DW_JSON_FIELDS: Record<string, JsonSchema> = {
             path: {type: 'string', description: 'URL path glob (e.g. `/jobs/*/executions`).'},
             job: {type: 'string', description: 'Job ID glob.'},
             command: {type: 'string', description: 'CLI command ID glob (e.g. `sandbox:*`, `ecdn:cache:purge`).'},
+            operationId: {type: 'string', description: 'SCAPI operation ID glob (e.g. `getProduct`); code mode only.'},
+            api: {
+              type: 'string',
+              description: 'SCAPI API ID glob (e.g. `product/products/v1`, `product/**`); code mode only.',
+            },
+            readOnlySearch: {
+              type: 'boolean',
+              description: 'Match the search POSTs that READ_ONLY treats as reads.',
+            },
             action: {type: 'string', enum: ['allow', 'block', 'confirm'], description: 'Action when the rule matches.'},
           },
         },

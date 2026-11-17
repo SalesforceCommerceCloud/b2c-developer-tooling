@@ -82,4 +82,30 @@ suite('config inspection', () => {
     assert.ok(html.includes('No B2C instance configured'));
     assert.ok(html.includes('Env file not found: /project/.env.gone'));
   });
+
+  test('flags a storefront Default Domain hostname on its row and in the warnings', () => {
+    const message = 'hostname "abcd-001.sbx.my.commercecloud.salesforce.com" is a storefront Default Domain host.';
+    const result = inspect(
+      [{name: 'DwJsonSource', location: projectDwJson, fields: ['hostname', 'codeVersion']}],
+      {hostname: 'abcd-001.sbx.my.commercecloud.salesforce.com', codeVersion: 'v1'},
+      [
+        {
+          code: 'STOREFRONT_HOSTNAME',
+          message,
+          details: {
+            field: 'hostname',
+            hostname: 'abcd-001.sbx.my.commercecloud.salesforce.com',
+            suggestion: 'abcd-001.dx.commercecloud.salesforce.com',
+          },
+        },
+      ],
+    );
+    assert.deepStrictEqual(result.warnings, [message]);
+    assert.strictEqual(
+      result.rows.find((row) => row.field === 'hostname')?.warning,
+      'Storefront host: use the Business Manager hostname (abcd-001.dx.commercecloud.salesforce.com)',
+    );
+    assert.strictEqual(result.rows.find((row) => row.field === 'codeVersion')?.warning, undefined);
+    assert.ok(renderConfigInspectPanel(result).includes('class="value-warning"'));
+  });
 });

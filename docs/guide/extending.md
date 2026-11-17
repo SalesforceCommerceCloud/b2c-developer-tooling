@@ -13,11 +13,12 @@ The B2C CLI can be extended with custom plugins using the [oclif plugin system](
 | [`b2c:config-sources`](#custom-configuration-sources)   | Custom configuration loading     | CLI only    |
 | [`b2c:http-middleware`](#http-middleware)               | HTTP request/response middleware | Yes         |
 | [`b2c:auth-session-store`](#auth-session-store)         | Where sign-in tokens are stored  | Yes         |
+| [`b2c:log-redaction`](#log-redaction)                   | Extra redaction of log output    | Yes         |
 | [`b2c:operation-lifecycle`](#operation-lifecycle-hooks) | Operation before/after callbacks | CLI only    |
 | [`b2c:cartridge-providers`](#cartridge-providers)       | Custom cartridge discovery       | CLI only    |
 | [`b2c:scaffold-providers`](#scaffold-providers)         | Custom scaffold providers        | Yes         |
 
-**SDK Support** indicates whether the hook can be used programmatically without the CLI. HTTP middleware can be registered directly via `globalMiddlewareRegistry`, and an auth session store via `setAuthSessionBackend()`.
+**SDK Support** indicates whether the hook can be used programmatically without the CLI. HTTP middleware can be registered directly via `globalMiddlewareRegistry`, an auth session store via `setAuthSessionBackend()`, and log redactors via `globalLogRedactorRegistry`.
 
 ## Plugin Architecture
 
@@ -664,6 +665,75 @@ Switching stores doesn't copy existing sessions, so sign in again after you inst
 ### SDK and VS Code Usage
 
 `B2CPluginManager` from `@salesforce/b2c-tooling-sdk/plugins` collects the plugin's store but doesn't install it, because the host may have its own secret storage. Call `manager.getAuthSessionBackend()` and pass the result to `setAuthSessionBackend()` from `@salesforce/b2c-tooling-sdk/auth` to use it. The VS Code extension keeps sessions in VS Code secret storage unless you turn on [`b2c-dx.auth.usePluginSessionStore`](/vscode-extension/configuration#authentication).
+
+## Log Redaction
+
+The CLI already hides common secret fields in its logs (`password`, `clientSecret`, `authorization` and similar, at the top level and one level down). A plugin can remove more with the `b2c:log-redaction` hook, for example secrets nested deeper or tokens inside messages. Without a plugin, log output doesn't change.
+
+### Hook: `b2c:log-redaction`
+
+This hook is called during command initialization, before the other plugin hooks, so their log entries are redacted too. Every redactor returned by every plugin runs, in plugin-name order, on each log entry after the built-in redaction.
+
+**Hook Options:**
+
+| Property | Type                      | Description                  |
+| -------- | ------------------------- | ---------------------------- |
+| `flags`  | `Record<string, unknown>` | Parsed CLI flags (read-only) |
+
+**Hook Result:**
+
+| Property    | Type                         | Description                       |
+| ----------- | ---------------------------- | --------------------------------- |
+| `redactors` | `LogRedactor[] \| undefined` | Redactors to apply to every entry |
+
+### LogRedactor Interface
+
+```typescript
+import type {LogEntry, LogRedactor} from '@salesforce/b2c-tooling-sdk/logging';
+
+interface LogRedactor {
+  name: string; // unique; registering the same name again replaces it
+  // Return the entry to write (changed in place or a new object), or undefined to keep it
+  redact(entry: LogEntry): LogEntry | undefined | void;
+}
+```
+
+`LogEntry` is the parsed log line: `level`, `time`, `msg` and any context fields. A redactor that throws is skipped for that entry and logging continues.
+
+The SDK includes `deepLogRedactor`, which applies `redactLogValue()`: it replaces values of secret-named keys at any depth (`password`, `clientSecret`, `refresh_token`, `authorization`, `clientCredentials` and similar) and removes JWTs, `Bearer`/`Basic` credentials and form-encoded secrets (`client_secret=...`) from any string.
+
+### Example: Log Redaction Plugin
+
+```typescript
+// src/hooks/log-redaction.ts
+import type {LogRedactionHook} from '@salesforce/b2c-tooling-sdk/cli';
+import {deepLogRedactor, type LogRedactor} from '@salesforce/b2c-tooling-sdk/logging';
+
+const internalHosts: LogRedactor = {
+  name: 'my-org-hosts',
+  redact: (entry) => JSON.parse(JSON.stringify(entry).replaceAll(/[\w-]+\.internal\.example\.com/g, 'HOST')),
+};
+
+const hook: LogRedactionHook = async function () {
+  return {redactors: [deepLogRedactor, internalHosts]};
+};
+
+export default hook;
+```
+
+### SDK Usage (without CLI)
+
+Register redactors with `globalLogRedactorRegistry`. They apply to every logger the SDK creates, including loggers created before registration. Use `redactLogValue()` directly on entries your app logs itself, so both use one set of rules.
+
+```typescript
+import {deepLogRedactor, globalLogRedactorRegistry, redactLogValue} from '@salesforce/b2c-tooling-sdk/logging';
+
+globalLogRedactorRegistry.register(deepLogRedactor);
+
+myAppLog.write(redactLogValue({request, response}));
+```
+
+`B2CPluginManager.applyMiddleware()` registers redactors collected from installed plugins.
 
 ## B2C Operation Lifecycle Hooks
 

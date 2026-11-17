@@ -150,14 +150,16 @@ b2c code deploy [CARTRIDGEPATH]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag                        | Description                                                          | Default |
-| --------------------------- | -------------------------------------------------------------------- | ------- |
-| `--activate`, `-a`          | Activate code version after deploy                                   | `false` |
-| `--reload`, `-r`            | Reload (toggle activation to force reload) code version after deploy | `false` |
-| `--delete`                  | Delete existing cartridges before upload                             | `false` |
-| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)          |         |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)          |         |
-| `--cartridge-ignore-dirs`   | Directory names to skip inside cartridges (see below)                |         |
+| Flag                        | Description                                                                                               | Default |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- | ------- |
+| `--activate`, `-a`          | Activate code version after deploy                                                                        | `false` |
+| `--reload`, `-r`            | Reload (toggle activation to force reload) code version after deploy                                      | `false` |
+| `--delete`                  | Delete existing cartridges before upload                                                                  | `false` |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)                                               |         |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)                                               |         |
+| `--all`                     | Include every discovered cartridge, ignoring the `cartridges` config value (dw.json or `SFCC_CARTRIDGES`) | `false` |
+| `--cartridge-ignore-dirs`   | Directory names to skip inside cartridges (see below)                                                     |         |
+| `--max-archive-size`        | Maximum size of one uploaded archive (see [large code versions](#large-code-versions))                    | `200mb` |
 
 ### Examples
 
@@ -170,6 +172,9 @@ b2c code deploy ./my-project --server my-sandbox.demandware.net --code-version v
 
 # Deploy and activate the code version
 b2c code deploy --activate
+
+# Deploy every cartridge, even when dw.json or SFCC_CARTRIDGES lists a subset
+b2c code deploy --all
 
 # Deploy specific cartridges only
 b2c code deploy -c app_storefront_base -c plugin_applepay
@@ -211,6 +216,21 @@ b2c code deploy --cartridge-ignore-dirs node_modules,.git,build
 b2c code deploy --cartridge-ignore-dirs ''
 ```
 
+### Large Code Versions
+
+Deploy streams cartridges into zip archives on disk, so large code versions don't need much memory. When the compressed cartridges are larger than the archive size limit (200 MiB by default), deploy splits them into several archives. It uploads and unzips each archive into the same code version, one at a time. Cartridges are kept whole where they fit; a cartridge larger than the limit is split at file boundaries. A single file larger than the limit stops the deploy before anything is uploaded.
+
+Set the limit with `--max-archive-size`, or with `max-archive-size` in `dw.json` (env: `SFCC_MAX_ARCHIVE_SIZE`) so CI, the VS Code extension, and the MCP server use it too. Values accept `kb`, `mb`, and `gb` suffixes; a bare number is MiB.
+
+```bash
+# Upload in archives of at most 100 MiB
+b2c code deploy --max-archive-size 100mb
+```
+
+WebDAV uploads to an instance are limited to 500 MB, and some instances also drop uploads that take longer than about a minute. If an upload is rejected as too large (HTTP 413) or the connection keeps dropping, lower the limit. Uploads that drop are retried automatically. If the connection drops while the server is unzipping an archive, deploy waits for the server to finish instead of failing.
+
+A 413 response for a small archive usually means the sandbox is stopped rather than that the archive is too large.
+
 ---
 
 ## b2c code download
@@ -235,12 +255,13 @@ b2c code download [CARTRIDGEPATH]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag                        | Description                                                 | Default      |
-| --------------------------- | ----------------------------------------------------------- | ------------ |
-| `--output`, `-o`            | Output directory for downloaded cartridges                  | `cartridges` |
-| `--mirror`, `-m`            | Extract cartridges to their local project locations         | `false`      |
-| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated) |              |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) |              |
+| Flag                        | Description                                                                                               | Default      |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- | ------------ |
+| `--output`, `-o`            | Output directory for downloaded cartridges                                                                | `cartridges` |
+| `--mirror`, `-m`            | Extract cartridges to their local project locations                                                       | `false`      |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)                                               |              |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)                                               |              |
+| `--all`                     | Include every discovered cartridge, ignoring the `cartridges` config value (dw.json or `SFCC_CARTRIDGES`) | `false`      |
 
 **Note:** The `--mirror` and `--output` flags are mutually exclusive. You must use one or the other, not both. Use `--output` to extract all cartridges to a single directory, or use `--mirror` to extract each cartridge to its local project location.
 
@@ -399,10 +420,11 @@ b2c code watch [CARTRIDGEPATH]
 
 In addition to [global flags](./index#global-flags):
 
-| Flag                        | Description                                                 |
-| --------------------------- | ----------------------------------------------------------- |
-| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated) |
-| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated) |
+| Flag                        | Description                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `--cartridge`, `-c`         | Include specific cartridge(s) (comma-separated or repeated)                                               |
+| `--exclude-cartridge`, `-x` | Exclude specific cartridge(s) (comma-separated or repeated)                                               |
+| `--all`                     | Include every discovered cartridge, ignoring the `cartridges` config value (dw.json or `SFCC_CARTRIDGES`) |
 
 ### Examples
 

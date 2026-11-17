@@ -7,6 +7,8 @@ import {Flags} from '@oclif/core';
 import {
   uploadCartridges,
   deleteCartridges,
+  formatBytes,
+  maxArchiveBytesFromConfig,
   reloadCodeVersion,
   type DeployResult,
   type ScriptsBackend,
@@ -35,6 +37,7 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
     '<%= config.bin %> <%= command.id %> --reload',
     '<%= config.bin %> <%= command.id %> -c app_storefront_base -c plugin_applepay',
     '<%= config.bin %> <%= command.id %> -x test_cartridge',
+    '<%= config.bin %> <%= command.id %> --max-archive-size 100mb',
   ];
 
   static flags = {
@@ -62,6 +65,10 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
       multiple: true,
       multipleNonGreedy: true,
       delimiter: ',',
+    }),
+    'max-archive-size': Flags.string({
+      description:
+        'Maximum size of one uploaded archive, e.g. 200mb or 1gb (default 200mb; a bare number is MiB). Larger deploys are split into several archives (env: SFCC_MAX_ARCHIVE_SIZE)',
     }),
   };
 
@@ -193,11 +200,35 @@ export default class CodeDeploy extends CartridgeCommand<typeof CodeDeploy> {
         unzipping: t('commands.code.deploy.unzipping', 'Unzipping on server'),
         cleanup: t('commands.code.deploy.cleanup', 'Cleaning up'),
       };
+      let maxArchiveBytes: number | undefined;
+      try {
+        maxArchiveBytes = maxArchiveBytesFromConfig(this.resolvedConfig.values.maxArchiveSize);
+      } catch (error) {
+        this.error((error as Error).message);
+      }
       await this.operations.uploadCartridges(this.instance, cartridges, {
         ignoreDirs: this.resolvedConfig.values.cartridgeIgnoreDirs,
+        maxArchiveBytes,
+        onPlan: (plan) => {
+          if (this.jsonEnabled() || plan.parts < 2) return;
+          this.log(
+            t(
+              'commands.code.deploy.splitPlan',
+              'Uploading {{files}} files in {{parts}} archives of up to {{max}} each (about {{total}} in total)',
+              {
+                files: plan.fileCount,
+                parts: plan.parts,
+                max: formatBytes(plan.maxBytes),
+                total: formatBytes(plan.estimatedBytes),
+              },
+            ),
+          );
+        },
         onProgress: (info) => {
           if (this.jsonEnabled()) return;
-          const label = uploadPhaseLabels[info.phase];
+          let label = uploadPhaseLabels[info.phase].replace(/\.+$/, '');
+          if (info.part && info.parts) label = `[${info.part}/${info.parts}] ${label}`;
+          if (info.phase === 'uploading' && info.bytes) label += ` (${formatBytes(info.bytes)})`;
           if (info.elapsedSeconds === 0) {
             this.log(`  ${label}...`);
           } else {

@@ -52,8 +52,6 @@ export {
   createGlobFilter,
   getDefaultMessage,
   DEFAULT_SSR_PARAMETERS,
-  DEFAULT_SSR_ONLY,
-  DEFAULT_SSR_SHARED,
   DEFAULT_V2_ROOT_DIR,
   DEFAULT_V2_CONFIG_PATH,
   DEFAULT_V2_MATCH_MODE,
@@ -485,3 +483,5 @@ export type {
 // Log tailing operations
 export {createLoggingToken, parseMrtLogLine, getLogsWebSocketUrl, tailMrtLogs} from './tail-logs.js';
 export type {MrtLogEntry, CreateLoggingTokenOptions, TailMrtLogsOptions, TailMrtLogsResult} from './tail-logs.js';
+export {watchMrtLogs} from './watch-logs.js';
+export type {MrtLogWatch, MrtLogWatchInfo, MrtLogWatchPoll, WatchMrtLogsOptions} from './watch-logs.js';

@@ -277,7 +277,13 @@ export abstract class InstanceCommand<T extends typeof Command> extends OAuthCom
       // default public clients, and the transitional PKCE→implicit fallback.
       // Keep it lazy so Basic-only WebDAV commands never resolve OAuth.
       this._instance = this.resolvedConfig.createB2CInstance({
-        oauthStrategy: () => this.getOAuthStrategy(),
+        oauthStrategy: () => {
+          // OCAPI and SCAPI calls reach this; WebDAV with the built-in client uses its own fallback.
+          if (this.useDefaultClient) {
+            throw new Error(this.defaultClientNoApiAccessMessage());
+          }
+          return this.getOAuthStrategy();
+        },
         defaultWebDavClient: this.canUseDefaultWebDavClient(),
       });
     }

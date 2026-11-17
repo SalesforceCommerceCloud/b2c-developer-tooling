@@ -39,6 +39,7 @@ description: >-
 | Meta tags, JSON-LD, canonical URLs, seoRoutes | `storefront-next:sfnext-seo` |
 | Shopper Context, order management, guest order lookup, email cartridge, shipped extensions | `storefront-next:sfnext-commerce-features` |
 | Lint, typecheck, pre-merge checks | `storefront-next:sfnext-quality-gates` |
+| Audit the deployed storefront before launch (performance, SEO, security, best practices) | `storefront-next:sfnext-site-audit` |
 | Accessibility checks and fixes | `storefront-next:sfnext-accessibility` |
 
 Figma-to-Page-Designer work lives in the separate `figma-to-sfnext-pagedesigner` plugin.

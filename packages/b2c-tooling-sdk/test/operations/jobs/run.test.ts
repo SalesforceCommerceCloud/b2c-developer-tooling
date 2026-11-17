@@ -13,6 +13,7 @@ import {
   findRunningJobExecution,
   getJobLog,
   JobExecutionError,
+  waitForJob,
 } from '@salesforce/b2c-tooling-sdk/operations/jobs';
 
 type FakeOcapi = {
@@ -70,6 +71,47 @@ describe('operations/jobs/run', () => {
         getJobExecution(instance as unknown as never, 'job-1', 'e1'),
         'Failed to get job execution e1',
       );
+    });
+  });
+
+  describe('waitForJob cancellation', () => {
+    it('ends the poll sleep early with the abort reason and passes the signal to requests', async () => {
+      const seen: unknown[] = [];
+      const instance = {
+        ocapi: {
+          async GET(_path: string, init: {signal?: AbortSignal}) {
+            seen.push(init.signal);
+            return {data: {id: 'e1', execution_status: 'running'}};
+          },
+        },
+      };
+      const controller = new AbortController();
+      const started = Date.now();
+      setTimeout(() => controller.abort(new Error('stop')), 20);
+      await expectRejectsWith(
+        waitForJob(instance as unknown as never, 'job-1', 'e1', {pollIntervalSeconds: 0.01, signal: controller.signal}),
+        'stop',
+      );
+      expect(Date.now() - started).to.be.lessThan(1000);
+      expect(seen.length).to.be.greaterThan(0);
+      expect(seen.every((signal) => signal === controller.signal)).to.equal(true);
+    });
+
+    it('rejects before polling when already aborted', async () => {
+      let polled = false;
+      const instance = {
+        ocapi: {
+          async GET() {
+            polled = true;
+            return {data: {id: 'e1', execution_status: 'finished'}};
+          },
+        },
+      };
+      await expectRejectsWith(
+        waitForJob(instance as unknown as never, 'job-1', 'e1', {signal: AbortSignal.abort(new Error('gone'))}),
+        'gone',
+      );
+      expect(polled).to.equal(false);
     });
   });
 

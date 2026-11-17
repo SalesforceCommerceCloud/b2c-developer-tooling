@@ -269,7 +269,7 @@ export interface SystemOAuthCredentials {
  * Manager per call (via the scope-cascade / additional-scopes hooks the SCAPI client
  * factories rely on). Browser user-auth (PKCE/implicit) and fixed-token stored
  * sessions are intentionally excluded, so this is the shared definition of
- * "SCAPI-eligible auth" used by both {@link B2CInstance.scapiClientConfig} and
+ * "SCAPI-eligible auth" used by both `B2CInstance.scapiClientConfig` and
  * `MrtCommand.getScapiMrtConfig`.
  *
  * Unlike {@link resolveAuthStrategy}, this handles JWT (which needs cert/key paths

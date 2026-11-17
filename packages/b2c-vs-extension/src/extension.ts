@@ -38,6 +38,9 @@ import {registerObjectTypes} from './object-types/index.js';
 import {registerExportTree} from './export-tree/index.js';
 import {registerDebugger} from './debugger/index.js';
 import {registerCodeSync} from './code-sync/index.js';
+import {registerEndpoints} from './endpoints/index.js';
+import {registerOpenRegistration} from './endpoints/registration.js';
+import {ProjectIndexService} from './cartridges/project-index-service.js';
 import {registerIsml} from './isml/index.js';
 import {registerScriptTypes} from './script-types/index.js';
 import {registerXmlValidation} from './xml-validation/index.js';
@@ -621,8 +624,12 @@ async function activateInner(
     }),
   );
 
-  const cartridgeService = new CartridgeService(configProvider);
+  const cartridgeService = new CartridgeService(configProvider, {workspaceState: context.workspaceState, log});
   context.subscriptions.push(cartridgeService);
+  // Controllers, routes, hooks, and Custom APIs across cartridges, shared by the Cartridges and Endpoints views.
+  const projectIndexService = new ProjectIndexService(cartridgeService, log);
+  context.subscriptions.push(projectIndexService);
+  registerOpenRegistration(context, projectIndexService);
 
   // Walkthrough context keys: drive auto-completion of the native walkthrough
   // steps. dwJsonExists tracks the per-workspace dw.json file; instanceConnected
@@ -1122,7 +1129,12 @@ async function activateInner(
   }
   if (settings.get<boolean>('features.codeSync', true)) {
     runActivationStep(log, 'Code Sync registration', () => {
-      registerCodeSync(context, configProvider, cartridgeService, log);
+      registerCodeSync(context, configProvider, cartridgeService, log, projectIndexService);
+    });
+  }
+  if (settings.get<boolean>('features.endpoints', true)) {
+    runActivationStep(log, 'Endpoints registration', () => {
+      registerEndpoints(context, projectIndexService);
     });
   }
   if (settings.get<boolean>('features.scriptTypes', true)) {

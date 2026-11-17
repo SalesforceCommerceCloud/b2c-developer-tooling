@@ -53,7 +53,7 @@ describe('utils/logs/filter', () => {
     });
 
     it('throws on invalid input', () => {
-      expect(() => parseSinceTime('not-a-date')).to.throw('Invalid --since value');
+      expect(() => parseSinceTime('not-a-date')).to.throw('Invalid time');
     });
   });
 

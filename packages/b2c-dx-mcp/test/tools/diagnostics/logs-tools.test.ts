@@ -29,6 +29,16 @@ function getResultText(result: ToolResult): string {
   return text.text;
 }
 
+/** Tail result whose `done` stays pending until stopped, like a running `tailLogs`. */
+function runningTail(stop: sinon.SinonStub = sinon.stub()) {
+  let finish!: () => void;
+  const done = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  stop.callsFake(async () => finish());
+  return {stop, files: [], entries: [], done};
+}
+
 function makeFile(name: string, prefix = 'error'): LogFile {
   return {name, prefix, size: 100, lastModified: new Date('2026-01-01T00:00:00Z'), path: `/Logs/${name}`};
 }
@@ -187,11 +197,11 @@ describe('tools/diagnostics/logs', () => {
       expect(json).to.not.have.property('unreadCustomLogs');
     });
 
-    it('errors on invalid --since', async () => {
+    it('errors on invalid since', async () => {
       const tool = createLogsGetRecentTool(loadServices, serverContext, {getRecentLogs: sinon.stub().resolves([])});
       const result = await tool.handler({since: 'nonsense'});
       expect(result.isError).to.be.true;
-      expect(getResultText(result)).to.include('Invalid --since value');
+      expect(getResultText(result)).to.include('Invalid since value: "nonsense"');
     });
   });
 
@@ -201,7 +211,7 @@ describe('tools/diagnostics/logs', () => {
       const options: TailLogsOptions[] = [];
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         options.push(opts);
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
 
       const tool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
@@ -220,7 +230,7 @@ describe('tools/diagnostics/logs', () => {
       let onEntry: ((e: LogEntry) => void) | undefined;
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         onEntry = opts.onEntry;
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const startRes = await startTool.handler({action: 'start'});
@@ -241,7 +251,7 @@ describe('tools/diagnostics/logs', () => {
       let onEntry: ((e: LogEntry) => void) | undefined;
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         onEntry = opts.onEntry;
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
@@ -260,7 +270,7 @@ describe('tools/diagnostics/logs', () => {
       let onEntry: ((e: LogEntry) => void) | undefined;
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         onEntry = opts.onEntry;
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
@@ -280,7 +290,7 @@ describe('tools/diagnostics/logs', () => {
       let onEntry: ((e: LogEntry) => void) | undefined;
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         onEntry = opts.onEntry;
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(
@@ -300,7 +310,7 @@ describe('tools/diagnostics/logs', () => {
 
     it('logs_watch(action: stop) calls stop and removes the watch', async () => {
       const stop = sinon.stub().resolves();
-      const tailLogsStub = sinon.stub().resolves({stop, files: [], entries: [], done: Promise.resolve()});
+      const tailLogsStub = sinon.stub().resolves(runningTail(stop));
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
@@ -313,7 +323,7 @@ describe('tools/diagnostics/logs', () => {
 
     it('logs_watch(action: stop) is idempotent (second stop returns success, not error)', async () => {
       const stop = sinon.stub().resolves();
-      const tailLogsStub = sinon.stub().resolves({stop, files: [], entries: [], done: Promise.resolve()});
+      const tailLogsStub = sinon.stub().resolves(runningTail(stop));
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
@@ -335,7 +345,7 @@ describe('tools/diagnostics/logs', () => {
       const options: TailLogsOptions[] = [];
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         options.push(opts);
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       await startTool.handler({action: 'start'});
@@ -353,7 +363,7 @@ describe('tools/diagnostics/logs', () => {
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         onError = opts.onError;
         onFileRotated = opts.onFileRotated;
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
       const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
@@ -382,14 +392,12 @@ describe('tools/diagnostics/logs', () => {
       let onEntry: ((e: LogEntry) => void) | undefined;
       const tailLogsStub = sinon.stub().callsFake((_inst: B2CInstance, opts: TailLogsOptions) => {
         onEntry = opts.onEntry;
-        return Promise.resolve({stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()});
+        return Promise.resolve(runningTail());
       });
-      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub});
+      const startTool = createLogsWatchTool(loadServices, serverContext, {tailLogs: tailLogsStub, bufferCap: 2});
       const {watch_id} = getResultJson<{watch_id: string}>(await startTool.handler({action: 'start'}));
 
-      // Force eviction by overflowing the buffer cap.
-      const watch = serverContext.logWatches.getWatch(watch_id)!;
-      watch.bufferCap = 2;
+      // Overflow the buffer cap to force eviction.
       onEntry!(makeEntry({message: 'a'}));
       onEntry!(makeEntry({message: 'b'}));
       onEntry!(makeEntry({message: 'c'})); // evicts 'a'
@@ -411,8 +419,11 @@ describe('tools/diagnostics/logs', () => {
       const tailLogsStub = sinon.stub().callsFake(() => {
         serverContext.logWatches.registerWatch({
           hostname: 'test.example.com',
-          prefixes: [],
-          tailResult: {stop: sinon.stub().resolves(), files: [], entries: [], done: Promise.resolve()},
+          watch: {
+            poll: sinon.stub(),
+            info: sinon.stub().returns({lastActivityAt: Date.now()}),
+            stop: sinon.stub().resolves(),
+          } as never,
         });
         return Promise.resolve({stop: racedStop, files: [], entries: [], done: Promise.resolve()});
       });

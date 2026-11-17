@@ -1,5 +1,48 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.15.0
+
+### Minor Changes
+
+- [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30) - SCAPI code mode no longer exports Account Manager tokens: `auth.accountManager()` is removed. Use `b2c auth token` when an external client needs an Admin token. `auth.slas()` is now available only when a SLAS client is configured. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#856](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/856) [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4) - The promotion and site import skills now create promotions, campaigns and coupons enabled unless the user asks otherwise, and point to campaign dates and assignment schedules to control when shoppers see them. Agents no longer create records disabled and then ask for a second approval to enable them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#860](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/860) [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1) - The SCAPI skill links promotion, campaign and coupon creation to its promotions reference, so agents create those records through SCAPI and import only the discount rule. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`ef5d854`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ef5d8545833261b55546fa24de698bb22c25eb57), [`e3a8339`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e3a8339740378ad88f3183f8399cd371160a1454), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`7d259bd`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d259bd080ce164af69d6f3a17fdd623bd00ba30), [`8d913d5`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8d913d5afbc1b735acc2278fa82f1fabe0f4d84c), [`b16d5e4`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/b16d5e4b5b12b9a8fa2e26725fc604317d9c22e4), [`7d35598`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7d355983668a46e0c550f2616efecbb9f78950c1)]:
+  - @salesforce/b2c-tooling-sdk@2.15.0
+
+## 3.14.0
+
+### Minor Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - New MCP tool `site_archive_import` imports site archive XML without a terminal: it validates the files first and imports nothing if one is invalid. Use it for data the Commerce API can't write yet, such as promotion discount rules; the SCAPI skill now walks through creating a promotion end to end. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - MCP debugger waits now report a disabled script debugger instead of timing out, log polls return as soon as an error arrives, and re-arming a breakpoint no longer adds a duplicate. The SCAPI skill now notes common request pitfalls, such as which operations accept `select`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#854](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/854) [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d) - SCAPI code mode is more locked down: programs can no longer open network connections themselves, and Safety Mode rules can match SCAPI operations by `operationId` or API, so you can allow-list exactly what an assistant may call. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d), [`4fba74e`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/4fba74e3b479b9651c98a2cf22d50cffca5e628d)]:
+  - @salesforce/b2c-tooling-sdk@2.14.0
+
+## 3.13.0
+
+### Minor Changes
+
+- [#849](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/849) [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78) - `code deploy` now handles very large code versions: cartridges are streamed to disk instead of memory and split into archives of up to 200 MiB (set with `--max-archive-size`, `max-archive-size` in `dw.json`, or `SFCC_MAX_ARCHIVE_SIZE`). Dropped uploads are retried, a dropped connection during server-side unzip no longer fails the deploy, and 413 errors explain whether the archive was too large or the sandbox is stopped. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#850](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/850) [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c) - Refreshed the Developer Center guides and Salesforce Help content behind `b2c docs search`/`read` and the MCP docs tools. Search descriptions for guides and Help knowledge articles are now drawn from the whole page, so details far down a page, such as Managed Runtime bundle limits and allowed content types, are findable. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`047f623`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/047f6234c5446c3d6c651f113c1c6e60c6dc8fc8), [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2), [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c), [`e4de3ef`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e4de3ef9396a8c645af7dba5c6e6653c65d12f8c), [`ee5aa9a`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/ee5aa9ae3699de9a83a651fc1c9222423ba20b78), [`7ac5ec8`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7ac5ec83c019afba2fde2e448d9920c71e40f5d2)]:
+  - @salesforce/b2c-tooling-sdk@2.13.0
+
 ## 3.12.1
 
 ### Patch Changes

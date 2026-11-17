@@ -12,7 +12,13 @@
  * @module config/resolver
  */
 import type {AuthCredentials} from '../auth/types.js';
-import {normalizeTenantId, sandboxHostnameFromTenantId, tenantIdFromSandboxHostname} from '../clients/custom-apis.js';
+import {
+  isDefaultDomainHostname,
+  normalizeTenantId,
+  sandboxHostnameFromDefaultDomain,
+  sandboxHostnameFromTenantId,
+  tenantIdFromSandboxHostname,
+} from '../clients/custom-apis.js';
 import type {B2CInstance} from '../instance/index.js';
 import {getLogger} from '../logging/logger.js';
 import {
@@ -407,6 +413,19 @@ export class ConfigResolver {
           details: {tenantId: config.tenantId, hostname: config.hostname, hostnameTenantId: sandboxTenantId},
         });
       }
+    }
+
+    // The storefront Default Domain sits behind eCDN rate limits and firewall rules meant for
+    // shoppers, and on sandboxes serves only the storefront. Tooling should use the BM host.
+    for (const field of ['hostname', 'webdavHostname'] as const) {
+      const value = config[field];
+      if (!value || !isDefaultDomainHostname(value)) continue;
+      const suggestion = sandboxHostnameFromDefaultDomain(value);
+      sourceWarnings.push({
+        code: 'STOREFRONT_HOSTNAME',
+        message: `${field} "${value}" is a storefront Default Domain host. Use the Business Manager hostname${suggestion ? ` ("${suggestion}")` : ''} instead; storefront hosts are subject to eCDN rate limits and firewall rules.`,
+        details: {field, hostname: value, ...(suggestion ? {suggestion} : {})},
+      });
     }
 
     // Combine source warnings with merge warnings

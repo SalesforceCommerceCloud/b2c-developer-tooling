@@ -102,9 +102,9 @@ export interface DebugSessionConfig extends HttpTransportOptions {
   clientId?: string;
   /** Cartridge mappings for source path resolution */
   cartridgeRoots: CartridgeMapping[];
-  /** Thread polling interval in ms (default: 500) */
+  /** Thread polling interval in ms (default: `SFCC_DEBUG_POLL_INTERVAL` or 500; minimum 100) */
   pollInterval?: number;
-  /** Keepalive/reset interval in ms (default: 15000) */
+  /** Keepalive/reset interval in ms (default: `SFCC_DEBUG_KEEPALIVE_INTERVAL` or 15000; minimum 1000) */
   keepaliveInterval?: number;
 }
 

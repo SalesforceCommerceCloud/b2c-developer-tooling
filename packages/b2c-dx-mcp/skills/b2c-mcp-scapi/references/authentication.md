@@ -1,9 +1,10 @@
 # SCAPI authentication
 
 - `scapi.request()` and snippets using it authenticate automatically. Do not acquire
-  or pass tokens first. For an explicitly requested token or external HTTP client,
-  use `auth.accountManager()` / `auth.slas()` in `scapi_execute`:
-  [token exports](tokens.md). These helpers are unavailable in search.
+  or pass tokens first. Code mode never exports Account Manager tokens; for an
+  external HTTP client use CLI `b2c auth token`. `auth.slas()` exports shopper
+  tokens in `scapi_execute` only when `slasClientId` is configured:
+  [token exports](tokens.md). It is unavailable in search.
 - The operation's declared security selects the credential; there is no auth option.
 - Admin `AmOAuth2`: Account Manager credentials. Each request selects operation/tenant
   scopes and reuses suitable cached tokens; no upfront scope union.
