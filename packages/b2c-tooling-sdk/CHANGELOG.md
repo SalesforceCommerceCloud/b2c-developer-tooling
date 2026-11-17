@@ -1,5 +1,14 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.16.1
+
+### Patch Changes
+
+- [`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c) - `skills_read` now accepts a skill URI together with `file`, so references can be opened relative to a skill that was read by URI. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c)]:
+  - @salesforce/b2c-agent-plugins@1.16.1
+
 ## 2.16.0
 
 ### Minor Changes
