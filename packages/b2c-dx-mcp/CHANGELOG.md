@@ -1,5 +1,18 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.16.0
+
+### Minor Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Added the `project_inspect` and `security_scan` tools to the `CARTRIDGES` and `STOREFRONTNEXT` toolsets. `project_inspect` (preview) lists controller endpoints, filtered by ID, cartridge, or middleware, and shows what runs for one across the cartridge path. It also covers hooks in cartridge path order, Custom API wiring, and custom job steps. It loads at session start so assistants check it before reading controller files; `security_scan` finds security problems in cartridge code and site data (preview). Both work offline from the project directory. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - When no `cartridges` value is configured, `b2c project`, `b2c security`, the MCP `project_inspect` and `security_scan` tools, and the VS Code Cartridges view now order cartridges by a site's cartridge path from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix), so overlays compose the way the site runs them. Set `siteId` to choose the site. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`84956d1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84956d14be04902fb3d20388335b9b1c23da9737), [`14a31b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/14a31b0668c5d901e64803b433243046d7f54ceb), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354)]:
+  - @salesforce/b2c-tooling-sdk@2.16.0
+
 ## 3.15.0
 
 ### Minor Changes

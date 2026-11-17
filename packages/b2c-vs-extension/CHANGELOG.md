@@ -1,5 +1,25 @@
 # Change Log
 
+## 1.11.0
+
+### Minor Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - When no `cartridges` value is configured, `b2c project`, `b2c security`, the MCP `project_inspect` and `security_scan` tools, and the VS Code Cartridges view now order cartridges by a site's cartridge path from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix), so overlays compose the way the site runs them. Set `siteId` to choose the site. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - The Cartridges view now orders cartridges by your instance's site cartridge path when no `cartridges` configuration is set, and you can reorder it with drag and drop or Move Up/Down (saved per workspace). The view shows where its order comes from. Go-to-definition for `*/cartridge/...` requires follows this order. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Added the Endpoints view: controller endpoints (SFRA and SiteGenesis) with the middleware and route event listeners that run for each across the cartridge path, Custom APIs with their schema operations and implementations, and hooks in cartridge path order, with warnings for missing CSRF checks, `server.replace()` overrides that drop security middleware, and system hooks that can skip later registrations. The Cartridges view now shows each cartridge's controllers and route statements, hooks with their place in the run order, and Custom APIs, and combines Job Steps and Custom Step Types into Custom Job Steps. Job steps open the function that runs, custom hooks list the functions the project calls with their call sites, and Open Registration jumps to their `hooks.json` or `steptypes.json` entry. Controller files show each endpoint's summary above its route statement, with a link to it in the Endpoints view. Custom APIs can be opened in the API Browser. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Go-to-definition for `*/cartridge/...` requires now searches the cartridge path from left to right, as the platform does. Before, it checked the calling file's own cartridge first and could open the wrong file. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#866](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/866) [`14a31b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/14a31b0668c5d901e64803b433243046d7f54ceb) - The project index (`b2c project`, the MCP `project_inspect` tool, and the VS Code Endpoints and Cartridges views) no longer loses a controller's endpoints when the leftmost cartridge's controller hands `module` to a helper (for example `require('*/cartridge/scripts/helpers/headlessHelpers').redirectHeadless(module, 'Show')`). The endpoints keep the routes from cartridges further right, and the delegating controller is shown as a step that may change them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`84956d1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84956d14be04902fb3d20388335b9b1c23da9737), [`14a31b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/14a31b0668c5d901e64803b433243046d7f54ceb), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354)]:
+  - @salesforce/b2c-tooling-sdk@2.16.0
+  - @salesforce/b2c-script-types@26.9.0
+
 ## 1.10.0
 
 ### Minor Changes
