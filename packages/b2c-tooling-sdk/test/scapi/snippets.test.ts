@@ -117,78 +117,124 @@ describe('SCAPI snippets', () => {
     }
   });
 
-  it('projects object type attributes from search with enum values and continuation', async () => {
-    type Req = {method: string; path: string; body: {query: {boolQuery: {must: unknown[]}}}};
-    const requests: Req[] = [];
+  const pageTypes = [{id: 'home', regionDefinitions: [{id: 'main', maxComponents: 1}]}];
+  const componentTypes = [
+    {
+      id: 'Content.hero',
+      attributeDefinitionGroups: [
+        {
+          attributeDefinitions: [
+            {id: 'title', type: 'string', required: true},
+            {id: 'height', type: 'enum', values: ['sm', 'md']},
+          ],
+        },
+      ],
+    },
+  ];
+  const typesRequest = async (args: unknown) => {
+    const {method, path} = args as {method: string; path: string};
+    if (method === 'GET' && path.endsWith('page-types')) return {ok: true, data: {total: 1, hits: pageTypes}};
+    if (method === 'GET' && path.endsWith('component-types')) return {ok: true, data: {total: 1, hits: componentTypes}};
+    throw new Error(`unexpected ${method} ${path}`);
+  };
+
+  it('summarizes content types and gives full detail for named types', async () => {
+    const summary = (await runScapiCode({
+      input: {siteId: 'SiteA'},
+      code: `async (input) => codemode.run('builtin/content-types-inspect', input)`,
+      request: typesRequest,
+    })) as {pageTypes: object[]; componentTypes: Array<{attributes: unknown[]}>};
+    expect(summary.pageTypes).to.deep.equal([{id: 'home', regions: ['main'], attributes: []}]);
+    expect(summary.componentTypes[0].attributes).to.deep.equal(['title:string!', 'height:enum']);
+
+    const detail = (await runScapiCode({
+      input: {siteId: 'SiteA', kind: 'component', typeIds: ['Content.hero']},
+      code: `async (input) => codemode.run('builtin/content-types-inspect', input)`,
+      request: typesRequest,
+    })) as {pageTypes?: unknown; componentTypes: Array<{attributes: Array<{id: string; values?: string[]}>}>};
+    expect(detail.pageTypes).to.equal(undefined);
+    expect(detail.componentTypes[0].attributes[1]).to.deep.include({id: 'height', values: ['sm', 'md']});
+  });
+
+  it('validates a page against live types and only pushes a valid page', async () => {
+    const puts: unknown[] = [];
+    const request = async (args: unknown) => {
+      const {method, body} = args as {method: string; body: unknown};
+      if (method === 'PUT') {
+        puts.push(body);
+        return {
+          ok: true,
+          status: 201,
+          data: {id: 'p', typeId: 'home', regions: [{id: 'main', components: [{id: 'h'}]}]},
+        };
+      }
+      return typesRequest(args);
+    };
+    const code = `async (input) => codemode.run('builtin/page-push', input)`;
+    const hero = (data: object) => ({id: 'h', typeId: 'Content.hero', data});
+
+    const invalid = (await runScapiCode({
+      input: {
+        siteId: 'SiteA',
+        page: {
+          id: 'p',
+          name: 'P',
+          typeId: 'home',
+          regions: [{id: 'main', components: [hero({height: 'xl', extra: 1})]}, {id: 'side'}],
+        },
+      },
+      code,
+      request,
+    })) as {pushed: boolean; errors: string[]; warnings: string[]};
+    expect(invalid.pushed).to.equal(false);
+    expect(invalid.errors.join('\n'))
+      .to.include('/data/title: required')
+      .and.include('not one of sm, md')
+      .and.include('region side');
+    expect(invalid.warnings.join('\n')).to.include('/data/extra');
+    expect(puts).to.have.length(0);
+
+    const valid = (await runScapiCode({
+      input: {
+        siteId: 'SiteA',
+        page: {id: 'p', name: 'P', typeId: 'home', regions: [{id: 'main', components: [hero({title: 'Hi'})]}]},
+      },
+      code,
+      request,
+    })) as {pushed: boolean; status: string; regions: unknown};
+    expect(valid).to.deep.include({pushed: true, status: 'created', regions: [{id: 'main', components: ['h']}]});
+    expect(puts).to.have.length(1);
+  });
+
+  it('searches slot configurations by slot ID and projects content', async () => {
     const result = (await runScapiCode({
-      input: {objectType: 'Product', custom: true, ids: ['c_color'], limit: 1},
-      code: `async (input) => codemode.run('builtin/object-type-attributes-inspect', input)`,
-      request: async (req) => {
-        requests.push(req as Req);
+      input: {siteId: 'SiteA', slotId: 'home-banner', limit: 1},
+      code: `async (input) => codemode.run('builtin/slot-configurations-inspect', input)`,
+      request: async (args) => {
+        const {path, body} = args as {path: string; body: {query: unknown; limit: number}};
+        expect(path).to.include('slot-configurations-search');
+        expect(body.query).to.deep.equal({termQuery: {fields: ['slotId'], operator: 'is', values: ['home-banner']}});
         return {
           ok: true,
           data: {
             total: 2,
+            offset: 0,
             hits: [
               {
-                id: 'color',
-                effectiveId: 'c_color',
-                valueType: 'enum_of_string',
-                displayName: {default: 'Color'},
-                valueDefinitions: [{value: 'red', displayValue: {default: 'Red'}}],
+                slotId: 'home-banner',
+                configurationId: 'summer',
+                context: 'global',
+                enabled: true,
+                assignmentInformation: {active: true},
+                slotContent: {type: 'content_assets', contentAssetIds: ['a1']},
               },
             ],
           },
         };
       },
-    })) as {attributes: object[]; nextOffset?: number};
-    expect(requests[0].method).to.equal('POST');
-    expect(requests[0].path).to.match(/\/system\/object-types\/Product\/attribute-definition-search$/);
-    expect(requests[0].body.query.boolQuery.must).to.deep.equal([
-      {termQuery: {fields: ['system'], operator: 'is', values: [false]}},
-      {termQuery: {fields: ['id'], operator: 'one_of', values: ['color']}},
-    ]);
-    expect(result.attributes[0]).to.deep.equal({
-      id: 'c_color',
-      valueType: 'enum_of_string',
-      displayName: 'Color',
-      values: [{value: 'red', label: 'Red'}],
-    });
+    })) as {nextOffset: number; configurations: object[]};
     expect(result.nextOffset).to.equal(1);
-  });
-
-  it('creates, groups, and verifies a custom attribute without replacing existing ones', async () => {
-    const calls: string[] = [];
-    const result = (await runScapiCode({
-      input: {objectType: 'Product', attributeId: 'c_fabric', valueType: 'string', groupId: 'materials'},
-      code: `async (input) => codemode.run('builtin/attribute-create-and-group', input)`,
-      request: async (options) => {
-        const req = options as {method: string; path: string};
-        calls.push(`${req.method} ${req.path.split('/object-types/')[1]}`);
-        if (req.method === 'GET' && calls.length === 1) return {ok: false, status: 404, data: {}};
-        if (req.method === 'GET' && req.path.endsWith('/attribute-groups/materials')) {
-          return {ok: false, status: 404, data: {}};
-        }
-        if (req.method === 'GET') return {ok: true, data: {id: 'fabric', effectiveId: 'c_fabric', valueType: 'string'}};
-        return {ok: true, status: req.method === 'PUT' ? 201 : 200, data: {}};
-      },
-    })) as {state: string; group?: object};
-    expect(calls).to.deep.equal([
-      'GET Product/attribute-definitions/fabric',
-      'PUT Product/attribute-definitions/fabric',
-      'GET Product/attribute-groups/materials',
-      'PUT Product/attribute-groups/materials',
-      'PUT Product/attribute-groups/materials/attribute-definitions/fabric',
-      'GET Product/attribute-definitions/fabric',
-    ]);
-    expect(result).to.deep.include({state: 'verified', group: {id: 'materials', created: true}});
-
-    const existing = await runScapiCode({
-      input: {objectType: 'Product', attributeId: 'fabric', valueType: 'string'},
-      code: `async (input) => codemode.run('builtin/attribute-create-and-group', input)`,
-      request: async () => ({ok: true, data: {id: 'fabric'}}),
-    });
-    expect(existing).to.deep.equal({state: 'exists', id: 'c_fabric', changed: false});
+    expect(result.configurations[0]).to.deep.include({active: true, contentType: 'content_assets', content: ['a1']});
   });
 
   it('preserves upstream errors from operational snippets', async () => {
@@ -197,6 +243,9 @@ describe('SCAPI snippets', () => {
       ['job-execution-inspect', {jobId: 'a', executionId: 'b'}],
       ['code-version-inspect', {}],
       ['site-cartridge-inspect', {siteId: 'a'}],
+      ['content-types-inspect', {siteId: 'a'}],
+      ['page-push', {siteId: 'a', page: {id: 'p', name: 'P', typeId: 'home'}}],
+      ['slot-configurations-inspect', {siteId: 'a'}],
       ['object-type-attributes-inspect', {objectType: 'Product'}],
     ] as const) {
       const result = await runScapiCode({
@@ -515,7 +564,7 @@ describe('SCAPI snippets', () => {
   });
 
   it('loads all built-in sources from the installed SDK data directory', () => {
-    expect(loadBuiltinScapiSnippets()).to.have.length(11);
+    expect(loadBuiltinScapiSnippets()).to.have.length(14);
     for (const item of loadBuiltinScapiSnippets()) expect(item.code).to.include('async (input)');
   });
 

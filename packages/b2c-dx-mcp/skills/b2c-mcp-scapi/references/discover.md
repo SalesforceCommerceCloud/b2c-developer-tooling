@@ -58,25 +58,29 @@ runtime support, not configured access; `op.security` gives scopes.
 Use these API IDs to narrow discovery; inspect the operation's inputs before calling.
 Snippet names below have the `builtin/` prefix. Describe only the relevant snippet.
 
-| Task                                          | API / starting point                                                                                                                                        |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Review runs, including successes              | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet                                                                                  |
-| Inspect steps and exact log path              | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet                                                                                     |
-| Investigate failures with detail reads        | `failed-job-triage` snippet; [jobs](jobs.md)                                                                                                                |
-| Start a job / stop an execution               | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first; bodies for system jobs: [jobs](jobs.md#start-a-job) |
-| Active/rollback versions, activation metadata | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet                                                                                          |
-| Activate/create/delete a code version         | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion`                                                                            |
-| Site status, catalog, ordered cartridge path  | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                                                                            |
-| Change a site's custom cartridge path         | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                                                                        |
-| Basic product + optional category assignment  | `create-product` snippet; [products](products.md)                                                                                                           |
+| Task                                                           | API / starting point                                                                                                                                        |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Review runs, including successes                               | `operation/jobs/v1`: `searchJobExecutions`; `job-execution-review` snippet                                                                                  |
+| Inspect steps and exact log path                               | `operation/jobs/v1`: `getJobExecution`; `job-execution-inspect` snippet                                                                                     |
+| Investigate failures with detail reads                         | `failed-job-triage` snippet; [jobs](jobs.md)                                                                                                                |
+| Start a job / stop an execution                                | `operation/jobs/v1`: `createJobExecution` / `deleteJobExecution`; confirm intent and active runs first; bodies for system jobs: [jobs](jobs.md#start-a-job) |
+| Active/rollback versions, activation metadata                  | `dx/scripts/v1`: `getCodeVersions`; `code-version-inspect` snippet                                                                                          |
+| Activate/create/delete a code version                          | `dx/scripts/v1`: `updateCodeVersion` / `createCodeVersion` / `deleteCodeVersion`                                                                            |
+| Site status, catalog, ordered cartridge path                   | `site/sites/v1`: `getSiteById`; `site-cartridge-inspect` snippet                                                                                            |
+| Change a site's custom cartridge path                          | `site/sites/v1`: `replaceSiteCustomCartridges`; preserve order and unrelated entries                                                                        |
+| Basic product + optional category assignment                   | `create-product` snippet; [products](products.md)                                                                                                           |
 | Campaign assignments and promotion details; create a promotion | `campaign-promotions` snippet; [promotions](promotions.md)                                                                                                  |
-| System object attributes, enum values, groups | `object_types_describe` tool first; `dx/object-definitions/v1`; `object-type-attributes-inspect` snippet; [object definitions](object-definitions.md)       |
-| Add a custom attribute (and group it)         | `attribute-create-and-group` snippet; [object definitions](object-definitions.md)                                                                           |
-| Categories, rules, exclusions                 | `product/catalogs/v1`; `category-rules-run` snippet; [catalogs](catalogs.md)                                                                                |
-| CORS origins for a site                       | `configuration/cors/v1`: replace-all PUT; `cors-preferences-update` snippet; [admin-config](admin-config.md)                                                |
-| SCAPI timeout overrides                       | `configuration/timeouts/v1`: replace-all PUT; [admin-config](admin-config.md)                                                                               |
-| Custom object records                         | `custom-object/custom-objects/v1`: global or `/sites/{siteId}`; [admin-config](admin-config.md)                                                             |
-| Custom sitemap upload, other file transfers   | Multipart/binary, not in code mode: [file-transfer](file-transfer.md)                                                                                       |
+| Page Designer page/component types for a site                  | `experience/experiences/v1`: `getPageTypes` / `getComponentTypes`; `content-types-inspect` snippet; [content](content.md)                                   |
+| Create or update a Page Designer page                          | `experience/experiences/v1`: `createOrUpdatePage`; `page-push` snippet; [content](content.md)                                                               |
+| Content assets, library folders, assignments                   | `experience/experiences/v1`: `getContent` / `createOrUpdateContent`, `getSubFolders`; [content](content.md#content-assets-and-folders)                      |
+| Content slot configurations                                    | `experience/experiences/v1`: `searchSlotConfigurations`; `slot-configurations-inspect` snippet; [content](content.md#slots)                                 |
+| System object attributes, enum values, groups                  | `object_types_describe` tool first; `dx/object-definitions/v1`; `object-type-attributes-inspect` snippet; [object definitions](object-definitions.md)       |
+| Add a custom attribute (and group it)                          | `attribute-create-and-group` snippet; [object definitions](object-definitions.md)                                                                           |
+| Categories, rules, exclusions                                  | `product/catalogs/v1`; `category-rules-run` snippet; [catalogs](catalogs.md)                                                                                |
+| CORS origins for a site                                        | `configuration/cors/v1`: replace-all PUT; `cors-preferences-update` snippet; [admin-config](admin-config.md)                                                |
+| SCAPI timeout overrides                                        | `configuration/timeouts/v1`: replace-all PUT; [admin-config](admin-config.md)                                                                               |
+| Custom object records                                          | `custom-object/custom-objects/v1`: global or `/sites/{siteId}`; [admin-config](admin-config.md)                                                             |
+| Custom sitemap upload, other file transfers                    | Multipart/binary, not in code mode: [file-transfer](file-transfer.md)                                                                                       |
 
 File content is WebDAV: `webdav_list` / `webdav_get` / `webdav_put`.
 Deploy local cartridge files with `cartridge_deploy`. Job schedules/definitions

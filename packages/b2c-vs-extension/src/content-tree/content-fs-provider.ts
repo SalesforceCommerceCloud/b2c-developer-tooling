@@ -12,6 +12,7 @@ import * as xml2js from 'xml2js';
 import * as vscode from 'vscode';
 import type {ContentConfigProvider} from './content-config.js';
 import {openJobLog} from '../job-log-viewer.js';
+import {saveContentXml, type ContentPageContext, type ContentSaveResult} from './content-save.js';
 
 export const CONTENT_SCHEME = 'b2c-content';
 
@@ -112,6 +113,27 @@ export function generateContentXML(library: Library, contentId: string): string 
   return new xml2js.Builder().buildObject(xmlDoc);
 }
 
+/**
+ * For a component, the page it is placed on (walking up through layout
+ * components) and that page's XML. Undefined for pages, content assets,
+ * fragments (shared content blocks) and components under a fragment or not
+ * placed on a page.
+ */
+export function findComponentPage(library: Library, contentId: string): ContentPageContext | undefined {
+  let target: LibraryNode | undefined;
+  for (const node of library.nodes({traverseHidden: true, callbackHidden: true})) {
+    if (node.id === contentId) {
+      target = node as LibraryNode;
+      break;
+    }
+  }
+  if (target?.type !== 'COMPONENT') return undefined;
+  let node: LibraryNode | null = target.parent;
+  while (node?.type === 'COMPONENT') node = node.parent;
+  if (node?.type !== 'PAGE') return undefined;
+  return {pageId: node.id, pageXml: generateContentXML(library, node.id)};
+}
+
 export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   private _onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   readonly onDidChangeFile = this._onDidChangeFile.event;
@@ -121,6 +143,10 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   // Cache only mtime — size is intentionally omitted because readFile returns dynamically
   // generated XML whose byte length doesn't match the bytes the user wrote.
   private mtimes = new Map<string, number>();
+  // XML as last read or saved, per item, so a save can tell which fields the edit changed.
+  private originals = new Map<string, string>();
+  // For components: their page as last read or saved, so a save can update that page.
+  private pages = new Map<string, ContentPageContext>();
 
   constructor(private configProvider: ContentConfigProvider) {}
 
@@ -145,31 +171,44 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
   }
 
   async readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-    const {libraryId} = parseContentUri(uri);
-    const library = this.configProvider.getCachedLibrary(libraryId);
-    if (!library) {
-      return [];
-    }
+    const {libraryId, isSiteLibrary} = parseContentUri(uri);
+    const library = await this.loadLibrary(libraryId, isSiteLibrary);
     return library.tree.children
       .filter((node) => !node.hidden)
       .map((node) => [`${node.id}.xml`, vscode.FileType.File] as [string, vscode.FileType]);
   }
 
   async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-    const {libraryId, contentId} = parseContentUri(uri);
+    const {libraryId, contentId, isSiteLibrary} = parseContentUri(uri);
     if (!contentId) {
       throw vscode.FileSystemError.FileIsADirectory(uri);
     }
 
-    const library = this.configProvider.getCachedLibrary(libraryId);
-    if (!library) {
-      throw vscode.FileSystemError.Unavailable(
-        `Library "${libraryId}" not loaded. Expand it in the Content tree first.`,
-      );
-    }
+    const library = await this.loadLibrary(libraryId, isSiteLibrary);
 
     const xmlString = generateContentXML(library, contentId);
+    const key = `${libraryId}:${contentId}`;
+    this.originals.set(key, xmlString);
+    const page = findComponentPage(library, contentId);
+    if (page) this.pages.set(key, page);
+    else this.pages.delete(key);
     return new TextEncoder().encode(xmlString);
+  }
+
+  /** The cached library, fetched from the instance when a save (or reset) cleared it. */
+  private async loadLibrary(libraryId: string, isSiteLibrary: boolean): Promise<Library> {
+    try {
+      return (
+        this.configProvider.getCachedLibrary(libraryId) ??
+        (await vscode.window.withProgress(
+          {location: vscode.ProgressLocation.Window, title: `Loading library ${libraryId}...`},
+          () => this.configProvider.loadLibrary(libraryId, isSiteLibrary),
+        ))
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw vscode.FileSystemError.Unavailable(`Failed to load library "${libraryId}": ${message}`);
+    }
   }
 
   async writeFile(uri: vscode.Uri, content: Uint8Array): Promise<void> {
@@ -180,13 +219,27 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     }
 
     const xmlContent = Buffer.from(content).toString('utf-8');
+    const key = `${libraryId}:${contentId}`;
+    let result: ContentSaveResult;
 
     try {
-      await vscode.window.withProgress(
-        {location: vscode.ProgressLocation.Notification, title: `Importing content to ${libraryId}...`},
-        async () => {
-          await importLibraryXML(instance, libraryId, isSiteLibrary, xmlContent);
-        },
+      result = await vscode.window.withProgress(
+        {location: vscode.ProgressLocation.Notification, title: `Saving content to ${libraryId}...`},
+        () =>
+          saveContentXml({
+            instance,
+            libraryId,
+            isSiteLibrary,
+            contentId: contentId ?? '',
+            xml: xmlContent,
+            originalXml: this.originals.get(key),
+            page: this.pages.get(key),
+            siteId: this.configProvider.getSiteId(),
+            useExperiencesApi: vscode.workspace
+              .getConfiguration('b2c-dx')
+              .get<boolean>('content.saveWithExperiencesApi', true),
+            importXml: () => importLibraryXML(instance, libraryId, isSiteLibrary, xmlContent),
+          }),
       );
     } catch (err) {
       // Show job log in editor on failure
@@ -207,10 +260,20 @@ export class ContentFileSystemProvider implements vscode.FileSystemProvider {
     // Record mtime so subsequent stat() calls return a stable timestamp instead of Date.now(),
     // preventing VS Code from thinking the file changed externally.
     if (contentId) {
-      this.mtimes.set(`${libraryId}:${contentId}`, Date.now());
+      this.mtimes.set(key, Date.now());
+      this.originals.set(key, xmlContent);
+      const page = this.pages.get(key);
+      const {pageXml} = result;
+      if (page && pageXml) this.pages.set(key, {pageId: page.pageId, pageXml});
     }
     this._onDidChangeFile.fire([{type: vscode.FileChangeType.Changed, uri}]);
-    vscode.window.showInformationMessage(`Content imported to ${libraryId} successfully.`);
+    vscode.window.showInformationMessage(
+      result.method === 'experiences-api'
+        ? result.pageId === contentId
+          ? `Saved page ${contentId} to ${libraryId} (site ${result.siteId}).`
+          : `Saved ${contentId} on page ${result.pageId} to ${libraryId} (site ${result.siteId}).`
+        : `Content imported to ${libraryId} successfully.`,
+    );
   }
 
   createDirectory(): never {

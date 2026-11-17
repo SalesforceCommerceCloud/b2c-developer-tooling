@@ -59,6 +59,13 @@ fs.copyFileSync(
   path.join(pkgRoot, 'resources', 'schemas', 'dw.schema.json'),
 );
 
+// Bundle the SDK's Page Designer meta definition schemas (package.json#contributes.jsonValidation
+// for cartridge experience/ JSON). They reference each other by relative file name, so copy the
+// whole directory.
+fs.cpSync(path.join(sdkRoot, 'data', 'content-schemas'), path.join(pkgRoot, 'resources', 'schemas', 'content'), {
+  recursive: true,
+});
+
 // In CJS there is no import.meta; SDK's version.js uses createRequire(import.meta.url). Shim it.
 // Use globalThis so the value is visible inside all module wrappers in the bundle.
 const IMPORT_META_URL_SHIM =

@@ -22,9 +22,11 @@ import * as vscode from 'vscode';
 import {B2CExtensionConfig, listEnvFileCandidates} from './config-provider.js';
 import {workspaceHasDwJson, isUnscannableRoot, WORKSPACE_DISCOVERY_MAX_DEPTH} from './workspace-discovery.js';
 import {CartridgeService} from './cartridges/cartridge-service.js';
+import {setStorefrontNextWorkspace} from './project-type.js';
 import {registerCap} from './cap/index.js';
 import {registerJobLogViewer} from './job-log-viewer.js';
 import {registerContentTree} from './content-tree/index.js';
+import {registerStorefrontNext} from './sfnext/index.js';
 import {registerLogs} from './logs/index.js';
 import {registerJobs} from './jobs/index.js';
 import {getPluginAuthSessionBackend, initializePlugins} from './plugins.js';
@@ -130,6 +132,7 @@ async function updateStorefrontNextContext(
   // case.
   if (isUnscannableRoot(workingDir)) {
     log.appendLine('[Workspace] No concrete workspace folder; skipping storefront-next detection');
+    setStorefrontNextWorkspace(false);
     await vscode.commands.executeCommand('setContext', 'b2c-dx.isStorefrontNext', false);
     return;
   }
@@ -146,6 +149,7 @@ async function updateStorefrontNextContext(
     const message = err instanceof Error ? err.message : String(err);
     log.appendLine(`[Workspace] storefront-next detection failed: ${message}`);
   }
+  setStorefrontNextWorkspace(isStorefrontNext);
   await vscode.commands.executeCommand('setContext', 'b2c-dx.isStorefrontNext', isStorefrontNext);
   log.appendLine(`[Workspace] setContext b2c-dx.isStorefrontNext=${isStorefrontNext} (cwd=${workingDir})`);
 }
@@ -1075,6 +1079,9 @@ async function activateInner(
       registerWebDavTree(context, configProvider);
     });
   }
+  runActivationStep(log, 'Storefront Next metadata diagnostics', () => {
+    registerStorefrontNext(context, log);
+  });
   if (settings.get<boolean>('features.contentLibraries', true)) {
     runActivationStep(log, 'Content Libraries registration', () => {
       registerContentTree(context, configProvider);

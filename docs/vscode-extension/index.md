@@ -58,6 +58,16 @@ Find Page Designer pages and components fast, with one-click export (with assets
 
 **Content blocks** (reusable, shared `fragment.*` content) get a dedicated **Content Blocks** group under each library — the single source of truth where a block and its full child tree live. Wherever a page or component links a block, it appears as a reference (↗) that reveals the canonical block in the group when clicked, so a shared block is only ever edited in one place. (Converting a component into a content block is done in Business Manager / Page Designer.)
 
+**Page Designer Types** lists the page and component types available to your site, read live from the instance (regions, attributes and allowed values in the tooltip; click to open the full definition). It uses the configured `siteId` (or the first site-private library) and needs an Account Manager API client with the `sfcc.experiences` scope and client credentials. Without that, the node explains what is missing and the library tree works as before.
+
+**Go to Type Source** (the file icon on a type, or right-click a type, page or component) opens the type's files in your workspace. In a cartridge project, such as SFRA, that's the meta definition JSON, the render script, and the ISML template the script renders. In a Storefront Next project, it also includes the TypeScript file whose `@Component` or `@PageType` decorator defines the type, listed first. When there's more than one file, pick one from the list.
+
+In a Storefront Next project, saving a file with a `@Component` or `@PageType` decorator checks whether the generated Page Designer metadata under `cartridges/app_storefrontnext_base` still matches. If it doesn't, the decorator gets a warning with a **Regenerate Page Designer metadata** Quick Fix. The check and the fix run the project's own generator (the same one as `sfnext generate-cartridge`) for that file only, so the output matches what a build produces. If the project's generator can't run, no warning is shown. Turn the check off with `b2c-dx.storefrontNext.metadataDiagnostics`.
+
+**Open in Page Designer** (right-click a page or component) opens the page in the Business Manager Page Designer editor in your browser. For a component, that's the page it's on. A page in a site library opens in that site. For a shared library, it uses the configured `siteId`, or asks for a site. If you aren't signed in to Business Manager, sign in and run the command again.
+
+Page Designer meta definition files in a cartridge (`experience/components/**/*.json`, `experience/pages/**/*.json` and `experience/aspects/**/*.json`) are validated as you edit them, with completion for their properties.
+
 <a :href="libraryImage">
 
 ![Library Explorer](./images/library-explorer.png)

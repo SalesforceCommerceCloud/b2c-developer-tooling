@@ -1,11 +1,11 @@
 ---
 name: b2c-content
-description: Export, list, and validate Page Designer content from B2C Commerce libraries. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
+description: Export, list, validate, and push Page Designer content in B2C Commerce libraries, manage classic content assets and folders, and manage content slot configurations. Use this skill whenever the user needs to export Page Designer pages, components, or content blocks, list pages in a content library, validate page JSON or metadefinitions, create or update a page from JSON, inspect the page and component types deployed to an instance, create or edit content assets and library folders, list or change content slot configurations (banners, schedules, customer groups), discover page IDs, migrate content between instances, or work with library XML offline. Also use when extracting content for review or building content deployment pipelines -- even if they just say 'export the homepage' or 'what pages are in the shared library'.
 ---
 
 # B2C Content Skill
 
-Use the `b2c` CLI to export, list, and validate Page Designer content from Salesforce B2C Commerce content libraries.
+Use the `b2c` CLI to export, list, validate, and push Page Designer content from Salesforce B2C Commerce content libraries.
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead (e.g., `npx @salesforce/b2c-cli content export homepage`).
 
@@ -16,6 +16,8 @@ The CLI auto-discovers the target instance and credentials from `SFCC_*` environ
 Run `b2c setup inspect` to see the resolved configuration and which source provided each value (use `--json` for scripting; secrets stay masked by default). For precedence rules and troubleshooting, see the `b2c-cli:b2c-config` skill.
 
 Online export/list starts a system export job: SCAPI uses `sfcc.jobs.rw` plus the tenant scope; WebDAV downloads the archive and assets. `--api-backend ocapi` forces OCAPI; `auto` permits fallback. If an error only mentions OCAPI, retry with `--api-backend scapi` to expose the SCAPI failure before assuming OCAPI permissions are needed.
+
+`content types`, `content push`, `content asset`, `content folder`, and `content slot` use the SCAPI Admin Experiences API: client credentials or JWT auth with `sfcc.experiences.rw` (or read-only `sfcc.experiences` for reads) plus the tenant scope. If those scopes are missing, only these commands fail. Export, list, and validate are unaffected.
 
 ## Examples
 
@@ -156,6 +158,94 @@ b2c content validate cartridge/experience/ --json
 
 Schema types are auto-detected from file paths (`experience/pages/` → pagetype, `experience/components/` → componenttype) and from JSON content. Use `--type` to override.
 
+### Inspect Deployed Page and Component Types
+
+```bash
+# list page and component types for a site (live from the instance)
+b2c content types list --site-id RefArch
+
+# only component types, as JSON
+b2c content types list --kind component --json
+
+# regions and attributes of one type (IDs have no page./component. prefix)
+b2c content types get Content.hero
+```
+
+Run these before building a page body, so that region IDs, component type IDs, enum values and required attributes come from the instance and aren't guessed.
+
+### Push Pages
+
+```bash
+# validate a page body against the deployed types without pushing
+b2c content push pages/summer.json --site-id RefArch --dry-run
+
+# create or update the page
+b2c content push pages/summer.json --site-id RefArch
+
+# round-trip: export, edit library.xml, push back
+b2c content export homepage -o ./export
+b2c content push ./export/libraries/SharedLibrary/library.xml --page homepage
+
+# validate a page body offline against local cartridge types
+b2c content validate --page pages/summer.json --types-dir ./cartridges
+```
+
+A page body is `{id, name, typeId, data?, regions: [{id, components: [{id, typeId, data?, regions?}]}]}`. Layout components nest `regions` in the same shape.
+
+- A new page is created **offline**; tell the user to set it online in Business Manager. An update keeps the page's online state, so changes to an online page are live right away.
+- Updates merge by region: a region you send replaces its components, and regions you leave out are kept.
+- An existing page's type can't be changed.
+- The API can't read, delete, or publish pages. Use `content export` to read pages back.
+
+### Content Assets and Folders
+
+```bash
+# folder tree of the library (no export job)
+b2c content folder list --tree
+
+# create a folder and an asset in it
+b2c content folder put promos --name Promotions --online
+b2c content asset put summer-banner --name "Summer Banner" --online \
+  --markup c_body="<p>Summer is here</p>" --folder promos
+
+# change one locale, keep the rest
+b2c content asset update summer-banner --locale fr --markup c_body="<p>L'été est là</p>"
+
+# read back as JSON
+b2c content asset get summer-banner --folders
+```
+
+- These commands cover classic content assets. Page Designer pages use `content push` and `content export`.
+- `--library` takes a shared library ID or a site ID (site-private library).
+- Use `--markup` for HTML attributes such as `c_body`, and `-a c_id=value` for string attributes. Unknown attribute IDs are ignored, so verify with `get`.
+- `folder list` can't see assets that aren't in a folder. Use `content list` for a full library view.
+
+### Content Slots
+
+```bash
+# slots of a site, with configuration counts and which configurations are live
+b2c content slot list --site-id RefArch
+
+# configurations of one slot, with schedule, groups, and template
+b2c content slot config list --slot-id home-main --extended
+
+# create or replace a configuration (the slot must already exist)
+b2c content slot config put home-main summer-sale --content-assets summer-banner \
+  --template slots/content/htmlslotcontainer.isml --enabled \
+  --start-date 2026-06-01T00:00:00Z --end-date 2026-09-01T00:00:00Z
+
+# change only some fields (content is kept)
+b2c content slot config update home-main summer-sale --no-enabled
+
+# delete a configuration
+b2c content slot config delete home-main summer-sale --force
+```
+
+- Slots come from templates and can't be created through the API. Run `content slot list` to find slot IDs.
+- `put` needs content (`--content-assets`, `--products`, `--categories`, `--html` or `--file`) and `--template`. Referenced content assets must exist in the site's library.
+- Export a configuration with `content slot config get ... > file.json` and reuse it with `put --file`.
+- `active` in the output means the configuration is enabled and inside its schedule now.
+
 ### More Commands
 
 See `b2c content --help` for a full list of available commands and options in the `content` topic.
@@ -166,6 +256,7 @@ See `b2c content --help` for a full list of available commands and options in th
 - **Authentication errors** -- Inspect resolved configuration first. SCAPI needs client-credentials or JWT authentication with `sfcc.jobs.rw` and the tenant scope; browser login is OCAPI/WebDAV-only. Use `b2c-cli:b2c-config` for setup. `--library-file` skips the remote export job; add `--offline` to skip asset downloads too.
 - **Library not found** -- Verify the library ID matches exactly. For site-private libraries, add `--site-library`.
 - **No content found** -- Check that the page/content IDs exist. Use `b2c content list` to discover available IDs.
+- **Experiences API errors on `content types`, `content push`, `content asset`, `content folder`, or `content slot`** -- A 403 or "not granted the Experiences scope" error means the API client needs `sfcc.experiences.rw` (or `sfcc.experiences`) in Account Manager. These commands also need client credentials (not browser login), a short code, and a tenant ID.
 - **Timeout errors** -- Large libraries may exceed the default timeout. Use `--timeout <seconds>` to increase it.
 
 ## Related Skills

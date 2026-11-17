@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {Args, Flags, ux} from '@oclif/core';
 import {glob} from 'glob';
+import {readPageInputs} from './push.js';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import {
   CONTENT_SCHEMA_TYPES,
@@ -14,6 +15,9 @@ import {
   validateMetaDefinitionFile,
   type ContentSchemaType,
   type MetaDefinitionValidationResult,
+  type PageValidationResult,
+  catalogFromLocalCartridges,
+  validatePageRequest,
 } from '@salesforce/b2c-tooling-sdk/operations/content';
 
 interface ContentValidateResponse {
@@ -21,6 +25,13 @@ interface ContentValidateResponse {
   totalErrors: number;
   totalFiles: number;
   validFiles: number;
+}
+
+interface ContentPageValidateResponse {
+  pages: Array<PageValidationResult & {source: string}>;
+  totalErrors: number;
+  totalPages: number;
+  validPages: number;
 }
 
 export default class ContentValidate extends BaseCommand<typeof ContentValidate> {
@@ -41,6 +52,7 @@ export default class ContentValidate extends BaseCommand<typeof ContentValidate>
     "<%= config.bin %> <%= command.id %> 'cartridge/experience/**/*.json'",
     '<%= config.bin %> <%= command.id %> cartridge/experience/',
     '<%= config.bin %> <%= command.id %> storePage.json --json',
+    '<%= config.bin %> <%= command.id %> --page pages/campaign.json --types-dir ./cartridges',
   ];
 
   static flags = {
@@ -50,25 +62,43 @@ export default class ContentValidate extends BaseCommand<typeof ContentValidate>
       description: 'Schema type (auto-detected if not specified)',
       options: [...CONTENT_SCHEMA_TYPES],
     }),
+    page: Flags.boolean({
+      description:
+        'Validate page bodies (Experiences API page JSON or exported library XML) against local page and component types instead of metadefinition files',
+      default: false,
+    }),
+    'types-dir': Flags.string({
+      description:
+        'Directory searched for cartridge experience/ type definitions in --page mode (defaults to the current directory); use "content push --dry-run" to validate against instance types',
+      multiple: true,
+    }),
   };
 
   // Allow multiple file arguments
   static strict = false;
 
   protected operations: {
+    catalogFromLocalCartridges: typeof catalogFromLocalCartridges;
     glob: (pattern: string, options?: {nodir?: boolean}) => Promise<string[]>;
+    readPageInputs: typeof readPageInputs;
     validateMetaDefinitionFile: typeof validateMetaDefinitionFile;
   } = {
+    catalogFromLocalCartridges,
     glob,
+    readPageInputs,
     validateMetaDefinitionFile,
   };
 
-  async run(): Promise<ContentValidateResponse> {
+  async run(): Promise<ContentPageValidateResponse | ContentValidateResponse> {
     const {argv, flags} = await this.parse(ContentValidate);
     const patterns = argv as string[];
 
     if (patterns.length === 0) {
       this.error('At least one file path, directory, or glob pattern is required.');
+    }
+
+    if (flags.page) {
+      return this.validatePages(patterns, flags['types-dir'] ?? [process.cwd()]);
     }
 
     // Expand directories to recursive JSON globs, then resolve all patterns in parallel
@@ -143,6 +173,49 @@ export default class ContentValidate extends BaseCommand<typeof ContentValidate>
       this.error('Validation failed', {exit: 1});
     }
 
+    return response;
+  }
+
+  private async validatePages(files: string[], typeDirs: string[]): Promise<ContentPageValidateResponse> {
+    const catalog = await this.operations.catalogFromLocalCartridges(typeDirs);
+    if (catalog.pageTypes.size === 0 && catalog.componentTypes.size === 0) {
+      this.warn(`No experience/ type definitions found under ${typeDirs.join(', ')}`);
+    }
+
+    const results: Array<PageValidationResult & {source: string}> = [];
+    for (const file of files) {
+      if (!fs.existsSync(file)) this.error(`File not found: ${file}`);
+      let inputs;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        inputs = await this.operations.readPageInputs(file);
+      } catch (error) {
+        this.error(`${file}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      for (const {page, source} of inputs) {
+        results.push({...validatePageRequest(page, catalog), source});
+      }
+    }
+
+    const totalErrors = results.reduce((sum, r) => sum + r.errors.length, 0);
+    const response: ContentPageValidateResponse = {
+      pages: results,
+      totalErrors,
+      totalPages: results.length,
+      validPages: results.filter((r) => r.valid).length,
+    };
+    if (this.jsonEnabled()) return response;
+
+    for (const r of results) {
+      ux.stdout(
+        `${r.valid ? ux.colorize('green', 'PASS') : ux.colorize('red', 'FAIL')}: ${r.pageId || '(no id)'} (${r.source})`,
+      );
+      for (const e of r.errors) ux.stdout(`  ${ux.colorize('red', 'ERROR')} at ${e.path || '/'}: ${e.message}`);
+      for (const w of r.warnings) ux.stdout(`  ${ux.colorize('yellow', 'WARNING')} at ${w.path || '/'}: ${w.message}`);
+    }
+    ux.stdout('');
+    ux.stdout(`${response.validPages}/${results.length} page(s) valid, ${totalErrors} error(s)`);
+    if (totalErrors > 0) this.error('Validation failed', {exit: 1});
     return response;
   }
 }

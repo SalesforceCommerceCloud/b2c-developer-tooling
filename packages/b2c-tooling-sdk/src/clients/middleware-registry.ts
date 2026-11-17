@@ -69,6 +69,7 @@ export type HttpClientType =
   | 'scapi-merchant-roles'
   | 'scapi-sites'
   | 'scapi-catalogs'
+  | 'scapi-experiences'
   | 'object-definitions'
   | 'scapi'
   | 'storefront-deployments'

@@ -222,4 +222,36 @@ describe('content validate', () => {
       expect(stdoutOutput.toLowerCase()).to.include('invalid json');
     });
   });
+
+  describe('--page mode', () => {
+    let dir: string;
+
+    beforeEach(() => {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'content-validate-page-'));
+      const pages = path.join(dir, 'cart/cartridge/experience/pages');
+      fs.mkdirSync(pages, {recursive: true});
+      fs.writeFileSync(path.join(pages, 'storePage.json'), JSON.stringify({region_definitions: [{id: 'main'}]}));
+      fs.writeFileSync(path.join(dir, 'good.json'), JSON.stringify({id: 'p', name: 'P', typeId: 'storePage'}));
+      fs.writeFileSync(
+        path.join(dir, 'bad.json'),
+        JSON.stringify({id: 'q', name: 'Q', typeId: 'storePage', regions: [{id: 'nope'}]}),
+      );
+    });
+
+    afterEach(() => fs.rmSync(dir, {recursive: true, force: true}));
+
+    it('validates page bodies against local cartridge types', async () => {
+      const files = [path.join(dir, 'good.json'), path.join(dir, 'bad.json')];
+      const command: any = await createCommand({page: true, 'types-dir': [dir]}, files);
+      sinon.stub(command, 'jsonEnabled').returns(true);
+      const metaStub = sinon.stub(command.operations, 'validateMetaDefinitionFile');
+
+      const result = await command.run();
+
+      expect(metaStub.called).to.equal(false);
+      expect(result.totalPages).to.equal(2);
+      expect(result.validPages).to.equal(1);
+      expect(result.pages[1].errors[0].message).to.include('Region "nope"');
+    });
+  });
 });
