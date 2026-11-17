@@ -16,7 +16,7 @@ import {findTemplateLinks, resolveTemplate} from '../isml/document-links.js';
 import {collectIsmlFoldingRanges} from '../isml/folding.js';
 import {formatIsmlText, normalizeVoidTagSpacing} from '../isml/formatting.js';
 import {findIsmlHoverInfo} from '../isml/hover.js';
-import {detectAutoCloseTag} from '../isml/index.js';
+import {detectAutoCloseTag, isInsideAutoCloseExcludedTag} from '../isml/index.js';
 import {findIsmlLinkedEditingTagNameMatch, findIsmlTagNameMatch} from '../isml/matching.js';
 import {
   detectSemanticCompletionContext,
@@ -100,6 +100,27 @@ suite('ISML: detectAutoCloseTag', () => {
     // After typing the closing > of <isif condition="x">, only one </isif> should be added.
     const result = detectAutoCloseTag('<isif condition="x">');
     assert.deepStrictEqual(result, {tagName: 'isif'});
+  });
+});
+
+suite('ISML: isInsideAutoCloseExcludedTag', () => {
+  const block = '\n<isif condition="${a}">\n</isif>\n';
+
+  test('does not suppress auto-close for the <iscomment>/<isscript> tag just typed', () => {
+    for (const typed of ['<iscomment>', '<isscript>', '  <iscomment>']) {
+      assert.strictEqual(isInsideAutoCloseExcludedTag(typed + block, typed.length), false, typed);
+    }
+  });
+
+  test('suppresses auto-close for tags typed inside an open <iscomment> or <isscript>', () => {
+    for (const prefix of ['<iscomment>\n<isif>', '<isscript>\nvar x = "<isif>']) {
+      assert.strictEqual(isInsideAutoCloseExcludedTag(prefix + block, prefix.length), true, prefix);
+    }
+  });
+
+  test('does not suppress after a closed <iscomment>', () => {
+    const prefix = '<iscomment>x</iscomment>\n<isif>';
+    assert.strictEqual(isInsideAutoCloseExcludedTag(prefix + block, prefix.length), false);
   });
 });
 
@@ -469,6 +490,60 @@ suite('ISML: tag matching', () => {
     const closing = text.slice(linkedMatch?.closingNameStartOffset ?? 0, linkedMatch?.closingNameEndOffset ?? 0);
     assert.strictEqual(opening, 'isforeach');
     assert.strictEqual(closing, 'isif');
+  });
+
+  test('half-typed tag above a block does not link to the block closing tag (#868)', () => {
+    const rest = '\n<isif condition="whatever">\n\n<iselse/>\n\n</isif>\n';
+    for (const typed of ['<is', '<isc', '<iscomment']) {
+      const text = typed + rest;
+      assert.strictEqual(findIsmlLinkedEditingTagNameMatch(text, typed.length), undefined, typed);
+    }
+
+    const text = '<iscomment' + rest;
+    const offset = text.indexOf('isif') + 2;
+    const match = findIsmlTagNameMatch(text, offset);
+    assert.ok(match);
+    assert.strictEqual(text.slice(match?.openingNameStartOffset, match?.openingNameEndOffset), 'isif');
+  });
+
+  test('half-typed tags with attributes or trailing text do not steal the block closing tag', () => {
+    const block = '\n<isif condition="${a}">\n<iselse/>\n</isif>\n';
+    for (const typed of [
+      '<isloop items',
+      '<isif condition=""',
+      '<isif condition=${}',
+      '</is',
+      "<isc\nDon't",
+      '<isc\n<div class="x">',
+    ]) {
+      const text = typed + block;
+      const blockOffset = text.lastIndexOf('<isif') + 3;
+      const match = findIsmlTagNameMatch(text, blockOffset);
+      assert.ok(match, typed);
+      assert.strictEqual(match?.closingNameStartOffset, text.lastIndexOf('isif'), typed);
+      assert.strictEqual(findIsmlLinkedEditingTagNameMatch(text, text.indexOf('is') + 2), undefined, typed);
+    }
+  });
+
+  test('ISML inside attribute values and string literals in expressions still scan', () => {
+    const cases = [
+      "<isif condition=${x == '}'}>x</isif>",
+      '<isif condition="${x == \'}\'}">x</isif>',
+      '<a href="<isprint value="${u}"/>"><isif condition="${b}">y</isif></a>',
+      '<isif condition="${c}">Don\'t</isif>',
+    ];
+    for (const text of cases) {
+      const offset = text.lastIndexOf('isif') + 2;
+      assert.ok(findIsmlTagNameMatch(text, offset), text);
+    }
+  });
+
+  test('`<` and `>` inside unquoted ${...} expressions do not end the tag', () => {
+    const text = '<isif condition=${a < b && c > d}>x</isif>';
+    const offset = text.indexOf('isif') + 2;
+    const match = findIsmlTagNameMatch(text, offset);
+    assert.ok(match);
+    assert.strictEqual(match?.closingNameStartOffset, text.lastIndexOf('isif'));
   });
 });
 

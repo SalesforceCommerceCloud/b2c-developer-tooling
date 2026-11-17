@@ -66,20 +66,54 @@ export function scanIsmlTags(text: string): IsmlTagToken[] {
       continue;
     }
 
+    // Find the tag's closing `>`. An unquoted `<` outside a `${...}` expression
+    // means this tag is unterminated (e.g. a tag still being typed above existing
+    // markup). Without that stop, a half-typed `<is` would swallow the next real
+    // tag and break open/close pairing (linked editing renamed the wrong tag).
+    // Quotes only open an attribute value after `=`, so stray apostrophes in
+    // text following a half-typed tag (`Don't`) are not taken as a value.
     let quote: '"' | "'" | null = null;
+    let exprQuote: '"' | "'" | null = null;
     let end = -1;
+    let unterminated = false;
+    let exprDepth = 0;
+    let prevSignificant = '';
     for (let j = cursor; j < text.length; j++) {
       const ch = text[j];
-      if (quote) {
+      if (exprDepth > 0) {
+        // Inside `${...}` (possibly within a quoted value): honor string
+        // literals so `${x == '}'}` does not end the expression early.
+        if (exprQuote) {
+          if (ch === exprQuote) exprQuote = null;
+        } else if (ch === '"' || ch === "'") {
+          if (ch === quote) {
+            // The enclosing attribute quote ends here; treat the expression as done.
+            exprDepth = 0;
+            quote = null;
+          } else exprQuote = ch;
+        } else if (ch === '{') exprDepth++;
+        else if (ch === '}') exprDepth--;
+      } else if (ch === '$' && text[j + 1] === '{') {
+        exprDepth = 1;
+        j++;
+      } else if (quote) {
         if (ch === quote) quote = null;
-      } else if (ch === '"' || ch === "'") {
+      } else if ((ch === '"' || ch === "'") && prevSignificant === '=') {
         quote = ch;
       } else if (ch === '>') {
         end = j;
         break;
+      } else if (ch === '<') {
+        unterminated = true;
+        break;
       }
+      if (!/\s/.test(ch)) prevSignificant = ch;
     }
 
+    if (unterminated) {
+      i = start + 1;
+      continue;
+    }
     if (end < 0) break;
 
     const inner = text.slice(cursor, end);
