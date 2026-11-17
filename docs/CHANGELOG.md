@@ -1,5 +1,11 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.15
+
+### Patch Changes
+
+- [`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c) - The `b2c-setup` skill and the Realm Setup guide now explain that a new sandbox's SCAPI can return 404 for 10 to 20 minutes after it starts, and how to wait for it without changing the API client. The skill's dataset imports use a `<datasets>` placeholder for a checkout at the release matching the storefront template. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.14
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @salesforce/b2c-cli
 
+## 2.16.1
+
+### Patch Changes
+
+- Updated dependencies [[`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c)]:
+  - @salesforce/b2c-tooling-sdk@2.16.1
+
 ## 2.16.0
 
 ### Minor Changes

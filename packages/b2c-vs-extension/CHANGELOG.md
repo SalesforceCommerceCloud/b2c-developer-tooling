@@ -1,5 +1,17 @@
 # Change Log
 
+## 1.11.1
+
+### Patch Changes
+
+- [#869](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/869) [`070bdac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/070bdac37cb153c4beb3f1682e2edba44291d1bc) - Fixed ISML auto-close not inserting `</iscomment>` or `</isscript>` after typing `<iscomment>` or `<isscript>` (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#869](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/869) [`070bdac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/070bdac37cb153c4beb3f1682e2edba44291d1bc) - Fixed ISML linked editing renaming an existing closing tag (for example `</isif>` becoming `</iscomment>`) while typing a new tag above it (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c)]:
+  - @salesforce/b2c-tooling-sdk@2.16.1
+  - @salesforce/b2c-script-types@26.9.0
+
 ## 1.11.0
 
 ### Minor Changes
