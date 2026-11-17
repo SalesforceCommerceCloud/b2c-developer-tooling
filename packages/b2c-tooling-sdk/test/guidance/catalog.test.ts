@@ -275,6 +275,21 @@ describe('offline guidance catalog', () => {
     expect(() => catalog.read({limit: 21})).to.throw('limit 1-20');
   });
 
+  it('resolves file against the skill named by an entrypoint URI', () => {
+    const catalog = new GuidanceCatalog(root);
+    const viaId = catalog.read({id: 'b2c/deploy', file: 'references/cleanup.md'});
+    const viaUri = catalog.read({uri: 'skill://b2c/deploy/SKILL.md', file: 'references/cleanup.md'});
+    expect(viaUri).to.deep.equal(viaId);
+    // A URI that already names the same non-entry file is accepted.
+    expect(() =>
+      catalog.read({uri: 'skill://b2c/deploy/references/cleanup.md', file: 'references/cleanup.md'}),
+    ).to.not.throw();
+    // A URI naming a different non-entry file is ambiguous and points at the full URI.
+    expect(() => catalog.read({uri: 'skill://b2c/deploy/references/cleanup.md', file: 'SKILL.md'})).to.throw(
+      'skill://b2c/deploy/SKILL.md',
+    );
+  });
+
   it('rejects symlink leaves and parent directories', () => {
     const catalog = new GuidanceCatalog(root);
     const reference = join(root, 'b2c/deploy/references/cleanup.md');

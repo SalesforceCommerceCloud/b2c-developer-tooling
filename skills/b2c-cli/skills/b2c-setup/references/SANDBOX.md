@@ -21,12 +21,24 @@ b2c setup inspect
 
 See `b2c-cli:b2c-config` for credentials and the SCAPI short code and tenant ID.
 
-## 2. Load Sample Data
+### Wait for SCAPI
 
-Import a storefront dataset and rebuild its search indexes: [storefront datasets](DATASETS.md).
+A new sandbox reports `started` before SCAPI serves its tenant. For roughly 10 to 20 minutes, every SCAPI call for the tenant (sites, jobs, storefronts) returns `404 Could not find requested resource`, even with a valid token. This is not an API client problem: do not change the client's roles, scopes, or tenant filter for it. A tenant filter of `<realm>_sbx` already covers new sandboxes in the realm.
+
+Commands that need SCAPI, such as `b2c mrt project create --mrt-backend scapi` and any command run with `--api-backend scapi`, must wait. Poll until the tenant answers:
 
 ```bash
-b2c job import ./storefront-datasets/marketstreet --show-log
+until b2c sites list -i my-sandbox --api-backend scapi >/dev/null 2>&1; do sleep 30; done
+```
+
+Today `b2c job import` and `b2c job run` fall back to WebDAV and OCAPI while SCAPI is unavailable, so start the data load (step 2) right away and poll for SCAPI afterwards. Where a command or instance uses SCAPI only, with no OCAPI fallback, the whole setup waits for SCAPI: poll first, then load data.
+
+## 2. Load Sample Data
+
+Import a storefront dataset and rebuild its search indexes. `<datasets>` is a checkout of the storefront-datasets repository at the release that matches the storefront template; clone it first ([storefront datasets](DATASETS.md)).
+
+```bash
+b2c job import <datasets>/marketstreet --show-log
 b2c job run Reindex --wait
 b2c sites list
 ```

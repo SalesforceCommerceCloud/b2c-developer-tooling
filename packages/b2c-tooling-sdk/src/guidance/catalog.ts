@@ -208,13 +208,27 @@ export class GuidanceCatalog {
     }
     if (request.id !== undefined || request.uri !== undefined) {
       if (request.id !== undefined && request.uri !== undefined) fail('INVALID_REQUEST', 'Use id or uri, not both.');
-      if (
-        supplied.some((key) => !['id', 'uri', 'file', 'section', 'offset', 'maxLength'].includes(key)) ||
-        (request.uri !== undefined && request.file !== undefined)
-      ) {
-        fail('INVALID_REQUEST', 'Exact reads accept id/file/section or uri/section.');
+      if (supplied.some((key) => !['id', 'uri', 'file', 'section', 'offset', 'maxLength'].includes(key))) {
+        fail('INVALID_REQUEST', 'Exact reads accept id/file/section or uri/file/section.');
       }
-      const selector = request.uri !== undefined ? this.parseUri(request.uri) : {id: request.id!, file: request.file};
+      let selector: {id: string; file?: string};
+      if (request.uri === undefined) {
+        selector = {id: request.id!, file: request.file};
+      } else {
+        const parsed = this.parseUri(request.uri);
+        selector = parsed;
+        if (request.file !== undefined) {
+          const entry = this.entries.get(parsed.id);
+          // A URI that names the skill entrypoint is just the skill; resolve file against it.
+          if (entry && parsed.file !== entry.entrypoint && parsed.file !== request.file) {
+            fail(
+              'INVALID_REQUEST',
+              `The URI already names a file. Read it without file, or use ${guidanceUri(parsed.id, request.file)}.`,
+            );
+          }
+          selector = {id: parsed.id, file: request.file};
+        }
+      }
       return this.readContent({
         ...selector,
         section: request.section,

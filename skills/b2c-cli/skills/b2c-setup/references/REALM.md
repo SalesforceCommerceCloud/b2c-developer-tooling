@@ -17,10 +17,10 @@ Code upload, log, and IMPEX file commands with an API client also need **WebDAV 
 
 ## 2. Prepare Staging
 
-1. **Data.** Import your site archives, or a [storefront dataset](DATASETS.md) for a demo site, then rebuild the search indexes.
+1. **Data.** Import your site archives, or a [storefront dataset](DATASETS.md) for a demo site, then rebuild the search indexes. `<datasets>` is a checkout of the storefront-datasets repository at the release that matches the storefront template.
 
    ```bash
-   b2c job import ./storefront-datasets/marketstreet -i staging --show-log
+   b2c job import <datasets>/marketstreet -i staging --show-log
    b2c job run Reindex -i staging --wait
    ```
 
