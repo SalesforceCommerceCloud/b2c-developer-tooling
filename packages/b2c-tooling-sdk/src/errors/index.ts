@@ -27,3 +27,11 @@ export {
   SandboxTerminalStateError,
 } from '../operations/ods/wait-for-sandbox.js';
 export {ClonePollingTimeoutError, ClonePollingError, CloneFailedError} from '../operations/ods/wait-for-clone.js';
+export {
+  REMEDIATION_DOCS,
+  describeRemediation,
+  withRemediationHint,
+  type Remediation,
+  type RemediationDoc,
+  type RemediationKind,
+} from './remediation.js';

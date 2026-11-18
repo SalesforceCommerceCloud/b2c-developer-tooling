@@ -8,6 +8,7 @@ import {TOOLSETS} from '../../utils/constants.js';
 import {z} from 'zod';
 import {readDocByQuery, type DocCategory, type DocEntry} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ProjectType} from '@salesforce/b2c-tooling-sdk/discovery';
+import {guidanceHeadings} from '@salesforce/b2c-tooling-sdk/guidance';
 import type {McpTool} from '../../utils/index.js';
 import type {Services} from '../../services.js';
 import {createToolAdapter, errorResult, jsonResult} from '../adapter.js';
@@ -19,6 +20,7 @@ const DEFAULT_MAX_LENGTH = 12_000;
 
 interface ReadInput extends WorkspaceContextInput {
   query: string;
+  section?: string;
   offset?: number;
   maxLength?: number;
 }
@@ -29,8 +31,15 @@ interface ReadOutput {
   entry: DocEntry;
   totalLength: number;
   offset: number;
+  section?: string;
   truncated?: boolean;
   nextOffset?: number;
+}
+
+/** Unknown section: the page's headings, so the caller can retry with one. */
+interface SectionNotFound {
+  sectionNotFound: string;
+  sections: Array<{id: string; title: string}>;
 }
 
 export function createDocsReadTool(
@@ -38,7 +47,7 @@ export function createDocsReadTool(
   enabledCategories?: readonly DocCategory[],
   detectedWorkspaces: readonly ProjectType[] = [],
 ): McpTool {
-  return createToolAdapter<ReadInput, null | ReadOutput>(
+  return createToolAdapter<ReadInput, null | ReadOutput | SectionNotFound>(
     {
       name: 'docs_read',
       searchHint: 'script api class reference documentation guide help article dw',
@@ -57,6 +66,11 @@ export function createDocsReadTool(
           .string()
           .min(1)
           .describe('Exact id ("dw.catalog.ProductMgr", "sfnext/sfnext-get-started") or fuzzy query.'),
+        section: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Heading ID to read one section, e.g. "scopes-by-command"; unknown IDs list the headings.'),
         offset: z
           .number()
           .int()
@@ -78,10 +92,17 @@ export function createDocsReadTool(
         const workspace = await resolveProjectWorkspace(args, detectedWorkspaces);
         const found = await readDocByQuery(args.query, {enabledCategories, workspace});
         if (!found) return null;
-        const totalLength = found.content.length;
+        let selected = found.content;
+        if (args.section !== undefined) {
+          const headings = guidanceHeadings(found.content);
+          const heading = headings.find((item) => item.id === args.section);
+          if (!heading) return {sectionNotFound: args.section, sections: headings.map(({id, title}) => ({id, title}))};
+          selected = found.content.slice(heading.start, heading.end);
+        }
+        const totalLength = selected.length;
         const offset = Math.min(args.offset ?? 0, totalLength);
         const maxLength = args.maxLength ?? DEFAULT_MAX_LENGTH;
-        const slice = found.content.slice(offset, offset + maxLength);
+        const slice = selected.slice(offset, offset + maxLength);
         const end = offset + slice.length;
         const truncated = end < totalLength;
         context.recordContentRead?.({
@@ -96,11 +117,20 @@ export function createDocsReadTool(
           content: slice,
           totalLength,
           offset,
+          ...(args.section !== undefined && {section: args.section}),
           ...(truncated && {truncated: true, nextOffset: end}),
         };
       },
-      formatOutput: (output) =>
-        output ? jsonResult(output) : errorResult('No documentation found. Try docs_search to find candidates.'),
+      formatOutput(output) {
+        if (!output) return errorResult('No documentation found. Try docs_search to find candidates.');
+        if ('sectionNotFound' in output) {
+          return {
+            ...jsonResult({error: 'Unknown section. Retry with an id from sections, or omit section.', ...output}),
+            isError: true,
+          };
+        }
+        return jsonResult(output);
+      },
     },
     loadServices,
   );

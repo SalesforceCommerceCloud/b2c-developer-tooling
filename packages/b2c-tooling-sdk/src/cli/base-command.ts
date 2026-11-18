@@ -54,6 +54,7 @@ import {initializeScapiSnippetStore} from '../scapi/snippets.js';
 import {setUserAgent} from '../clients/user-agent.js';
 import {redactAccessTokens} from '../clients/error-utils.js';
 import {createTelemetry, Telemetry, type TelemetryAttributes} from '../telemetry/index.js';
+import {withRemediationHint} from '../errors/remediation.js';
 
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
@@ -940,6 +941,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       await this.telemetry.flush();
       await this.telemetry.stop();
     }
+
+    // Name the fix for recognized auth and permission failures (after telemetry,
+    // so error messages there stay comparable across releases).
+    err.message = withRemediationHint(err.message);
 
     // Log if logger is available (may not be if error during init)
     if (this.logger) {

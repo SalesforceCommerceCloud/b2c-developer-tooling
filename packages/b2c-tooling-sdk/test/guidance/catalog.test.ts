@@ -118,7 +118,38 @@ describe('offline guidance catalog', () => {
   it('rejects served bytes that differ from the listed size', () => {
     const catalog = new GuidanceCatalog(root);
     writeFileSync(join(root, 'b2c/deploy/references/cleanup.md'), '# Cleanup\nChanged.\n');
-    expect(() => catalog.readResource('skill://b2c/deploy/references/cleanup.md')).to.throw('inconsistent');
+    expect(() => catalog.readResource('skill://b2c/deploy/references/cleanup.md')).to.throw('Restart the MCP server');
+  });
+
+  it('reloads the manifest when the package is updated while running', () => {
+    const catalog = new GuidanceCatalog(root);
+    const updated = '# Cleanup\nUpdated in a newer release.\n';
+    writeFileSync(join(root, 'b2c/deploy/references/cleanup.md'), updated);
+    manifest.entries[0].files[1] = {
+      path: 'references/cleanup.md',
+      bytes: Buffer.byteLength(updated),
+      digest: digest(updated),
+    };
+    writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
+    expect(catalog.readResource('skill://b2c/deploy/references/cleanup.md')).to.equal(updated);
+  });
+
+  it('reloads the manifest when an updated package removed a file', () => {
+    const catalog = new GuidanceCatalog(root);
+    rmSync(join(root, 'b2c/deploy/references/cleanup.md'));
+    manifest.entries[0].files = manifest.entries[0].files.filter((file) => file.path === 'SKILL.md');
+    writeFileSync(join(root, 'index.json'), JSON.stringify(manifest));
+    expect(() => catalog.readResource('skill://b2c/deploy/references/cleanup.md')).to.throw(
+      GuidanceError,
+      'not available',
+    );
+    expect(catalog.readResource('skill://b2c/deploy/SKILL.md')).to.equal(content);
+  });
+
+  it('asks for a restart when the package is gone', () => {
+    const catalog = new GuidanceCatalog(root);
+    rmSync(root, {recursive: true, force: true});
+    expect(() => catalog.readResource('skill://b2c/deploy/SKILL.md')).to.throw(GuidanceError, 'Restart the MCP server');
   });
 
   it('describes featured skills with verbatim frontmatter and every file digest', () => {

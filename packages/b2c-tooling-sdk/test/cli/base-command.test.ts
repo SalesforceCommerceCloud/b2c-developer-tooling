@@ -478,15 +478,20 @@ describe('cli/base-command', () => {
     describe('Telemetry.getConnectionString()', () => {
       let originalSfDisable: string | undefined;
       let originalAppInsightsKey: string | undefined;
+      let originalSfccDisable: string | undefined;
 
       beforeEach(() => {
         originalSfDisable = process.env.SF_DISABLE_TELEMETRY;
+        originalSfccDisable = process.env.SFCC_DISABLE_TELEMETRY;
         originalAppInsightsKey = process.env.SFCC_APP_INSIGHTS_KEY;
         delete process.env.SF_DISABLE_TELEMETRY;
+        delete process.env.SFCC_DISABLE_TELEMETRY;
         delete process.env.SFCC_APP_INSIGHTS_KEY;
       });
 
       afterEach(() => {
+        if (originalSfccDisable !== undefined) process.env.SFCC_DISABLE_TELEMETRY = originalSfccDisable;
+        else delete process.env.SFCC_DISABLE_TELEMETRY;
         if (originalSfDisable !== undefined) {
           process.env.SF_DISABLE_TELEMETRY = originalSfDisable;
         } else {

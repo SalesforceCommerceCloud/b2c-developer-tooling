@@ -313,6 +313,26 @@ describe('tools/docs', () => {
       expect(json.totalLength).to.be.a('number');
     });
 
+    it('reads only the requested section', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const result = await tool.handler({query: 'dw.catalog.ProductMgr', section: 'method-summary'});
+      expect(result.isError).to.be.undefined;
+      const json = getResultJson<{content: string; section: string; totalLength: number}>(result);
+      expect(json.section).to.equal('method-summary');
+      expect(json.content).to.match(/^## Method Summary/);
+      expect(json.content).to.not.contain('## Method Details');
+      expect(json.totalLength).to.equal(json.content.length);
+    });
+
+    it('lists headings for an unknown section', async () => {
+      const tool = createDocsReadTool(loadServices);
+      const result = await tool.handler({query: 'dw.catalog.ProductMgr', section: 'nope'});
+      expect(result.isError).to.equal(true);
+      const json = getResultJson<{sectionNotFound: string; sections: Array<{id: string}>}>(result);
+      expect(json.sectionNotFound).to.equal('nope');
+      expect(json.sections.map((item) => item.id)).to.include('method-summary');
+    });
+
     it('returns related Help entry ids for landing articles', async () => {
       const tool = createDocsReadTool(loadServices);
       const result = await tool.handler({query: 'help-merchant/b2c_cb_page_designer'});
