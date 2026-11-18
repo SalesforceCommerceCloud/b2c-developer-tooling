@@ -21,6 +21,7 @@ import {
 import {MiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {SafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
+import {buildScapiScript} from '../../src/scapi/runtime-source.js';
 
 const server = setupServer();
 const prefix = '/product/products/v1/organizations/f_ecom_test_001/products/';
@@ -56,6 +57,14 @@ describe('SCAPI code mode', function () {
   it('accepts trailing semicolons and line comments after the function', async () => {
     expect(await runScapiCode({code: 'async () => ({ok: true});\n'})).to.deep.equal({ok: true});
     expect(await runScapiCode({code: 'async () => ({ok: true}) // done'})).to.deep.equal({ok: true});
+    expect(await runScapiCode({code: 'async () => ({ok: true});;; '})).to.deep.equal({ok: true});
+  });
+
+  it('strips long runs of trailing semicolons in linear time', () => {
+    const started = performance.now();
+    const script = buildScapiScript('async () => 1' + ';'.repeat(32_000), {});
+    expect(performance.now() - started).to.be.lessThan(50);
+    expect(script).to.include('async () => 1\n))(__console)(__config.input)');
   });
 
   it('restricts local development APIs without affecting parent-managed work', async () => {

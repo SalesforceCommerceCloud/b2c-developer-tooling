@@ -84,7 +84,11 @@ const codemode = Object.freeze({
 
 /** Strip the trailing semicolons a model may add after the function expression. */
 function programExpression(code: string): string {
-  return code.trim().replace(/;+$/, '');
+  const trimmed = code.trim();
+  // A linear scan; an anchored /;+$/ is quadratic on long runs of semicolons.
+  let end = trimmed.length;
+  while (end > 0 && trimmed[end - 1] === ';') end--;
+  return trimmed.slice(0, end);
 }
 
 // Each program sees `console` as the bounded logger, alongside the prelude's bindings.
