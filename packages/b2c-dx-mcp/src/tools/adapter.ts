@@ -76,6 +76,7 @@
 import {z, type ZodRawShape} from 'zod';
 import type {B2CInstance} from '@salesforce/b2c-tooling-sdk';
 import {redactAccessTokens} from '@salesforce/b2c-tooling-sdk/clients';
+import {describeRemediation} from '@salesforce/b2c-tooling-sdk/errors';
 import type {McpTool, ToolContext, ToolEffects, ToolResult, Toolset} from '../utils/index.js';
 import type {Services, MrtConfig} from '../services.js';
 import type {ServerContext} from '../server-context.js';
@@ -213,6 +214,21 @@ export function textResult(text: string): ToolResult {
   return {
     content: [{type: 'text', text}],
   };
+}
+
+/**
+ * Names the fix for a recognized auth or permission failure and the docs_read
+ * call that explains it, so the agent can tell the user what to change instead
+ * of retrying. Empty when the error is not recognized or already explains itself.
+ */
+export function remediationSuffix(message: string): string {
+  const remediation = describeRemediation(message);
+  if (!remediation) return '';
+  const {doc} = remediation;
+  return (
+    `\n\n${remediation.hint}\nDetails: docs_read({query: "${doc.id}", section: "${doc.section}"}) ` +
+    `(cite ${doc.url}).`
+  );
 }
 
 /**
@@ -463,7 +479,7 @@ export function createToolAdapter<TInput, TOutput>(
       } catch (error) {
         // Handle execution errors
         const message = redactAccessTokens(error instanceof Error ? error.message : String(error));
-        const result = errorResult(`Execution error: ${message}`);
+        const result = errorResult(`Execution error: ${message}${remediationSuffix(message)}`);
         return resolution ? attachResolution(result, withAuth(resolution)) : result;
       }
     },
