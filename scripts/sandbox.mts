@@ -179,7 +179,8 @@ Object.assign(env, {
 let projectDir: string;
 if (opts.project) {
   projectDir = resolve(invokedFrom, opts.project);
-  if (hostname && !opts.empty) {
+  // Only an explicit --server overrides the project's dw.json; the remembered one does not.
+  if (opts.server && hostname && !opts.empty) {
     env.SFCC_CONFIG = '';
     env.SFCC_SERVER = hostname;
   }
