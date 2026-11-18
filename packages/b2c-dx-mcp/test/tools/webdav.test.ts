@@ -187,7 +187,7 @@ describe('WebDAV file tools', () => {
 
   it('bounds range reads even without Content-Length', async () => {
     const response = new Response(
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.16 release.
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.19 release.
       new ReadableStream({
         start(controller) {
           for (let i = 0; i < 3; i++) controller.enqueue(new Uint8Array(4));
@@ -209,7 +209,7 @@ describe('WebDAV file tools', () => {
     const chunks = MAX_FILE_BYTES / chunk.length + 1;
     request.resolves(
       new Response(
-        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.16 release.
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.19 release.
         new ReadableStream({
           start(controller) {
             for (let i = 0; i < chunks; i++) controller.enqueue(chunk);
@@ -226,7 +226,7 @@ describe('WebDAV file tools', () => {
   it('removes the partial local file when a download fails mid-stream', async () => {
     request.resolves(
       new Response(
-        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.16 release.
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Supported by the minimum Node 22.19 release.
         new ReadableStream({
           start(controller) {
             controller.enqueue(new Uint8Array([1, 2, 3]));

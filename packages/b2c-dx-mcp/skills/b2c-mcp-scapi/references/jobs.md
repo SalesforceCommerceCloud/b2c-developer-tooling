@@ -56,7 +56,7 @@ async () => {
   if (!start.ok) return start;
   let ex = start.data;
   for (let i = 0; i < 20 && ['pending', 'running'].includes(ex.executionStatus); i++) {
-    await new Promise((r) => setTimeout(r, 3000));
+    await sleep(3000);
     const r = await scapi.request({method: 'GET', path: base + '/' + ex.id});
     if (!r.ok) return r;
     ex = r.data;

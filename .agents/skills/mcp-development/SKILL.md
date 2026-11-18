@@ -178,7 +178,7 @@ focused; do not test prose by matching whole descriptions.
 ## SCAPI code mode
 
 Follow Cloudflare's discovery/execution convention: JavaScript async functions,
-`spec.paths` for offline discovery, and an authenticated `scapi.request` helper.
+an async `spec` host API (`apis`, `operations`, `operation`, `resolve`, `search`) for offline discovery, and an authenticated `scapi.request` helper.
 Tool descriptions include concise object types and runnable discovery/execution
 examples; Commerce procedures belong in the required skill. Expose local refs
 expanded in the discovery view, retaining recursive/deep refs; keep source schemas
@@ -190,29 +190,25 @@ representation. Teach discovery of operation IDs before selected schema fields;
 filter/page/aggregate live data in code and retain errors and partial-list counts.
 Warn about large schemas/results in tool descriptions. Introduce code mode in
 server instructions as the Commerce API fallback; prefer dedicated tools.
-Use native Node execution; no custom language parser or evaluator. A disposable
-child bounds runtime and cleans up work, but is not a security sandbox. Keep
-credentials in the host and apply SDK safety rules for the resolved target at
-each helper request. Preserve cancellation and resolution. Never replay a whole
-program automatically after writes; let SCAPI validate request payloads.
-Disable ambient fetch/WebSocket to discourage unmanaged requests; do not claim
-network isolation. Enable Node permissions only on the disposable child, without
-filesystem, subprocess, worker, or addon grants. Launch the current executable
-directly; keep configuration, package loading, and snippet storage in the parent.
-These guardrails keep code mode focused on APIs and result processing. Route local
-development work to terminal/file tools; do not pursue a hostile-code sandbox or
-expand API blacklists. Test managed calls and denials on supported Node/platforms.
+Run programs in the SDK's QuickJS VM (`runScapiCode`); no custom language parser
+or evaluator. The VM has no network, file system, modules, process or timers;
+every capability is a host call (`__b2c`) that the SDK answers, limits and passes
+through interceptors. Keep credentials in the host and apply SDK safety rules for
+the resolved target at each helper request. Preserve cancellation and resolution.
+Approval pauses end the run; resume by replaying its journal, never by resending
+recorded requests. Let SCAPI validate request payloads. These guardrails keep code
+mode focused on APIs and result processing. Route local development work to
+terminal/file tools; do not expand API blacklists. Test managed calls and denials.
 Token-export helpers serve explicit external-client needs;
 managed requests authenticate automatically. Resolve prerequisites lazily by
 helper, honor configured auth methods, and propagate cancellation through grants.
-Never expose configured secrets to the worker or persist tokens in snippet source.
-Retained SCAPI executions bind native retries to the original arguments and target;
-never replay code. Confirmation exempts only one detached request, including its
-query/body. Keep hard blocks, unsupported clients, decline, and cancellation
-closed. Serialize managed calls at approval boundaries. Approval waits have no
-server deadline, including the legacy elicitation bridge; pause active runtime
-while awaiting approval. Bound active runtime and worker count, support explicit
-cancellation, and await worker cleanup on shutdown.
+Never expose configured secrets to the VM or persist tokens in snippet source.
+Paused SCAPI executions bind native retries to the original arguments and target,
+and an approved retry replays the journal, so recorded requests are never sent
+twice. Confirmation exempts only the approved call. Keep hard blocks, unsupported
+clients, decline, and cancellation closed. Approval waits have no server deadline
+and hold only the journal, not a running program. Bound active executions, support
+explicit cancellation, and settle paused work on shutdown.
 Forward request context through registration; test cancellation through both
 stdio protocols and verify execution stops. Resolve project safety environment
 without mutating process.env; launch values win over project .env. Evaluate the

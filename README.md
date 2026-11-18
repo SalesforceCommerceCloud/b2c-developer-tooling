@@ -63,7 +63,7 @@ This is a pnpm monorepo with the following packages:
 
 ### Prerequisites
 
-- Node.js >= 22.16.0
+- Node.js >= 22.19.0
 - pnpm 10.17.1+
 
 ### Setup

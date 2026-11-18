@@ -9,17 +9,19 @@ candidates, and read `op.description` only for the operations you are about to c
 parameters, schemas and responses but without nested descriptions or examples. Pass `detail: "full"` when you need
 property-level descriptions or example payloads for the operations you are about to call (`scapi_execute` always
 sees full operations). Results are capped at 24 KB of JSON for both tools (`SCAPI_RESULT_TOO_LARGE`). A whole resolved operation is
-typically 6-20 KB and some exceed the cap alone, so never return `op` or `spec.paths` entries unprojected: list
+typically 6-20 KB and some exceed the cap alone, so never return `spec.operation()` results unprojected: list
 `{operationId, method, path, summary}`, then return only `parameters` or `requestBody` for the operations you will call.
 
-The `spec` object has exactly four members; there is no `spec.schemas` and no need to probe it:
+The `spec` object has exactly five members, all async (`await` each call); there is no `spec.paths` or
+`spec.schemas` and no need to probe it:
 
-- `spec.apis`: array of `{id, apiFamily, apiName, apiVersion, status, origin?}` (`id` is e.g. `product/catalogs/v1`).
-- `spec.paths`: `{[fullPath]: {[method]: operation}}`, where `fullPath` starts with the API id (`/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}`) and methods are lowercase. Operations carry `operationId`, `api`, `summary`, `description`, `tags`, `parameters`, `requestBody`, `responses`, `security` and `auth`.
+- `spec.apis({api})`: resolves to `{id, apiFamily, apiName, apiVersion, status, origin?}` entries (`id` is e.g. `product/catalogs/v1`).
+- `spec.operations({api, method})`: resolves to one `{api, method, path, operationId, summary}` row per operation, where `path` starts with the API id (`/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}`) and methods are lowercase.
+- `spec.operation(path, method)`: resolves to the operation, with `operationId`, `api`, `summary`, `description`, `tags`, `parameters`, `requestBody`, `responses`, `security` and `auth`.
 - `spec.resolve(value, apiId)`: expands local `$ref`s in a fragment.
 - `spec.search(query, {limit})`: resolves to ranked `{api, method, path, operationId, summary, score, otherVersions?}`
-  matches (default 10, at most 50). `spec.paths[match.path][match.method]` is the operation. Versions of one API
-  collapse into the newest, with older ones in `otherVersions`. It searches the same contracts as `spec.paths`, so
+  matches (default 10, at most 50). `await spec.operation(match.path, match.method)` is the operation. Versions of one API
+  collapse into the newest, with older ones in `otherVersions`. It searches the same contracts as `spec.operations`, so
   `api`, `authType` and `schemas: "live"` apply.
 
 ## Discover
@@ -37,7 +39,7 @@ developer-supplied beta contracts (dw.json `scapi-schemas`, `SFCC_SCAPI_SCHEMAS`
 execution. Schemas and responses can be huge.
 Return only what the next decision needs:
 
-1. Find operations with `spec.search`, or enumerate `spec.apis`/`spec.paths`; return method/path/operationId.
+1. Find operations with `spec.search`, or enumerate `spec.apis()`/`spec.operations()`; return method/path/operationId.
 2. Narrow by `api` (a family, family/name or full id: `cdn`, `cdn/zones`, `cdn/zones/v1`), path, or `authType`; inspect required inputs and selected fields,
    including `allOf` when present.
 3. Inspect response fields only as needed; avoid whole operations/schema trees.

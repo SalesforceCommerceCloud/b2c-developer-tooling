@@ -5,9 +5,6 @@
  */
 
 import {createServer, type Server} from 'node:http';
-import {mkdtempSync, rmSync, writeFileSync} from 'node:fs';
-import {tmpdir} from 'node:os';
-import {join} from 'node:path';
 import {expect} from 'chai';
 import {stub, restore} from 'sinon';
 import {
@@ -19,7 +16,6 @@ import {
   searchScapiOperations,
   type ScapiConfirmation,
 } from '@salesforce/b2c-tooling-sdk/scapi';
-import {resolveScapiWorkerSpawn} from '../../src/scapi/runtime.js';
 import {MiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
@@ -58,79 +54,7 @@ describe('SCAPI host integration', function () {
     resetLogger();
   });
 
-  describe('worker command (U7)', () => {
-    it('keeps the default command and minimal environment', () => {
-      const spec = resolveScapiWorkerSpawn();
-      expect(spec.command).to.equal(process.execPath);
-      expect(spec.args.slice(0, 4)).to.deep.equal([
-        '--permission',
-        '--max-old-space-size=128',
-        '--input-type=commonjs',
-        '--eval',
-      ]);
-      expect(Object.keys(spec.env).sort()).to.deep.equal(['PATH', 'SYSTEMROOT', 'TEMP']);
-    });
-
-    it('carries ELECTRON_RUN_AS_NODE from a parent running Electron as Node', () => {
-      const previous = process.env.ELECTRON_RUN_AS_NODE;
-      try {
-        process.env.ELECTRON_RUN_AS_NODE = '1';
-        expect(resolveScapiWorkerSpawn().env.ELECTRON_RUN_AS_NODE).to.equal('1');
-        process.env.ELECTRON_RUN_AS_NODE = '0';
-        expect(resolveScapiWorkerSpawn().env).to.not.have.property('ELECTRON_RUN_AS_NODE');
-        delete process.env.ELECTRON_RUN_AS_NODE;
-        expect(resolveScapiWorkerSpawn().env).to.not.have.property('ELECTRON_RUN_AS_NODE');
-      } finally {
-        if (previous === undefined) delete process.env.ELECTRON_RUN_AS_NODE;
-        else process.env.ELECTRON_RUN_AS_NODE = previous;
-      }
-    });
-
-    it('runs the worker as Node inside Electron main without host options', () => {
-      const previous = process.env.ELECTRON_RUN_AS_NODE;
-      try {
-        delete process.env.ELECTRON_RUN_AS_NODE;
-        const spec = resolveScapiWorkerSpawn(undefined, {node: '22.0.0', electron: '38.0.0'});
-        expect(spec.command).to.equal(process.execPath);
-        expect(spec.env.ELECTRON_RUN_AS_NODE).to.equal('1');
-        expect(resolveScapiWorkerSpawn(undefined, {node: '22.0.0'}).env).to.not.have.property('ELECTRON_RUN_AS_NODE');
-      } finally {
-        if (previous !== undefined) process.env.ELECTRON_RUN_AS_NODE = previous;
-      }
-    });
-
-    it('prepends host args and merges host env', () => {
-      const spec = resolveScapiWorkerSpawn({
-        command: '/opt/app/App',
-        args: ['--no-sandbox'],
-        env: {ELECTRON_RUN_AS_NODE: '1'},
-      });
-      expect(spec.command).to.equal('/opt/app/App');
-      expect(spec.args[0]).to.equal('--no-sandbox');
-      expect(spec.args[1]).to.equal('--permission');
-      expect(spec.env.ELECTRON_RUN_AS_NODE).to.equal('1');
-    });
-
-    it('rejects credential-like environment names', async () => {
-      for (const name of ['SFCC_CLIENT_SECRET', 'API_KEY', 'MY_TOKEN', 'PASSWORD', 'AUTH_HEADER']) {
-        expect(() => resolveScapiWorkerSpawn({command: 'x', env: {[name]: 'v'}}), name).to.throw('credentials');
-      }
-      await rejects(
-        () => runScapiCode({code: 'async () => 1', worker: {command: process.execPath, env: {SECRET: 'x'}}}),
-        'credentials',
-      );
-    });
-
-    it('runs programs with an explicit command and env', async () => {
-      const result = await runScapiCode({
-        code: 'async () => 6 * 7',
-        worker: {command: process.execPath, env: {ELECTRON_RUN_AS_NODE: '1'}},
-      });
-      expect(result).to.equal(42);
-    });
-  });
-
-  describe('network block (U8)', () => {
+  describe('sandbox (U8)', () => {
     let server: Server;
     let port: number;
     let hits = 0;
@@ -144,111 +68,47 @@ describe('SCAPI host integration', function () {
     });
     after(() => new Promise<void>((resolve) => server.close(() => resolve())));
 
-    for (const module of [
-      'http',
-      'https',
-      'http2',
-      'net',
-      'tls',
-      'dgram',
-      'dns',
-      'node:http',
-      'node:net',
-      '_http_client',
-      '_http_agent',
-      '_tls_wrap',
-      'node:_http_client',
-    ]) {
-      it(`blocks require('${module}') and process.getBuiltinModule('${module}')`, async () => {
-        // Module names travel as program input, so the program source is a fixed literal.
-        await rejects(() => runScapiCode({code: 'async (name) => require(name)', input: module}), module);
-        await rejects(
-          () => runScapiCode({code: 'async (name) => process.getBuiltinModule(name)', input: module}),
-          module,
-        );
+    it('has no module loader, process, timers or host objects', async () => {
+      const result = await runScapiCode({
+        code: `async () => ({
+          WebAssembly: typeof WebAssembly,
+          Buffer: typeof Buffer,
+          URL: typeof URL,
+          TextEncoder: typeof TextEncoder,
+          Intl: typeof Intl,
+          clone: structuredClone({a: [1, {b: 2}]}),
+        })`,
       });
-    }
-
-    it('blocks internal socket bindings and keeps the guard in place', async () => {
-      // undici isn't a public built-in; with no file access it can't be loaded either.
-      await rejects(() => runScapiCode({code: "async () => require('undici')"}), 'SCAPI_');
-      await rejects(() => runScapiCode({code: "async () => process.binding('tcp_wrap')"}), 'SCAPI_RUNTIME_RESTRICTED');
-      await rejects(
-        () => runScapiCode({code: "async () => process._linkedBinding('tcp_wrap')"}),
-        'SCAPI_RUNTIME_RESTRICTED',
-      );
-      // The loader itself is off-limits, so the guard can't be unwrapped or re-entered.
+      expect(result).to.deep.equal({
+        WebAssembly: 'undefined',
+        Buffer: 'undefined',
+        URL: 'undefined',
+        TextEncoder: 'undefined',
+        Intl: 'undefined',
+        clone: {a: [1, {b: 2}]},
+      });
       for (const code of [
-        "async () => { const M = require('module'); M._load = (r) => 'restored'; return require('http'); }",
-        "async () => process.getBuiltinModule('module')._load('net', null, false)",
-        "async () => process.getBuiltinModule('module').createRequire(process.cwd() + '/x.js')('net')",
-        "async () => { process.getBuiltinModule = () => 'restored'; return process.getBuiltinModule('net'); }",
+        "async () => require('net')",
+        "async () => process.getBuiltinModule('fs')",
+        "async () => process.binding('tcp_wrap')",
+        'async () => process.versions',
+        'async () => setTimeout(() => {}, 1)',
+        'async () => setInterval(() => {}, 1)',
       ]) {
-        await rejects(() => runScapiCode({code}), 'SCAPI_');
+        await rejects(() => runScapiCode({code}), 'SCAPI_RUNTIME_RESTRICTED');
       }
-    });
-
-    it('blocks dynamic import() of networking modules', async () => {
-      for (const module of ['node:net', 'http', '_http_client']) {
-        await rejects(() => runScapiCode({code: 'async (name) => import(name)', input: module}), module);
-        // import() from code compiled at runtime, outside the program's own module scope.
-        await rejects(
-          () => runScapiCode({code: "async (name) => Function('n', 'return import(n)')(name)", input: module}),
-          module,
-        );
-      }
-    });
-
-    it('denies built-ins outside the allow-list and refuses new module hooks', async () => {
-      for (const module of ['module', 'fs', 'vm', 'os', 'child_process', 'worker_threads']) {
-        await rejects(
-          () => runScapiCode({code: 'async (name) => require(name)', input: module}),
-          'SCAPI_RUNTIME_RESTRICTED',
-        );
-      }
-      await rejects(
-        () =>
-          runScapiCode({
-            code: "async () => process.getBuiltinModule('module').registerHooks({resolve: (s, c, n) => n(s, c)})",
-          }),
-        'SCAPI_RUNTIME_RESTRICTED',
-      );
-    });
-
-    it('refuses to run when the worker command drops --permission', async () => {
-      // A host wrapper that re-executes Node without the permission model, as a misconfigured host might.
-      const dir = mkdtempSync(join(tmpdir(), 'b2c-worker-'));
-      const wrapper = join(dir, 'drop-permission.cjs');
-      writeFileSync(
-        wrapper,
-        "const {spawn} = require('node:child_process');" +
-          "const args = process.argv.slice(2).filter((arg) => arg !== '--permission');" +
-          "const child = spawn(process.execPath, args, {stdio: ['ignore', 'inherit', 'inherit', 'ipc']});" +
-          "child.on('message', (m) => process.send(m)); child.on('exit', (code) => process.exit(code ?? 1));" +
-          "process.on('message', (m) => child.send(m));",
-      );
-      try {
-        await rejects(
-          () => runScapiCode({code: 'async () => 1', worker: {command: process.execPath, args: [wrapper]}}),
-          'SCAPI_WORKER_UNRESTRICTED',
-        );
-      } finally {
-        rmSync(dir, {recursive: true, force: true});
-      }
+      await rejects(() => runScapiCode({code: "async () => import('node:net')"}), '');
     });
 
     it('cannot reach a local HTTP server, while scapi.request still works', async () => {
       hits = 0;
-      // The port travels as program input, so each program source is a fixed literal.
-      const attempts = [
-        "async (port) => new Promise((r, j) => { const q = new (require('_http_client').ClientRequest)(`http://127.0.0.1:${port}/`); q.on('response', r); q.on('error', j); q.end(); })",
-        "async (port) => import('node:net').then((net) => new Promise((r, j) => { const s = net.connect(port, '127.0.0.1'); s.on('connect', r); s.on('error', j); }))",
-        "async (port) => require('http').get(`http://127.0.0.1:${port}/`)",
-        "async (port) => new Promise((r, j) => { const s = require('net').connect(port, '127.0.0.1'); s.on('connect', r); s.on('error', j); })",
+      for (const code of [
         'async (port) => fetch(`http://127.0.0.1:${port}/`)',
-      ];
-      for (const code of attempts) {
-        await rejects(() => runScapiCode({code, input: port}), 'SCAPI_');
+        'async (port) => globalThis.fetch(`http://127.0.0.1:${port}/`)',
+        "async (port) => import('node:http').then((http) => http.get(`http://127.0.0.1:${port}/`))",
+        "async (port) => Function('p', 'return import(\"node:net\")')(port)",
+      ]) {
+        await rejects(() => runScapiCode({code, input: port}), '');
       }
       expect(hits).to.equal(0);
       const result = await runScapiCode({
@@ -258,11 +118,13 @@ describe('SCAPI host integration', function () {
       expect(result).to.deep.equal({ok: true, echo: {method: 'GET', path: '/x'}});
     });
 
-    it('still allows plain computation and safe builtins', async () => {
-      const result = await runScapiCode({
-        code: "async () => ({hash: require('crypto').createHash('sha256').update('x').digest('hex').length, url: new URL('https://e.com/a?b=1').searchParams.get('b')})",
-      });
-      expect(result).to.deep.equal({hash: 64, url: '1'});
+    it('waits with sleep() and points setTimeout at it', async () => {
+      expect(
+        await runScapiCode({
+          code: 'async () => { const a = Date.now(); await sleep(30); return Date.now() - a >= 30; }',
+        }),
+      ).to.equal(true);
+      await rejects(() => runScapiCode({code: 'async () => new Promise((r) => setTimeout(r, 1))'}), 'sleep(ms)');
     });
   });
 
@@ -358,7 +220,7 @@ describe('SCAPI host integration', function () {
   });
 
   describe('safety-filtered discovery (U10)', () => {
-    it('hides always-blocked operations from search and spec.paths but keeps confirm and allow', async () => {
+    it('hides always-blocked operations from search and spec.operations but keeps confirm and allow', async () => {
       const documents = loadScapiSchemas();
       const visible = filterScapiDocumentsBySafety(documents, allowList, ORG);
       const ids = new Set(visible.map((d) => d.entry.id));
@@ -395,7 +257,7 @@ describe('SCAPI host integration', function () {
         documents,
         safety: allowList,
         organizationId: 'test_001',
-        code: "async () => ({paths: Object.keys(spec.paths).filter(p => p.includes('/customers/')).length, product: Object.keys(spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}']).sort(), search: (await spec.search('delete product', {limit: 50})).map(h => h.operationId)})",
+        code: "async () => { const ops = await spec.operations(); return {paths: ops.filter(o => o.path.includes('/customers/')).length, product: ops.filter(o => o.path === '/product/products/v1/organizations/{organizationId}/products/{productId}').map(o => o.method).sort(), search: (await spec.search('delete product', {limit: 50})).map(h => h.operationId)}; }",
       })) as {paths: number; product: string[]; search: string[]};
       expect(spec.paths).to.equal(0);
       expect(spec.product).to.include.members(['get', 'patch']);

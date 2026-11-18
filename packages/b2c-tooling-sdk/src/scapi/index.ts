@@ -49,13 +49,23 @@ export type {
 export type {ScapiLiveSchemaCacheOptions, ScapiLiveSchemaLoadOptions, ScapiLiveSchemaLoadResult} from './live.js';
 export {ScapiShopperSessions} from './shopper.js';
 export type {ScapiShopperAuth, ScapiShopperConfig} from './shopper.js';
-export {runScapiCode} from './runtime.js';
-export {ScapiCodeError, scapiErrorCode} from './errors.js';
+export {runScapiCode, ScapiCodePausedError} from './runtime.js';
+export {ScapiCodeError, ScapiCodePause, scapiErrorCode} from './errors.js';
 export {createScapiOperationSearch, scapiFullPath, searchScapiOperations} from './search.js';
 export type {ScapiOperationMatch, ScapiOperationSearchOptions, ScapiOperationIndexOptions} from './search.js';
 export {filterScapiDocumentsBySafety, isScapiOperationBlocked} from './safety-filter.js';
 export {createScapiAuth} from './auth-primitives.js';
-export type {ScapiCodeOptions, ScapiRuntimeControl, ScapiWorkerCommand} from './runtime.js';
+export type {
+  ScapiCall,
+  ScapiCallInterceptor,
+  ScapiCallKind,
+  ScapiCodeOptions,
+  ScapiJournal,
+  ScapiJournalEntry,
+  ScapiRuntimeControl,
+} from './runtime.js';
+export {createScapiSpecHost} from './spec.js';
+export type {ScapiSpecOperationSummary} from './spec.js';
 export {
   loadBuiltinScapiSnippets,
   loadScapiSnippets,
@@ -65,6 +75,6 @@ export {
 } from './snippets.js';
 export type {ScapiSnippet} from './snippets.js';
 export {createScapiRequest} from './request.js';
-export type {ScapiRequestOptions, ScapiConfirmation} from './request.js';
+export type {ScapiRequestOptions, ScapiConfirmation, ScapiRequestContext} from './request.js';
 export {getScapiAuthInfo, selectScapiAuth} from './authentication.js';
 export type {ScapiAuthType, ScapiAuthInfo, ScapiAuthDiagnostic, ScapiRequestAuth} from './authentication.js';

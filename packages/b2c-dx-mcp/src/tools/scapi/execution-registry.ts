@@ -6,18 +6,17 @@
 
 import {createHash, createHmac, randomBytes, randomUUID} from 'node:crypto';
 import {inputRequired} from '@modelcontextprotocol/server';
-import type {ScapiConfirmation, ScapiRuntimeControl} from '@salesforce/b2c-tooling-sdk/scapi';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
+import {
+  ScapiCodePause,
+  ScapiCodePausedError,
+  type ScapiCall,
+  type ScapiCallInterceptor,
+  type ScapiConfirmation,
+  type ScapiJournal,
+  type ScapiRequestContext,
+} from '@salesforce/b2c-tooling-sdk/scapi';
 import type {ToolContext, ToolResult} from '../../utils/types.js';
-
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  let reject!: (reason: Error) => void;
-  const promise = new Promise<T>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return {promise, resolve, reject};
-}
 
 function fingerprint(args: unknown): string {
   const canonical = (value: unknown): unknown => {
@@ -60,29 +59,65 @@ interface OperationRecord {
   httpStatus?: number;
 }
 
+/** The request awaiting approval, keyed by the program's own call number. */
 interface ApprovalRound {
   state: string;
   key: string;
+  callId: number;
   prompt: ToolResult;
-  decision: ReturnType<typeof deferred<void>>;
-  responded?: boolean;
+  /** Set once the client answered, so duplicate retries coalesce on the same continuation. */
+  continuation?: Promise<ToolResult>;
 }
 
-/** One worker survives protocol round trips; none of its code is replayed. */
+/**
+ * Runs one program until it finishes or needs approval. An approval ends the run: the program's
+ * journal (every answer it received) is kept under a signed `requestState`, and an approved
+ * continuation runs the same program again. Recorded answers replay without re-sending, the
+ * approved request is sent, and the run continues live. Nothing runs while the user decides.
+ */
 export class ScapiExecution {
-  control?: ScapiRuntimeControl;
+  /** Calls the user approved, by the program's call number. */
+  readonly approved = new Set<number>();
   readonly controller = new AbortController();
   done!: Promise<void>;
   readonly id = randomUUID();
-  readonly operations: OperationRecord[] = [];
+  journal: ScapiJournal = {entries: []};
   result?: ToolResult;
   readonly rounds = new Map<string, ApprovalRound>();
+  /** Tracks requests and token exports for the result's `operations` list. */
+  readonly track: ScapiCallInterceptor = async (call: ScapiCall, next) => {
+    if (call.kind !== 'request' && call.kind !== 'auth') return next();
+    this.controller.signal.throwIfAborted();
+    const args = call.args as undefined | {method?: unknown; path?: unknown};
+    const record: OperationRecord = {
+      kind: call.kind,
+      ...(call.kind === 'request' && typeof args?.method === 'string' ? {method: args.method.toUpperCase()} : {}),
+      ...(call.kind === 'request' && typeof args?.path === 'string' ? {path: args.path.slice(0, 500)} : {}),
+      status: 'in_flight',
+    };
+    this.operations.set(call.id, record);
+    try {
+      const result = await next();
+      record.status = 'completed';
+      if (result && typeof result === 'object' && 'status' in result && typeof result.status === 'number')
+        record.httpStatus = result.status;
+      return result;
+    } catch (error) {
+      if (error instanceof ScapiCodePause) record.status = 'awaiting_confirmation';
+      else record.status = call.kind === 'auth' ? 'failed' : this.dispatched.has(call.id) ? 'unknown' : 'not_sent';
+      throw error;
+    }
+  };
   private cancellation?: string;
   private cancellationListeners = new Map<AbortSignal, () => void>();
-  private dispatched = new WeakSet<OperationRecord>();
-  private event = deferred<ToolResult>();
+  private readonly clientCancel = () => this.cancel('SCAPI_EXECUTION_CANCELLED: client cancelled the request.');
+  private readonly dispatched = new Map<number, number>();
+  private readonly operations = new Map<number, OperationRecord>();
+  /** Runs of the program: the first, plus one per approved continuation. */
+  private passes = 0;
   private pending?: ApprovalRound;
-  private queue: Promise<unknown> = Promise.resolve();
+
+  private run!: (execution: ScapiExecution) => Promise<ToolResult>;
 
   constructor(
     readonly digest: string,
@@ -90,17 +125,29 @@ export class ScapiExecution {
     private readonly mintState: (round: number) => string,
   ) {}
 
+  /** Starts a pass of the program; resolves with its result or an approval prompt. */
+  begin(run: (execution: ScapiExecution) => Promise<ToolResult>, context?: ToolContext): Promise<ToolResult> {
+    this.run = run;
+    return this.pass(context);
+  }
+
   cancel(reason = 'SCAPI_EXECUTION_CANCELLED: explicitly cancelled.'): void {
     if (this.result || this.cancellation) return;
     this.cancellation = reason;
-    const error = new Error(reason);
-    this.controller.abort(error);
-    this.pending?.decision.reject(error);
+    this.controller.abort(new Error(reason));
+    // A paused execution has nothing running; settle it now.
+    if (this.pending) this.finish(errorResult(reason));
   }
 
+  /**
+   * The SDK's `confirm` hook. An approved call proceeds; any other pauses the execution so the
+   * client can be asked, without sending the request.
+   */
   async confirm(request: ScapiConfirmation): Promise<void> {
     this.controller.signal.throwIfAborted();
-    const record = this.operations.at(-1);
+    const callId = request.callId;
+    if (callId !== undefined && this.approved.has(callId)) return;
+    const record = callId === undefined ? undefined : this.operations.get(callId);
     if (record) record.status = 'awaiting_confirmation';
     if (!this.supportsElicitation) {
       this.cancel(
@@ -108,14 +155,133 @@ export class ScapiExecution {
       );
       this.controller.signal.throwIfAborted();
     }
+    throw new ScapiCodePause(request);
+  }
+
+  finish(result: ToolResult): void {
+    if (this.result) return;
+    this.controller.abort(new Error('SCAPI_EXECUTION_FINISHED'));
+    for (const [signal, listener] of this.cancellationListeners) signal.removeEventListener('abort', listener);
+    this.cancellationListeners.clear();
+    this.pending = undefined;
+    for (const record of this.operations.values()) {
+      if (record.status === 'awaiting_confirmation') record.status = 'not_sent';
+      else if (record.status === 'in_flight') record.status = 'unknown';
+    }
+    const output = this.cancellation ? {...result, isError: true} : result;
+    this.logRun(this.cancellation ? 'cancelled' : output.isError ? 'failed' : 'completed');
+    const first = output.content[0];
+    const data = first?.type === 'text' ? JSON.parse(first.text) : {};
+    if (this.cancellation) {
+      delete data.result;
+      data.error = this.cancellation + ' Check earlier writes before retrying; no rollback is performed.';
+    }
+    this.result = {
+      ...output,
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            ...data,
+            executionId: this.id,
+            status: this.cancellation ? 'cancelled' : output.isError ? 'failed' : 'completed',
+            operations: this.records(),
+          }),
+        },
+      ],
+    };
+  }
+
+  markDispatched(call?: ScapiRequestContext): void {
+    if (call?.id === undefined) return;
+    this.dispatched.set(call.id, (this.dispatched.get(call.id) ?? 0) + 1);
+  }
+
+  async retry(state: string, context: ToolContext): Promise<ToolResult> {
+    const round = this.rounds.get(state);
+    if (!round) throw new Error('SCAPI_CONTINUATION_INVALID: unknown or altered continuation.');
+    if (this.result) return this.result;
+    if (round.continuation) return round.continuation;
+    if (round !== this.pending) throw new Error('SCAPI_CONTINUATION_STALE: approval round is no longer pending.');
+    const response = context.inputResponses?.[round.key] as undefined | {action?: unknown};
+    if (!response) return round.prompt;
+    if (context.supportsElicitation && response.action === 'accept') {
+      this.approved.add(round.callId);
+      this.pending = undefined;
+      round.continuation = this.pass(context);
+      return round.continuation;
+    }
+    this.cancel(
+      response.action === 'cancel'
+        ? 'SCAPI_APPROVAL_CANCELLED: approval dismissed; execution cancelled without sending the pending request.'
+        : 'SCAPI_APPROVAL_DECLINED: execution cancelled without sending the pending request.',
+    );
+    round.continuation = Promise.resolve(this.result!);
+    return round.continuation;
+  }
+
+  /** Debug-only replay evidence: runs so far and how often each request was sent across them. */
+  private logRun(status: string): void {
+    getLogger().debug(
+      {
+        executionId: this.id,
+        status,
+        passes: this.passes,
+        dispatches: [...this.operations.entries()]
+          .sort(([a], [b]) => a - b)
+          .map(([id, record]) => ({
+            callId: id,
+            method: record.method ?? record.kind,
+            path: record.path,
+            status: record.status,
+            dispatches: this.dispatched.get(id) ?? 0,
+          })),
+      },
+      'SCAPI execution run',
+    );
+  }
+
+  /** Runs the program once; pauses become approval prompts, everything else finishes the execution. */
+  private async pass(context?: ToolContext): Promise<ToolResult> {
+    const cancel = this.clientCancel;
+    const signal = context?.signal;
+    if (signal && !this.cancellationListeners.has(signal)) {
+      this.cancellationListeners.set(signal, cancel);
+      signal.addEventListener('abort', cancel, {once: true});
+      if (signal.aborted) cancel();
+    }
+    try {
+      let result: ToolResult;
+      try {
+        this.passes++;
+        result = await this.run(this);
+      } catch (error) {
+        if (error instanceof ScapiCodePausedError) return this.prompt(error);
+        result = errorResult(error instanceof Error ? error.message : String(error));
+      }
+      this.finish(result);
+      return this.result!;
+    } finally {
+      // Modern clients end the request with each round; legacy ones keep it open and cancel through it.
+      if (signal && (!context?.keepCancellation || this.result)) {
+        signal.removeEventListener('abort', this.cancellationListeners.get(signal)!);
+        this.cancellationListeners.delete(signal);
+      }
+    }
+  }
+
+  private prompt(paused: ScapiCodePausedError): ToolResult {
+    this.journal = paused.journal;
+    const request = paused.detail as ScapiConfirmation;
+    const callId = request.callId!;
     const roundNumber = this.rounds.size + 1;
     const state = this.mintState(roundNumber);
     const key = `approve_${roundNumber}`;
     const path = new URL(request.url).pathname;
     const organizationId = path.match(/\/organizations\/([^/]+)/)?.[1];
-    const earlierWrites = this.operations.filter(
-      (item) =>
-        item.kind === 'request' && !['GET', 'HEAD', 'OPTIONS'].includes(item.method ?? '') && this.dispatched.has(item),
+    const earlierWrites = [...this.operations.entries()].filter(
+      ([id, item]) =>
+        item.kind === 'request' && !['GET', 'HEAD', 'OPTIONS'].includes(item.method ?? '') && this.dispatched.has(id),
     ).length;
     const message = [
       `Approve SCAPI operation: ${request.operationId}`,
@@ -143,129 +309,18 @@ export class ScapiExecution {
       _meta: {
         executionId: this.id,
         status: 'awaiting_confirmation',
-        operations: structuredClone(this.operations),
+        operations: this.records(),
       },
     };
-    const round: ApprovalRound = {state, key, prompt, decision: deferred<void>()};
+    this.logRun('awaiting_confirmation');
+    const round: ApprovalRound = {state, key, callId, prompt};
     this.pending = round;
     this.rounds.set(state, round);
-    this.control?.pauseTimeout();
-    this.event.resolve(prompt);
-    try {
-      await round.decision.promise;
-      this.controller.signal.throwIfAborted();
-      if (record) record.status = 'in_flight';
-    } finally {
-      this.pending = undefined;
-      this.control?.resumeTimeout();
-    }
+    return prompt;
   }
 
-  finish(result: ToolResult): void {
-    this.controller.abort(new Error('SCAPI_EXECUTION_FINISHED'));
-    for (const [signal, listener] of this.cancellationListeners) signal.removeEventListener('abort', listener);
-    this.cancellationListeners.clear();
-    this.pending?.decision.reject(new Error('SCAPI_EXECUTION_FINISHED'));
-    for (const record of this.operations) {
-      if (record.status === 'awaiting_confirmation') record.status = 'not_sent';
-      else if (record.status === 'in_flight') record.status = this.dispatched.has(record) ? 'unknown' : 'not_sent';
-    }
-    const output = this.cancellation ? {...result, isError: true} : result;
-    const first = output.content[0];
-    const data = first?.type === 'text' ? JSON.parse(first.text) : {};
-    if (this.cancellation) {
-      delete data.result;
-      data.error = this.cancellation + ' Check earlier writes before retrying; no rollback is performed.';
-    }
-    this.result = {
-      ...output,
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            ...data,
-            executionId: this.id,
-            status: this.cancellation ? 'cancelled' : output.isError ? 'failed' : 'completed',
-            operations: this.operations,
-          }),
-        },
-      ],
-    };
-    this.event.resolve(this.result);
-  }
-
-  markDispatched(): void {
-    const record = this.operations.at(-1);
-    if (record) this.dispatched.add(record);
-  }
-
-  async retry(state: string, context: ToolContext): Promise<ToolResult> {
-    const round = this.rounds.get(state);
-    if (!round) throw new Error('SCAPI_CONTINUATION_INVALID: unknown or altered continuation.');
-    if (this.cancellation) await this.done;
-    if (this.result) return this.result;
-    if (round.responded) return this.wait(context);
-    if (round !== this.pending) throw new Error('SCAPI_CONTINUATION_STALE: approval round is no longer pending.');
-    const response = context.inputResponses?.[round.key] as undefined | {action?: unknown};
-    if (!response) return this.wait(context);
-    this.event = deferred<ToolResult>();
-    round.responded = true;
-    const result = this.wait(context);
-    if (context.supportsElicitation && response.action === 'accept') {
-      round.decision.resolve();
-    } else if (response.action === 'cancel') {
-      this.cancel(
-        'SCAPI_APPROVAL_CANCELLED: approval dismissed; execution cancelled without sending the pending request.',
-      );
-    } else {
-      this.cancel('SCAPI_APPROVAL_DECLINED: execution cancelled without sending the pending request.');
-    }
-    return result;
-  }
-
-  async runCall<T>(kind: OperationRecord['kind'], input: unknown, operation: () => Promise<T>): Promise<T> {
-    const previous = this.queue;
-    const call = previous.then(async () => {
-      this.controller.signal.throwIfAborted();
-      const args = input as undefined | {method?: unknown; path?: unknown};
-      const record: OperationRecord = {
-        kind,
-        ...(typeof args?.method === 'string' ? {method: args.method.toUpperCase()} : {}),
-        ...(typeof args?.path === 'string' ? {path: args.path.slice(0, 500)} : {}),
-        status: 'in_flight',
-      };
-      this.operations.push(record);
-      try {
-        const result = await operation();
-        record.status = 'completed';
-        if (result && typeof result === 'object' && 'status' in result && typeof result.status === 'number')
-          record.httpStatus = result.status;
-        return result;
-      } catch (error) {
-        record.status = kind === 'auth' ? 'failed' : this.dispatched.has(record) ? 'unknown' : 'not_sent';
-        throw error;
-      }
-    });
-    this.queue = call.catch(() => {});
-    return call;
-  }
-
-  async wait(context?: ToolContext): Promise<ToolResult> {
-    const signal = context?.signal;
-    if (signal && !this.cancellationListeners.has(signal)) {
-      const cancel = () => this.cancel('SCAPI_EXECUTION_CANCELLED: client cancelled the request.');
-      this.cancellationListeners.set(signal, cancel);
-      signal.addEventListener('abort', cancel, {once: true});
-      if (signal.aborted) cancel();
-    }
-    try {
-      return this.result ?? (await this.event.promise);
-    } finally {
-      if (signal && (!context?.keepCancellation || this.result)) {
-        signal.removeEventListener('abort', this.cancellationListeners.get(signal)!);
-        this.cancellationListeners.delete(signal);
-      }
-    }
+  private records(): OperationRecord[] {
+    return [...this.operations.entries()].sort(([a], [b]) => a - b).map(([, record]) => ({...record}));
   }
 }
 
@@ -302,7 +357,12 @@ export class ScapiExecutionRegistry {
       throw new Error(
         'SCAPI_CONTINUATION_MISMATCH: original code, input and target arguments must be unchanged. Start new code with a fresh call.',
       );
-    return execution.retry(state, context);
+    const result = execution.retry(state, context);
+    execution.done = result.then(
+      () => {},
+      () => {},
+    );
+    return result.finally(() => this.prune());
   }
 
   async start(
@@ -318,16 +378,16 @@ export class ScapiExecutionRegistry {
       return `${prefix}.${createHmac('sha256', this.secret).update(`${prefix}.${digest}`).digest('base64url')}`;
     });
     this.executions.set(execution.id, execution);
-    execution.done = Promise.resolve()
-      .then(() => run(execution))
-      .then(
-        (result) => execution.finish(result),
-        (error: unknown) => execution.finish(errorResult(error instanceof Error ? error.message : String(error))),
-      )
-      .then(() => {
-        const terminal = [...this.executions.values()].filter((item) => item.result);
-        for (const item of terminal.slice(0, Math.max(0, terminal.length - 50))) this.executions.delete(item.id);
-      });
-    return execution.wait(context);
+    const result = execution.begin(run, context).catch((error: unknown) => {
+      execution.finish(errorResult(error instanceof Error ? error.message : String(error)));
+      return execution.result!;
+    });
+    execution.done = result.then(() => {});
+    return result.finally(() => this.prune());
+  }
+
+  private prune(): void {
+    const terminal = [...this.executions.values()].filter((item) => item.result);
+    for (const item of terminal.slice(0, Math.max(0, terminal.length - 50))) this.executions.delete(item.id);
   }
 }

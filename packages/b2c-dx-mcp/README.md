@@ -14,7 +14,7 @@ Build and debug storefronts, deploy code, and manage your sites through requests
 
 ## Set up your assistant
 
-Requires Node.js 22.16 or later.
+Requires Node.js 22.19 or later.
 
 **Claude Code**
 

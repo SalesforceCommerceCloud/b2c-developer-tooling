@@ -7,7 +7,7 @@ description: Install the B2C CLI using your preferred JavaScript package manager
 ## Prerequisites
 
 - macOS, Linux, or Windows
-- Node.js 22.16.0 or higher
+- Node.js 22.19.0 or higher
 
 ## Install via npm (Recommended)
 

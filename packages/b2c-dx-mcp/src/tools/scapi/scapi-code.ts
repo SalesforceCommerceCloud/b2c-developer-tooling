@@ -13,6 +13,7 @@ import {
   ScapiLiveSchemaCache,
   ScapiShopperSessions,
   runScapiCode,
+  ScapiCodePausedError,
   createScapiRequest,
   createScapiAuth,
   loadScapiSnippets,
@@ -21,6 +22,7 @@ import {
   loadScapiSchemaOverrides,
   resolveScapiDocuments,
   type ScapiLiveSchemaSource,
+  type ScapiRequestContext,
   type ScapiSchemaDocument,
 } from '@salesforce/b2c-tooling-sdk/scapi';
 import {toOrganizationId} from '@salesforce/b2c-tooling-sdk/clients';
@@ -47,7 +49,7 @@ const skillRead = z
 function requireScapiSkill(read: boolean | undefined): void {
   if (read !== true) throw new Error(SCAPI_SKILL_REQUIRED);
 }
-const searchDescription = `Read skill://mcp/b2c-mcp-scapi/SKILL.md first. Find the SCAPI Admin/Shopper operation (operationId, path, inputs, scopes) for a Commerce API task when no dedicated tool fits; cip_* covers analytics, webdav_* files. \`code\` runs JavaScript over \`spec\`, which has only apis, paths[fullPath][method], resolve and search. Start with await spec.search("task words"): typo-tolerant ranking over summary, description, tags, operationId and path, returning {api, method, path, operationId, summary} keys into spec.paths; narrow with regex over spec.paths. Return those fields, not whole operations; results cap at 24 KB. Failed live access falls back to bundled with a warning.`;
+const searchDescription = `Read skill://mcp/b2c-mcp-scapi/SKILL.md first. Find the SCAPI Admin/Shopper operation (operationId, path, inputs, scopes) for a Commerce API task when no dedicated tool fits; cip_* covers analytics, webdav_* files. \`code\` runs JavaScript over \`spec\`, whose members are all async: apis(), operations({api, method}), operation(path, method), resolve(value, api) and search(query). Start with await spec.search("task words"): typo-tolerant ranking over summary, description, tags, operationId and path, returning {api, method, path, operationId, summary}; read one with await spec.operation(path, method). Return those fields, not whole operations; results cap at 24 KB. Failed live access falls back to bundled with a warning.`;
 
 const executeDescription = `Requires reading skill://mcp/b2c-mcp-scapi/SKILL.md first. Run any SCAPI Admin or Shopper API operation (reads, writes, searches and actions) through scapi.request() in JavaScript. Covers most developer, merchant and administrator tasks: catalogs, products, pricing, promotions, orders, customers, inventory, sites, jobs, code versions, observability, and storefront flows such as baskets. Use it whenever no more specific tool fits. Find operations with scapi_search first. Auth is automatic; Shopper calls run as a per-site guest whose basket persists. Operations are governed by Safety Mode and may ask the user for confirmation.`;
 
@@ -294,7 +296,7 @@ export function createScapiCodeTools(
               localDocuments,
             );
             let managedRequest: ReturnType<typeof createScapiRequest>;
-            const request = async (options: unknown, signal: AbortSignal) => {
+            const request = async (options: unknown, signal: AbortSignal, call: ScapiRequestContext) => {
               if (!shortCode || !tenantId)
                 throw new Error('SCAPI requires configured shortCode and tenantId. Use config_inspect.');
               managedRequest ??= createScapiRequest({
@@ -316,7 +318,7 @@ export function createScapiCodeTools(
                   if (tenant && (full || document.entry.apiFamily === 'custom')) schemaCache.put(tenant, document);
                 },
                 confirm: (request) => execution.confirm(request),
-                onDispatch: () => execution.markDispatched(),
+                onDispatch: (call) => execution.markDispatched(call),
                 safety: resolveEffectiveSafetyConfig(
                   config.values.safety,
                   loadGlobalSafetyConfig(
@@ -327,7 +329,7 @@ export function createScapiCodeTools(
                   safetyEnvironment,
                 ),
               });
-              return managedRequest(options, signal);
+              return managedRequest(options, signal, call);
             };
             // auth.slas() exists only with SLAS credentials; Account Manager tokens are never exported to code.
             const auth = config.values.slasClientId ? createScapiAuth(config.values) : undefined;
@@ -335,18 +337,14 @@ export function createScapiCodeTools(
               const result = await runScapiCode({
                 code: input.code!,
                 documents,
-                request: (options, signal) => execution.runCall('request', options, () => request(options, signal)),
-                auth: auth
-                  ? (operation, options, signal) =>
-                      execution.runCall('auth', undefined, () => auth(operation, options, signal))
-                  : undefined,
+                request: (options, signal, call) => request(options, signal, call),
+                auth: auth ? (operation, options, signal) => auth(operation, options, signal) : undefined,
                 organizationId: tenantId ? toOrganizationId(tenantId) : undefined,
                 siteId,
-                cwd: resolution?.projectDirectory?.path,
                 signal: execution.controller.signal,
-                onControl(control) {
-                  execution.control = control;
-                },
+                // Approval ends the run; an approved continuation replays what it already received.
+                interceptors: [execution.track],
+                journal: execution.journal,
                 input: input.input,
                 snippets: loadScapiSnippets(snippetDirectory),
               });
@@ -355,6 +353,7 @@ export function createScapiCodeTools(
               if (executions.size > 50) executions.delete(executions.keys().next().value!);
               return codeResult({result, executionId}, resolution);
             } catch (error) {
+              if (error instanceof ScapiCodePausedError) throw error;
               return failure(error, resolution);
             }
           });

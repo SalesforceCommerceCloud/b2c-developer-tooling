@@ -357,9 +357,10 @@
     }
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.19.0"
   },
   "dependencies": {
+    "@earendil-works/pi-codemode": "1.5.2",
     "@salesforce/b2c-agent-plugins": "workspace:*",
     "@salesforce/b2c-api-schemas": "workspace:*",
     "@vscode/debugadapter": "1.68.0",

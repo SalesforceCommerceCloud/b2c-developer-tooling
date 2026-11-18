@@ -57,7 +57,7 @@ describe('SCAPI code tools', function () {
       skillRead: true,
       code: `async () => {
         const [match] = await spec.search('create product', {limit: 1});
-        return {match, operationId: spec.paths[match.path][match.method].operationId};
+        return {match, operationId: (await spec.operation(match.path, match.method)).operationId};
       }`,
     });
     expect(result.isError).not.to.equal(true);
@@ -92,7 +92,7 @@ describe('SCAPI code tools', function () {
     const result = await search.handler({
       skillRead: true,
       api: 'product/products/v1',
-      code: 'async () => spec.paths["/product/products/v1/organizations/{organizationId}/products/{productId}"].put.operationId',
+      code: 'async () => (await spec.operation("/product/products/v1/organizations/{organizationId}/products/{productId}", "put")).operationId',
     });
     expect(result.isError).not.to.equal(true);
     expect(readJson(result)).to.deep.equal({result: 'createProduct'});
@@ -106,7 +106,7 @@ describe('SCAPI code tools', function () {
         skillRead: true,
         schemas: 'live',
         api: 'product/products/v1',
-        code: 'async () => spec.apis.map(a => a.id)',
+        code: 'async () => (await spec.apis()).map(a => a.id)',
       }),
     );
     expect(result.result).to.deep.equal(['product/products/v1']);
@@ -117,7 +117,8 @@ describe('SCAPI code tools', function () {
 
   it('filters by API family or family/name and names close ids for a near miss', async () => {
     const [search] = createScapiCodeTools(stub().throws(new Error('no config')));
-    const ids = (api: string) => search.handler({skillRead: true, api, code: 'async () => spec.apis.map(a => a.id)'});
+    const ids = (api: string) =>
+      search.handler({skillRead: true, api, code: 'async () => (await spec.apis()).map(a => a.id)'});
     expect(readJson(await ids('cdn')).result).to.deep.equal(['cdn/zones/v1']);
     expect(readJson(await ids('cdn/zones')).result).to.deep.equal(['cdn/zones/v1']);
     const miss = await ids('ecdn');
@@ -194,9 +195,10 @@ describe('SCAPI code tools', function () {
       skillRead: true,
       api: 'operation/jobs/v1',
       detail: 'full',
-      code: `async () => Object.entries(spec.paths).flatMap(([path, methods]) =>
-        Object.entries(methods).filter(([method]) => method === 'post' && path.endsWith('/executions'))
-          .map(([method, op]) => ({path, method, ...op})))`,
+      code: `async () => {
+        const matches = (await spec.operations({method: 'post'})).filter((op) => op.path.endsWith('/executions'));
+        return Promise.all(matches.map(async ({path, method}) => ({path, method, ...(await spec.operation(path, method))})));
+      }`,
     });
     expect(response.isError).not.to.equal(true);
     const data = readJson(response);
@@ -224,7 +226,7 @@ describe('SCAPI code tools', function () {
   it('returns outlines by default and restores nested prose with detail full', async () => {
     const [search] = createScapiCodeTools(stub());
     const code = `async () => {
-      const op = spec.paths['/checkout/shopper-baskets/v2/organizations/{organizationId}/baskets'].post;
+      const op = await spec.operation('/checkout/shopper-baskets/v2/organizations/{organizationId}/baskets', 'post');
       return {summary: op.summary, bytes: JSON.stringify(op).length, nested: JSON.stringify(op).includes('"example"')};
     }`;
     const run = async (detail?: 'full' | 'outline') =>
@@ -327,8 +329,8 @@ describe('SCAPI code tools', function () {
         await search.handler({
           skillRead: true,
           schemas: 'live',
-          code: `async () => ({apis: spec.apis.map(a => [a.id, a.origin]),
-            color: spec.paths['/product/widgets/v1/organizations/{organizationId}/widgets/{widgetId}'].get
+          code: `async () => ({apis: (await spec.apis()).map(a => [a.id, a.origin]),
+            color: (await spec.operation('/product/widgets/v1/organizations/{organizationId}/widgets/{widgetId}', 'get'))
               .responses['200'].content['application/json'].schema.properties.c_color.type})`,
         }),
       );
@@ -375,14 +377,14 @@ describe('SCAPI code tools', function () {
     const result = await search.handler({
       skillRead: true,
       authType: 'shopper',
-      code: 'async () => Object.values(spec.paths).flatMap(Object.values).every(op => op.auth.types.includes("shopper"))',
+      code: 'async () => (await Promise.all((await spec.operations()).map(o => spec.operation(o.path, o.method)))).every(op => op.auth.types.includes("shopper"))',
     });
     expect(readJson(result)).to.deep.equal({result: true});
     const noMatch = await search.handler({
       skillRead: true,
       authType: 'shopper',
       api: 'product/products/v1',
-      code: 'async () => spec.apis',
+      code: 'async () => spec.apis()',
     });
     expect(noMatch.isError).to.equal(true);
     expect(readJson(noMatch)).to.have.property('error').that.includes('Omit authType');
@@ -562,7 +564,7 @@ describe('SCAPI code tools', function () {
     stub(services, 'getScapiSchemasClient').returns({GET: get} as never);
     try {
       const [search, execute] = createScapiCodeTools(() => services, undefined, undefined, undefined, undefined, local);
-      const code = `async () => ({origin: spec.apis[0].origin, paths: Object.keys(spec.paths)})`;
+      const code = `async () => ({origin: (await spec.apis())[0].origin, paths: (await spec.operations()).map(o => o.path)})`;
       const expected = {
         origin: 'local',
         paths: ['/cdn/zones/v1/organizations/{organizationId}/zones/{zoneId}/insights'],
@@ -600,7 +602,11 @@ describe('SCAPI code tools', function () {
     try {
       const config = createMockResolvedConfig({scapiSchemas: [url]});
       const [search] = createScapiCodeTools(() => new Services({resolvedConfig: config}));
-      const input = {skillRead: true, api: 'cdn/zones/v1', code: `async () => Object.keys(spec.paths)`};
+      const input = {
+        skillRead: true,
+        api: 'cdn/zones/v1',
+        code: `async () => [...new Set((await spec.operations()).map(o => o.path))]`,
+      };
       expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-url']);
       expect(readJson(await search.handler(input)).result).to.deep.equal(['/cdn/zones/v1/from-url']);
       expect(fetchStub.calledOnceWith(url)).to.equal(true);
@@ -623,7 +629,7 @@ describe('SCAPI code tools', function () {
     writeFileSync(flagFile, JSON.stringify(contract('/from-flag')));
     const config = createMockResolvedConfig({projectDirectory: directory, scapiSchemas: ['schemas']});
     const load = () => new Services({resolvedConfig: config});
-    const code = `async () => Object.keys(spec.paths)`;
+    const code = `async () => [...new Set((await spec.operations()).map(o => o.path))]`;
     const input = {skillRead: true, api: 'cdn/zones/v1', code};
     try {
       const [search] = createScapiCodeTools(load);
