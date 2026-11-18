@@ -54,7 +54,8 @@ describe('SCAPI retained confirmations', function () {
     sent = [];
     stub(globalThis, 'fetch').callsFake(async (input) => {
       const request = input as Request;
-      sent.push({path: new URL(request.url).pathname, body: JSON.parse(await request.text())});
+      const text = await request.text();
+      sent.push({path: new URL(request.url).pathname, body: text ? JSON.parse(text) : undefined});
       return new Response(JSON.stringify({id: sent.length}), {headers: {'content-type': 'application/json'}});
     });
   });
@@ -106,6 +107,30 @@ describe('SCAPI retained confirmations', function () {
     expect(load.callCount).to.equal(1);
     expect(await execute.handler(args, context)).to.deep.equal(result);
     expect(sent).to.have.length(2);
+  });
+
+  it('reports how often each request was sent across approval runs', async () => {
+    const {execute} = fixture();
+    const read = `scapi.request({method:'GET',path:'${prefix}first'})`;
+    const args = {
+      skillRead: true,
+      code: `async () => { await ${read}; await ${call('first')}; await ${call('second')}; return (await ${read}).data; }`,
+    };
+    const first = await execute.handler(args, capable);
+    expect((first as {_meta?: {passes?: number}})._meta?.passes).to.equal(1);
+    const second = await execute.handler(args, approve(first));
+    expect((second as {_meta?: {passes?: number}})._meta?.passes).to.equal(2);
+    const result = json(await execute.handler(args, approve(second)));
+    expect(result.passes).to.equal(3);
+    expect(
+      result.operations.map((op: {method: string; dispatches?: number}) => [op.method, op.dispatches]),
+    ).to.deep.equal([
+      ['GET', 1],
+      ['PUT', 1],
+      ['PUT', 1],
+      ['GET', 1],
+    ]);
+    expect(sent.map((request) => request.path.split('/').pop())).to.deep.equal(['first', 'first', 'second', 'first']);
   });
 
   for (const {body, truncated} of [

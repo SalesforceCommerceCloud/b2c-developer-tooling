@@ -56,6 +56,8 @@ interface OperationRecord {
   path?: string;
   status: 'awaiting_confirmation' | 'completed' | 'failed' | 'in_flight' | 'not_sent' | 'unknown';
   httpStatus?: number;
+  /** Times this request was sent across every run of the program; replayed answers are not sent again. */
+  dispatches?: number;
 }
 
 /** The request awaiting approval, keyed by the program's own call number. */
@@ -93,6 +95,7 @@ export class ScapiExecution {
       ...(call.kind === 'request' && typeof args?.method === 'string' ? {method: args.method.toUpperCase()} : {}),
       ...(call.kind === 'request' && typeof args?.path === 'string' ? {path: args.path.slice(0, 500)} : {}),
       status: 'in_flight',
+      ...(this.dispatched.has(call.id) ? {dispatches: this.dispatched.get(call.id)} : {}),
     };
     this.operations.set(call.id, record);
     try {
@@ -110,8 +113,10 @@ export class ScapiExecution {
   private cancellation?: string;
   private cancellationListeners = new Map<AbortSignal, () => void>();
   private readonly clientCancel = () => this.cancel('SCAPI_EXECUTION_CANCELLED: client cancelled the request.');
-  private readonly dispatched = new Set<number>();
+  private readonly dispatched = new Map<number, number>();
   private readonly operations = new Map<number, OperationRecord>();
+  /** Runs of the program: the first, plus one per approved continuation. */
+  private passes = 0;
   private pending?: ApprovalRound;
 
   private run!: (execution: ScapiExecution) => Promise<ToolResult>;
@@ -181,6 +186,7 @@ export class ScapiExecution {
             ...data,
             executionId: this.id,
             status: this.cancellation ? 'cancelled' : output.isError ? 'failed' : 'completed',
+            passes: this.passes,
             operations: this.records(),
           }),
         },
@@ -189,7 +195,10 @@ export class ScapiExecution {
   }
 
   markDispatched(call?: ScapiRequestContext): void {
-    if (call?.id !== undefined) this.dispatched.add(call.id);
+    if (call?.id === undefined) return;
+    this.dispatched.set(call.id, (this.dispatched.get(call.id) ?? 0) + 1);
+    const record = this.operations.get(call.id);
+    if (record) record.dispatches = this.dispatched.get(call.id);
   }
 
   async retry(state: string, context: ToolContext): Promise<ToolResult> {
@@ -227,6 +236,7 @@ export class ScapiExecution {
     try {
       let result: ToolResult;
       try {
+        this.passes++;
         result = await this.run(this);
       } catch (error) {
         if (error instanceof ScapiCodePausedError) return this.prompt(error);
@@ -282,6 +292,7 @@ export class ScapiExecution {
       _meta: {
         executionId: this.id,
         status: 'awaiting_confirmation',
+        passes: this.passes,
         operations: this.records(),
       },
     };

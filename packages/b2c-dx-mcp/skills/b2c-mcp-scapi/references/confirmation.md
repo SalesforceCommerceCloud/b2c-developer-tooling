@@ -13,7 +13,8 @@
   applied. Prompts identify the organization, operation, method/path, and execution
   ID. JSON previews are redacted and capped at five lines/400 characters; marked
   truncation does not limit approval, which covers the full request.
-  Results include operation outcomes; `unknown` requires
+  Results include `passes` (runs of the program) and operation outcomes, each with
+  `dispatches` (times it was sent across all runs; replayed answers add none); `unknown` requires
   checking the affected records before a fresh attempt.
 - Decline/cancel terminates the entire execution, even if code catches errors.
   Explicitly stop work with `scapi_execute({action: "cancel", executionId, skillRead: true})`;
