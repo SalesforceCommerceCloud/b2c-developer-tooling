@@ -5,6 +5,7 @@
  */
 
 import {expect} from 'chai';
+import {configureLogger, resetLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {stub, restore, useFakeTimers} from 'sinon';
 import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -109,28 +110,52 @@ describe('SCAPI retained confirmations', function () {
     expect(sent).to.have.length(2);
   });
 
-  it('reports how often each request was sent across approval runs', async () => {
-    const {execute} = fixture();
-    const read = `scapi.request({method:'GET',path:'${prefix}first'})`;
-    const args = {
-      skillRead: true,
-      code: `async () => { await ${read}; await ${call('first')}; await ${call('second')}; return (await ${read}).data; }`,
-    };
-    const first = await execute.handler(args, capable);
-    expect((first as {_meta?: {passes?: number}})._meta?.passes).to.equal(1);
-    const second = await execute.handler(args, approve(first));
-    expect((second as {_meta?: {passes?: number}})._meta?.passes).to.equal(2);
-    const result = json(await execute.handler(args, approve(second)));
-    expect(result.passes).to.equal(3);
-    expect(
-      result.operations.map((op: {method: string; dispatches?: number}) => [op.method, op.dispatches]),
-    ).to.deep.equal([
-      ['GET', 1],
-      ['PUT', 1],
-      ['PUT', 1],
-      ['GET', 1],
-    ]);
-    expect(sent.map((request) => request.path.split('/').pop())).to.deep.equal(['first', 'first', 'second', 'first']);
+  it('sends each request once across approval runs and logs the counts at debug level', async () => {
+    const lines: string[] = [];
+    configureLogger({
+      level: 'debug',
+      json: true,
+      destination: {write: (line: unknown) => lines.push(String(line)) > 0},
+    });
+    try {
+      const {execute} = fixture();
+      const read = `scapi.request({method:'GET',path:'${prefix}first'})`;
+      const args = {
+        skillRead: true,
+        code: `async () => { await ${read}; await ${call('first')}; await ${call('second')}; return (await ${read}).data; }`,
+      };
+      const first = await execute.handler(args, capable);
+      const second = await execute.handler(args, approve(first));
+      const result = json(await execute.handler(args, approve(second)));
+      expect(result.status).to.equal('completed');
+      expect(result).not.to.have.property('passes');
+      expect(result.operations[0]).not.to.have.property('dispatches');
+      expect(sent.map((request) => request.path.split('/').pop())).to.deep.equal(['first', 'first', 'second', 'first']);
+      const runs = lines
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              msg?: string;
+              status?: string;
+              passes?: number;
+              dispatches?: Array<{method: string; dispatches: number}>;
+            },
+        )
+        .filter((entry) => entry.msg === 'SCAPI execution run');
+      expect(runs.map((run) => [run.status, run.passes])).to.deep.equal([
+        ['awaiting_confirmation', 1],
+        ['awaiting_confirmation', 2],
+        ['completed', 3],
+      ]);
+      expect(runs.at(-1)!.dispatches!.map((op) => [op.method, op.dispatches])).to.deep.equal([
+        ['GET', 1],
+        ['PUT', 1],
+        ['PUT', 1],
+        ['GET', 1],
+      ]);
+    } finally {
+      resetLogger();
+    }
   });
 
   for (const {body, truncated} of [

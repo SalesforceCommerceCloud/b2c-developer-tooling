@@ -6,6 +6,7 @@
 
 import {createHash, createHmac, randomBytes, randomUUID} from 'node:crypto';
 import {inputRequired} from '@modelcontextprotocol/server';
+import {getLogger} from '@salesforce/b2c-tooling-sdk/logging';
 import {
   ScapiCodePause,
   ScapiCodePausedError,
@@ -56,8 +57,6 @@ interface OperationRecord {
   path?: string;
   status: 'awaiting_confirmation' | 'completed' | 'failed' | 'in_flight' | 'not_sent' | 'unknown';
   httpStatus?: number;
-  /** Times this request was sent across every run of the program; replayed answers are not sent again. */
-  dispatches?: number;
 }
 
 /** The request awaiting approval, keyed by the program's own call number. */
@@ -95,7 +94,6 @@ export class ScapiExecution {
       ...(call.kind === 'request' && typeof args?.method === 'string' ? {method: args.method.toUpperCase()} : {}),
       ...(call.kind === 'request' && typeof args?.path === 'string' ? {path: args.path.slice(0, 500)} : {}),
       status: 'in_flight',
-      ...(this.dispatched.has(call.id) ? {dispatches: this.dispatched.get(call.id)} : {}),
     };
     this.operations.set(call.id, record);
     try {
@@ -171,6 +169,7 @@ export class ScapiExecution {
       else if (record.status === 'in_flight') record.status = 'unknown';
     }
     const output = this.cancellation ? {...result, isError: true} : result;
+    this.logRun(this.cancellation ? 'cancelled' : output.isError ? 'failed' : 'completed');
     const first = output.content[0];
     const data = first?.type === 'text' ? JSON.parse(first.text) : {};
     if (this.cancellation) {
@@ -186,7 +185,6 @@ export class ScapiExecution {
             ...data,
             executionId: this.id,
             status: this.cancellation ? 'cancelled' : output.isError ? 'failed' : 'completed',
-            passes: this.passes,
             operations: this.records(),
           }),
         },
@@ -197,8 +195,6 @@ export class ScapiExecution {
   markDispatched(call?: ScapiRequestContext): void {
     if (call?.id === undefined) return;
     this.dispatched.set(call.id, (this.dispatched.get(call.id) ?? 0) + 1);
-    const record = this.operations.get(call.id);
-    if (record) record.dispatches = this.dispatched.get(call.id);
   }
 
   async retry(state: string, context: ToolContext): Promise<ToolResult> {
@@ -222,6 +218,27 @@ export class ScapiExecution {
     );
     round.continuation = Promise.resolve(this.result!);
     return round.continuation;
+  }
+
+  /** Debug-only replay evidence: runs so far and how often each request was sent across them. */
+  private logRun(status: string): void {
+    getLogger().debug(
+      {
+        executionId: this.id,
+        status,
+        passes: this.passes,
+        dispatches: [...this.operations.entries()]
+          .sort(([a], [b]) => a - b)
+          .map(([id, record]) => ({
+            callId: id,
+            method: record.method ?? record.kind,
+            path: record.path,
+            status: record.status,
+            dispatches: this.dispatched.get(id) ?? 0,
+          })),
+      },
+      'SCAPI execution run',
+    );
   }
 
   /** Runs the program once; pauses become approval prompts, everything else finishes the execution. */
@@ -292,10 +309,10 @@ export class ScapiExecution {
       _meta: {
         executionId: this.id,
         status: 'awaiting_confirmation',
-        passes: this.passes,
         operations: this.records(),
       },
     };
+    this.logRun('awaiting_confirmation');
     const round: ApprovalRound = {state, key, callId, prompt};
     this.pending = round;
     this.rounds.set(state, round);
