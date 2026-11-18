@@ -56,7 +56,8 @@ Options:
   --state <dir>         Sandbox state (default: ~/.cache/b2c-dx-sandbox)
   --keep-session        Reuse sessions from the previous run instead of starting signed out
   --toolsets <list>     MCP toolsets (default: all)
-  --mcp-debug           Start the MCP server with debug JSON logs on stderr (shown in the client's MCP log)
+  --no-mcp-debug        Start the MCP server without debug logs (default: debug JSON logs on stderr,
+                        shown in the client's MCP log)
   --no-build            vscode: skip building the extension
 
 probe options:
@@ -101,7 +102,7 @@ const {values: opts} = parseArgs({
     state: {type: 'string', default: join(homedir(), '.cache', 'b2c-dx-sandbox')},
     'keep-session': {type: 'boolean', default: false},
     toolsets: {type: 'string', default: 'all'},
-    'mcp-debug': {type: 'boolean', default: false},
+    'no-mcp-debug': {type: 'boolean', default: false},
     'no-build': {type: 'boolean', default: false},
     protocol: {type: 'string', default: '2026-07-28'},
     answer: {type: 'string', default: 'accept'},
@@ -216,7 +217,7 @@ const mcpArgs = [
   opts.toolsets!,
   '--project-directory',
   projectDir,
-  ...(opts['mcp-debug'] ? ['--log-level', 'debug', '--jsonl'] : []),
+  ...(opts['no-mcp-debug'] ? [] : ['--log-level', 'debug', '--jsonl']),
 ];
 
 if (command !== 'env') {
