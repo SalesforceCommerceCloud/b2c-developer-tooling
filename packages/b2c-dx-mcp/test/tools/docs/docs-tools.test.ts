@@ -17,6 +17,7 @@ import {createDocsSchemaSearchTool} from '../../../src/tools/docs/docs-schema-se
 import {createDocsSchemaReadTool} from '../../../src/tools/docs/docs-schema-read.js';
 import {createDocsSchemaListTool} from '../../../src/tools/docs/docs-schema-list.js';
 import {createDocsTools} from '../../../src/tools/docs/index.js';
+import {clearContentCache, initializeContentCache} from '@salesforce/b2c-tooling-sdk/docs';
 import type {ContentRead, ToolResult} from '../../../src/utils/index.js';
 
 function getResultJson<T>(result: ToolResult): T {
@@ -313,24 +314,46 @@ describe('tools/docs', () => {
       expect(json.totalLength).to.be.a('number');
     });
 
-    it('reads only the requested section', async () => {
-      const tool = createDocsReadTool(loadServices);
-      const result = await tool.handler({query: 'dw.catalog.ProductMgr', section: 'method-summary'});
-      expect(result.isError).to.be.undefined;
-      const json = getResultJson<{content: string; section: string; totalLength: number}>(result);
-      expect(json.section).to.equal('method-summary');
-      expect(json.content).to.match(/^## Method Summary/);
-      expect(json.content).to.not.contain('## Method Details');
-      expect(json.totalLength).to.equal(json.content.length);
-    });
+    describe('section', () => {
+      // Script API pages are read online; serve a fixed page so the test needs
+      // neither the network nor a warm docs cache.
+      const page = '# Class ProductMgr\n\nIntro.\n\n## Method Summary\n\n- getProduct\n\n## Method Details\n\nBody.\n';
+      const tool = () => createDocsReadTool(loadServices);
 
-    it('lists headings for an unknown section', async () => {
-      const tool = createDocsReadTool(loadServices);
-      const result = await tool.handler({query: 'dw.catalog.ProductMgr', section: 'nope'});
-      expect(result.isError).to.equal(true);
-      const json = getResultJson<{sectionNotFound: string; sections: Array<{id: string}>}>(result);
-      expect(json.sectionNotFound).to.equal('nope');
-      expect(json.sections.map((item) => item.id)).to.include('method-summary');
+      let cacheDir: string;
+
+      beforeEach(() => {
+        cacheDir = mkdtempSync(join(tmpdir(), 'b2c-docs-cache-'));
+        initializeContentCache(cacheDir);
+        clearContentCache();
+        globalThis.fetch = (async () => new Response(page)) as typeof fetch;
+      });
+
+      afterEach(() => {
+        clearContentCache();
+        rmSync(cacheDir, {recursive: true, force: true});
+      });
+
+      it('reads only the requested section', async () => {
+        const result = await tool().handler({query: 'dw.catalog.ProductMgr', section: 'method-summary'});
+        expect(result.isError).to.be.undefined;
+        const json = getResultJson<{content: string; section: string; totalLength: number}>(result);
+        expect(json.section).to.equal('method-summary');
+        expect(json.content).to.equal('## Method Summary\n\n- getProduct\n\n');
+        expect(json.totalLength).to.equal(json.content.length);
+      });
+
+      it('lists headings for an unknown section', async () => {
+        const result = await tool().handler({query: 'dw.catalog.ProductMgr', section: 'nope'});
+        expect(result.isError).to.equal(true);
+        const json = getResultJson<{sectionNotFound: string; sections: Array<{id: string}>}>(result);
+        expect(json.sectionNotFound).to.equal('nope');
+        expect(json.sections.map((item) => item.id)).to.deep.equal([
+          'class-productmgr',
+          'method-summary',
+          'method-details',
+        ]);
+      });
     });
 
     it('returns related Help entry ids for landing articles', async () => {
