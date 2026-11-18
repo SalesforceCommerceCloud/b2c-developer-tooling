@@ -12,19 +12,21 @@ Operations or incidents (jobs, checkout, orders, eCDN edge traffic and rules): r
 
 ## `spec` shape (search and execute)
 
-Only these exist. No `spec.schemas`, no `spec.operations`. Do not probe.
+Only these exist; every member is an async host call (`await` it). No `spec.paths`, no `spec.schemas`. Do not probe.
 
 ```ts
 declare const spec: {
-  apis: Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; status: string}>; // id: 'product/catalogs/v1'
-  paths: Record<string, Record<string, Operation>>; // fullPath -> lowercase method -> op
-  resolve(value: unknown, apiId: string): unknown; // expand local $ref
+  apis(o?: {api?: string}): Promise<Array<{id: string; apiFamily: string; apiName: string; apiVersion: string; status: string}>>; // id: 'product/catalogs/v1'
+  // one row per operation; filter by API id/family and method
+  operations(o?: {api?: string; method?: string}): Promise<Array<{api: string; method: string; path: string; operationId?: string; summary?: string}>>;
+  operation(path: string, method: string): Promise<Operation>; // full op for a path + method from search/operations
+  resolve(value: unknown, apiId: string): Promise<unknown>; // expand local $ref
   // ranked fuzzy search over summary/description/tags/operationId/path; newest API version only
   search(query: string, o?: {limit?: number}): Promise<Array<Match>>; // limit default 10, max 50
 };
-// spec.paths[m.path][m.method] is the full op; otherVersions = older versions with the same op
+// await spec.operation(m.path, m.method) is the full op; otherVersions = older versions with the same op
 type Match = {api: string; method: string; path: string; operationId?: string; summary?: string; score: number; otherVersions?: string[]};
-// fullPath = '/' + api id + path, e.g. '/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}'
+// path = '/' + api id + path, e.g. '/product/catalogs/v1/organizations/{organizationId}/catalogs/{catalogId}'
 interface Operation {
   api: string;
   operationId: string;
@@ -44,6 +46,7 @@ interface Operation {
 ```ts
 declare const organizationId: string | undefined;
 declare const siteId: string | undefined;
+declare function sleep(ms: number): Promise<void>; // wait between polls; no setTimeout
 declare const scapi: {
   request(o: {
     method: string;
@@ -56,14 +59,14 @@ declare const scapi: {
 
 ## Rules
 
-- Result cap 24 KB (`SCAPI_RESULT_TOO_LARGE`). Whole op = 6-20 KB. NEVER return `op` or `spec.paths` entries whole. List `{operationId, method, path, summary}`; then return only `parameters`/`requestBody` of ops you will call.
-- Start with `await spec.search('task words')`; it matches prose (`summary`, `description`, `tags`) and tolerates typos. Regex over `spec.paths` to narrow or enumerate.
+- Result cap 24 KB (`SCAPI_RESULT_TOO_LARGE`). Whole op = 6-20 KB. NEVER return `spec.operation()` results whole. List `{operationId, method, path, summary}`; then return only `parameters`/`requestBody` of ops you will call.
+- Start with `await spec.search('task words')`; it matches prose (`summary`, `description`, `tags`) and tolerates typos. Filter `await spec.operations({api})` to narrow or enumerate.
 - `scapi_search` default `detail:"outline"` drops nested descriptions/examples. `detail:"full"` restores. Execute sees full.
 - Default corpus = bundled standard. `schemas:"live"` = tenant (`c_*`, custom APIs, newer APIs); falls back to bundled with `warnings`. Tell user if `c_*`/custom APIs matter.
 - `scapi.request` auths itself. Never fetch tokens first. Path `{organizationId}` auto-fills.
 - Check `ok`/`status`. Writes: read back. Check before retry. Await every request.
-- Limits: 20 calls, 4 parallel, 30 s. `fetch`/`WebSocket` disabled.
-- Write needing approval pauses for client elicitation. Decline = whole run ends. Never fake approval.
+- Limits: 20 calls, 4 parallel, 30 s. No `fetch`, `WebSocket`, `setTimeout`, `URL`, `TextEncoder` or `Intl`; wait with `await sleep(ms)`.
+- Write needing approval pauses for client elicitation. Accept re-runs the program from the start: calls already answered replay without being sent again, so keep code deterministic (no reads of anything but `input`, results and `spec`). Decline = whole run ends. Never fake approval.
 - Claude artifact/dashboard: page code cannot call `scapi_execute`. Never allowlist this server's tools as artifact connectors (shared copies fail with **Connectors needed**). Embed results.
 
 ```js
@@ -72,15 +75,13 @@ async () => spec.search('apply coupon to basket', {limit: 8});
 
 // enumerate with a filter
 async () =>
-  Object.entries(spec.paths)
-    .flatMap(([path, methods]) =>
-      Object.entries(methods).map(([method, op]) => ({method, path, operationId: op.operationId, summary: op.summary})),
-    )
-    .filter((o) => /basket/i.test(o.summary ?? '') && /coupon|promotion/i.test(o.summary ?? ''));
+  (await spec.operations({api: 'checkout'})).filter(
+    (o) => /basket/i.test(o.summary ?? '') && /coupon|promotion/i.test(o.summary ?? ''),
+  );
 
 // inspect only needed fields
 async () => {
-  const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
+  const op = await spec.operation('/product/products/v1/organizations/{organizationId}/products/{productId}', 'put');
   const body = op.requestBody.content['application/json'].schema;
   return {parameters: op.parameters, required: body.required, security: op.security, auth: op.auth};
 };

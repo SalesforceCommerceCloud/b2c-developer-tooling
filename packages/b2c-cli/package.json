@@ -53,7 +53,7 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.19.0"
   },
   "files": [
     "./bin",

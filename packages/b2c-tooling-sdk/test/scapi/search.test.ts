@@ -76,7 +76,7 @@ describe('SCAPI operation search', function () {
       authType: 'admin',
       code: `async () => {
         const matches = await spec.search('gift certificate balance', {limit: 5});
-        return {matches, operation: spec.paths[matches[0].path][matches[0].method].operationId};
+        return {matches, operation: (await spec.operation(matches[0].path, matches[0].method)).operationId};
       }`,
     })) as {matches: Array<{api: string; operationId: string}>; operation: string};
     expect(result.matches[0].api).to.equal('pricing/gift-certificates/v1');

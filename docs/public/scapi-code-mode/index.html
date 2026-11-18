@@ -321,10 +321,7 @@ sequenceDiagram
   <div class="split">
     <div>
 <div class="dim" style="font-size:1.9vh"><b>1 · scapi_search</b>: find the operation, its path and auth</div>
-      <pre class="card mono" style="font-size:1.65vh;line-height:1.45;margin:.6vh 0 0;color:#cfe3ff">async () =&gt; Object.entries(spec.paths)
-  .flatMap(([path, ops]) =&gt; Object.entries(ops).map(
-    ([method, op]) =&gt; ({operationId: op.operationId, method, path,
-                       security: op.security})))
+      <pre class="card mono" style="font-size:1.65vh;line-height:1.45;margin:.6vh 0 0;color:#cfe3ff">async () =&gt; (await spec.operations({api: 'product'}))
   .filter(o =&gt; /^(create|update)Product$/.test(o.operationId))</pre>
       <div class="dim" style="font-size:1.9vh;margin-top:1.6vh"><b>2 · scapi_execute</b>: call it</div>
       <pre class="card mono" style="font-size:1.65vh;line-height:1.45;margin:.6vh 0 0;color:#cfe3ff">async (input) =&gt; {

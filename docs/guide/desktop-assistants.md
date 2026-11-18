@@ -20,7 +20,7 @@ and [skill collections](./agent-skills). No separate skills installation is need
 
 ## Before you start
 
-Install [Node.js](https://nodejs.org/) 22.16.0 or higher. The plugin starts the
+Install [Node.js](https://nodejs.org/) 22.19.0 or higher. The plugin starts the
 MCP server on your computer with `npx`. Connected tasks use your existing
 [B2C Commerce configuration](./configuration).
 
@@ -94,7 +94,7 @@ ChatGPT online in a browser does not use Codex plugins. To connect it, see
 | Problem                   | What to check                                                                                                                                            |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Plugin is missing         | Check that you installed it for this surface. Claude Desktop (Cowork) and Claude Code install separately; ChatGPT and the Codex CLI share Codex plugins. |
-| Server does not start     | Run `node --version` and confirm Node.js 22.16.0 or higher. Restart the app after installing Node.js.                                                    |
+| Server does not start     | Run `node --version` and confirm Node.js 22.19.0 or higher. Restart the app after installing Node.js.                                                    |
 | Wrong project or instance | Specify the intended project or named instance in your request.                                                                                          |
 | Old tools or skills       | Update the marketplace or plugin, then start a new task.                                                                                                 |
 | Artifact shows no data    | Cowork artifacts cannot call local MCP tools. Embed the data and refresh it with a scheduled task.                                                       |
