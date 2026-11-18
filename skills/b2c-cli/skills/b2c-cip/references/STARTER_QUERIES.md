@@ -6,7 +6,8 @@ when it already answers the task. For sales interpretation/coverage, use
 
 Replace `Sites-Example-Site` with a verified natural site ID. Replace `<FROM>` /
 `<TO>` with explicit inclusive dates before MCP execution. CLI `b2c cip query`
-can replace them using `--from` / `--to`. Discover columns before adapting a query.
+can replace them using `--from` / `--to`. Discover columns before adapting a query. Calcite reserves `date`, `day`,
+`month`, `year` and `value`: never use them as bare aliases.
 Date/site predicates bound the analysis; LIMIT only bounds returned rows.
 
 ## 1) Recent Daily Sales Snapshot

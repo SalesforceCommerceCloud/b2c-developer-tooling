@@ -24,6 +24,10 @@ Read this skill once through resources or `skills_read` (`mcp/b2c-mcp-cip`), the
    Follow `nextOffset` only for needed columns, not to exhaust unrelated metadata.
 4. `cip_query` accepts either `report` plus string-valued `params`, or `sql`.
    Do not invent parameters or use a narrower report that omits requested evidence.
+5. Before custom SQL, describe each table you use with `action: "table"` and use
+   only returned column names. Do not guess: sales aggregates use `num_orders`
+   and `num_units` (not `orders`/`units`); `ccdw_dim_site` has `site_display_name`
+   (not `site_name`); `ccdw_dim_promotion` has `npromotion_id` and `display_name`.
 
 ## Configuration and access
 
@@ -50,6 +54,18 @@ and the analytics guide (`docs_read({query: "guide-analytics-reports-cip-ccac"})
 (`cli-cip`, [online](https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/cip.md)).
 Read these conditionally, not as extra prerequisites.
 Official [JDBC setup and limits](https://developer.salesforce.com/docs/commerce/b2c-commerce/guide/jdbc_access_guide.html).
+
+## SQL dialect
+
+CIP SQL is Apache Calcite. Common parse errors:
+
+- Reserved words cannot be bare aliases or identifiers: `date`, `day`, `month`,
+  `year`, `hour`, `minute`, `second`, `time`, `timestamp`, `value`, `user`,
+  `method`, `rows`. Alias as `submit_day`, `yr`, `mo`, or double-quote: `AS "date"`.
+- Dates: `DATE '2026-11-01'`; ranges with `BETWEEN` or `>=`/`<=`. Months:
+  `EXTRACT(YEAR FROM submit_date)`, `EXTRACT(MONTH FROM submit_date)`, grouped by
+  the same expressions. There is no `DATEADD`; compute windows as explicit dates.
+- Safe division `x / NULLIF(y, 0)`; rounding `CAST(x AS DECIMAL(15,2))`.
 
 ## Query and interpret
 
