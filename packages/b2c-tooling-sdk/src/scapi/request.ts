@@ -89,6 +89,9 @@ export function createScapiRequest(
   options: ScapiRequestOptions,
 ): (input: unknown, signal: AbortSignal, call?: ScapiRequestContext) => Promise<unknown> {
   if (!/^[a-z0-9-]+$/i.test(options.shortCode)) throw new Error('Invalid SCAPI shortCode.');
+  // Required by the type; checked here too so untyped callers fail at setup, not on their first request.
+  if (!options.safety || typeof options.safety !== 'object')
+    throw new Error("createScapiRequest requires a safety config; pass {level: 'NONE'} to allow every operation.");
   const origin = getScapiOrigin(options.shortCode);
   const organizationId = toOrganizationId(options.tenantId);
   const documents = [...options.documents];

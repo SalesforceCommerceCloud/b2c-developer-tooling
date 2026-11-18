@@ -21,6 +21,12 @@ const path = '/product/products/v1/organizations/{organizationId}/products/test'
 describe('SCAPI request approvals', () => {
   afterEach(() => restore());
 
+  it('requires a safety config at setup', () => {
+    const options = {shortCode: 'test', tenantId: 'test_001', auth: {} as never, documents: []};
+    expect(() => createScapiRequest(options as never)).to.throw('requires a safety config');
+    expect(() => createScapiRequest({...options, safety: {level: 'NONE'}})).not.to.throw();
+  });
+
   it('keeps approvals private to each request and detaches approved query/body from callers', async () => {
     const approvals: Array<{request: ScapiConfirmation; resolve: () => void}> = [];
     const sent: Request[] = [];
