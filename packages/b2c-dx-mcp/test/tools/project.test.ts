@@ -96,7 +96,7 @@ describe('tools/project', () => {
 
   it('are closed-world reads in the CARTRIDGES and STOREFRONTNEXT toolsets with project context', () => {
     for (const tool of [inspect, scan]) {
-      expect(tool).to.include({effect: 'read', idempotent: true, openWorld: true});
+      expect(tool).to.include({effect: 'read', idempotent: true, openWorld: false});
       expect(tool.toolsets).to.deep.equal(['CARTRIDGES', 'STOREFRONTNEXT']);
       expect(tool.inputSchema).to.have.property('projectDirectory');
     }

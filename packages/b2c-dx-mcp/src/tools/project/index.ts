@@ -173,12 +173,13 @@ export function createProjectInspectTool(
       alwaysLoad: true,
       effect: 'read',
       idempotent: true,
-      openWorld: true,
+      // The instance lookup for the cartridge path is best effort and falls back to local sources.
+      openWorld: false,
       description:
-        'Inspect storefront code from source (preview), along the site cartridge path (cartridgePathSource says where ' +
-        'it came from). Start with the summary; list endpoints, filtered by ID, cartridge, or middleware; then get one ' +
+        'Inspect storefront code from source (preview), along the site cartridge path. Start with the summary ' +
+        '(counts and what each aspect returns); list endpoints, filtered by ID, cartridge, or middleware; then get one ' +
         'endpoint for what runs, in order, and which cartridge each step comes from. Also hooks in run order, Custom ' +
-        'APIs, and custom job steps.',
+        'APIs, and custom job steps. Reads local files.',
       searchHint:
         'controller route endpoint middleware override extend replace prepend append superModule hooks hooks.json custom api rest-apis job steps steptypes.json which cartridge',
       toolsets: ['CARTRIDGES', 'STOREFRONTNEXT'],
@@ -436,11 +437,11 @@ export function createSecurityScanTool(
       name: 'security_scan',
       effect: 'read',
       idempotent: true,
-      openWorld: true,
+      openWorld: false,
       description:
         'Scan cartridge code and site data for B2C Commerce security problems (preview): CSRF gaps, overrides that drop ' +
         'security middleware, query injection, open redirects, hardcoded credentials, OCAPI demo client ID, and more. ' +
-        'Follows the site cartridge path; honors suppressions, baseline, and settings. ' +
+        'Local scan along the site cartridge path; honors suppressions, baseline, and settings. ' +
         'Triage with skill://b2c-cli/b2c-security/SKILL.md.',
       searchHint:
         'security vulnerabilities csrf xss injection secrets credentials audit lint sast ocapi permissions controllers',
