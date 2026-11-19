@@ -254,6 +254,7 @@ describe('tools/project', () => {
       );
       const out = json(await tool.handler({aspect: 'endpoint', id: 'Account-Save', siteId: 'RefArch'}));
       expect(out.cartridgePathSource).to.deep.include({source: 'instance', siteId: 'RefArch'});
+      expect(out.cartridgePath).to.deep.equal(['app_storefront_base', 'app_custom']);
       // With app_custom after the base cartridge on the site's path, its replace never applies.
       expect(out.endpoint.steps.map((s: {cartridge: string}) => s.cartridge)).to.deep.equal(['app_storefront_base']);
       await tool.handler({aspect: 'hooks', siteId: 'RefArch'});
@@ -284,6 +285,9 @@ describe('tools/project', () => {
         await tool.handler({aspect: 'endpoint', id: 'Wishlist-Show', siteId: 'Other', allCartridges: true}),
       );
       expect(all.endpoint.cartridge).to.equal('app_custom');
+      // Local cartridges only; with allCartridges, off-path ones come after the site's path.
+      expect(save.cartridgePath).to.deep.equal(['app_storefront_base']);
+      expect(all.cartridgePath).to.deep.equal(['app_storefront_base', 'app_custom']);
       expect(all.cartridgePathSource).to.include({allCartridges: true});
       expect(all.cartridgePathHint).to.include('are included after it');
     });

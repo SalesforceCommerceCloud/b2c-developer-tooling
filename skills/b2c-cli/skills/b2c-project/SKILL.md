@@ -9,7 +9,7 @@ Use `b2c project` (preview) to answer questions about a project's storefront cod
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead. Add `--json` to any command for structured output.
 
-> **MCP parity:** If the `b2c-dx-mcp` server is connected, `project_inspect` covers these commands: `aspect: "summary"` (`b2c project index`, plus what each aspect returns), `"endpoints"` (with `filter`, `cartridge`, `uses`), `"endpoint"` with `id`, `"hooks"`, `"customApis"`, and `"jobSteps"`. Unlike the CLI, it can read the cartridge path live from the instance: pass `siteId` for a specific site. Every result has `cartridgePathSource` (`instance`, `configured`, `site-file`, or `discovery`); when it isn't `instance` or `configured`, follow `cartridgePathHint` and say where the order came from. Only cartridges on the path are indexed (others are in `notOnPath`); pass `allCartridges: true` to include them.
+> **MCP parity:** If the `b2c-dx-mcp` server is connected, `project_inspect` covers these commands: `aspect: "summary"` (`b2c project index`, plus what each aspect returns), `"endpoints"` (with `filter`, `cartridge`, `uses`), `"endpoint"` with `id`, `"hooks"`, `"customApis"`, and `"jobSteps"`. Unlike the CLI, it can read the cartridge path live from the instance: pass `siteId` for a specific site. Every result has `cartridgePath` (the cartridges used, in order) and `cartridgePathSource` (`instance`, `configured`, `site-file`, or `discovery`); when it isn't `instance` or `configured`, follow `cartridgePathHint` and say where the order came from. Only cartridges on the path are indexed (others are in `notOnPath`); pass `allCartridges: true` to include them.
 
 ## Get the cartridge path right first
 

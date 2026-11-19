@@ -222,7 +222,11 @@ export function createProjectInspectTool(
         const dir = context.services.resolveProjectDirectory(args.projectDirectory).path;
         const resolved = await resolver.resolve(context.services, dir, args.siteId);
         const index = loadIndex(dir, resolved, args.allCartridges);
-        const order = describeCartridgeOrder(index.cartridgeOrder, resolved);
+        // Every aspect says which cartridges were composed, in order, and where that order came from.
+        const order = {
+          cartridgePath: index.cartridges.map((c) => c.name),
+          ...describeCartridgeOrder(index.cartridgeOrder, resolved),
+        };
         const filter = args.filter?.toLowerCase();
         const matches = (text: string) => !filter || text.toLowerCase().includes(filter);
         const endpoints = controllerEndpoints(index);
@@ -232,7 +236,6 @@ export function createProjectInspectTool(
           const apis = customApiGroups(index);
           return {
             projectDirectory: dir,
-            cartridgePath: index.cartridges.map((c) => c.name),
             ...order,
             counts: {
               endpoints: endpoints.length,
