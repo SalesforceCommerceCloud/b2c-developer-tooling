@@ -217,18 +217,26 @@ export interface IndexedCartridge {
  * Where the index's cartridge order came from:
  *
  * - `configured`: the `cartridgePath` option (`cartridges` in dw.json or `SFCC_CARTRIDGES`).
+ * - `instance`: a site's cartridge path read from the instance (the caller passed it as `cartridgePath`).
  * - `provided`: the caller passed ordered cartridges (for example the VS Code Cartridges view order).
  * - `site-file`: a site's `<custom-cartridges>` in a site import file in the project
  *   (`sites/<id>/site.xml`, the latest by migration or import set timestamp).
  * - `discovery`: a guess: discovery order with known base cartridges last.
  */
 export interface CartridgeOrder {
-  source: 'configured' | 'discovery' | 'provided' | 'site-file';
-  /** For `site-file`: the site whose path was used. */
+  source: 'configured' | 'discovery' | 'instance' | 'provided' | 'site-file';
+  /** For `instance` and `site-file`: the site whose path was used. */
   siteId?: string;
+  /** For `instance`: the instance the path was read from. */
+  hostname?: string;
   /** For `site-file`: the file, relative to the project root. */
   file?: string;
-  /** For `site-file`: other sites in the project with a different cartridge path. */
+  /**
+   * Cartridges in the project that the cartridge path doesn't name. The index still includes them,
+   * after the named cartridges, but the site doesn't run their code.
+   */
+  notOnPath?: string[];
+  /** For `instance` and `site-file`: other sites (on the instance, or in the project) with a different cartridge path. */
   otherSites?: string[];
 }
 

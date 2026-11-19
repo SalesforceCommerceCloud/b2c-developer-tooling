@@ -14,7 +14,7 @@ import {
   DISCOVERY_IGNORED_DIRECTORIES,
 } from '../cartridges/index.js';
 import {buildProjectIndex} from '../project-index/build.js';
-import type {ProjectIndex} from '../project-index/types.js';
+import type {CartridgeOrder, ProjectIndex} from '../project-index/types.js';
 import {applyBaseline, fingerprintFinding, type SecurityBaseline} from './baseline.js';
 import {applyRuleSettings, disabledRules, ignoredPathTest, loadSecurityConfig, type SecurityConfig} from './config.js';
 import type {ScriptRule} from './rule.js';
@@ -76,6 +76,8 @@ export interface SecurityScanOptions {
   baseline?: SecurityBaseline;
   /** Cartridge path order (names) used to compose routes across cartridges. */
   cartridgePath?: string[];
+  /** Where `cartridgePath` came from (see `BuildProjectIndexOptions.cartridgePathSource`). */
+  cartridgePathSource?: CartridgeOrder;
   /** Without `cartridgePath`: the site whose cartridge path to read from the project's site.xml files. */
   siteId?: string;
   /** Leave out findings inside SFRA and SiteGenesis reference cartridges ({@link REFERENCE_CARTRIDGES}). */
@@ -114,6 +116,9 @@ export interface SecurityScanResult {
   hiddenReferenceFindings: number;
   /** Endpoints in the project index the rules used. */
   indexedEndpoints: number;
+  /** Cartridge path order the rules composed routes with, and where it came from. */
+  cartridgePath: string[];
+  cartridgeOrder?: CartridgeOrder;
   /** The `.b2c-security.json` file that was applied, if any. */
   configFile?: string;
 }
@@ -269,6 +274,7 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
       root,
       paths: paths.filter((p) => path.resolve(p) !== root),
       cartridgePath: options.cartridgePath,
+      cartridgePathSource: options.cartridgePathSource,
       siteId: options.siteId,
     });
   const resolver = new CartridgeResolver(projectIndex.cartridges, createNodeFileSystemHost());
@@ -321,6 +327,8 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
     rules: rules.map((r) => r.meta.b2c),
     hiddenReferenceFindings,
     indexedEndpoints: projectIndex.endpoints.length,
+    cartridgePath: projectIndex.cartridges.map((c) => c.name),
+    ...(projectIndex.cartridgeOrder ? {cartridgeOrder: projectIndex.cartridgeOrder} : {}),
     ...(loaded ? {configFile: loaded.file} : {}),
   };
 }

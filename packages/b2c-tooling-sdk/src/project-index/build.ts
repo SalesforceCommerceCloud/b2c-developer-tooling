@@ -59,6 +59,11 @@ export interface BuildProjectIndexOptions {
   /** Cartridge path order (names), applied to discovered cartridges. */
   cartridgePath?: string[];
   /**
+   * Where `cartridgePath` came from, reported as {@link ProjectIndex.cartridgeOrder}. Defaults to
+   * `{source: 'configured'}`; pass `{source: 'instance', siteId, hostname}` for a path read from an instance.
+   */
+  cartridgePathSource?: CartridgeOrder;
+  /**
    * Without `cartridgePath` or `cartridges`, order by a site cartridge path found
    * in the project's site import files (`sites/<id>/site.xml`, the latest by
    * migration or import set timestamp). Defaults to true.
@@ -240,6 +245,17 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
   return index;
 }
 
+/** Adds the local cartridges that `cartridgePath` doesn't name (they still load, after the path, in discovery order). */
+function withNotOnPath(
+  order: CartridgeOrder,
+  discovered: readonly CartridgeLocation[],
+  cartridgePath: readonly string[],
+): CartridgeOrder {
+  const onPath = new Set(cartridgePath);
+  const notOnPath = [...new Set(discovered.map((c) => c.name).filter((n) => !onPath.has(n)))];
+  return notOnPath.length > 0 ? {...order, notOnPath} : order;
+}
+
 function discoverAll(
   options: BuildProjectIndexOptions,
   host: CartridgeFileSystemHost,
@@ -254,7 +270,10 @@ function discoverAll(
   }
   const discovered = [...found.values()];
   if (options.cartridgePath && options.cartridgePath.length > 0) {
-    return {cartridges: orderCartridges(discovered, options.cartridgePath), order: {source: 'configured'}};
+    return {
+      cartridges: orderCartridges(discovered, options.cartridgePath),
+      order: withNotOnPath(options.cartridgePathSource ?? {source: 'configured'}, discovered, options.cartridgePath),
+    };
   }
   if (options.detectSitePath !== false) {
     const site = selectSiteCartridgePath(
@@ -265,12 +284,16 @@ function discoverAll(
     if (site) {
       return {
         cartridges: orderCartridges(discovered, site.cartridges),
-        order: {
-          source: 'site-file',
-          siteId: site.siteId,
-          file: toForwardSlashes(path.relative(roots[0], site.file)),
-          ...(site.alternatives.length > 0 ? {otherSites: site.alternatives} : {}),
-        },
+        order: withNotOnPath(
+          {
+            source: 'site-file',
+            siteId: site.siteId,
+            file: toForwardSlashes(path.relative(roots[0], site.file)),
+            ...(site.alternatives.length > 0 ? {otherSites: site.alternatives} : {}),
+          },
+          discovered,
+          site.cartridges,
+        ),
       };
     }
   }

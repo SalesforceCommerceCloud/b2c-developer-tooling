@@ -92,7 +92,21 @@ describe('cartridges/site-paths', () => {
     it('lets a configured cartridge path win', () => {
       const index = buildProjectIndex({root: dir, cartridgePath: ['app_a', 'app_b']});
       expect(index.cartridges.map((c) => c.name)).to.deep.equal(['app_a', 'app_b', 'app_storefront_base']);
-      expect(index.cartridgeOrder).to.deep.equal({source: 'configured'});
+      expect(index.cartridgeOrder).to.deep.equal({source: 'configured', notOnPath: ['app_storefront_base']});
+    });
+
+    it('reports a caller-provided source, such as a path read from the instance', () => {
+      const index = buildProjectIndex({
+        root: dir,
+        cartridgePath: ['app_a', 'app_storefront_base'],
+        cartridgePathSource: {source: 'instance', siteId: 'RefArch', hostname: 'my-sandbox.example.com'},
+      });
+      expect(index.cartridgeOrder).to.deep.equal({
+        source: 'instance',
+        siteId: 'RefArch',
+        hostname: 'my-sandbox.example.com',
+        notOnPath: ['app_b'],
+      });
     });
 
     it('guesses when detection is off, and ignores a siteId the project has no file for', () => {

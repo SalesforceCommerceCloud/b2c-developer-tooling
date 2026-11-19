@@ -147,8 +147,12 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
       {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Commerce Apps', link: '/guide/commerce-apps'},
-      {text: 'Code Security', link: '/guide/code-security'},
-      {text: 'Security Rules', link: '/guide/security-rules'},
+      {
+        text: 'Code Security',
+        link: '/guide/code-security',
+        collapsed: true,
+        items: [{text: 'Security Rules', link: '/guide/security-rules'}],
+      },
       {text: 'Security', link: '/guide/security'},
       {text: 'Agent Sandboxing', link: '/guide/agent-sandboxing'},
     ],
@@ -186,9 +190,9 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
 ];
 
 // Preserve existing guide URLs while assigning task guides their own navigation.
-const guidePaths = guidesSidebar
-  .flatMap(({link, items}) => [link, ...(items ?? []).map((item) => item.link)])
-  .filter((link): link is string => Boolean(link));
+const sidebarLinks = (items: DefaultTheme.SidebarItem[]): (string | undefined)[] =>
+  items.flatMap(({link, items: children}) => [link, ...sidebarLinks(children ?? [])]);
+const guidePaths = sidebarLinks(guidesSidebar).filter((link): link is string => Boolean(link));
 const guidesActiveMatch = `(?:${guidePaths.join('|')})(?:\\.html)?/?$`;
 
 const referenceSidebar = [

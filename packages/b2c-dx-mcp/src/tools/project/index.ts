@@ -7,7 +7,8 @@
 /**
  * Project tools: inspect a project's storefront code from source (project
  * index) and scan it for security problems. Both read local files on the MCP
- * host only; no instance or credentials.
+ * host. When SCAPI system credentials are configured, they also read the
+ * site's cartridge path from the instance (see cartridge-path.ts).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,6 +36,7 @@ import {
   type SecuritySeverity,
 } from '@salesforce/b2c-tooling-sdk/security';
 import {createToolAdapter, jsonResult} from '../adapter.js';
+import {CartridgePathResolver, describeCartridgeOrder, type ResolvedCartridgePath} from './cartridge-path.js';
 import type {Services} from '../../services.js';
 import type {McpTool} from '../../utils/index.js';
 
@@ -53,6 +55,7 @@ interface ProjectInspectInput {
   cartridge?: string;
   uses?: string;
   issuesOnly?: boolean;
+  siteId?: string;
   projectDirectory?: string;
 }
 
@@ -67,9 +70,26 @@ const ASPECTS: Record<Exclude<Aspect, 'summary'>, string> = {
   jobSteps: 'Custom job step types from steptypes.json with parameters and implementation.',
 };
 
-/** Builds the index for the project directory, ordered by that project's `cartridges` configuration. */
-function loadIndex(projectDirectory: string, cartridgePath: string[] | undefined, siteId?: string): ProjectIndex {
-  return buildProjectIndex({root: projectDirectory, cartridgePath, siteId});
+/** Shared by the project tools so instance lookups are cached across calls. */
+const defaultResolver = new CartridgePathResolver();
+
+/** Input schema shared by the project tools for choosing the site whose cartridge path to use. */
+const siteIdInput = z
+  .string()
+  .min(1)
+  .optional()
+  .describe(
+    'Site whose cartridge path to read live from the instance (overrides configured cartridges). See cartridgePathHint.',
+  );
+
+/** Builds the index for the project directory, ordered by the resolved cartridge path. */
+function loadIndex(projectDirectory: string, resolved: ResolvedCartridgePath): ProjectIndex {
+  return buildProjectIndex({
+    root: projectDirectory,
+    cartridgePath: resolved.cartridgePath,
+    cartridgePathSource: resolved.cartridgePathSource,
+    siteId: resolved.siteId,
+  });
 }
 
 /** A cartridge file as a path relative to the project directory, with an optional `:line`. */
@@ -128,7 +148,10 @@ function endpointDetail(index: ProjectIndex, dir: string, e: IndexedEndpoint) {
   };
 }
 
-export function createProjectInspectTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createProjectInspectTool(
+  loadServices: () => Promise<Services> | Services,
+  resolver: CartridgePathResolver = defaultResolver,
+): McpTool {
   return createToolAdapter<ProjectInspectInput, Record<string, unknown>>(
     {
       name: 'project_inspect',
@@ -136,12 +159,12 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
       alwaysLoad: true,
       effect: 'read',
       idempotent: true,
-      openWorld: false,
+      openWorld: true,
       description:
-        'Inspect storefront code from source (preview), along the configured cartridge path. Start with the summary ' +
-        '(counts and what each aspect returns); list endpoints, filtered by ID, cartridge, or middleware; then get one ' +
+        'Inspect storefront code from source (preview), along the site cartridge path (cartridgePathSource says where ' +
+        'it came from). Start with the summary; list endpoints, filtered by ID, cartridge, or middleware; then get one ' +
         'endpoint for what runs, in order, and which cartridge each step comes from. Also hooks in run order, Custom ' +
-        'APIs, and custom job steps. Offline.',
+        'APIs, and custom job steps.',
       searchHint:
         'controller route endpoint middleware override extend replace prepend append superModule hooks hooks.json custom api rest-apis job steps steptypes.json which cartridge',
       toolsets: ['CARTRIDGES', 'STOREFRONTNEXT'],
@@ -174,14 +197,16 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
           .optional()
           .describe('endpoints: only endpoints whose middleware contains this text, such as "userLoggedIn" or "csrf".'),
         issuesOnly: z.boolean().optional().describe('hooks, customApis, jobSteps: only items with issues.'),
+        siteId: siteIdInput,
       },
       async execute(args, context) {
         const aspect = args.aspect ?? 'summary';
         if (aspect === 'endpoint' && !args.id)
           throw new Error('aspect "endpoint" requires id (for example Cart-AddProduct).');
         const dir = context.services.resolveProjectDirectory(args.projectDirectory).path;
-        const {cartridges: cartridgePath, siteId} = context.services.getResolvedConfig().values;
-        const index = loadIndex(dir, cartridgePath, siteId);
+        const resolved = await resolver.resolve(context.services, dir, args.siteId);
+        const index = loadIndex(dir, resolved);
+        const order = describeCartridgeOrder(index.cartridgeOrder, resolved);
         const filter = args.filter?.toLowerCase();
         const matches = (text: string) => !filter || text.toLowerCase().includes(filter);
         const endpoints = controllerEndpoints(index);
@@ -192,10 +217,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
           return {
             projectDirectory: dir,
             cartridgePath: index.cartridges.map((c) => c.name),
-            cartridgePathSource: index.cartridgeOrder,
-            ...(index.cartridgeOrder?.source === 'discovery'
-              ? {cartridgePathHint: 'Guessed order. Set cartridges in dw.json (or SFCC_CARTRIDGES) to match the site.'}
-              : {}),
+            ...order,
             counts: {
               endpoints: endpoints.length,
               hookRegistrations: index.hooks.length,
@@ -226,7 +248,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
                 (similar.length > 0 ? ` Similar: ${similar.join(', ')}.` : ' Use aspect "endpoints" to list them.'),
             );
           }
-          return {endpoint: endpointDetail(index, dir, endpoint)};
+          return {endpoint: endpointDetail(index, dir, endpoint), ...order};
         }
 
         if (aspect === 'endpoints') {
@@ -246,6 +268,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
               ? {truncated: rows.length - MAX_LIST, hint: 'Narrow with filter, cartridge, or uses.'}
               : {}),
             next: 'Use aspect "endpoint" with an id for what runs, protection (HTTPS, login, CSRF), and issues.',
+            ...order,
           };
         }
 
@@ -279,7 +302,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
               parameters: s.parameters,
               ...(s.problems.length > 0 ? {problems: s.problems} : {}),
             }));
-          return {total: steps.length, jobSteps: steps.slice(0, MAX_LIST)};
+          return {total: steps.length, jobSteps: steps.slice(0, MAX_LIST), ...order};
         }
 
         if (aspect === 'hooks') {
@@ -325,7 +348,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
               };
             })
             .filter((c) => !args.issuesOnly || c.issue || c.registrations.some((r) => r.issue));
-          return {semantics: HOOK_SEMANTICS, hooks};
+          return {semantics: HOOK_SEMANTICS, hooks, ...order};
         }
 
         const apis = customApiGroups(index)
@@ -360,7 +383,7 @@ export function createProjectInspectTool(loadServices: () => Promise<Services> |
               })),
           }))
           .filter((g) => g.endpoints.length > 0);
-        return {apis};
+        return {apis, ...order};
       },
       formatOutput: (output) => jsonResult(output),
     },
@@ -375,22 +398,27 @@ interface SecurityScanInput {
   ignore?: string[];
   minSeverity?: SecuritySeverity;
   excludeReferenceCartridges?: boolean;
+  siteId?: string;
   includeSuppressed?: boolean;
   maxFindings?: number;
   projectDirectory?: string;
 }
 
-export function createSecurityScanTool(loadServices: () => Promise<Services> | Services): McpTool {
+export function createSecurityScanTool(
+  loadServices: () => Promise<Services> | Services,
+  resolver: CartridgePathResolver = defaultResolver,
+): McpTool {
   return createToolAdapter<SecurityScanInput, Record<string, unknown>>(
     {
       name: 'security_scan',
       effect: 'read',
       idempotent: true,
-      openWorld: false,
+      openWorld: true,
       description:
         'Scan cartridge code and site data for B2C Commerce security problems (preview): CSRF gaps, overrides that drop ' +
         'security middleware, query injection, open redirects, hardcoded credentials, OCAPI demo client ID, and more. ' +
-        'Offline; honors inline suppressions, the project baseline, and .b2c-security.json settings. Triage with skill://b2c-cli/b2c-security/SKILL.md.',
+        'Follows the site cartridge path; honors suppressions, baseline, and settings. ' +
+        'Triage with skill://b2c-cli/b2c-security/SKILL.md.',
       searchHint:
         'security vulnerabilities csrf xss injection secrets credentials audit lint sast ocapi permissions controllers',
       toolsets: ['CARTRIDGES', 'STOREFRONTNEXT'],
@@ -417,6 +445,7 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
           .optional()
           .describe('Leave out findings in SFRA and SiteGenesis base cartridges (reported and tagged by default).'),
         includeSuppressed: z.boolean().optional().describe('Also return suppressed and baselined findings.'),
+        siteId: siteIdInput,
         maxFindings: z
           .number()
           .int()
@@ -441,6 +470,7 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
         if (fs.existsSync(baselineFile)) baseline = parseBaseline(fs.readFileSync(baselineFile, 'utf8'));
 
         const dwJsonSecurity = context.services.getResolvedConfig().values.security;
+        const resolved = await resolver.resolve(context.services, dir, args.siteId);
         const result = scanSecurity({
           root: dir,
           paths,
@@ -451,8 +481,9 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
             dwJsonSecurity === undefined ? undefined : validateSecurityConfig(dwJsonSecurity, 'dw.json "security"'),
           minSeverity: args.minSeverity,
           baseline,
-          cartridgePath: context.services.getResolvedConfig().values.cartridges,
-          siteId: context.services.getResolvedConfig().values.siteId,
+          cartridgePath: resolved.cartridgePath,
+          cartridgePathSource: resolved.cartridgePathSource,
+          siteId: resolved.siteId,
           excludeReferenceCartridges: args.excludeReferenceCartridges,
         });
 
@@ -482,6 +513,8 @@ export function createSecurityScanTool(loadServices: () => Promise<Services> | S
             byRule,
             ...(baseline ? {baselineFile: BASELINE_FILE} : {}),
           },
+          cartridgePath: result.cartridgePath,
+          ...describeCartridgeOrder(result.cartridgeOrder, resolved),
           findings: [...shown]
             .sort(
               (a, b) =>

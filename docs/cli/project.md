@@ -18,7 +18,7 @@ Results follow your cartridge path, the same order the platform uses for `*/cart
 2. A site's cartridge path from a site import in the project (`sites/<site-id>/site.xml`, for example in a site template or a migration). When there are several, the newest one is used. With several sites, set `siteId` (or `SFCC_SITE_ID`) to choose one.
 3. The order the cartridges are found on disk, with `app_storefront_base` and `modules` last.
 
-`b2c project index` shows which one it used. For accurate results, set `cartridges` to your site's cartridge path.
+`b2c project index` shows which one it used. For accurate results, set `cartridges` to your site's cartridge path. The CLI doesn't read the cartridge path from the instance; the [MCP project tools](../mcp/toolsets.md#project) can.
 
 List commands are for finding things quickly; `b2c project endpoints get` drills into one endpoint.
 

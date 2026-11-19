@@ -23,6 +23,15 @@ export function loadProjectIndex(
 /** One line saying where the cartridge order came from, for human-readable output. */
 export function describeCartridgeOrder(index: ProjectIndex): string {
   const order = index.cartridgeOrder;
+  const notOnPath = order?.notOnPath?.length ? `; not on the path: ${listNames(order.notOnPath)}` : '';
+  return describeSource(order) + notOnPath;
+}
+
+function listNames(names: readonly string[], max = 10): string {
+  return names.length > max ? `${names.slice(0, max).join(', ')} and ${names.length - max} more` : names.join(', ');
+}
+
+function describeSource(order: ProjectIndex['cartridgeOrder']): string {
   switch (order?.source) {
     case 'configured': {
       return 'from configuration (cartridges in dw.json or SFCC_CARTRIDGES)';
