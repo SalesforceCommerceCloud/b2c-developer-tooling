@@ -82,7 +82,7 @@ The **Cartridges** view lists cartridges in cartridge path order, which IntelliS
 
 ### Endpoints
 
-The **Endpoints** view shows what your cartridges expose and what runs for each request, using the same cartridge order as the **Cartridges** view:
+The **Endpoints** view shows what your cartridges expose and what runs for each request, using the same cartridge order as the **Cartridges** view. Only cartridges on the cartridge path are included unless you turn on **Include Cartridges Not on the Path** (see [cartridge order](../guide/ide-integration.md)):
 
 - **Controllers**: every SFRA and SiteGenesis controller endpoint (`Cart-AddProduct`) with the methods it accepts and whether it requires HTTPS, a logged-in customer, and a CSRF token. Expand an SFRA endpoint to see the middleware and handlers that run, in order and with the cartridge each comes from; the route event listeners they register with `this.on('route:BeforeComplete', ...)`, which run after the chain; and the `server.get`/`post`/`append`/`prepend`/`replace` statements across cartridges that built it. Endpoints that accept POST without a CSRF check, or whose `server.replace()` dropped security middleware, are marked with a warning.
 - **Custom APIs**: each API's endpoints with method, path, security scheme, and scopes from `schema.yaml`, linked to the implementing function. Missing operations, missing `.public = true`, and APIs defined in more than one cartridge are flagged.

@@ -20,6 +20,8 @@ Results follow your cartridge path, the same order the platform uses for `*/cart
 
 `b2c project index` shows which one it used. For accurate results, set `cartridges` to your site's cartridge path. The CLI doesn't read the cartridge path from the instance; the [MCP project tools](../mcp/toolsets.md#project) can.
 
+Only cartridges on the path are used: the site doesn't run the others, so their controllers, overlays, hooks, Custom APIs, and job steps are left out, and `b2c project index` lists them as not on the path. Pass `--all-cartridges` to any `b2c project` command to include them after the path cartridges, as if the site ran them all. With a guessed order, every cartridge is used.
+
 List commands are for finding things quickly; `b2c project endpoints get` drills into one endpoint.
 
 ## b2c project endpoints list

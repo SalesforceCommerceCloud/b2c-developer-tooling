@@ -13,7 +13,7 @@ import {
   type IndexedHook,
 } from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {allCartridgesFlag, displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 /** One extension point in `b2c project hooks` output. */
 export interface HookChainResult extends Omit<HookChain, 'registrations'> {
@@ -45,6 +45,7 @@ export default class ProjectHooksList extends BaseCommand<typeof ProjectHooksLis
   ];
 
   static flags = {
+    'all-cartridges': allCartridgesFlag,
     ...BaseCommand.baseFlags,
     issues: Flags.boolean({description: 'Only extension points or registrations with issues', default: false}),
   };
@@ -58,6 +59,7 @@ export default class ProjectHooksList extends BaseCommand<typeof ProjectHooksLis
       [],
       projectRoot(this.resolvedConfig),
       this.resolvedConfig.values.siteId,
+      flags['all-cartridges'],
     );
     const filter = args.filter?.toLowerCase();
     const hooks = hookChains(index)

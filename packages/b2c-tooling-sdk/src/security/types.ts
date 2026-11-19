@@ -92,6 +92,12 @@ export interface SecurityFinding {
    * fix it with an overlay cartridge).
    */
   referenceCartridge?: string;
+  /**
+   * Set to the cartridge name when the file is in a cartridge that isn't on the cartridge path the scan used.
+   * The site doesn't run that code; route rules can't see how it would compose, so treat these findings as
+   * lower priority unless the cartridge is on another site's path.
+   */
+  notOnPathCartridge?: string;
 }
 
 /** Returns true when `severity` is at least as severe as `threshold`. */

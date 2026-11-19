@@ -11,7 +11,7 @@ import {
   type IndexedCustomApiEndpoint,
 } from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {allCartridgesFlag, displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 type Row = IndexedCustomApiEndpoint & {implementationPath?: string; apiIssue?: string};
 
@@ -45,6 +45,7 @@ export default class ProjectApisList extends BaseCommand<typeof ProjectApisList>
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> loyalty --json'];
 
   static flags = {
+    'all-cartridges': allCartridgesFlag,
     ...BaseCommand.baseFlags,
     issues: Flags.boolean({description: 'Only APIs or endpoints with problems', default: false}),
     extended: Flags.boolean({char: 'x', description: 'Show extended columns (implementation)', default: false}),
@@ -59,6 +60,7 @@ export default class ProjectApisList extends BaseCommand<typeof ProjectApisList>
       [],
       projectRoot(this.resolvedConfig),
       this.resolvedConfig.values.siteId,
+      flags['all-cartridges'],
     );
     const filter = args.filter?.toLowerCase();
     const apis = customApiGroups(index)

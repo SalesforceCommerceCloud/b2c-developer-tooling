@@ -189,10 +189,15 @@ export function describeCartridgeOrder(
     }
   }
   const notOnPath = order?.notOnPath?.length ?? 0;
-  if (notOnPath > 0 && order?.source !== 'discovery') {
+  if (notOnPath > 0 && order?.allCartridges) {
+    hints.push(
+      `allCartridges: ${notOnPath} cartridge${notOnPath === 1 ? '' : 's'} not on the path (notOnPath) are included after it; ` +
+        'the site does not run them, so results may show routes and hooks the site does not have.',
+    );
+  } else if (notOnPath > 0 && order?.source !== 'discovery') {
     hints.push(
       `${notOnPath} local cartridge${notOnPath === 1 ? ' is' : 's are'} not on this cartridge path (notOnPath); ` +
-        'the site does not run their code. If the user asks about one, it is likely meant for another site: pass that siteId.',
+        'the site does not run their code, so they are left out. For another site, pass its siteId; to include them, allCartridges.',
     );
   }
   return {cartridgePathSource: source, ...(hints.length > 0 ? {cartridgePathHint: hints.join(' ')} : {})};

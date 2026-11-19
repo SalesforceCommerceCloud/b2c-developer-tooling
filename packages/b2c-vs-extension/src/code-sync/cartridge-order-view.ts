@@ -12,6 +12,7 @@ import {
   describeOrderSource,
   moveCartridge,
   shiftCartridge,
+  INCLUDE_ALL_CARTRIDGES_SETTING,
 } from '../cartridges/cartridge-order.js';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import type {B2CExtensionConfig} from '../config-provider.js';
@@ -58,7 +59,8 @@ export function bindCartridgeOrderDisplay(
 ): vscode.Disposable {
   const update = () => {
     const info = cartridgeService.getOrderInfo();
-    setCartridgeViewLabel(treeView, 'order', describeOrderSource(info));
+    const includeAll = vscode.workspace.getConfiguration('b2c-dx').get<boolean>(INCLUDE_ALL_CARTRIDGES_SETTING, false);
+    setCartridgeViewLabel(treeView, 'order', describeOrderSource(info) + (includeAll ? ' · all cartridges' : ''));
     void vscode.commands.executeCommand('setContext', 'b2c-dx.cartridgeOrderSource', info.source);
     // Only speak up when we tried the instance and fell back to a guess.
     treeView.message =
@@ -68,7 +70,12 @@ export function bindCartridgeOrderDisplay(
         : undefined;
   };
   update();
-  return cartridgeService.onDidChange(update);
+  return vscode.Disposable.from(
+    cartridgeService.onDidChange(update),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration(`b2c-dx.${INCLUDE_ALL_CARTRIDGES_SETTING}`)) update();
+    }),
+  );
 }
 
 /** Commands for the cartridge order: move up/down, reset, and choose the site. */
@@ -87,7 +94,16 @@ export function registerCartridgeOrderCommands(
     registerSafeCommand('b2c-dx.cartridges.moveDown', shift(1)),
     registerSafeCommand('b2c-dx.cartridges.resetOrder', () => cartridgeService.resetManualOrder()),
     registerSafeCommand('b2c-dx.cartridges.chooseOrderSite', () => chooseOrderSite(cartridgeService, configProvider)),
+    registerSafeCommand('b2c-dx.cartridges.includeAllCartridges', () => setIncludeAll(true)),
+    registerSafeCommand('b2c-dx.cartridges.onlyCartridgePath', () => setIncludeAll(false)),
   ];
+}
+
+/** Sets the include-all toggle for this workspace (the index and views refresh on the setting change). */
+async function setIncludeAll(value: boolean): Promise<void> {
+  await vscode.workspace
+    .getConfiguration('b2c-dx')
+    .update(INCLUDE_ALL_CARTRIDGES_SETTING, value, vscode.ConfigurationTarget.Workspace);
 }
 
 async function chooseOrderSite(cartridgeService: CartridgeService, configProvider: B2CExtensionConfig): Promise<void> {

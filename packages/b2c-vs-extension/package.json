@@ -334,6 +334,11 @@
           "default": true,
           "description": "Provide a document formatter for ISML files (Format Document / Format Selection), using the same engine as VS Code's built-in HTML formatter."
         },
+        "b2c-dx.cartridges.includeAllCartridges": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include cartridges that aren't on the cartridge path in routes, hooks, and the Endpoints view, after the path cartridges (as if the site ran them all). Off by default: only the site's (or configured) cartridge path is used."
+        },
         "b2c-dx.isml.highlightTags": {
           "type": "boolean",
           "default": true,
@@ -1001,6 +1006,18 @@
         "command": "b2c-dx.cartridges.resetOrder",
         "title": "Reset Cartridge Order",
         "icon": "$(discard)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
+        "command": "b2c-dx.cartridges.includeAllCartridges",
+        "title": "Include Cartridges Not on the Path",
+        "icon": "$(eye-closed)",
+        "category": "B2C DX - Cartridges"
+      },
+      {
+        "command": "b2c-dx.cartridges.onlyCartridgePath",
+        "title": "Use Only the Cartridge Path",
+        "icon": "$(eye)",
         "category": "B2C DX - Cartridges"
       },
       {
@@ -1802,6 +1819,26 @@
           "command": "b2c-dx.cartridges.chooseOrderSite",
           "when": "view == b2cCartridgeExplorer",
           "group": "2_order@2"
+        },
+        {
+          "command": "b2c-dx.cartridges.includeAllCartridges",
+          "when": "view == b2cCartridgeExplorer && !config.b2c-dx.cartridges.includeAllCartridges",
+          "group": "2_order@3"
+        },
+        {
+          "command": "b2c-dx.cartridges.onlyCartridgePath",
+          "when": "view == b2cCartridgeExplorer && config.b2c-dx.cartridges.includeAllCartridges",
+          "group": "2_order@3"
+        },
+        {
+          "command": "b2c-dx.cartridges.includeAllCartridges",
+          "when": "view == b2cEndpointsExplorer && !config.b2c-dx.cartridges.includeAllCartridges",
+          "group": "navigation@8"
+        },
+        {
+          "command": "b2c-dx.cartridges.onlyCartridgePath",
+          "when": "view == b2cEndpointsExplorer && config.b2c-dx.cartridges.includeAllCartridges",
+          "group": "navigation@8"
         },
         {
           "command": "b2c-dx.endpoints.filter",

@@ -87,6 +87,21 @@ export function resolveCartridgeOrder<T extends {name: string}>(
   return {cartridges: orderCartridges(discovered), source: 'guessed'};
 }
 
+/**
+ * The cartridge names on the site's cartridge path, when the order comes from one (configuration, the
+ * instance, or a site file). Undefined for a manual or guessed order, where every cartridge counts.
+ */
+export function cartridgePathNames(info: {
+  source: CartridgeOrderSource;
+  path?: readonly string[];
+}): Set<string> | undefined {
+  if (info.source !== 'config' && info.source !== 'instance' && info.source !== 'site-file') return undefined;
+  return info.path && info.path.length > 0 ? new Set(info.path) : undefined;
+}
+
+/** Setting: index cartridges that aren't on the cartridge path too (`b2c-dx.cartridges.includeAllCartridges`). */
+export const INCLUDE_ALL_CARTRIDGES_SETTING = 'cartridges.includeAllCartridges';
+
 /** A site and its cartridge path, as candidates for {@link pickSiteForCartridges}. */
 export interface SiteCartridgePath {
   siteId: string;

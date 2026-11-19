@@ -267,6 +267,27 @@ describe('tools/project', () => {
       expect(out.cartridgePathHint).to.include('1 local cartridge is not on this cartridge path');
     });
 
+    it('leaves cartridges off the site path out of the index and explains missing endpoints', async () => {
+      const tool = createProjectInspectTool(servicesWith({}, instance()), new CartridgePathResolver(backend));
+      const list = json(await tool.handler({aspect: 'hooks', siteId: 'Other'}));
+      expect(list.hooks).to.deep.equal([]);
+      // The base still serves Account-Save; app_custom's replace isn't on Other's path.
+      const save = json(await tool.handler({aspect: 'endpoint', id: 'Account-Save', siteId: 'Other'}));
+      expect(save.endpoint.steps.map((s: {cartridge: string}) => s.cartridge)).to.deep.equal(['app_storefront_base']);
+      write(
+        'cartridges/app_custom/cartridge/controllers/Wishlist.js',
+        "var server = require('server');\nserver.get('Show', function (req, res, next) { next(); });\nmodule.exports = server.exports();",
+      );
+      const off = errorText(await tool.handler({aspect: 'endpoint', id: 'Wishlist-Show', siteId: 'Other'}));
+      expect(off).to.include('only defined in app_custom, which is not on the cartridge path');
+      const all = json(
+        await tool.handler({aspect: 'endpoint', id: 'Wishlist-Show', siteId: 'Other', allCartridges: true}),
+      );
+      expect(all.endpoint.cartridge).to.equal('app_custom');
+      expect(all.cartridgePathSource).to.include({allCartridges: true});
+      expect(all.cartridgePathHint).to.include('are included after it');
+    });
+
     it('uses configured cartridges without an instance lookup unless siteId is given', async () => {
       const resolver = new CartridgePathResolver(backend);
       const tool = createProjectInspectTool(

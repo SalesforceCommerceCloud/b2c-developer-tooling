@@ -56,6 +56,7 @@ interface ProjectInspectInput {
   uses?: string;
   issuesOnly?: boolean;
   siteId?: string;
+  allCartridges?: boolean;
   projectDirectory?: string;
 }
 
@@ -82,10 +83,16 @@ const siteIdInput = z
     'Site whose cartridge path to read live from the instance (overrides configured cartridges). See cartridgePathHint.',
   );
 
+const allCartridgesInput = z
+  .boolean()
+  .optional()
+  .describe('Also index cartridges not on the cartridge path, after it (as if the site ran them). Default false.');
+
 /** Builds the index for the project directory, ordered by the resolved cartridge path. */
-function loadIndex(projectDirectory: string, resolved: ResolvedCartridgePath): ProjectIndex {
+function loadIndex(projectDirectory: string, resolved: ResolvedCartridgePath, allCartridges?: boolean): ProjectIndex {
   return buildProjectIndex({
     root: projectDirectory,
+    includeAllCartridges: allCartridges,
     cartridgePath: resolved.cartridgePath,
     cartridgePathSource: resolved.cartridgePathSource,
     siteId: resolved.siteId,
@@ -105,6 +112,13 @@ function fileRef(
     ? path.relative(projectDirectory, path.join(src, relPath)).split(path.sep).join('/')
     : `${cartridge}/${relPath}`;
   return line ? `${file}:${line}` : file;
+}
+
+/** A cartridge off the cartridge path that has a controller file for `controller`, if any. */
+function offPathController(index: ProjectIndex, controller: string): string | undefined {
+  return index.otherCartridges?.find((c) =>
+    ['.js', '.ds'].some((ext) => fs.existsSync(path.join(c.src, 'cartridge', 'controllers', controller + ext))),
+  )?.name;
 }
 
 function endpointDetail(index: ProjectIndex, dir: string, e: IndexedEndpoint) {
@@ -198,6 +212,7 @@ export function createProjectInspectTool(
           .describe('endpoints: only endpoints whose middleware contains this text, such as "userLoggedIn" or "csrf".'),
         issuesOnly: z.boolean().optional().describe('hooks, customApis, jobSteps: only items with issues.'),
         siteId: siteIdInput,
+        allCartridges: allCartridgesInput,
       },
       async execute(args, context) {
         const aspect = args.aspect ?? 'summary';
@@ -205,7 +220,7 @@ export function createProjectInspectTool(
           throw new Error('aspect "endpoint" requires id (for example Cart-AddProduct).');
         const dir = context.services.resolveProjectDirectory(args.projectDirectory).path;
         const resolved = await resolver.resolve(context.services, dir, args.siteId);
-        const index = loadIndex(dir, resolved);
+        const index = loadIndex(dir, resolved, args.allCartridges);
         const order = describeCartridgeOrder(index.cartridgeOrder, resolved);
         const filter = args.filter?.toLowerCase();
         const matches = (text: string) => !filter || text.toLowerCase().includes(filter);
@@ -239,6 +254,13 @@ export function createProjectInspectTool(
           const endpoint = endpoints.find((e) => e.id.toLowerCase() === args.id!.toLowerCase());
           if (!endpoint) {
             const prefix = args.id!.split('-')[0].toLowerCase();
+            const offPath = offPathController(index, args.id!.split('-')[0]);
+            if (offPath) {
+              throw new Error(
+                `Endpoint "${args.id}" is only defined in ${offPath}, which is not on the cartridge path, so the site ` +
+                  `does not serve it. If it belongs to another site, pass that site's siteId, or pass allCartridges.`,
+              );
+            }
             const similar = endpoints
               .filter((e) => e.id.toLowerCase().startsWith(prefix))
               .map((e) => e.id)
@@ -399,6 +421,7 @@ interface SecurityScanInput {
   minSeverity?: SecuritySeverity;
   excludeReferenceCartridges?: boolean;
   siteId?: string;
+  allCartridges?: boolean;
   includeSuppressed?: boolean;
   maxFindings?: number;
   projectDirectory?: string;
@@ -446,6 +469,7 @@ export function createSecurityScanTool(
           .describe('Leave out findings in SFRA and SiteGenesis base cartridges (reported and tagged by default).'),
         includeSuppressed: z.boolean().optional().describe('Also return suppressed and baselined findings.'),
         siteId: siteIdInput,
+        allCartridges: allCartridgesInput,
         maxFindings: z
           .number()
           .int()
@@ -483,6 +507,7 @@ export function createSecurityScanTool(
           baseline,
           cartridgePath: resolved.cartridgePath,
           cartridgePathSource: resolved.cartridgePathSource,
+          includeAllCartridges: args.allCartridges,
           siteId: resolved.siteId,
           excludeReferenceCartridges: args.excludeReferenceCartridges,
         });
@@ -508,6 +533,7 @@ export function createSecurityScanTool(
             suppressed: result.findings.filter((f) => f.suppression).length,
             baselined: result.findings.filter((f) => f.baselined && !f.suppression).length,
             inReferenceCartridges: open.filter((f) => f.referenceCartridge).length,
+            ...(result.notOnPathFindings > 0 ? {notOnPath: open.filter((f) => f.notOnPathCartridge).length} : {}),
             ...(result.hiddenReferenceFindings > 0 ? {hiddenReferenceFindings: result.hiddenReferenceFindings} : {}),
             bySeverity,
             byRule,
@@ -532,6 +558,7 @@ export function createSecurityScanTool(
               remediation: f.remediation,
               docsUrl: f.docsUrl,
               ...(f.referenceCartridge ? {referenceCartridge: f.referenceCartridge} : {}),
+              ...(f.notOnPathCartridge ? {notOnPathCartridge: f.notOnPathCartridge} : {}),
               ...(f.suppression ? {suppressed: f.suppression.reason ?? true} : {}),
               ...(f.baselined ? {baselined: true} : {}),
             })),

@@ -76,6 +76,8 @@ export interface SecurityScanOptions {
   baseline?: SecurityBaseline;
   /** Cartridge path order (names) used to compose routes across cartridges. */
   cartridgePath?: string[];
+  /** Index every project cartridge, not just those on the path (see `BuildProjectIndexOptions.includeAllCartridges`). */
+  includeAllCartridges?: boolean;
   /** Where `cartridgePath` came from (see `BuildProjectIndexOptions.cartridgePathSource`). */
   cartridgePathSource?: CartridgeOrder;
   /** Without `cartridgePath`: the site whose cartridge path to read from the project's site.xml files. */
@@ -116,6 +118,8 @@ export interface SecurityScanResult {
   hiddenReferenceFindings: number;
   /** Endpoints in the project index the rules used. */
   indexedEndpoints: number;
+  /** Findings in cartridges that aren't on the cartridge path (see `SecurityFinding.notOnPathCartridge`). */
+  notOnPathFindings: number;
   /** Cartridge path order the rules composed routes with, and where it came from. */
   cartridgePath: string[];
   cartridgeOrder?: CartridgeOrder;
@@ -275,9 +279,11 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
       paths: paths.filter((p) => path.resolve(p) !== root),
       cartridgePath: options.cartridgePath,
       cartridgePathSource: options.cartridgePathSource,
+      includeAllCartridges: options.includeAllCartridges,
       siteId: options.siteId,
     });
   const resolver = new CartridgeResolver(projectIndex.cartridges, createNodeFileSystemHost());
+  const offPath = new CartridgeResolver(projectIndex.otherCartridges ?? [], createNodeFileSystemHost());
   const host = createNodeFileSystemHost();
   const constantsCache = new Map<string, Map<string, string>>();
   const moduleConstant = (fromFile: string, specifier: string, property: string): string | undefined => {
@@ -299,7 +305,9 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     const fileFindings = scanSecurityText(text, relativeTo(file), scriptRules, errors, {filename: file, settings});
-    const owner = resolver.ownerOf(file)?.name;
+    const offPathOwner = offPath.ownerOf(file)?.name;
+    if (offPathOwner) for (const f of fileFindings) f.notOnPathCartridge = offPathOwner;
+    const owner = resolver.ownerOf(file)?.name ?? offPathOwner;
     if (owner && REFERENCE_CARTRIDGES.has(owner)) {
       if (options.excludeReferenceCartridges) {
         hiddenReferenceFindings += fileFindings.length;
@@ -328,6 +336,7 @@ export function scanSecurity(options: SecurityScanOptions = {}): SecurityScanRes
     hiddenReferenceFindings,
     indexedEndpoints: projectIndex.endpoints.length,
     cartridgePath: projectIndex.cartridges.map((c) => c.name),
+    notOnPathFindings: result.filter((f) => f.notOnPathCartridge).length,
     ...(projectIndex.cartridgeOrder ? {cartridgeOrder: projectIndex.cartridgeOrder} : {}),
     ...(loaded ? {configFile: loaded.file} : {}),
   };

@@ -9,7 +9,7 @@ Use `b2c project` (preview) to answer questions about a project's storefront cod
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead. Add `--json` to any command for structured output.
 
-> **MCP parity:** If the `b2c-dx-mcp` server is connected, `project_inspect` covers these commands: `aspect: "summary"` (`b2c project index`, plus what each aspect returns), `"endpoints"` (with `filter`, `cartridge`, `uses`), `"endpoint"` with `id`, `"hooks"`, `"customApis"`, and `"jobSteps"`. Unlike the CLI, it can read the cartridge path live from the instance: pass `siteId` for a specific site. Every result has `cartridgePathSource` (`instance`, `configured`, `site-file`, or `discovery`); when it isn't `instance` or `configured`, follow `cartridgePathHint` and say where the order came from.
+> **MCP parity:** If the `b2c-dx-mcp` server is connected, `project_inspect` covers these commands: `aspect: "summary"` (`b2c project index`, plus what each aspect returns), `"endpoints"` (with `filter`, `cartridge`, `uses`), `"endpoint"` with `id`, `"hooks"`, `"customApis"`, and `"jobSteps"`. Unlike the CLI, it can read the cartridge path live from the instance: pass `siteId` for a specific site. Every result has `cartridgePathSource` (`instance`, `configured`, `site-file`, or `discovery`); when it isn't `instance` or `configured`, follow `cartridgePathHint` and say where the order came from. Only cartridges on the path are indexed (others are in `notOnPath`); pass `allCartridges: true` to include them.
 
 ## Get the cartridge path right first
 
@@ -19,7 +19,7 @@ Results depend on cartridge order. The CLI uses the `cartridges` value from `dw.
 b2c project index        # prints "Cartridge path: a:b:c" and "Order: from site X in <file>"
 ```
 
-With `--json`, `cartridgeOrder.source` is `configured`, `site-file`, or `discovery`. If the order is a guess or doesn't match the site, ask the user for the site's cartridge path (or read it with `b2c sites cartridges list --site-id <site>`) and set `cartridges` in `dw.json` before drawing conclusions about overlays.
+With `--json`, `cartridgeOrder.source` is `configured`, `site-file`, or `discovery`. If the order is a guess or doesn't match the site, ask the user for the site's cartridge path (or read it with `b2c sites cartridges list --site-id <site>`) and set `cartridges` in `dw.json` before drawing conclusions about overlays. Cartridges not on the path are left out of endpoints and hooks (the site doesn't run them); `b2c project index` lists them, and `--all-cartridges` includes them after the path.
 
 ## Endpoints and what runs for them
 

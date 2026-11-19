@@ -232,12 +232,14 @@ export interface CartridgeOrder {
   /** For `site-file`: the file, relative to the project root. */
   file?: string;
   /**
-   * Cartridges in the project that the cartridge path doesn't name. The index still includes them,
-   * after the named cartridges, but the site doesn't run their code.
+   * Cartridges in the project that the cartridge path doesn't name. The site doesn't run their code, so they
+   * are left out of the index (see {@link ProjectIndex.otherCartridges}) unless `includeAllCartridges` is set.
    */
   notOnPath?: string[];
   /** For `instance` and `site-file`: other sites (on the instance, or in the project) with a different cartridge path. */
   otherSites?: string[];
+  /** True when every project cartridge was indexed (`includeAllCartridges`), including those in `notOnPath`. */
+  allCartridges?: boolean;
 }
 
 /** A JSON-serializable model of a B2C Commerce project's server-side entry points. */
@@ -246,6 +248,12 @@ export interface ProjectIndex {
   cartridges: IndexedCartridge[];
   /** Where the cartridge order came from. */
   cartridgeOrder?: CartridgeOrder;
+  /**
+   * Cartridges found in the project but not on the cartridge path. They are not indexed: no endpoints, route
+   * steps, hooks, Custom APIs, or job steps come from them. Absent when the order is a guess or
+   * `includeAllCartridges` is set (all cartridges are used).
+   */
+  otherCartridges?: IndexedCartridge[];
   endpoints: IndexedEndpoint[];
   hooks: IndexedHook[];
   customApis: IndexedCustomApiEndpoint[];

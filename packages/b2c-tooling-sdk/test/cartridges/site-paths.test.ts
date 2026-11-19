@@ -91,8 +91,9 @@ describe('cartridges/site-paths', () => {
 
     it('lets a configured cartridge path win', () => {
       const index = buildProjectIndex({root: dir, cartridgePath: ['app_a', 'app_b']});
-      expect(index.cartridges.map((c) => c.name)).to.deep.equal(['app_a', 'app_b', 'app_storefront_base']);
+      expect(index.cartridges.map((c) => c.name)).to.deep.equal(['app_a', 'app_b']);
       expect(index.cartridgeOrder).to.deep.equal({source: 'configured', notOnPath: ['app_storefront_base']});
+      expect(index.otherCartridges?.map((c) => c.name)).to.deep.equal(['app_storefront_base']);
     });
 
     it('reports a caller-provided source, such as a path read from the instance', () => {
@@ -107,6 +108,54 @@ describe('cartridges/site-paths', () => {
         hostname: 'my-sandbox.example.com',
         notOnPath: ['app_b'],
       });
+    });
+
+    it('composes routes and hooks only from cartridges on the path', () => {
+      write(
+        'cartridges/app_b/cartridge/controllers/Cart.js',
+        [
+          "var server = require('server');",
+          'server.extend(module.superModule);',
+          "server.append('Show', function (req, res, next) { next(); });",
+          'module.exports = server.exports();',
+        ].join('\n'),
+      );
+      write(
+        'cartridges/app_b/cartridge/controllers/Wishlist.js',
+        "var server = require('server');\nserver.get('Show', function () {});\nmodule.exports = server.exports();",
+      );
+      write('cartridges/app_b/package.json', JSON.stringify({hooks: './hooks.json'}));
+      write(
+        'cartridges/app_b/hooks.json',
+        JSON.stringify({hooks: [{name: 'dw.order.calculate', script: './cartridge/scripts/calc'}]}),
+      );
+      write('cartridges/app_b/cartridge/scripts/calc.js', 'exports.calculate = function () {};');
+      write(
+        'cartridges/app_storefront_base/cartridge/controllers/Cart.js',
+        "var server = require('server');\nserver.get('Show', function () {});\nmodule.exports = server.exports();",
+      );
+
+      const onPath = buildProjectIndex({root: dir, cartridgePath: ['app_a', 'app_storefront_base']});
+      const ids = onPath.endpoints.map((e) => e.id);
+      expect(ids).to.include('Cart-Show').and.not.include('Wishlist-Show');
+      const show = onPath.endpoints.find((e) => e.id === 'Cart-Show')!;
+      expect(show.steps?.map((s) => s.cartridge)).to.deep.equal(['app_storefront_base']);
+      expect(onPath.hooks.map((h) => h.cartridge)).to.not.include('app_b');
+
+      const all = buildProjectIndex({
+        root: dir,
+        cartridgePath: ['app_a', 'app_storefront_base'],
+        includeAllCartridges: true,
+      });
+      expect(all.cartridges.map((c) => c.name)).to.deep.equal(['app_a', 'app_storefront_base', 'app_b']);
+      expect(all.endpoints.map((e) => e.id)).to.include('Wishlist-Show');
+      expect(all.hooks.map((h) => h.cartridge)).to.include('app_b');
+      expect(all.cartridgeOrder).to.include({allCartridges: true});
+      expect(all.otherCartridges).to.equal(undefined);
+
+      const guessed = buildProjectIndex({root: dir, detectSitePath: false});
+      expect(guessed.endpoints.map((e) => e.id)).to.include('Wishlist-Show');
+      expect(guessed.otherCartridges).to.equal(undefined);
     });
 
     it('guesses when detection is off, and ignores a siteId the project has no file for', () => {
