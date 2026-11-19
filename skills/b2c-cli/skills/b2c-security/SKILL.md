@@ -9,7 +9,7 @@ Use `b2c security scan` (preview) to find security problems in B2C Commerce cart
 
 > **Tip:** If `b2c` is not installed globally, use `npx @salesforce/b2c-cli` instead.
 
-> **MCP parity:** If the `b2c-dx-mcp` server is connected, `security_scan` covers `b2c security scan` with the same rules, suppressions, and baseline.
+> **MCP parity:** If the `b2c-dx-mcp` server is connected, `security_scan` covers `b2c security scan` with the same rules, suppressions, and baseline. Route findings depend on cartridge order: check `cartridgePathSource` and pass `siteId` to use a site's path from the instance.
 
 ## Scan
 

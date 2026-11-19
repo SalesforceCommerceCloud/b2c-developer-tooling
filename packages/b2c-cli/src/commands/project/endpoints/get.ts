@@ -13,7 +13,7 @@ import {
   type IndexedEndpoint,
 } from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {allCartridgesFlag, displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 export default class ProjectEndpointsGet extends BaseCommand<typeof ProjectEndpointsGet> {
   static args = {
@@ -35,17 +35,18 @@ export default class ProjectEndpointsGet extends BaseCommand<typeof ProjectEndpo
     '<%= config.bin %> <%= command.id %> Account-SaveProfile --json',
   ];
 
-  static flags = {...BaseCommand.baseFlags};
+  static flags = {...BaseCommand.baseFlags, 'all-cartridges': allCartridgesFlag};
 
   protected operations = {loadProjectIndex};
 
   async run(): Promise<{endpoint: IndexedEndpoint; issues: string[]}> {
-    const {args} = await this.parse(ProjectEndpointsGet);
+    const {args, flags} = await this.parse(ProjectEndpointsGet);
     const index = this.operations.loadProjectIndex(
       this.resolvedConfig.values.cartridges,
       [],
       projectRoot(this.resolvedConfig),
       this.resolvedConfig.values.siteId,
+      flags['all-cartridges'],
     );
     const endpoints = controllerEndpoints(index);
     const endpoint = endpoints.find((e) => e.id.toLowerCase() === args.id.toLowerCase());

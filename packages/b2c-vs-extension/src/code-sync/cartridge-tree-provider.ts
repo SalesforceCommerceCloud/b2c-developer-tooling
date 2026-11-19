@@ -6,7 +6,13 @@
 import {type CartridgeMapping} from '@salesforce/b2c-tooling-sdk/operations/code';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {type CartridgeOrderSource, describeOrderSource} from '../cartridges/cartridge-order.js';
+import * as fs from 'fs';
+import {
+  type CartridgeOrderSource,
+  cartridgePathNames,
+  describeOrderSource,
+  INCLUDE_ALL_CARTRIDGES_SETTING,
+} from '../cartridges/cartridge-order.js';
 import type {CartridgeService} from '../cartridges/cartridge-service.js';
 import type {ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 import type {ProjectIndexService} from '../cartridges/project-index-service.js';
@@ -31,6 +37,8 @@ export type CartridgeCategory = 'controllers' | 'customApis' | 'hooks' | 'stepTy
 
 export type CartridgeNode =
   | CartridgeItem
+  | CartridgeNotOnPathItem
+  | InactiveControllerItem
   | CartridgeCategoryItem
   | ControllerFileItem
   | ControllerStatementItem
@@ -51,6 +59,8 @@ export interface CartridgeItemOrder {
 
 export class CartridgeItem extends vscode.TreeItem {
   readonly kind = 'cartridge' as const;
+  /** True when the order comes from a cartridge path that doesn't name this cartridge. */
+  readonly notOnPath: boolean;
 
   constructor(
     public readonly cartridge: CartridgeMapping,
@@ -62,13 +72,21 @@ export class CartridgeItem extends vscode.TreeItem {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const location = workspaceFolders ? path.relative(workspaceFolders[0].uri.fsPath, cartridge.src) : undefined;
     const notOnPath = order?.onPath === false;
+    this.notOnPath = notOnPath;
     this.description = [location, notOnPath ? 'not on cartridge path' : undefined].filter(Boolean).join(' · ');
 
-    this.iconPath = new vscode.ThemeIcon('package');
+    // Dimmed: the site doesn't run this cartridge's code, so it isn't part of routes or hooks.
+    this.iconPath = notOnPath
+      ? new vscode.ThemeIcon('package', new vscode.ThemeColor('disabledForeground'))
+      : new vscode.ThemeIcon('package');
+    // Keep 'cartridge' so deploy and other cartridge actions stay available.
     this.contextValue = 'cartridge';
     this.tooltip = order
       ? `${cartridge.src}\nPosition ${order.position} of ${order.total} · ${order.sourceLabel}` +
-        (notOnPath ? '\nNot named in the cartridge path this order comes from.' : '') +
+        (notOnPath
+          ? '\nNot on the cartridge path, so the site does not run its code. Its controllers, hooks, and APIs are ' +
+            'left out of routes and the Endpoints view.'
+          : '') +
         (order.source === 'guessed'
           ? '\nTo use the real order: choose a site for the cartridge order, set "cartridges" in your configuration, or drag to reorder.'
           : '')
@@ -96,6 +114,54 @@ const CATEGORY_EMPTY_HINTS: Record<CartridgeCategory, {label: string; descriptio
   hooks: {label: 'No hooks registered', description: 'Add a hooks.json to register one'},
   stepTypes: {label: 'No custom job steps registered', description: 'Add a steptypes.json in the cartridge root'},
 };
+
+/** First child of a cartridge that isn't on the cartridge path: says why it has no routes or hooks. */
+export class CartridgeNotOnPathItem extends vscode.TreeItem {
+  readonly kind = 'notOnPath' as const;
+
+  constructor(readonly cartridge: CartridgeMapping) {
+    super('Not on the cartridge path', vscode.TreeItemCollapsibleState.None);
+    this.id = `cart-not-on-path:${cartridge.src}`;
+    this.iconPath = new vscode.ThemeIcon('circle-slash', new vscode.ThemeColor('disabledForeground'));
+    this.description = 'the site does not run this code';
+    this.tooltip =
+      'This cartridge is not on the cartridge path the order comes from, so its controllers, hooks, and Custom APIs ' +
+      'are not part of any route. Choose another site for the cartridge order if it belongs to one.';
+    this.contextValue = 'cartridge-not-on-path-info';
+  }
+}
+
+/** A controller file in a cartridge that isn't on the path: opens the file; no route composition. */
+export class InactiveControllerItem extends vscode.TreeItem {
+  readonly kind = 'inactiveController' as const;
+
+  constructor(
+    readonly cartridge: CartridgeMapping,
+    relPath: string,
+  ) {
+    super(relPath.split('/').at(-1) ?? relPath, vscode.TreeItemCollapsibleState.None);
+    this.id = `cart-inactive-controller:${cartridge.src}:${relPath}`;
+    this.description = 'inactive';
+    this.resourceUri = vscode.Uri.file(path.join(cartridge.src, relPath));
+    this.iconPath = new vscode.ThemeIcon('symbol-class', new vscode.ThemeColor('disabledForeground'));
+    this.contextValue = 'cartridge-controller-file-inactive';
+    this.command = openCommand(path.join(cartridge.src, relPath));
+  }
+}
+
+/** Controller files in a cartridge, relative to the cartridge root, read from disk. */
+function inactiveControllerFiles(cartridge: CartridgeMapping): string[] {
+  const dir = path.join(cartridge.src, 'cartridge', 'controllers');
+  try {
+    return fs
+      .readdirSync(dir)
+      .filter((f) => /\.(js|ds)$/.test(f))
+      .sort()
+      .map((f) => `cartridge/controllers/${f}`);
+  } catch {
+    return [];
+  }
+}
 
 /** Grouping node beneath a cartridge ("Controllers", "Hooks", "Custom APIs", "Custom Job Steps"). */
 export class CartridgeCategoryItem extends vscode.TreeItem {
@@ -238,6 +304,7 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
     private readonly indexService: ProjectIndexService,
   ) {
     this.cartridgesSub = cartridgeService.onDidChange(() => this._onDidChangeTreeData.fire());
+    // Index changes cover the include-all setting too (the index service rebuilds on it).
     this.indexSub = indexService.onDidChange(() => this._onDidChangeTreeData.fire());
   }
 
@@ -254,7 +321,10 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
       const cartridges = this.cartridgeService.getCartridges();
       const info = this.cartridgeService.getOrderInfo();
       const sourceLabel = describeOrderSource(info).replace(/^Order: /, 'order from ');
-      const checkPath = info.source === 'config' || info.source === 'instance';
+      const includeAll = vscode.workspace
+        .getConfiguration('b2c-dx')
+        .get<boolean>(INCLUDE_ALL_CARTRIDGES_SETTING, false);
+      const onPath = includeAll ? undefined : cartridgePathNames(info);
       return cartridges.map(
         (c, i) =>
           new CartridgeItem(c, {
@@ -262,9 +332,16 @@ export class CartridgeTreeProvider implements vscode.TreeDataProvider<CartridgeN
             total: cartridges.length,
             source: info.source,
             sourceLabel,
-            onPath: checkPath ? info.path?.includes(c.name) : undefined,
+            onPath: onPath ? onPath.has(c.name) : undefined,
           }),
       );
+    }
+
+    if (element instanceof CartridgeItem && element.notOnPath) {
+      return [
+        new CartridgeNotOnPathItem(element.cartridge),
+        ...inactiveControllerFiles(element.cartridge).map((f) => new InactiveControllerItem(element.cartridge, f)),
+      ];
     }
 
     if (element instanceof CartridgeItem) {

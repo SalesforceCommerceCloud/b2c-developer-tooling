@@ -7,7 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {BaseCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import type {IndexedJobStep} from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {allCartridgesFlag, displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 type Row = IndexedJobStep & {implementationPath?: string};
 
@@ -40,6 +40,7 @@ export default class ProjectJobStepsList extends BaseCommand<typeof ProjectJobSt
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> export --json'];
 
   static flags = {
+    'all-cartridges': allCartridgesFlag,
     ...BaseCommand.baseFlags,
     cartridge: Flags.string({description: 'Only step types registered by this cartridge'}),
     extended: Flags.boolean({char: 'x', description: 'Show extended columns (implementation)', default: false}),
@@ -54,6 +55,7 @@ export default class ProjectJobStepsList extends BaseCommand<typeof ProjectJobSt
       [],
       projectRoot(this.resolvedConfig),
       this.resolvedConfig.values.siteId,
+      flags['all-cartridges'],
     );
     const filter = args.filter?.toLowerCase();
     const jobSteps = index.jobSteps

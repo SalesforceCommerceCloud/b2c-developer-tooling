@@ -83,38 +83,46 @@ export function findSiteCartridgePaths(
   return [...latest.values()].sort((a, b) => a.siteId.localeCompare(b.siteId));
 }
 
-/** The site whose cartridge path was chosen by {@link selectSiteCartridgePath}, and why. */
-export interface SelectedSiteCartridgePath extends SiteCartridgePathFile {
+/** How {@link selectSiteCartridgePath} chose a site. */
+export interface SiteCartridgePathSelection {
   /**
-   * `siteId` when the requested site was found, `only` when the project has one
-   * site, `best-match` otherwise (including when the requested site isn't in the project).
+   * `siteId` when the requested site was found, `only` when there is one
+   * site, `best-match` otherwise (including when the requested site isn't listed).
    */
   selection: 'best-match' | 'only' | 'siteId';
   /** Other sites whose cartridge path differs, when the choice was a best match. */
   alternatives: string[];
 }
 
+/** The site whose cartridge path was chosen by {@link selectSiteCartridgePath}, and why. */
+export type SelectedSiteCartridgePath = SiteCartridgePathFile & SiteCartridgePathSelection;
+
 /**
- * Picks one site's cartridge path: the requested `siteId` when the project has
- * a file for it, else the only site, else the site whose path names the most
- * local cartridges (ties go to the first site ID alphabetically). A `siteId`
- * without a file (often a default for another project) falls through to the
+ * Picks one site's cartridge path: the requested `siteId` when it is listed,
+ * else the only site, else the site whose path names the most local
+ * cartridges (ties go to the first site ID alphabetically). A `siteId` that
+ * isn't listed (often a default for another project) falls through to the
  * automatic choice. Business Manager (`Sites-Site`) is never picked
  * automatically. Returns undefined when nothing matches.
+ *
+ * Works on site files from {@link findSiteCartridgePaths} or on any list of
+ * sites and their cartridge paths, such as the sites on an instance.
  */
-export function selectSiteCartridgePath(
-  sites: readonly SiteCartridgePathFile[],
+export function selectSiteCartridgePath<T extends {siteId: string; cartridges: readonly string[]}>(
+  sites: readonly T[],
   localNames: readonly string[],
   siteId?: string,
-): SelectedSiteCartridgePath | undefined {
+): (SiteCartridgePathSelection & T) | undefined {
   if (siteId) {
     const requested = sites.find((s) => s.siteId === siteId);
     if (requested) return {...requested, selection: 'siteId', alternatives: []};
   }
-  const candidates = sites.filter((s) => s.siteId !== BUSINESS_MANAGER_SITE_ID && s.cartridges.length > 0);
+  const candidates = [...sites]
+    .filter((s) => s.siteId !== BUSINESS_MANAGER_SITE_ID && s.cartridges.length > 0)
+    .sort((a, b) => a.siteId.localeCompare(b.siteId));
   if (candidates.length === 1) return {...candidates[0], selection: 'only', alternatives: []};
   const local = new Set(localNames);
-  let best: SiteCartridgePathFile | undefined;
+  let best: T | undefined;
   let bestScore = 0;
   for (const site of candidates) {
     const score = site.cartridges.filter((c) => local.has(c)).length;

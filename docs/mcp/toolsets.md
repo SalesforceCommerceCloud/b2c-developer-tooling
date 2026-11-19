@@ -272,11 +272,15 @@ See [file access](./security#instance-files).
 | `project_inspect` | Find controller endpoints, then show what runs for one across the cartridge path; hooks in cartridge path order, Custom APIs, and custom job steps. |
 | `security_scan`   | Find security problems in cartridge code and site data, such as POST routes without CSRF checks and OCAPI settings for the demo client ID.          |
 
-Your assistant can answer questions about your storefront code from its source: which cartridge serves an endpoint, which middleware and handlers run for it and in what order, whether an override dropped a security check, why a hook doesn't run, and where a Custom API is implemented. It can also scan the project for security problems specific to B2C Commerce and help fix them. Both tools read the cartridges and site data in your project directory and need no instance or credentials. Results follow the `cartridges` value in your configuration; set it to your site's cartridge path. The same information is available with [`b2c project`](../cli/project) and [`b2c security scan`](../cli/security); see [Code Security](../guide/code-security).
+Your assistant can answer questions about your storefront code from its source: which cartridge serves an endpoint, which middleware and handlers run for it and in what order, whether an override dropped a security check, why a hook doesn't run, and where a Custom API is implemented. It can also scan the project for security problems specific to B2C Commerce and help fix them. Both tools read the cartridges and site data in your project directory.
+
+Results follow your site's cartridge path. When the `cartridges` value isn't set in your configuration and SCAPI is configured (`shortCode`, `tenantId`, and an API client with a secret), the tools read the path live from the instance: the configured `siteId`, or the site whose path best matches your cartridges. Your assistant can pass `siteId` to read a specific site's path, which also overrides `cartridges`. Without SCAPI, the tools fall back to a site import file in the project (`sites/<site-id>/site.xml`), then a guess. Every result lists the cartridges it used, in order, in `cartridgePath`, and which source the order came from in `cartridgePathSource`. A site's path is read once and reused for 10 minutes.
+
+Only cartridges on the path are used. Cartridges in the project that aren't on it are listed in `cartridgePathSource.notOnPath` and left out of endpoints, hooks, and route rules, because the site doesn't run them; security findings in them are marked `notOnPathCartridge`. Your assistant can pass `allCartridges` to include them after the path cartridges. The same information is available with [`b2c project`](../cli/project) and [`b2c security scan`](../cli/security); see [Code Security](../guide/code-security).
 
 <ExamplePrompt>
 
-> What runs when a shopper posts to Cart-AddProduct, and which cartridge does each step come from?
+> What runs when a shopper posts to Cart-AddProduct on RefArch, and which cartridge does each step come from?
 
 </ExamplePrompt>
 

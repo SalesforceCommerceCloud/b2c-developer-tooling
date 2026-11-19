@@ -56,8 +56,21 @@ export interface BuildProjectIndexOptions {
   paths?: string[];
   /** Cartridges to index, in cartridge path order. Overrides discovery. */
   cartridges?: CartridgeLocation[];
+  /**
+   * Index every cartridge in the project, not just those on the cartridge path: path cartridges first in path
+   * order, then the rest in discovery order (as if the site ran them all). `notOnPath` is still reported.
+   * Defaults to false.
+   */
+  includeAllCartridges?: boolean;
+  /** With `cartridges`: cartridges in the project that aren't on the path, reported as {@link ProjectIndex.otherCartridges}. */
+  otherCartridges?: CartridgeLocation[];
   /** Cartridge path order (names), applied to discovered cartridges. */
   cartridgePath?: string[];
+  /**
+   * Where `cartridgePath` came from, reported as {@link ProjectIndex.cartridgeOrder}. Defaults to
+   * `{source: 'configured'}`; pass `{source: 'instance', siteId, hostname}` for a path read from an instance.
+   */
+  cartridgePathSource?: CartridgeOrder;
   /**
    * Without `cartridgePath` or `cartridges`, order by a site cartridge path found
    * in the project's site import files (`sites/<id>/site.xml`, the latest by
@@ -101,14 +114,21 @@ const SCRIPT_EXT = ['.js', '.ds'];
  */
 export function buildProjectIndex(options: BuildProjectIndexOptions = {}): ProjectIndex {
   const host = options.host ?? createNodeFileSystemHost();
-  const {cartridges, order} = options.cartridges
-    ? {cartridges: options.cartridges, order: {source: 'provided' as const}}
+  const {
+    cartridges,
+    order,
+    others = [],
+  } = options.cartridges
+    ? {cartridges: options.cartridges, order: {source: 'provided' as const}, others: options.otherCartridges}
     : discoverAll(options, host);
   const resolver = new CartridgeResolver(cartridges, host);
   const index: ProjectIndex = {
     version: 1,
     cartridges: cartridges.map((c) => ({name: c.name, src: toForwardSlashes(path.resolve(c.src))})),
     cartridgeOrder: order,
+    ...(others.length > 0
+      ? {otherCartridges: others.map((c) => ({name: c.name, src: toForwardSlashes(path.resolve(c.src))}))}
+      : {}),
     endpoints: [],
     hooks: [],
     customApis: [],
@@ -240,10 +260,38 @@ export function buildProjectIndex(options: BuildProjectIndexOptions = {}): Proje
   return index;
 }
 
+/**
+ * Splits discovered cartridges into those on the cartridge path, in path order, and the rest. Only cartridges
+ * on the path are composed: the site doesn't run the others, so they can't serve, extend, or register anything.
+ */
+function splitByPath(
+  discovered: readonly CartridgeLocation[],
+  cartridgePath: readonly string[],
+  includeAll = false,
+): {cartridges: CartridgeLocation[]; others: CartridgeLocation[]} {
+  if (includeAll) return {cartridges: orderCartridges(discovered, cartridgePath), others: []};
+  const onPath = new Set(cartridgePath);
+  return {
+    cartridges: orderCartridges(discovered, cartridgePath).filter((c) => onPath.has(c.name)),
+    others: orderCartridges(discovered.filter((c) => !onPath.has(c.name))),
+  };
+}
+
+/** Adds the names of local cartridges that `cartridgePath` doesn't name. */
+function withNotOnPath(
+  order: CartridgeOrder,
+  discovered: readonly CartridgeLocation[],
+  cartridgePath: readonly string[],
+): CartridgeOrder {
+  const onPath = new Set(cartridgePath);
+  const notOnPath = [...new Set(discovered.map((c) => c.name).filter((n) => !onPath.has(n)))];
+  return notOnPath.length > 0 ? {...order, notOnPath} : order;
+}
+
 function discoverAll(
   options: BuildProjectIndexOptions,
   host: CartridgeFileSystemHost,
-): {cartridges: CartridgeLocation[]; order: CartridgeOrder} {
+): {cartridges: CartridgeLocation[]; order: CartridgeOrder; others?: CartridgeLocation[]} {
   const roots = [options.root ?? process.cwd(), ...(options.paths ?? [])].map((r) => path.resolve(r));
   const found = new Map<string, CartridgeLocation>();
   for (const root of roots) {
@@ -254,7 +302,17 @@ function discoverAll(
   }
   const discovered = [...found.values()];
   if (options.cartridgePath && options.cartridgePath.length > 0) {
-    return {cartridges: orderCartridges(discovered, options.cartridgePath), order: {source: 'configured'}};
+    return {
+      ...splitByPath(discovered, options.cartridgePath, options.includeAllCartridges),
+      order: withNotOnPath(
+        {
+          ...(options.cartridgePathSource ?? {source: 'configured'}),
+          ...(options.includeAllCartridges ? {allCartridges: true} : {}),
+        },
+        discovered,
+        options.cartridgePath,
+      ),
+    };
   }
   if (options.detectSitePath !== false) {
     const site = selectSiteCartridgePath(
@@ -264,13 +322,18 @@ function discoverAll(
     );
     if (site) {
       return {
-        cartridges: orderCartridges(discovered, site.cartridges),
-        order: {
-          source: 'site-file',
-          siteId: site.siteId,
-          file: toForwardSlashes(path.relative(roots[0], site.file)),
-          ...(site.alternatives.length > 0 ? {otherSites: site.alternatives} : {}),
-        },
+        ...splitByPath(discovered, site.cartridges, options.includeAllCartridges),
+        order: withNotOnPath(
+          {
+            source: 'site-file',
+            siteId: site.siteId,
+            file: toForwardSlashes(path.relative(roots[0], site.file)),
+            ...(site.alternatives.length > 0 ? {otherSites: site.alternatives} : {}),
+            ...(options.includeAllCartridges ? {allCartridges: true} : {}),
+          },
+          discovered,
+          site.cartridges,
+        ),
       };
     }
   }

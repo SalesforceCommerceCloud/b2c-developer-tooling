@@ -8,14 +8,16 @@ description: Find and fix security problems in B2C Commerce storefront code (SFR
 Code security scanning is a preview. Rules, output fields, and flags may change before they are stable.
 :::
 
-`b2c security scan` checks your storefront's server-side code for security problems specific to B2C Commerce and the Script API:
+Code security scanning is static analysis built for B2C Commerce. It reads your project's cartridges and site data and reports patterns that commonly lead to vulnerabilities on the platform, each with a severity, a confidence, and a recommended fix. Run it from your AI assistant through the MCP server, from the terminal with `b2c security scan`, or in CI.
 
-- **CSRF:** SFRA and SiteGenesis POST routes without a CSRF token check, GET routes that change data, and `server.replace()` overrides that drop the CSRF, login, HTTPS, or method checks of the route they replace.
-- **Injection:** object query strings built by concatenation, file paths and upload names chosen by the client, request fields copied into persistent objects by key, and code built from strings at runtime.
-- **Site data and settings:** OCAPI settings that use the demo client ID `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` or grant every resource, plaintext service passwords and `http://` service URLs, credentials in preferences, secret attributes that aren't the password type, and Business Manager CSRF exemptions.
-- **Redirects, secrets, and data handling:** open redirects, hardcoded credentials, weak `dw.crypto` usage, cookies without Secure and HttpOnly, and personal data in logs.
+It understands how a storefront runs, not just the syntax of each file. It knows the Script API, SFRA and SiteGenesis routing, and how cartridges overlay each other on the cartridge path, so it can judge a route by everything that runs for it across your cartridges.
 
-The scan runs locally against your working tree, needs no instance or credentials, and takes well under a second for a typical storefront. See [Security Rules](./security-rules.md) for what each rule finds and how to fix it.
+It checks two kinds of input:
+
+- **Cartridge code:** the server-side JavaScript in your controllers, scripts, and models. Rules cover request handling and route protection (such as CSRF), injection, unsafe redirects, secrets in code, cryptography, cookies, and logging of personal data.
+- **Site data:** the configuration you import into an instance, such as service definitions, site preferences, attribute definitions, OCAPI settings, and Business Manager CSRF exemptions. Rules cover credentials stored in plain text, insecure endpoints, and overly broad access.
+
+The scan runs locally against your working tree, needs no instance or credentials, and takes well under a second for a typical storefront. See [Security Rules](./security-rules.md) for every rule, what it finds, and how to fix it.
 
 This page is about the security of your storefront code. For how the toolkit itself is built and published securely, see [Security](./security.md).
 
@@ -53,7 +55,7 @@ Read the code around a finding before changing it, then follow the fix in the [r
 
 Route rules understand SFRA controllers (`server.get`, `post`, and `use`, and `server.extend(module.superModule)` with `append`, `prepend`, and `replace`) and SiteGenesis controllers (`guard.ensure` filters). They look at each route the way your storefront serves it, across all your cartridges, so they can tell that an overlay cartridge adds a CSRF check to a base route, or that a `server.replace()` removed one.
 
-That depends on cartridge order. Set `cartridges` in `dw.json` (or `SFCC_CARTRIDGES`) to your site's cartridge path so overlays combine the way your storefront runs them; see [cartridge order](../cli/project.md#cartridge-order) for what's used when it isn't set:
+That depends on cartridge order. Set `cartridges` in `dw.json` (or `SFCC_CARTRIDGES`) to your site's cartridge path so overlays combine the way your storefront runs them; see [cartridge order](../cli/project.md#cartridge-order) for what's used when it isn't set. Through the MCP server, your assistant can also read the path live from the instance (see [Project code and security](../mcp/toolsets.md#project)):
 
 ```json
 {
@@ -143,7 +145,11 @@ steps:
 
 ## Use it with your AI assistant
 
-The `b2c-security` [agent skill](./agent-skills.md) teaches assistants to run the scan, triage findings by confidence, explain the impact, and apply the fixes from the rule reference. Install the `b2c-cli` skills and ask, for example, "check my cartridges for security issues".
+The [B2C DX MCP server](../mcp/) gives your assistant a `security_scan` tool (in the `CARTRIDGES` and `STOREFRONTNEXT` toolsets) that runs the same scan and returns structured findings. Paired with `project_inspect`, which shows everything that runs for a route across the cartridge path, the assistant can triage each finding against your code and apply the fix. See [Project code and security](../mcp/toolsets.md#project). Ask, for example:
+
+> Check my cartridges for security issues and fix the high-severity ones.
+
+The MCP server also serves the `b2c-security` skill, which guides the assistant through triaging findings by confidence and applying each rule's fix. If your assistant uses the CLI without the MCP server, install it as an [agent skill](./agent-skills.md).
 
 ## Use it from Node.js
 

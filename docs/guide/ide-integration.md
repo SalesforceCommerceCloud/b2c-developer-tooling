@@ -38,7 +38,9 @@ Resolution follows the order shown in the extension's **Cartridges** view, which
 3. **A site's cartridge path on your instance.** The extension uses the site set in **Choose Site for Cartridge Order…** in the view menu, then the `site-id` from your configuration, and otherwise the site whose cartridge path names the most of your local cartridges (never Business Manager). It reads the path in the background only when you use client credentials, so it never opens a login page on its own; with browser sign-in, choose a site to read it. The path is cached per workspace. If it can't be read, the view falls back quietly and says why.
 4. **A guess:** discovery order with known base cartridges (`app_storefront_base`, `modules`) last.
 
-The view's description shows which source is in use, and a cartridge's tooltip shows its position. Cartridges on disk that the chosen cartridge path doesn't name are listed last and marked **not on cartridge path**.
+The view's description shows which source is in use, and a cartridge's tooltip shows its position. Cartridges on disk that the chosen cartridge path doesn't name are listed last, with a dimmed icon, and marked **not on cartridge path**. The site doesn't run their code, so their controllers, overlays, hooks, and Custom APIs are left out of routes, the **Endpoints** view, and CodeLens; expand one to open its controller files.
+
+To see routes as if the site ran every cartridge, use **Include Cartridges Not on the Path** in the **Cartridges** or **Endpoints** view menu (setting `b2c-dx.cartridges.includeAllCartridges`). The order still follows the cartridge path, with the other cartridges after it. **Use Only the Cartridge Path** switches back.
 
 Editors that load the TypeScript plugin without the extension use the `cartridges` field from `dw.json`, then the guess.
 

@@ -18,7 +18,7 @@ import {
 } from '@salesforce/b2c-tooling-sdk/security';
 import {t, withDocs} from '../../i18n/index.js';
 import {loadBaseline, ruleFilterFlags, securityConfigFromDwJson} from '../../utils/security/index.js';
-import {projectRoot} from '../../utils/project/index.js';
+import {allCartridgesFlag, projectRoot} from '../../utils/project/index.js';
 
 const SEVERITY_COLORS: Record<SecuritySeverity, string> = {
   critical: 'red',
@@ -36,6 +36,8 @@ export interface SecurityScanResponse extends SecurityScanResult {
     baselined: number;
     /** Open findings inside SFRA and SiteGenesis reference cartridges. */
     reference: number;
+    /** Open findings in cartridges that aren't on the cartridge path. */
+    notOnPath: number;
     bySeverity: Record<SecuritySeverity, number>;
     baselineFile?: string;
     failed: boolean;
@@ -66,6 +68,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
   static flags = {
     ...BaseCommand.baseFlags,
     ...ruleFilterFlags,
+    'all-cartridges': allCartridgesFlag,
     format: Flags.string({
       description: 'Report format: table (readable), json, or sarif (for GitHub code scanning)',
       options: ['table', 'json', 'sarif'],
@@ -125,6 +128,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         minSeverity: flags.severity as SecuritySeverity | undefined,
         baseline: baselineInfo.baseline,
         cartridgePath: this.resolvedConfig.values.cartridges,
+        includeAllCartridges: flags['all-cartridges'],
         siteId: this.resolvedConfig.values.siteId,
         excludeReferenceCartridges: flags['exclude-reference-cartridges'],
       });
@@ -145,6 +149,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         suppressed: result.findings.filter((f) => f.suppression).length,
         baselined: result.findings.filter((f) => f.baselined && !f.suppression).length,
         reference: open.filter((f) => f.referenceCartridge).length,
+        notOnPath: open.filter((f) => f.notOnPathCartridge).length,
         bySeverity,
         baselineFile: baselineInfo.file,
         failed,
@@ -205,6 +210,15 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
           'commands.security.scan.reference',
           '{{count}} of the open findings are in SFRA or SiteGenesis reference cartridges. They affect any storefront that deploys those cartridges; fix them with an overlay cartridge, or leave them out with --exclude-reference-cartridges.',
           {count: summary.reference},
+        ),
+      );
+    }
+    if (summary.notOnPath > 0) {
+      ux.stdout(
+        t(
+          'commands.security.scan.notOnPath',
+          '{{count}} of the open findings are in cartridges that are not on the cartridge path; the site does not run that code.',
+          {count: summary.notOnPath},
         ),
       );
     }
@@ -279,6 +293,7 @@ export default class SecurityScan extends BaseCommand<typeof SecurityScan> {
         f.suppression ? 'suppressed' : undefined,
         f.baselined ? 'baselined' : undefined,
         f.referenceCartridge ? 'reference cartridge' : undefined,
+        f.notOnPathCartridge ? 'not on cartridge path' : undefined,
       ].filter(Boolean);
       const tag = tags.length > 0 ? ` [${tags.join(', ')}]` : '';
       ux.stdout(`  ${where}${severity}${f.ruleId.padEnd(24)} ${f.message}${tag}`);

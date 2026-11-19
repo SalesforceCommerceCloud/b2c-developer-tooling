@@ -217,19 +217,29 @@ export interface IndexedCartridge {
  * Where the index's cartridge order came from:
  *
  * - `configured`: the `cartridgePath` option (`cartridges` in dw.json or `SFCC_CARTRIDGES`).
+ * - `instance`: a site's cartridge path read from the instance (the caller passed it as `cartridgePath`).
  * - `provided`: the caller passed ordered cartridges (for example the VS Code Cartridges view order).
  * - `site-file`: a site's `<custom-cartridges>` in a site import file in the project
  *   (`sites/<id>/site.xml`, the latest by migration or import set timestamp).
  * - `discovery`: a guess: discovery order with known base cartridges last.
  */
 export interface CartridgeOrder {
-  source: 'configured' | 'discovery' | 'provided' | 'site-file';
-  /** For `site-file`: the site whose path was used. */
+  source: 'configured' | 'discovery' | 'instance' | 'provided' | 'site-file';
+  /** For `instance` and `site-file`: the site whose path was used. */
   siteId?: string;
+  /** For `instance`: the instance the path was read from. */
+  hostname?: string;
   /** For `site-file`: the file, relative to the project root. */
   file?: string;
-  /** For `site-file`: other sites in the project with a different cartridge path. */
+  /**
+   * Cartridges in the project that the cartridge path doesn't name. The site doesn't run their code, so they
+   * are left out of the index (see {@link ProjectIndex.otherCartridges}) unless `includeAllCartridges` is set.
+   */
+  notOnPath?: string[];
+  /** For `instance` and `site-file`: other sites (on the instance, or in the project) with a different cartridge path. */
   otherSites?: string[];
+  /** True when every project cartridge was indexed (`includeAllCartridges`), including those in `notOnPath`. */
+  allCartridges?: boolean;
 }
 
 /** A JSON-serializable model of a B2C Commerce project's server-side entry points. */
@@ -238,6 +248,12 @@ export interface ProjectIndex {
   cartridges: IndexedCartridge[];
   /** Where the cartridge order came from. */
   cartridgeOrder?: CartridgeOrder;
+  /**
+   * Cartridges found in the project but not on the cartridge path. They are not indexed: no endpoints, route
+   * steps, hooks, Custom APIs, or job steps come from them. Absent when the order is a guess or
+   * `includeAllCartridges` is set (all cartridges are used).
+   */
+  otherCartridges?: IndexedCartridge[];
   endpoints: IndexedEndpoint[];
   hooks: IndexedHook[];
   customApis: IndexedCustomApiEndpoint[];

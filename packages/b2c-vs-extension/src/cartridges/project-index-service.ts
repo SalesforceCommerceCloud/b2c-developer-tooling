@@ -4,6 +4,7 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import {buildProjectIndex, type ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
+import {cartridgePathNames, INCLUDE_ALL_CARTRIDGES_SETTING} from './cartridge-order.js';
 
 import * as vscode from 'vscode';
 
@@ -55,7 +56,12 @@ export class ProjectIndexService implements vscode.Disposable {
         watcher.onDidDelete(schedule),
       );
     }
-    this.disposables.push(cartridgeService.onDidChange(() => this.invalidate()));
+    this.disposables.push(
+      cartridgeService.onDidChange(() => this.invalidate()),
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration(`b2c-dx.${INCLUDE_ALL_CARTRIDGES_SETTING}`)) this.invalidate();
+      }),
+    );
   }
 
   dispose(): void {
@@ -69,8 +75,16 @@ export class ProjectIndexService implements vscode.Disposable {
     if (!this.index) {
       const started = Date.now();
       try {
-        const cartridges = this.cartridgeService.getCartridges().map((c) => ({name: c.name, src: c.src}));
-        this.index = buildProjectIndex({cartridges});
+        // Only cartridges on the site's cartridge path serve, extend, or register anything; list the rest separately.
+        const all = this.cartridgeService.getCartridges().map((c) => ({name: c.name, src: c.src}));
+        const includeAll = vscode.workspace
+          .getConfiguration('b2c-dx')
+          .get<boolean>(INCLUDE_ALL_CARTRIDGES_SETTING, false);
+        const onPath = includeAll ? undefined : cartridgePathNames(this.cartridgeService.getOrderInfo());
+        this.index = buildProjectIndex({
+          cartridges: onPath ? all.filter((c) => onPath.has(c.name)) : all,
+          otherCartridges: onPath ? all.filter((c) => !onPath.has(c.name)) : undefined,
+        });
         this.log?.appendLine(
           `[Endpoints] Indexed ${this.index.endpoints.length} endpoint(s), ${this.index.hooks.length} hook(s), ` +
             `${this.index.customApis.length} Custom API endpoint(s) in ${Date.now() - started} ms`,

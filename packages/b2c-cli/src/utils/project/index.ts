@@ -4,7 +4,15 @@
  * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
  */
 import path from 'node:path';
+import {Flags} from '@oclif/core';
 import {buildProjectIndex, type ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
+
+/** `--all-cartridges`: index every project cartridge, not just those on the cartridge path. */
+export const allCartridgesFlag = Flags.boolean({
+  description:
+    'Include cartridges that are not on the cartridge path, after the path cartridges (as if the site ran them all)',
+  default: false,
+});
 
 /**
  * Builds the project index for the project directory (`--project-directory`,
@@ -16,13 +24,26 @@ export function loadProjectIndex(
   extraPaths: string[] = [],
   root: string = process.cwd(),
   siteId?: string,
+  includeAllCartridges = false,
 ): ProjectIndex {
-  return buildProjectIndex({root, paths: extraPaths, cartridgePath, siteId});
+  return buildProjectIndex({root, paths: extraPaths, cartridgePath, siteId, includeAllCartridges});
 }
 
 /** One line saying where the cartridge order came from, for human-readable output. */
 export function describeCartridgeOrder(index: ProjectIndex): string {
   const order = index.cartridgeOrder;
+  const notOnPath = order?.notOnPath?.length
+    ? `; ${order.allCartridges ? 'included though not on the path' : 'not on the path'}: ${listNames(order.notOnPath)}` +
+      (order.allCartridges ? '' : ' (include them with --all-cartridges)')
+    : '';
+  return describeSource(order) + notOnPath;
+}
+
+function listNames(names: readonly string[], max = 10): string {
+  return names.length > max ? `${names.slice(0, max).join(', ')} and ${names.length - max} more` : names.join(', ');
+}
+
+function describeSource(order: ProjectIndex['cartridgeOrder']): string {
   switch (order?.source) {
     case 'configured': {
       return 'from configuration (cartridges in dw.json or SFCC_CARTRIDGES)';

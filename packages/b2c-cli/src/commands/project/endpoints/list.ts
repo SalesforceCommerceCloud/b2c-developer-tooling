@@ -7,7 +7,7 @@ import {Args, Flags} from '@oclif/core';
 import {BaseCommand, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {endpointSummaries, type EndpointSummary} from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {allCartridgesFlag, displayPath, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
 
 /** One row of `b2c project endpoints list`: the SDK summary with a display path. */
 export type EndpointListRow = EndpointSummary & {file: string};
@@ -49,6 +49,7 @@ export default class ProjectEndpointsList extends BaseCommand<typeof ProjectEndp
   ];
 
   static flags = {
+    'all-cartridges': allCartridgesFlag,
     ...BaseCommand.baseFlags,
     cartridge: Flags.string({
       description: 'Only endpoints this cartridge defines or changes (append, prepend, replace)',
@@ -68,6 +69,7 @@ export default class ProjectEndpointsList extends BaseCommand<typeof ProjectEndp
       [],
       projectRoot(this.resolvedConfig),
       this.resolvedConfig.values.siteId,
+      flags['all-cartridges'],
     );
     const endpoints = endpointSummaries(index, {filter: args.filter, cartridge: flags.cartridge, uses: flags.uses}).map(
       (e) => ({...e, file: displayPath(index, e.cartridge, e.relPath, e.line)}),

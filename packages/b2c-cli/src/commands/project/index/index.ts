@@ -8,7 +8,12 @@ import {Args, Flags, ux} from '@oclif/core';
 import {BaseCommand} from '@salesforce/b2c-tooling-sdk/cli';
 import type {ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
 import {t, withDocs} from '../../../i18n/index.js';
-import {describeCartridgeOrder, loadProjectIndex, projectRoot} from '../../../utils/project/index.js';
+import {
+  allCartridgesFlag,
+  describeCartridgeOrder,
+  loadProjectIndex,
+  projectRoot,
+} from '../../../utils/project/index.js';
 
 export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndexCommand> {
   static args = {
@@ -34,6 +39,7 @@ export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndex
   ];
 
   static flags = {
+    'all-cartridges': allCartridgesFlag,
     ...BaseCommand.baseFlags,
     output: Flags.string({description: 'Write the index JSON to this file'}),
   };
@@ -49,6 +55,7 @@ export default class ProjectIndexCommand extends BaseCommand<typeof ProjectIndex
       argv as string[],
       projectRoot(this.resolvedConfig),
       this.resolvedConfig.values.siteId,
+      flags['all-cartridges'],
     );
     if (flags.output) {
       fs.writeFileSync(flags.output, JSON.stringify(index, null, 2) + '\n');

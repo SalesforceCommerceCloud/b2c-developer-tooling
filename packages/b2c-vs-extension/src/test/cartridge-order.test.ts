@@ -5,6 +5,7 @@
  */
 import * as assert from 'assert';
 import {
+  cartridgePathNames,
   canQueryInstanceSilently,
   describeOrderSource,
   moveCartridge,
@@ -157,6 +158,17 @@ suite('cartridge order', () => {
     test('describeOrderSource names the source', () => {
       assert.strictEqual(describeOrderSource({source: 'instance', instance}), 'Order: RefArch on instance');
       assert.strictEqual(describeOrderSource({source: 'guessed'}), 'Order: guessed');
+    });
+  });
+
+  suite('cartridgePathNames', () => {
+    test('names the path for config, instance, and site-file orders only', () => {
+      assert.deepStrictEqual([...cartridgePathNames({source: 'config', path: ['a', 'b']})!], ['a', 'b']);
+      assert.deepStrictEqual([...cartridgePathNames({source: 'instance', path: ['a']})!], ['a']);
+      assert.deepStrictEqual([...cartridgePathNames({source: 'site-file', path: ['b']})!], ['b']);
+      assert.strictEqual(cartridgePathNames({source: 'manual', path: ['a']}), undefined);
+      assert.strictEqual(cartridgePathNames({source: 'guessed'}), undefined);
+      assert.strictEqual(cartridgePathNames({source: 'config', path: []}), undefined);
     });
   });
 });
