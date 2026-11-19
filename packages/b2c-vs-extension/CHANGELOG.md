@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.11.2
+
+### Patch Changes
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Routes, overlays, and hooks now follow the site's cartridge path only: cartridges in the project that aren't on the path are listed as not on the path and left out, and security findings in them are marked. `project_inspect` and `security_scan` also read the site's cartridge path live from the instance when SCAPI is configured, take a `siteId` input, and report where the order came from (`cartridgePathSource`). To see every cartridge as before, use `--all-cartridges` in the CLI, `allCartridges` in the MCP tools, or **Include Cartridges Not on the Path** in VS Code, where cartridges off the path are now dimmed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706), [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad), [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe), [`c219964`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c219964e991c3493d7cf5828525a780df6a39023), [`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706)]:
+  - @salesforce/b2c-tooling-sdk@2.17.0
+  - @salesforce/b2c-script-types@26.9.0
+
 ## 1.11.1
 
 ### Patch Changes

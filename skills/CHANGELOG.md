@@ -1,5 +1,13 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.16.2
+
+### Patch Changes
+
+- [#870](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/870) [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad) - The CIP skill now covers the Calcite SQL dialect (reserved words such as `date` and `month` as aliases, date literals, month grouping) and says to describe tables before writing custom SQL, so agents stop guessing column names like `orders` and `site_name`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Routes, overlays, and hooks now follow the site's cartridge path only: cartridges in the project that aren't on the path are listed as not on the path and left out, and security findings in them are marked. `project_inspect` and `security_scan` also read the site's cartridge path live from the instance when SCAPI is configured, take a `siteId` input, and report where the order came from (`cartridgePathSource`). To see every cartridge as before, use `--all-cartridges` in the CLI, `allCartridges` in the MCP tools, or **Include Cartridges Not on the Path** in VS Code, where cartridges off the path are now dimmed. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 1.16.1
 
 ### Patch Changes

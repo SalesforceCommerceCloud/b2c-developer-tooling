@@ -1,5 +1,24 @@
 # @salesforce/b2c-tooling-sdk
 
+## 2.17.0
+
+### Minor Changes
+
+- [#873](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/873) [`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706) - Rejected scopes, refused API client credentials, missing OCAPI permissions, and WebDAV 401/403/404 errors now say what to change and link the docs section that explains it. In MCP tool errors, the hint names the `docs_read` call to make, and `docs_read` accepts a `section` input to read one heading of a page. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#872](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/872) [`c219964`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c219964e991c3493d7cf5828525a780df6a39023) - SCAPI code mode now runs programs in an in-process QuickJS sandbox instead of a Node child process, with no network, file system or timer access. Programs read contracts through async `spec` calls (`await spec.operations()`, `await spec.operation(path, method)`) in place of `spec.paths`, and wait with `await sleep(ms)`. Approved `scapi_execute` writes now resume by replaying the earlier answers, so earlier requests are never sent twice. SDK users can wrap every call with `interceptors` and pause or resume a run with its `journal`. Node.js 22.19 or later is now required. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#870](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/870) [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad) - The CIP skill now covers the Calcite SQL dialect (reserved words such as `date` and `month` as aliases, date literals, month grouping) and says to describe tables before writing custom SQL, so agents stop guessing column names like `orders` and `site_name`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Routes, overlays, and hooks now follow the site's cartridge path only: cartridges in the project that aren't on the path are listed as not on the path and left out, and security findings in them are marked. `project_inspect` and `security_scan` also read the site's cartridge path live from the instance when SCAPI is configured, take a `siteId` input, and report where the order came from (`cartridgePathSource`). To see every cartridge as before, use `--all-cartridges` in the CLI, `allCartridges` in the MCP tools, or **Include Cartridges Not on the Path** in VS Code, where cartridges off the path are now dimmed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#873](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/873) [`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706) - Skill reads no longer fail with "Packaged skills are inconsistent" after the MCP package is updated while the server is running; the server reloads the installed skills, and asks for a restart only if that fails. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad), [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe)]:
+  - @salesforce/b2c-agent-plugins@1.16.2
+
 ## 2.16.1
 
 ### Patch Changes
