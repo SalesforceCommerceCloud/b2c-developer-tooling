@@ -480,6 +480,15 @@ export type {
   PatchedB2CTargetInfo,
 } from './b2c-config.js';
 
+// Storefront manage-access operations
+export {getStorefrontManageAccess} from './manage-access.js';
+export type {
+  GetStorefrontManageAccessOptions,
+  StorefrontEnvironment,
+  StorefrontManageAccess,
+  UiManagedAt,
+} from './manage-access.js';
+
 // Log tailing operations
 export {createLoggingToken, parseMrtLogLine, getLogsWebSocketUrl, tailMrtLogs} from './tail-logs.js';
 export type {MrtLogEntry, CreateLoggingTokenOptions, TailMrtLogsOptions, TailMrtLogsResult} from './tail-logs.js';

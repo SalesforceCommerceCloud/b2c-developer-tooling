@@ -42,7 +42,8 @@ mrt
 │   └── cert                     - Custom domain certificates
 ├── project                      - Project management
 │   ├── member                   - Team member management
-│   └── notification             - Deployment notifications
+│   ├── notification             - Deployment notifications
+│   └── manage-access            - Storefront management surface and API access
 ├── env                          - Environment management (incl. clone)
 │   ├── var                      - Environment variables
 │   ├── redirect                 - URL redirects
@@ -154,6 +155,9 @@ b2c mrt project member list -p my-storefront
 
 # Add a member
 b2c mrt project member add user@example.com -p my-storefront --role developer
+
+# Show where the storefront is managed (Runtime Admin or Business Manager) and SCAPI / legacy MRT API access
+b2c mrt project manage-access get -p my-storefront
 ```
 
 ### URL Redirects
@@ -204,7 +208,7 @@ Store your API key in `~/.mobify`:
 
 ## Detailed References
 
-- [Project Commands](references/PROJECT-COMMANDS.md) - Projects, members, and notifications
+- [Project Commands](references/PROJECT-COMMANDS.md) - Projects, members, notifications, and manage access
 - [Environment Commands](references/ENVIRONMENT-COMMANDS.md) - Environments, variables, redirects
 - [Bundle Commands](references/BUNDLE-COMMANDS.md) - Deployments, history, downloads
 

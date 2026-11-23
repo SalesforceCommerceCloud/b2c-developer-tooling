@@ -14,6 +14,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt project`              | `list`, `create`, `get`, `update`, `delete`                      | Manage MRT projects                    |
 | `mrt project member`       | `list`, `add`, `get`, `update`, `remove`                         | Manage project members                 |
 | `mrt project notification` | `list`, `create`, `get`, `update`, `delete`                      | Manage deployment notifications        |
+| `mrt project manage-access` | `get` | View storefront management surface and API access |
 | `mrt env`                  | `list`, `create`, `get`, `update`, `delete`, `invalidate`, `b2c` | Manage environments                    |
 | `mrt env var`              | `list`, `set`, `push`, `delete`                                  | Manage environment variables           |
 | `mrt env redirect`         | `list`, `create`, `get`, `update`, `delete`, `clone`             | Manage URL redirects                   |
@@ -23,7 +24,7 @@ Commands for managing Managed Runtime (MRT) projects, environments, and bundles 
 | `mrt save-credentials`     |                                                                  | Save MRT credentials to ~/.mobify      |
 | `mrt user`                 | `profile`, `api-key`, `email-prefs`                              | Manage user settings                   |
 
-> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including the `member` and `notification` subtopics). For example, `b2c mrt storefront get my-storefront` is identical to `b2c mrt project get my-storefront`. The alias matches the terminology used by the SCAPI MRT API; `mrt project` continues to work unchanged.
+> **`storefront` alias:** `mrt storefront` is an alias for `mrt project` (including the `member`, `notification`, and `manage-access` subtopics). For example, `b2c mrt storefront get my-storefront` is identical to `b2c mrt project get my-storefront`. The alias matches the terminology used by the SCAPI MRT API; `mrt project` continues to work unchanged.
 
 ## Global MRT Flags
 
@@ -396,6 +397,52 @@ Delete a notification.
 b2c mrt project notification delete abc-123 --project my-storefront
 b2c mrt project notification delete abc-123 -p my-storefront --force
 ```
+
+---
+
+## Project Manage Access Commands
+
+View where a storefront is managed and which APIs can change it.
+
+### b2c mrt project manage-access get
+
+Show whether a project's storefront is managed in Runtime Admin or Business Manager, whether the SCAPI MRT Admin API is available, and whether direct (legacy) MRT API access is allowed. Also lists the project's environments and the B2C Commerce instances they connect to.
+
+```bash
+b2c mrt project manage-access get -p my-storefront
+b2c mrt project manage-access get -p my-storefront --json
+```
+
+Example output:
+
+```
+Storefront: my-storefront
+Resolved across 3 instances / 4 environments
+
+{
+  "ui": "mrt",
+  "scapi": false,
+  "legacy-mrt-api": true
+}
+
+ui: mrt              -> Managed in Runtime Admin. BM Dev Workspace is read-only for this storefront.
+scapi: false         -> SCAPI MRT Admin API not available for this storefront.
+legacy-mrt-api: true -> Direct MRT API read/writes allowed.
+
+Environments:
+  production   aaaa_prd
+  staging      aaaa_stg
+  development  aaaa_dev
+  sandbox      (no B2C instance connected)
+```
+
+| Key | Values | Meaning |
+|-----|--------|---------|
+| `ui` | `mrt`, `b2c` | `mrt`: managed in Runtime Admin (Business Manager is read-only). `b2c`: managed in Business Manager (Runtime Admin is read-only). |
+| `scapi` | `true`, `false` | Whether the SCAPI MRT Admin API is available for the storefront. |
+| `legacy-mrt-api` | `true`, `false` | Whether direct MRT API reads/writes are allowed. |
+
+When both `scapi` and `legacy-mrt-api` are `false`, the output warns that no write path is available. If the server does not report `scapi` or `legacy-mrt-api`, they are shown as `unknown` (`null` in JSON).
 
 ---
 

@@ -27,7 +27,7 @@ const B2C_API_PATH = '/api/cc/b2c';
  * When callers pass the generic MRT origin (e.g. https://cloud.mobify.com),
  * we need to append the B2C API path.
  */
-function toB2COrigin(origin: string | undefined): string {
+export function toB2COrigin(origin: string | undefined): string {
   if (!origin) return DEFAULT_MRT_B2C_ORIGIN;
   // Already has the B2C path
   if (origin.endsWith(B2C_API_PATH)) return origin;
