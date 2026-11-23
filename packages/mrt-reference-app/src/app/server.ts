@@ -22,6 +22,7 @@ import {
   exception,
   tlsVersionTest,
   outboundLoopTest,
+  httpbinIpTest,
   cacheTest,
   memoryTest,
   cookieTest,
@@ -41,6 +42,7 @@ import {
   traceLogging,
   dataStoreTest,
   secretsManagerTest,
+  describeNetworkInterfacesTest,
   proxyTransformationTest,
 } from '../utils/reference-routes.js';
 import {isolationTests} from '../utils/isolation-actions.js';
@@ -125,6 +127,7 @@ export const createApp = (): AppWithMetrics => {
   app.all('/exception', exception);
   app.get('/tls', tlsVersionTest);
   app.get('/outbound-loop', outboundLoopTest);
+  app.get('/httpbin-ip', httpbinIpTest);
   app.get('/cache', cacheTest);
   app.get('/cache/:duration', cacheTest);
   app.get('/memtest', memoryTest);
@@ -144,6 +147,7 @@ export const createApp = (): AppWithMetrics => {
   app.get('/trace-logging', traceLogging);
   app.get('/data-store/:key', dataStoreTest);
   app.get('/secrets-manager', secretsManagerTest);
+  app.get('/describe-network-interfaces', describeNetworkInterfacesTest);
   app.get('/proxy-transformation', proxyTransformationTest);
 
   app.all('/auth/logout', (req, res) => res.status(401).send('Logged out'));
