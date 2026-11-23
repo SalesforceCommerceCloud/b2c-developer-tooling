@@ -832,6 +832,45 @@ describe('Compression Streaming', () => {
     });
   });
 
+  describe('Caller-set Content-Encoding', () => {
+    it('should not re-compress when the route already set Content-Encoding: identity', async () => {
+      const stream = createCollectingStream();
+      const event = createMockEvent({headers: {'Accept-Encoding': 'br, gzip'}});
+      const context = createMockContext();
+      const request = createExpressRequest(event, context);
+      const response = createExpressResponse(stream, event, context, request);
+
+      response.setHeader('Content-Type', 'text/html');
+      response.setHeader('Content-Encoding', 'identity');
+      const payload = 'plain html '.repeat(100);
+      response.end(payload);
+
+      await stream.waitForEnd();
+
+      expect(stream.getMetadata().headers['content-encoding']).to.equal('identity');
+      expect(stream.getData().toString('utf-8')).to.equal(payload);
+    });
+
+    it('should preserve a caller-set Content-Encoding other than identity', async () => {
+      const stream = createCollectingStream();
+      const event = createMockEvent({headers: {'Accept-Encoding': 'br, gzip'}});
+      const context = createMockContext();
+      const request = createExpressRequest(event, context);
+      const response = createExpressResponse(stream, event, context, request);
+
+      // A route serving a pre-gzipped asset.
+      const preGzipped = zlib.gzipSync(Buffer.from('pre-compressed payload'));
+      response.setHeader('Content-Type', 'text/html');
+      response.setHeader('Content-Encoding', 'gzip');
+      response.end(preGzipped);
+
+      await stream.waitForEnd();
+
+      expect(stream.getMetadata().headers['content-encoding']).to.equal('gzip');
+      expect(stream.getData().equals(preGzipped)).to.be.true;
+    });
+  });
+
   describe('CompressionConfig', () => {
     describe('Encoding override', () => {
       it('should use compressionConfig.encoding to override Accept-Encoding negotiation', async () => {
