@@ -1,5 +1,44 @@
 # @salesforce/b2c-dx-mcp
 
+## 3.17.0
+
+### Minor Changes
+
+- [#873](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/873) [`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706) - Rejected scopes, refused API client credentials, missing OCAPI permissions, and WebDAV 401/403/404 errors now say what to change and link the docs section that explains it. In MCP tool errors, the hint names the `docs_read` call to make, and `docs_read` accepts a `section` input to read one heading of a page. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#872](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/872) [`c219964`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c219964e991c3493d7cf5828525a780df6a39023) - SCAPI code mode now runs programs in an in-process QuickJS sandbox instead of a Node child process, with no network, file system or timer access. Programs read contracts through async `spec` calls (`await spec.operations()`, `await spec.operation(path, method)`) in place of `spec.paths`, and wait with `await sleep(ms)`. Approved `scapi_execute` writes now resume by replaying the earlier answers, so earlier requests are never sent twice. SDK users can wrap every call with `interceptors` and pause or resume a run with its `journal`. Node.js 22.19 or later is now required. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#870](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/870) [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad) - The CIP skill now covers the Calcite SQL dialect (reserved words such as `date` and `month` as aliases, date literals, month grouping) and says to describe tables before writing custom SQL, so agents stop guessing column names like `orders` and `site_name`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Routes, overlays, and hooks now follow the site's cartridge path only: cartridges in the project that aren't on the path are listed as not on the path and left out, and security findings in them are marked. `project_inspect` and `security_scan` also read the site's cartridge path live from the instance when SCAPI is configured, take a `siteId` input, and report where the order came from (`cartridgePathSource`). To see every cartridge as before, use `--all-cartridges` in the CLI, `allCartridges` in the MCP tools, or **Include Cartridges Not on the Path** in VS Code, where cartridges off the path are now dimmed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706), [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad), [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe), [`c219964`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c219964e991c3493d7cf5828525a780df6a39023), [`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706)]:
+  - @salesforce/b2c-tooling-sdk@2.17.0
+
+## 3.16.1
+
+### Patch Changes
+
+- [`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c) - `skills_read` now accepts a skill URI together with `file`, so references can be opened relative to a skill that was read by URI. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c)]:
+  - @salesforce/b2c-tooling-sdk@2.16.1
+
+## 3.16.0
+
+### Minor Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Added the `project_inspect` and `security_scan` tools to the `CARTRIDGES` and `STOREFRONTNEXT` toolsets. `project_inspect` (preview) lists controller endpoints, filtered by ID, cartridge, or middleware, and shows what runs for one across the cartridge path. It also covers hooks in cartridge path order, Custom API wiring, and custom job steps. It loads at session start so assistants check it before reading controller files; `security_scan` finds security problems in cartridge code and site data (preview). Both work offline from the project directory. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - When no `cartridges` value is configured, `b2c project`, `b2c security`, the MCP `project_inspect` and `security_scan` tools, and the VS Code Cartridges view now order cartridges by a site's cartridge path from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix), so overlays compose the way the site runs them. Set `siteId` to choose the site. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- Updated dependencies [[`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`84956d1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84956d14be04902fb3d20388335b9b1c23da9737), [`14a31b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/14a31b0668c5d901e64803b433243046d7f54ceb), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354)]:
+  - @salesforce/b2c-tooling-sdk@2.16.0
+
 ## 3.15.0
 
 ### Minor Changes

@@ -29,6 +29,14 @@ export function guidanceUri(id: string, file: string): string {
   return `${PREFIX}${id}/${file}`;
 }
 
+/** Skill files changed or disappeared underneath a running process and a reload did not recover. */
+function stalePackageError(): GuidanceError {
+  return new GuidanceError(
+    'CONTENT_UNAVAILABLE',
+    'Packaged skills changed on disk after this process started, usually because the package was updated while it was running. Restart the MCP server (or rerun the command) to load the installed version.',
+  );
+}
+
 function fail(code: string, message: string): never {
   throw new GuidanceError(code, message);
 }
@@ -53,72 +61,84 @@ function readSafe(root: string, relative: string): Buffer {
   }
 }
 
+interface GuidanceCatalogOptions {
+  allowNonGa?: boolean;
+  collections?: readonly string[];
+}
+
+/** Read and validate the manifest, then apply exposure options. */
+function loadManifest(root: string, options: GuidanceCatalogOptions): GuidanceManifest {
+  const parsed = JSON.parse(readSafe(root, 'index.json').toString('utf8')) as GuidanceManifest;
+  if (parsed.version !== 1 || !Array.isArray(parsed.collections) || !Array.isArray(parsed.entries)) {
+    fail('INVALID_MANIFEST', 'Unsupported skill manifest.');
+  }
+  const collectionIds = new Set<string>();
+  for (const collection of parsed.collections) {
+    if (!safePath(collection.id) || collection.id.includes('/') || collectionIds.has(collection.id)) {
+      fail('INVALID_MANIFEST', 'Invalid or duplicate skill collection.');
+    }
+    collectionIds.add(collection.id);
+  }
+  const ids = new Set<string>();
+  for (const entry of parsed.entries) {
+    if (
+      !safePath(entry.id) ||
+      entry.id.split('/').length !== 2 ||
+      ids.has(entry.id) ||
+      !collectionIds.has(entry.collection) ||
+      entry.id.split('/')[0] !== entry.collection ||
+      (entry.featured !== undefined && typeof entry.featured !== 'boolean') ||
+      (entry.indexSummary !== undefined && typeof entry.indexSummary !== 'string') ||
+      !entry.files.some((file) => file.path === entry.entrypoint) ||
+      typeof entry.frontmatter !== 'object' ||
+      entry.frontmatter === null ||
+      Array.isArray(entry.frontmatter) ||
+      entry.frontmatter.name !== entry.id.split('/')[1] ||
+      typeof entry.frontmatter.description !== 'string'
+    ) {
+      fail('INVALID_MANIFEST', 'Invalid or duplicate skill entry.');
+    }
+    const paths = new Set<string>();
+    for (const file of entry.files) {
+      if (
+        !safePath(file.path) ||
+        !file.path.endsWith('.md') ||
+        paths.has(file.path) ||
+        !Number.isSafeInteger(file.bytes) ||
+        typeof file.digest !== 'string' ||
+        !DIGEST.test(file.digest)
+      ) {
+        fail('INVALID_MANIFEST', 'Invalid or duplicate skill file.');
+      }
+      paths.add(file.path);
+    }
+    ids.add(entry.id);
+  }
+  const collections = parsed.collections.filter(
+    (c) => (c.isGA || options.allowNonGa) && (!options.collections || options.collections.includes(c.id)),
+  );
+  return {
+    ...parsed,
+    collections,
+    entries: parsed.entries.filter((entry) => collections.some((collection) => collection.id === entry.collection)),
+  };
+}
+
 /**
  * Manifest-backed, offline guidance resolver. Exposure applies to every read,
  * including resource URIs and section reads.
  */
 export class GuidanceCatalog {
   private readonly root: string;
-  private readonly manifest: GuidanceManifest;
-  private readonly entries: Map<string, GuidanceEntry>;
+  private readonly options: GuidanceCatalogOptions;
+  private manifest: GuidanceManifest;
+  private entries: Map<string, GuidanceEntry>;
   private searchIndex?: MiniSearch;
 
-  constructor(root: string, options: {allowNonGa?: boolean; collections?: readonly string[]} = {}) {
+  constructor(root: string, options: GuidanceCatalogOptions = {}) {
     this.root = resolve(root);
-    const parsed = JSON.parse(readSafe(this.root, 'index.json').toString('utf8')) as GuidanceManifest;
-    if (parsed.version !== 1 || !Array.isArray(parsed.collections) || !Array.isArray(parsed.entries)) {
-      fail('INVALID_MANIFEST', 'Unsupported skill manifest.');
-    }
-    const collectionIds = new Set<string>();
-    for (const collection of parsed.collections) {
-      if (!safePath(collection.id) || collection.id.includes('/') || collectionIds.has(collection.id)) {
-        fail('INVALID_MANIFEST', 'Invalid or duplicate skill collection.');
-      }
-      collectionIds.add(collection.id);
-    }
-    const ids = new Set<string>();
-    for (const entry of parsed.entries) {
-      if (
-        !safePath(entry.id) ||
-        entry.id.split('/').length !== 2 ||
-        ids.has(entry.id) ||
-        !collectionIds.has(entry.collection) ||
-        entry.id.split('/')[0] !== entry.collection ||
-        (entry.featured !== undefined && typeof entry.featured !== 'boolean') ||
-        (entry.indexSummary !== undefined && typeof entry.indexSummary !== 'string') ||
-        !entry.files.some((file) => file.path === entry.entrypoint) ||
-        typeof entry.frontmatter !== 'object' ||
-        entry.frontmatter === null ||
-        Array.isArray(entry.frontmatter) ||
-        entry.frontmatter.name !== entry.id.split('/')[1] ||
-        typeof entry.frontmatter.description !== 'string'
-      ) {
-        fail('INVALID_MANIFEST', 'Invalid or duplicate skill entry.');
-      }
-      const paths = new Set<string>();
-      for (const file of entry.files) {
-        if (
-          !safePath(file.path) ||
-          !file.path.endsWith('.md') ||
-          paths.has(file.path) ||
-          !Number.isSafeInteger(file.bytes) ||
-          typeof file.digest !== 'string' ||
-          !DIGEST.test(file.digest)
-        ) {
-          fail('INVALID_MANIFEST', 'Invalid or duplicate skill file.');
-        }
-        paths.add(file.path);
-      }
-      ids.add(entry.id);
-    }
-    const collections = parsed.collections.filter(
-      (c) => (c.isGA || options.allowNonGa) && (!options.collections || options.collections.includes(c.id)),
-    );
-    this.manifest = {
-      ...parsed,
-      collections,
-      entries: parsed.entries.filter((entry) => collections.some((collection) => collection.id === entry.collection)),
-    };
+    this.options = options;
+    this.manifest = loadManifest(this.root, options);
     this.entries = new Map(this.manifest.entries.map((entry) => [entry.id, entry]));
   }
 
@@ -208,13 +228,27 @@ export class GuidanceCatalog {
     }
     if (request.id !== undefined || request.uri !== undefined) {
       if (request.id !== undefined && request.uri !== undefined) fail('INVALID_REQUEST', 'Use id or uri, not both.');
-      if (
-        supplied.some((key) => !['id', 'uri', 'file', 'section', 'offset', 'maxLength'].includes(key)) ||
-        (request.uri !== undefined && request.file !== undefined)
-      ) {
-        fail('INVALID_REQUEST', 'Exact reads accept id/file/section or uri/section.');
+      if (supplied.some((key) => !['id', 'uri', 'file', 'section', 'offset', 'maxLength'].includes(key))) {
+        fail('INVALID_REQUEST', 'Exact reads accept id/file/section or uri/file/section.');
       }
-      const selector = request.uri !== undefined ? this.parseUri(request.uri) : {id: request.id!, file: request.file};
+      let selector: {id: string; file?: string};
+      if (request.uri === undefined) {
+        selector = {id: request.id!, file: request.file};
+      } else {
+        const parsed = this.parseUri(request.uri);
+        selector = parsed;
+        if (request.file !== undefined) {
+          const entry = this.entries.get(parsed.id);
+          // A URI that names the skill entrypoint is just the skill; resolve file against it.
+          if (entry && parsed.file !== entry.entrypoint && parsed.file !== request.file) {
+            fail(
+              'INVALID_REQUEST',
+              `The URI already names a file. Read it without file, or use ${guidanceUri(parsed.id, request.file)}.`,
+            );
+          }
+          selector = {id: parsed.id, file: request.file};
+        }
+      }
       return this.readContent({
         ...selector,
         section: request.section,
@@ -236,7 +270,38 @@ export class GuidanceCatalog {
     return {id: `${collection}/${entry}`, file: parts.join('/')};
   }
 
+  /**
+   * Resolve a file, reloading the manifest once when the files on disk no longer
+   * match it. That happens when the package is updated in place (for example by
+   * npx or a plugin cache) while a long-running server still holds the old manifest.
+   */
   private resolveFile(id: string, file?: string): {entry: GuidanceEntry; file: string; content: string} {
+    try {
+      return this.resolveFileOnce(id, file);
+    } catch (error) {
+      if (!(error instanceof GuidanceError) || error.code !== 'CONTENT_UNAVAILABLE') throw error;
+      try {
+        this.reload();
+      } catch {
+        throw stalePackageError();
+      }
+      try {
+        return this.resolveFileOnce(id, file);
+      } catch (retryError) {
+        if (retryError instanceof GuidanceError && retryError.code === 'CONTENT_UNAVAILABLE') throw stalePackageError();
+        throw retryError;
+      }
+    }
+  }
+
+  private reload(): void {
+    const manifest = loadManifest(this.root, this.options);
+    this.manifest = manifest;
+    this.entries = new Map(manifest.entries.map((entry) => [entry.id, entry]));
+    this.searchIndex = undefined;
+  }
+
+  private resolveFileOnce(id: string, file?: string): {entry: GuidanceEntry; file: string; content: string} {
     if (!safePath(id)) fail('INVALID_PATH', 'Use an exact skill ID from the directory.');
     const entry = this.entries.get(id);
     if (!entry) fail('NOT_FOUND', 'Skill ID is not available. List or search skills to find one.');

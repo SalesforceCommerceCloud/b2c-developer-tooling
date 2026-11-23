@@ -18,7 +18,12 @@ import {ALL_AUTH_METHODS} from '../auth/types.js';
 import {resolveConfig, type NormalizedConfig, type ConfigSource, type ResolvedB2CConfig} from '../config/index.js';
 import {findDwJson} from '../config/dw-json.js';
 import {readEnvFile} from '../config/project-environment.js';
-import {STOREFRONT_NEXT_ENV_VAR_MAP, StorefrontNextEnvSource} from '../config/sources/env-source.js';
+import {
+  EnvSource,
+  FLAGLESS_ENV_VARS,
+  STOREFRONT_NEXT_ENV_VAR_MAP,
+  StorefrontNextEnvSource,
+} from '../config/sources/env-source.js';
 import {getLogger} from '../logging/logger.js';
 
 // Re-export for convenience
@@ -343,7 +348,7 @@ export async function loadConfig(
     credentialsFile: options.credentialsFile,
     accountManagerHost: options.accountManagerHost,
     overrideOrigins: describeOverrideOrigins(flags, options.envFile),
-    sourcesBefore: pluginSources.before,
+    sourcesBefore: [...createFlaglessEnvSource(pluginSources.before), ...(pluginSources.before ?? [])],
     sourcesAfter: [...(pluginSources.after ?? []), createStorefrontNextSource(options.envFile)],
   });
 
@@ -390,6 +395,17 @@ function describeOverrideOrigins(
     }
   }
   return origins;
+}
+
+/**
+ * Reads the toolkit variables that have no CLI flag (such as `SFCC_CARTRIDGES`)
+ * from the environment, unless the caller already supplies an {@link EnvSource}
+ * (as `setup inspect` does). Variables with flags come in through the flags.
+ */
+function createFlaglessEnvSource(before: ConfigSource[] | undefined): ConfigSource[] {
+  if (before?.some((source) => source instanceof EnvSource && source.name === 'EnvSource')) return [];
+  const env = Object.fromEntries(FLAGLESS_ENV_VARS.map((name) => [name, process.env[name]]));
+  return [new EnvSource(env)];
 }
 
 /**

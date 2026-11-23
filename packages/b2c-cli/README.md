@@ -13,7 +13,7 @@ Develop, deploy, and administer Salesforce B2C Commerce from your terminal or CI
 
 ## Install
 
-Requires Node.js 22.16 or later.
+Requires Node.js 22.19 or later.
 
 ```bash
 npm install -g @salesforce/b2c-cli

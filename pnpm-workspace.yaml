@@ -16,6 +16,7 @@ catalog:
   '@types/node': ^22
   '@types/sinon': ^21.0.0
   c8: ^11.0.0
+  esbuild: ^0.25.0
   chai: ^4
   cliui: 9.0.1
   eslint: ^9

@@ -31,6 +31,14 @@ pnpm run skills:eval -- --runs-per-query 3
 pnpm run skills:eval -- --output results.json
 ```
 
+The default model is `us.anthropic.claude-sonnet-4-6` (Amazon Bedrock). To use another model, set `SKILLS_EVAL_MODEL` or pass `--model`:
+
+```bash
+SKILLS_EVAL_MODEL=claude-sonnet-5-5 pnpm run skills:eval
+```
+
+If the model isn't available to your `claude` CLI, every query scores as "not triggered" (even for skills that normally pass). Check with `claude -p "ok" --model <id>` first.
+
 Or run directly with `uv`:
 
 ```bash
@@ -120,7 +128,7 @@ Each skill stores its evals in `evals/trigger-evals.json`:
 |------|---------|-------------|
 | `--skill-path` | — | Evaluate a single skill (overrides discovery) |
 | `--discover` | `skills/` | Directories to search for skills with trigger evals |
-| `--model` | — | Model ID for `claude -p` |
+| `--model` | `$SKILLS_EVAL_MODEL`, else `us.anthropic.claude-sonnet-4-6` | Model ID for `claude -p` |
 | `--runs-per-query` | 1 | Times to run each query (higher = more reliable) |
 | `--num-workers` | 10 | Parallel `claude -p` processes |
 | `--timeout` | 30 | Seconds per query |
@@ -137,7 +145,7 @@ Each skill stores its evals in `evals/trigger-evals.json`:
 |------|---------|-------------|
 | `--eval-set` | — | Path to trigger-evals.json |
 | `--skill-path` | — | Path to skill directory |
-| `--model` | — | Model for eval and improvement |
+| `--model` | `$SKILLS_EVAL_MODEL`, else `us.anthropic.claude-sonnet-4-6` | Model for eval and improvement |
 | `--max-iterations` | 5 | Max improvement iterations |
 | `--runs-per-query` | 3 | Times to run each query per iteration |
 | `--holdout` | 0.4 | Fraction held out for testing |

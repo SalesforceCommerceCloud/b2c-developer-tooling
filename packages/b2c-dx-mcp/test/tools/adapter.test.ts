@@ -248,6 +248,31 @@ describe('tools/adapter', () => {
       expect(getResultText(result)).to.include('Something bad happened');
     });
 
+    it('names the fix and the docs to read for a recognized permission failure', async () => {
+      const tool = createToolAdapter(
+        {
+          name: 'webdav_error_tool',
+          description: 'Throws a WebDAV refusal',
+          effect: 'read',
+          idempotent: true,
+          openWorld: false,
+          toolsets: ['MRT'],
+          requiresInstance: false,
+          inputSchema: {},
+          async execute() {
+            throw new Error('PROPFIND failed: 401 Unauthorized');
+          },
+          formatOutput: () => textResult('This should not be reached'),
+        },
+        createMockLoadServices(),
+      );
+
+      const text = getResultText(await tool.handler({}));
+      expect(text).to.match(/^Execution error: PROPFIND failed: 401 Unauthorized\n\n/);
+      expect(text).to.include('WebDAV Client Permissions');
+      expect(text).to.include('docs_read({query: "guide-authentication", section: "webdav-access"})');
+    });
+
     it('should handle thrown errors gracefully', async () => {
       const loadServices = createMockLoadServices();
 

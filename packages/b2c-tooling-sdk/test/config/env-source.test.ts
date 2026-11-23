@@ -294,6 +294,16 @@ describe('config/EnvSource', () => {
       expect(result?.config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
     });
 
+    it('parses SFCC_CARTRIDGES as a colon- or comma-separated cartridge path', () => {
+      const source = new EnvSource({SFCC_CARTRIDGES: 'app_custom:int_payment, app_storefront_base'});
+      expect(source.load({})?.config.cartridges).to.deep.equal(['app_custom', 'int_payment', 'app_storefront_base']);
+    });
+
+    it('splits other list variables on commas only', () => {
+      const source = new EnvSource({SFCC_ASSET_QUERY: 'image.path:alt'});
+      expect(source.load({})?.config.assetQuery).to.deep.equal(['image.path:alt']);
+    });
+
     it('parses cartridge ignore directories', () => {
       const source = new EnvSource({SFCC_CARTRIDGE_IGNORE_DIRS: 'node_modules, build'});
       const result = source.load({});

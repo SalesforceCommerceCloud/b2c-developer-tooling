@@ -1,5 +1,47 @@
 # Change Log
 
+## 1.11.2
+
+### Patch Changes
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Routes, overlays, and hooks now follow the site's cartridge path only: cartridges in the project that aren't on the path are listed as not on the path and left out, and security findings in them are marked. `project_inspect` and `security_scan` also read the site's cartridge path live from the instance when SCAPI is configured, take a `siteId` input, and report where the order came from (`cartridgePathSource`). To see every cartridge as before, use `--all-cartridges` in the CLI, `allCartridges` in the MCP tools, or **Include Cartridges Not on the Path** in VS Code, where cartridges off the path are now dimmed. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706), [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad), [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe), [`c219964`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/c219964e991c3493d7cf5828525a780df6a39023), [`34a42f7`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/34a42f73f3fcff9ad80e377184b75795c087d706)]:
+  - @salesforce/b2c-tooling-sdk@2.17.0
+  - @salesforce/b2c-script-types@26.9.0
+
+## 1.11.1
+
+### Patch Changes
+
+- [#869](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/869) [`070bdac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/070bdac37cb153c4beb3f1682e2edba44291d1bc) - Fixed ISML auto-close not inserting `</iscomment>` or `</isscript>` after typing `<iscomment>` or `<isscript>` (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#869](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/869) [`070bdac`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/070bdac37cb153c4beb3f1682e2edba44291d1bc) - Fixed ISML linked editing renaming an existing closing tag (for example `</isif>` becoming `</iscomment>`) while typing a new tag above it (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c)]:
+  - @salesforce/b2c-tooling-sdk@2.16.1
+  - @salesforce/b2c-script-types@26.9.0
+
+## 1.11.0
+
+### Minor Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - When no `cartridges` value is configured, `b2c project`, `b2c security`, the MCP `project_inspect` and `security_scan` tools, and the VS Code Cartridges view now order cartridges by a site's cartridge path from a `sites/<site-id>/site.xml` in the project (the latest migration or import set by timestamp prefix), so overlays compose the way the site runs them. Set `siteId` to choose the site. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - The Cartridges view now orders cartridges by your instance's site cartridge path when no `cartridges` configuration is set, and you can reorder it with drag and drop or Move Up/Down (saved per workspace). The view shows where its order comes from. Go-to-definition for `*/cartridge/...` requires follows this order. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Added the Endpoints view: controller endpoints (SFRA and SiteGenesis) with the middleware and route event listeners that run for each across the cartridge path, Custom APIs with their schema operations and implementations, and hooks in cartridge path order, with warnings for missing CSRF checks, `server.replace()` overrides that drop security middleware, and system hooks that can skip later registrations. The Cartridges view now shows each cartridge's controllers and route statements, hooks with their place in the run order, and Custom APIs, and combines Job Steps and Custom Step Types into Custom Job Steps. Job steps open the function that runs, custom hooks list the functions the project calls with their call sites, and Open Registration jumps to their `hooks.json` or `steptypes.json` entry. Controller files show each endpoint's summary above its route statement, with a link to it in the Endpoints view. Custom APIs can be opened in the API Browser. (Thanks [@clavery](https://github.com/clavery)!)
+
+### Patch Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Go-to-definition for `*/cartridge/...` requires now searches the cartridge path from left to right, as the platform does. Before, it checked the calling file's own cartridge first and could open the wrong file. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#866](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/866) [`14a31b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/14a31b0668c5d901e64803b433243046d7f54ceb) - The project index (`b2c project`, the MCP `project_inspect` tool, and the VS Code Endpoints and Cartridges views) no longer loses a controller's endpoints when the leftmost cartridge's controller hands `module` to a helper (for example `require('*/cartridge/scripts/helpers/headlessHelpers').redirectHeadless(module, 'Show')`). The endpoints keep the routes from cartridges further right, and the delegating controller is shown as a step that may change them. (Thanks [@clavery](https://github.com/clavery)!)
+
+- Updated dependencies [[`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`84956d1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/84956d14be04902fb3d20388335b9b1c23da9737), [`14a31b0`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/14a31b0668c5d901e64803b433243046d7f54ceb), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354), [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354)]:
+  - @salesforce/b2c-tooling-sdk@2.16.0
+  - @salesforce/b2c-script-types@26.9.0
+
 ## 1.10.0
 
 ### Minor Changes

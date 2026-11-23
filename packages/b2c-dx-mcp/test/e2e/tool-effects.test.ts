@@ -20,6 +20,8 @@ const groups = [
       'docs_schema_search',
       'docs_schema_read',
       'validate_xml_schema',
+      'project_inspect',
+      'security_scan',
       'logs_watch_poll',
       'mrt_logs_watch_poll',
     ],

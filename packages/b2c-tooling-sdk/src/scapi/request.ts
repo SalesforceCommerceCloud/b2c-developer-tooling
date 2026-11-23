@@ -53,6 +53,16 @@ export interface ScapiConfirmation {
   pathParams: Record<string, string>;
   /** Zero-based position of this request among the requests made with this helper. */
   requestIndex: number;
+  /**
+   * The program's own number for the call (see `ScapiCall.id`), when the helper is called from
+   * `runScapiCode`. Stable across replays of the same program, so hosts can key approvals by it.
+   */
+  callId?: number;
+}
+
+/** What `runScapiCode` passes along with each request; see `ScapiCall`. */
+export interface ScapiRequestContext {
+  id?: number;
 }
 
 export interface ScapiRequestOptions {
@@ -69,7 +79,7 @@ export interface ScapiRequestOptions {
   /** Resolve only after user approval; reject on decline/cancellation. Omit to block confirmations. */
   confirm?: (request: ScapiConfirmation, signal: AbortSignal) => Promise<void>;
   /** Called immediately before network dispatch, for tracking potentially applied writes. */
-  onDispatch?: () => void;
+  onDispatch?: (call?: ScapiRequestContext) => void;
   /** Called with each contract fetched from the Schemas API; `full` reports tenant custom properties and operation prose (expand=all). */
   onSchema?: (document: ScapiSchemaDocument, full: boolean) => void;
 }
@@ -77,14 +87,17 @@ export interface ScapiRequestOptions {
 /** Build one execution's SCAPI request helper. Auth, policy, and responses stay in the host. */
 export function createScapiRequest(
   options: ScapiRequestOptions,
-): (input: unknown, signal: AbortSignal) => Promise<unknown> {
+): (input: unknown, signal: AbortSignal, call?: ScapiRequestContext) => Promise<unknown> {
   if (!/^[a-z0-9-]+$/i.test(options.shortCode)) throw new Error('Invalid SCAPI shortCode.');
+  // Required by the type; checked here too so untyped callers fail at setup, not on their first request.
+  if (!options.safety || typeof options.safety !== 'object')
+    throw new Error("createScapiRequest requires a safety config; pass {level: 'NONE'} to allow every operation.");
   const origin = getScapiOrigin(options.shortCode);
   const organizationId = toOrganizationId(options.tenantId);
   const documents = [...options.documents];
   let totalBytes = 0;
   let requestCount = 0;
-  const request = async (input: unknown, signal: AbortSignal): Promise<unknown> => {
+  const request = async (input: unknown, signal: AbortSignal, call?: ScapiRequestContext): Promise<unknown> => {
     const requestIndex = requestCount++;
     signal.throwIfAborted();
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Request must be an object.');
@@ -223,6 +236,7 @@ export function createScapiRequest(
           pathTemplate: matched.template,
           pathParams: {...matched.parameters},
           requestIndex,
+          ...(call?.id === undefined ? {} : {callId: call.id}),
         }),
         signal,
       );
@@ -296,7 +310,7 @@ export function createScapiRequest(
           signal.throwIfAborted();
           await checkApprovedRequest(request);
           signal.throwIfAborted();
-          options.onDispatch?.();
+          options.onDispatch?.(call);
           const response = await apiFetch(request, {signal, redirect: 'error'});
           const mediaType = response.headers.get('content-type');
           if (response.ok && mediaType && !isScapiTextMediaType(mediaType)) {
@@ -397,9 +411,9 @@ export function createScapiRequest(
     }
     return {status: result.response.status, ok: result.response.ok, data, ...(diagnostic ? {diagnostic} : {})};
   };
-  return async (input, signal) => {
+  return async (input, signal, call) => {
     try {
-      return await request(input, signal);
+      return await request(input, signal, call);
     } catch (error) {
       throw toScapiCodeError(error);
     }

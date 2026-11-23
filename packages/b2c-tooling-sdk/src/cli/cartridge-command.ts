@@ -53,6 +53,12 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
       multipleNonGreedy: true,
       delimiter: ',',
     }),
+    all: Flags.boolean({
+      description:
+        'Include every discovered cartridge, ignoring the cartridges config value (dw.json or SFCC_CARTRIDGES)',
+      default: false,
+      exclusive: ['cartridge'],
+    }),
   };
 
   /** Cartridge provider runner for custom cartridge discovery */
@@ -118,11 +124,11 @@ export abstract class CartridgeCommand<T extends typeof Command> extends Instanc
   /**
    * Gets the cartridge filter options from flags, falling back to
    * the `cartridges` config value (from dw.json or env) when no
-   * `-c` / `--cartridge` flag is provided.
+   * `-c` / `--cartridge` flag is provided. `--all` skips the config fallback.
    */
   protected get cartridgeOptions(): FindCartridgesOptions {
     const flagCartridges = this.flags.cartridge as string[] | undefined;
-    const configCartridges = this.resolvedConfig?.values.cartridges;
+    const configCartridges = this.flags.all ? undefined : this.resolvedConfig?.values.cartridges;
     return {
       include: flagCartridges ?? configCartridges,
       exclude: this.flags['exclude-cartridge'] as string[] | undefined,

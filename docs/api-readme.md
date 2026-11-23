@@ -689,7 +689,7 @@ A session backend implements `find`, `save`, `delete`, `list` and `clearAll`, pl
 
 ### SCAPI Code Mode In-process
 
-`createScapiRequest` builds a request helper with the app's auth and safety policy. `runScapiCode` runs a JavaScript program in a disposable Node process, whose `scapi.request()` calls go back to that helper. The worker never receives credentials. It can load only a short list of safe built-in modules (such as `crypto`, `url` and `util`), so it can't open network connections itself, and it refuses to start if Node's permission model is off.
+`createScapiRequest` builds a request helper with the app's auth and safety policy. `runScapiCode` runs a JavaScript program in a disposable QuickJS virtual machine (WebAssembly, on a worker thread in the same process). The VM has no network, file system, modules, process or timers: `scapi.request()`, `spec`, `codemode`, `auth.slas()` and `sleep(ms)` are host calls that the SDK answers and limits, so the program never receives credentials.
 
 ```typescript
 import {createScapiRequest, loadBundledScapiDocuments, runScapiCode} from '@salesforce/b2c-tooling-sdk/scapi';
@@ -722,17 +722,33 @@ const result = await runScapiCode({
   code,
   input,
   documents,
-  safety, // hides operations the policy always blocks from spec.paths and spec.search
+  safety, // hides operations the policy always blocks from spec
   organizationId: 'zzzz_001',
   request,
 });
 ```
 
-In Electron, the worker runs the app binary as Node (`ELECTRON_RUN_AS_NODE=1`) without extra options. Pass `worker` only to start a different executable.
+Bundled hosts (such as Electron apps) whose `node_modules` are not on disk can pass `wasm` (the compiled `quickjs-wasi/quickjs.wasm`) and `workerUrl` (an entry that imports `@earendil-works/pi-codemode/worker`).
+
+Every call a program makes passes through `interceptors`, outermost first. An interceptor can let the call proceed with `next()`, answer it, fail it, or throw `ScapiCodePause` to end the run so it can be resumed. A paused run rejects with `ScapiCodePausedError`, carrying the `journal` of answers the program received. Pass that journal back to `runScapiCode` with the same code and input to resume: recorded answers replay without being sent again, and the program continues live. A program that makes different calls fails with `SCAPI_REPLAY_DIVERGED`, and a request whose answer was lost stops with `SCAPI_REPLAY_UNCERTAIN`.
+
+```typescript
+const pauseWrites: ScapiCallInterceptor = async (call, next) => {
+  if (call.kind === 'request' && (call.args as {method: string}).method !== 'GET' && !approved.has(call.id))
+    throw new ScapiCodePause({callId: call.id});
+  return next();
+};
+try {
+  return await runScapiCode({code, input, documents, request, interceptors: [pauseWrites], journal});
+} catch (error) {
+  if (error instanceof ScapiCodePausedError) saveForLater(error.journal, error.detail);
+  else throw error;
+}
+```
 
 `searchScapiOperations(documents, query, {safety})` filters search results with the same policy. A blocked request fails with `SafetyBlockedError` before it is sent.
 
-Discovery decides visibility from each operation's path template, before any parameter values are known. A rule that allows only one value (for example `path: '/product/products/v1/organizations/*/products/p1'`) ahead of a catch-all block still lets the request through, but hides the operation from search and `spec.paths`. Use `operationId` or `api` rules for an allow-list you want programs to see.
+Discovery decides visibility from each operation's path template, before any parameter values are known. A rule that allows only one value (for example `path: '/product/products/v1/organizations/*/products/p1'`) ahead of a catch-all block still lets the request through, but hides the operation from `spec`. Use `operationId` or `api` rules for an allow-list you want programs to see.
 
 To include the tenant's own contracts (custom APIs and `c_*` properties), resolve documents with `resolveScapiDocuments()`. It falls back to the bundled contracts with a warning when the tenant can't be reached, and the cache keeps contracts between calls.
 

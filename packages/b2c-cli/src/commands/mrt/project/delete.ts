@@ -9,9 +9,6 @@ import {deleteProjectWithBackend} from '@salesforce/b2c-tooling-sdk/operations/m
 import {t, withDocs} from '../../../i18n/index.js';
 import {confirm} from '../../../prompts.js';
 
-/**
- * Delete result for JSON output.
- */
 interface DeleteResult {
   slug: string;
   deleted: boolean;
@@ -41,6 +38,8 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
     '<%= config.bin %> <%= command.id %> my-old-project',
     '<%= config.bin %> <%= command.id %> --project my-old-project --force',
     '<%= config.bin %> <%= command.id %> my-old-project --mrt-backend scapi --force',
+    '<%= config.bin %> <%= command.id %> my-old-project --mrt-backend scapi --no-delete-mrt-env',
+    '<%= config.bin %> <%= command.id %> my-old-project --mrt-backend scapi --no-delete-am-slas-clients --no-delete-ecdn-routing',
   ];
 
   static flags = {
@@ -49,6 +48,27 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
       char: 'f',
       description: 'Skip confirmation prompt',
       default: false,
+    }),
+    'delete-mrt-env': Flags.boolean({
+      description:
+        "Delete the project's Managed Runtime environments and deployments. SCAPI backend only. Default: true. " +
+        'Pass --no-delete-mrt-env to preserve MRT resources after the project is removed.',
+      default: true,
+      allowNo: true,
+    }),
+    'delete-am-slas-clients': Flags.boolean({
+      description:
+        "Delete the project's Account Manager and SLAS clients. SCAPI backend only. Default: true. " +
+        'Pass --no-delete-am-slas-clients to preserve the AM/SLAS clients after the project is removed.',
+      default: true,
+      allowNo: true,
+    }),
+    'delete-ecdn-routing': Flags.boolean({
+      description:
+        "Delete the project's eCDN routing. SCAPI backend only. Default: true. " +
+        'Pass --no-delete-ecdn-routing to preserve eCDN routing after the project is removed.',
+      default: true,
+      allowNo: true,
     }),
   };
 
@@ -61,7 +81,12 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
     this.assertDestructiveOperationAllowed('delete MRT project');
 
     const slug = this.resolveProjectSlug(this.args.slug);
-    const {force} = this.flags;
+    const {
+      force,
+      'delete-mrt-env': deleteMrtEnv,
+      'delete-am-slas-clients': deleteAmSlasClients,
+      'delete-ecdn-routing': deleteEcdnRouting,
+    } = this.flags;
 
     // Confirm deletion unless --force is specified
     if (!force && !this.jsonEnabled()) {
@@ -87,9 +112,35 @@ export default class MrtProjectDelete extends MrtCommand<typeof MrtProjectDelete
       scapiConnection,
       legacyAuth,
       projectSlug: slug,
+      // Forward only opt-outs; when the user left the flag at its default
+      // (true) we omit it so the SCAPI server-side default is the single
+      // source of truth.
+      deleteMrtEnv: deleteMrtEnv ? undefined : false,
+      deleteAmSlasClients: deleteAmSlasClients ? undefined : false,
+      deleteEcdnRouting: deleteEcdnRouting ? undefined : false,
       origin: this.resolvedConfig.values.mrtOrigin,
       onFallback: (reason) => this.warn(reason),
-      onResolve: (backend) => this.logger.debug({backend}, '[MRT] Deleting project via backend'),
+      // Warn before the HTTP DELETE fires so the user learns their opt-outs
+      // were dropped even if the call itself fails server-side.
+      onResolve: (resolved) => {
+        this.logger.debug({backend: resolved}, '[MRT] Deleting project via backend');
+        if (resolved !== 'legacy') {
+          return;
+        }
+        const ignored: string[] = [];
+        if (!deleteMrtEnv) {
+          ignored.push('--no-delete-mrt-env');
+        }
+        if (!deleteAmSlasClients) {
+          ignored.push('--no-delete-am-slas-clients');
+        }
+        if (!deleteEcdnRouting) {
+          ignored.push('--no-delete-ecdn-routing');
+        }
+        if (ignored.length > 0) {
+          this.warn(`The legacy MRT backend does not support granular-delete opt-outs; ignored ${ignored.join(', ')}.`);
+        }
+      },
     });
 
     this.log(t('commands.mrt.project.delete.success', 'Project "{{slug}}" deleted successfully.', {slug}));

@@ -40,6 +40,9 @@ export function isolateConfig(): void {
   process.env.SFCC_DOTENV_FILE = '';
   process.env.MRT_CREDENTIALS_FILE = '/dev/null';
   process.env.SFCC_LOG_LEVEL = 'silent';
+  // The loop above clears any SFCC_DISABLE_TELEMETRY from test setup or CI, and
+  // commands run inside isolated tests would otherwise send production telemetry.
+  process.env.SFCC_DISABLE_TELEMETRY = 'true';
   // An empty settings directory, so the user's global default dw.json is never read or written
   const configDirectory = mkdtempSync(path.join(tmpdir(), 'b2c-test-config-'));
   process.env.B2C_CONFIG_DIR = configDirectory;

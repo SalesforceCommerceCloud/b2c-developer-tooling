@@ -56,6 +56,8 @@ Options:
   --state <dir>         Sandbox state (default: ~/.cache/b2c-dx-sandbox)
   --keep-session        Reuse sessions from the previous run instead of starting signed out
   --toolsets <list>     MCP toolsets (default: all)
+  --no-mcp-debug        Start the MCP server without debug logs (default: debug JSON logs on stderr,
+                        shown in the client's MCP log)
   --no-build            vscode: skip building the extension
 
 probe options:
@@ -100,6 +102,7 @@ const {values: opts} = parseArgs({
     state: {type: 'string', default: join(homedir(), '.cache', 'b2c-dx-sandbox')},
     'keep-session': {type: 'boolean', default: false},
     toolsets: {type: 'string', default: 'all'},
+    'no-mcp-debug': {type: 'boolean', default: false},
     'no-build': {type: 'boolean', default: false},
     protocol: {type: 'string', default: '2026-07-28'},
     answer: {type: 'string', default: 'accept'},
@@ -179,7 +182,8 @@ Object.assign(env, {
 let projectDir: string;
 if (opts.project) {
   projectDir = resolve(invokedFrom, opts.project);
-  if (hostname && !opts.empty) {
+  // Only an explicit --server overrides the project's dw.json; the remembered one does not.
+  if (opts.server && hostname && !opts.empty) {
     env.SFCC_CONFIG = '';
     env.SFCC_SERVER = hostname;
   }
@@ -213,6 +217,7 @@ const mcpArgs = [
   opts.toolsets!,
   '--project-directory',
   projectDir,
+  ...(opts['no-mcp-debug'] ? [] : ['--log-level', 'debug', '--jsonl']),
 ];
 
 if (command !== 'env') {

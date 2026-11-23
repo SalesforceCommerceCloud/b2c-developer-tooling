@@ -147,6 +147,12 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
       {text: 'Script Debugger', link: '/guide/script-debugger'},
       {text: 'IDE Integration', link: '/guide/ide-integration'},
       {text: 'Commerce Apps', link: '/guide/commerce-apps'},
+      {
+        text: 'Code Security',
+        link: '/guide/code-security',
+        collapsed: true,
+        items: [{text: 'Security Rules', link: '/guide/security-rules'}],
+      },
       {text: 'Security', link: '/guide/security'},
       {text: 'Agent Sandboxing', link: '/guide/agent-sandboxing'},
     ],
@@ -184,9 +190,9 @@ const guidesSidebar: DefaultTheme.SidebarItem[] = [
 ];
 
 // Preserve existing guide URLs while assigning task guides their own navigation.
-const guidePaths = guidesSidebar
-  .flatMap(({link, items}) => [link, ...(items ?? []).map((item) => item.link)])
-  .filter((link): link is string => Boolean(link));
+const sidebarLinks = (items: DefaultTheme.SidebarItem[]): (string | undefined)[] =>
+  items.flatMap(({link, items: children}) => [link, ...sidebarLinks(children ?? [])]);
+const guidePaths = sidebarLinks(guidesSidebar).filter((link): link is string => Boolean(link));
 const guidesActiveMatch = `(?:${guidePaths.join('|')})(?:\\.html)?/?$`;
 
 const referenceSidebar = [
@@ -212,12 +218,14 @@ const referenceSidebar = [
       {text: 'MRT', link: '/cli/mrt'},
       {text: 'Object Types', link: '/cli/object-types'},
       {text: 'Preferences', link: '/cli/preferences'},
+      {text: 'Project', link: '/cli/project'},
       {text: 'Sandbox', link: '/cli/sandbox'},
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
       {text: 'Granular Replications', link: '/cli/replications'},
       {text: 'Setup', link: '/cli/setup'},
       {text: 'Sites', link: '/cli/sites'},
+      {text: 'Security', link: '/cli/security'},
       {text: 'SLAS', link: '/cli/slas'},
       {text: 'Storefront Next', link: '/cli/sfnext'},
       {text: 'Validate', link: '/cli/validate'},

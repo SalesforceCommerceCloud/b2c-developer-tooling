@@ -21,6 +21,22 @@ export class ScapiCodeError extends Error {
   }
 }
 
+/**
+ * Thrown by an interceptor, the `request` callback or a `confirm` hook to end a `runScapiCode`
+ * execution for now, for example while a user decides on a write. Calls already in flight finish
+ * and are journaled first; the paused call and anything after it are not. `runScapiCode` then
+ * rejects with `ScapiCodePausedError`; run again with its journal to resume.
+ */
+export class ScapiCodePause extends ScapiCodeError {
+  constructor(
+    readonly detail?: unknown,
+    message = 'SCAPI_EXECUTION_PAUSED: the host paused this execution.',
+  ) {
+    super('SCAPI_EXECUTION_PAUSED', message);
+    this.name = 'ScapiCodePause';
+  }
+}
+
 /** The `SCAPI_*` code at the start of a message, if any. */
 export function scapiErrorCode(message: string): string | undefined {
   return CODE_PREFIX.exec(message)?.[1];

@@ -147,6 +147,15 @@ describe('config/sources', () => {
       expect(config.importSetExclude).to.deep.equal(['fixtures', 'test/integration']);
     });
 
+    it('loads security scan settings from dw.json', async () => {
+      const security = {ignore: ['cartridges/bm_*'], rules: {'pii-in-logs': 'off'}};
+      fs.writeFileSync(path.join(tempDir, 'dw.json'), JSON.stringify({hostname: 'test.demandware.net', security}));
+
+      const {config} = await new ConfigResolver().resolve();
+
+      expect(config.security).to.deep.equal(security);
+    });
+
     it('returns undefined when dw.json does not exist', async () => {
       const resolver = new ConfigResolver();
       const {config} = await resolver.resolve();

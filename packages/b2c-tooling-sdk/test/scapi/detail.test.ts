@@ -66,7 +66,7 @@ type OperationShape = {
   requestBody: {content: Record<string, ContentShape>};
   responses: Record<string, unknown>;
 };
-const code = `async () => spec.paths['/test/things/v1/things'].post`;
+const code = `async () => spec.operation('/test/things/v1/things', 'post')`;
 
 describe('scapi/detail', () => {
   it('keeps the operation prose but drops nested descriptions and examples in an outline', async () => {
@@ -94,7 +94,8 @@ describe('scapi/detail', () => {
 
   it('is much smaller for the bundled corpus', async () => {
     const documents = loadScapiSchemas();
-    const measure = `async () => JSON.stringify(Object.values(spec.paths).flatMap(Object.values)).length`;
+    // A sample of 200 operations; programs read operations one at a time.
+    const measure = `async () => { const ops = (await spec.operations()).slice(0, 200); let n = 0; for (const o of ops) n += JSON.stringify(await spec.operation(o.path, o.method)).length; return n; }`;
     const full = (await runScapiCode({code: measure, documents, maxOutputBytes: 1000})) as number;
     const outline = (await runScapiCode({code: measure, documents, detail: 'outline', maxOutputBytes: 1000})) as number;
     expect(outline).to.be.lessThan(full * 0.6);
@@ -103,12 +104,12 @@ describe('scapi/detail', () => {
   it('explains the shape of spec when a member is guessed', async () => {
     let message = '';
     try {
-      await runScapiCode({code: 'async () => spec.operations.filter(Boolean)', documents: [document]});
+      await runScapiCode({code: 'async () => spec.paths.filter(Boolean)', documents: [document]});
     } catch (error) {
       message = (error as Error).message;
     }
-    expect(message).to.include('SCAPI_SPEC_UNKNOWN_MEMBER').and.to.include('spec.paths').and.to.include('spec.search');
+    expect(message).to.include('SCAPI_SPEC_UNKNOWN_MEMBER').and.to.include('operations(').and.to.include('search(');
     const keys = (await runScapiCode({code: 'async () => Object.keys(spec)', documents: [document]})) as string[];
-    expect(keys).to.deep.equal(['apis', 'paths', 'resolve', 'search']);
+    expect(keys).to.deep.equal(['apis', 'operations', 'operation', 'resolve', 'search']);
   });
 });

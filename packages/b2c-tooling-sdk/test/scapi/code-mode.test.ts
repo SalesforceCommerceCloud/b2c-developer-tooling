@@ -21,6 +21,7 @@ import {
 import {MiddlewareRegistry} from '@salesforce/b2c-tooling-sdk/clients';
 import type {AuthStrategy} from '@salesforce/b2c-tooling-sdk/auth';
 import type {SafetyConfig} from '@salesforce/b2c-tooling-sdk/safety';
+import {buildScapiScript} from '../../src/scapi/runtime-source.js';
 
 const server = setupServer();
 const prefix = '/product/products/v1/organizations/f_ecom_test_001/products/';
@@ -56,6 +57,14 @@ describe('SCAPI code mode', function () {
   it('accepts trailing semicolons and line comments after the function', async () => {
     expect(await runScapiCode({code: 'async () => ({ok: true});\n'})).to.deep.equal({ok: true});
     expect(await runScapiCode({code: 'async () => ({ok: true}) // done'})).to.deep.equal({ok: true});
+    expect(await runScapiCode({code: 'async () => ({ok: true});;; '})).to.deep.equal({ok: true});
+  });
+
+  it('strips long runs of trailing semicolons in linear time', () => {
+    const started = performance.now();
+    const script = buildScapiScript('async () => 1' + ';'.repeat(32_000), {});
+    expect(performance.now() - started).to.be.lessThan(50);
+    expect(script).to.include('async () => 1\n))(__console)(__config.input)');
   });
 
   it('restricts local development APIs without affecting parent-managed work', async () => {
@@ -69,11 +78,10 @@ describe('SCAPI code mode', function () {
         'process.getBuiltinModule("child_process").execFileSync(process.execPath, ["--version"])',
         'new (process.getBuiltinModule("worker_threads").Worker)("", {eval: true})',
       ]) {
-        await rejects(() => runScapiCode({cwd, code: `async () => ${expression}`}), 'SCAPI_RUNTIME_RESTRICTED');
+        await rejects(() => runScapiCode({code: `async () => ${expression}`}), 'SCAPI_RUNTIME_RESTRICTED');
       }
       expect(readFileSync(file, 'utf8')).to.equal('unchanged');
       const result = await runScapiCode({
-        cwd,
         request: async () => ({data: readFileSync(file, 'utf8')}),
         code: 'async () => ({sum: [1, 2, 3].reduce((a, b) => a + b, 0), response: await scapi.request({})})',
       });
@@ -166,7 +174,7 @@ describe('SCAPI code mode', function () {
     const result = await runScapiCode({
       documents: loadScapiSchemas(),
       code: `async () => {
-      const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
+      const op = await spec.operation('/product/products/v1/organizations/{organizationId}/products/{productId}', 'put');
       const body = op.requestBody.content['application/json'].schema;
       return {operation: op.operationId, required: body.required, scopes: op.security, fields: Object.keys(body.properties)};
     }`,
@@ -192,7 +200,7 @@ describe('SCAPI code mode', function () {
     const before = JSON.stringify(document);
     const result = await runScapiCode({
       documents: [document],
-      code: 'async () => Object.values(spec.paths)[0].get.responses["200"].properties',
+      code: "async () => { const [o] = await spec.operations(); return (await spec.operation(o.path, o.method)).responses['200'].properties; }",
     });
     const node = {type: 'object', properties: {next: {$ref: '#/components/schemas/Node'}}};
     expect(result).to.deep.equal({left: node, right: node});
@@ -231,11 +239,16 @@ describe('SCAPI code mode', function () {
     const result = await runScapiCode({
       documents: docs,
       authType: 'shopper',
-      code: `async () => ({
-      allMatch: Object.values(spec.paths).flatMap(Object.values).every(op => op.auth.types.includes('shopper')),
-      mixed: spec.apis.find(api => api.id === 'checkout/orders/v1').authTypes,
-      standardProductPresent: spec.apis.some(api => api.id === 'product/products/v1')
-    })`,
+      code: `async () => {
+      const ops = await spec.operations({api: 'checkout'});
+      const all = await Promise.all(ops.slice(0, 40).map(o => spec.operation(o.path, o.method)));
+      const apis = await spec.apis();
+      return {
+        allMatch: all.every(op => op.auth.types.includes('shopper')),
+        mixed: apis.find(api => api.id === 'checkout/orders/v1').authTypes,
+        standardProductPresent: apis.some(api => api.id === 'product/products/v1')
+      };
+    }`,
     });
     expect(result).to.deep.equal({allMatch: true, mixed: ['admin', 'shopper'], standardProductPresent: false});
     expect(orders.schema.paths['/organizations/{organizationId}/orders']?.get).not.to.have.property('auth');

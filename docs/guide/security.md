@@ -6,6 +6,10 @@ description: Security practices for the B2C Developer Tooling project including 
 
 This page covers security practices used in the B2C Developer Tooling project, with a focus on supply chain security.
 
+::: tip Securing your storefront code
+To find security problems in your own cartridges, such as POST routes without CSRF checks, query injection, open redirects, and hardcoded credentials, see [Code Security](./code-security.md).
+:::
+
 ## Supply Chain Security
 
 The JavaScript/Node.js ecosystem is particularly vulnerable to supply chain attacks due to the large number of transitive dependencies in typical projects. This project uses several pnpm features to mitigate these risks.
@@ -16,10 +20,11 @@ New package versions are quarantined for 48 hours before they can be installed:
 
 ```yaml
 # pnpm-workspace.yaml
-minimumReleaseAge: 2880  # minutes (48 hours)
+minimumReleaseAge: 2880 # minutes (48 hours)
 ```
 
 This provides a buffer period during which:
+
 - Malicious packages can be detected and removed from npm
 - Security researchers can identify and report compromised packages
 - The community can flag suspicious updates
@@ -56,6 +61,7 @@ onlyBuiltDependencies:
 Build scripts are a common attack vector because they execute arbitrary code during installation. By default, pnpm blocks all build scripts except for packages in this allowlist.
 
 When adding a new dependency that requires build scripts:
+
 1. Verify the package is legitimate and actively maintained
 2. Review what the build script does
 3. Add it to `onlyBuiltDependencies` if necessary
@@ -85,3 +91,4 @@ See the **[Safety Mode](/guide/safety)** guide for full documentation.
 - Review the `pnpm-workspace.yaml` settings if you fork or modify this project
 - Consider using similar protections in your own projects
 - **Use Safety Mode** when running CLI in automated environments or providing it as a tool to AI agents
+- **Scan your storefront code** with `b2c security scan` (see [Code Security](./code-security.md))

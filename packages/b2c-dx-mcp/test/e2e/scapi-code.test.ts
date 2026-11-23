@@ -113,7 +113,7 @@ describe('SCAPI code mode over stdio', function () {
           authType: 'admin',
           api: 'product/products/v1',
           code: `async () => {
-          const op = spec.paths['/product/products/v1/organizations/{organizationId}/products/{productId}'].put;
+          const op = await spec.operation('/product/products/v1/organizations/{organizationId}/products/{productId}', 'put');
           const body = op.requestBody.content['application/json'].schema;
           return {operation: op.operationId, required: body.required, fields: Object.keys(body.properties), auth:op.auth};
         }`,
@@ -183,7 +183,7 @@ describe('SCAPI code mode over stdio', function () {
       expect(read.isError).not.to.equal(true);
       const result = (await client.call('tools/call', {
         name: 'scapi_search',
-        arguments: {skillRead: true, authType: 'shopper', code: 'async () => spec.apis.length'},
+        arguments: {skillRead: true, authType: 'shopper', code: 'async () => (await spec.apis()).length'},
       })) as {isError?: boolean};
       expect(result.isError).not.to.equal(true);
       expect(readJson<{result: number}>(result).result).to.be.greaterThan(0);
@@ -212,7 +212,7 @@ describe('SCAPI code mode over stdio', function () {
           arguments: {
             skillRead: true,
             api: 'cdn/zones/v1',
-            code: 'async () => [spec.apis[0].origin, Object.keys(spec.paths)]',
+            code: 'async () => [(await spec.apis())[0].origin, (await spec.operations()).map((o) => o.path)]',
           },
         }),
       );

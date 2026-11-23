@@ -3,3 +3,4 @@ dist
 coverage
 data
 specs
+test/security/fixtures

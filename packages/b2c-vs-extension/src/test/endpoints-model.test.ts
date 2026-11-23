@@ -1,0 +1,483 @@
+/*
+ * Copyright (c) 2025, Salesforce, Inc.
+ * SPDX-License-Identifier: Apache-2
+ * For full license text, see the license.txt file in the repo root or http://www.apache.org/licenses/LICENSE-2.0
+ */
+import * as assert from 'assert';
+import type {IndexedEndpoint, ProjectIndex} from '@salesforce/b2c-tooling-sdk/project-index';
+import {
+  absolutePath,
+  cartridgeCustomApis,
+  cartridgeHookRows,
+  cartridgeJobStepRows,
+  chainRows,
+  controllerFiles,
+  controllerGroups,
+  controllerLenses,
+  customApiEndpointRow,
+  customApiGroups,
+  endpointRow,
+  endpointWarnings,
+  eventRows,
+  historyRows,
+  hookFunctionRows,
+  hookGroups,
+  hookRegistrationRow,
+} from '../endpoints/model.js';
+
+const mw = (id: string, cartridge: string, line: number, extra: Record<string, unknown> = {}) => ({
+  id,
+  cartridge,
+  relPath: 'cartridge/controllers/Account.js',
+  line,
+  ...extra,
+});
+
+const saveProfile: IndexedEndpoint = {
+  id: 'Account-SaveProfile',
+  controller: 'Account',
+  action: 'SaveProfile',
+  kind: 'sfra',
+  cartridge: 'app_custom',
+  relPath: 'cartridge/controllers/Account.js',
+  line: 9,
+  methods: ['ANY'],
+  https: false,
+  loginRequired: false,
+  csrf: 'none',
+  chain: [mw('function', 'app_custom', 9, {readsForm: true})],
+  steps: [
+    {method: 'post', cartridge: 'app_storefront_base', relPath: 'cartridge/controllers/Account.js', line: 42},
+    {
+      method: 'replace',
+      cartridge: 'app_custom',
+      relPath: 'cartridge/controllers/Account.js',
+      line: 9,
+      dropped: ['server.middleware.post', 'csrf.validateAjaxRequest'],
+    },
+  ],
+};
+
+const addProduct: IndexedEndpoint = {
+  id: 'Cart-AddProduct',
+  controller: 'Cart',
+  action: 'AddProduct',
+  kind: 'sfra',
+  cartridge: 'app_storefront_base',
+  relPath: 'cartridge/controllers/Cart.js',
+  line: 60,
+  methods: ['POST'],
+  https: false,
+  loginRequired: false,
+  csrf: 'middleware',
+  chain: [
+    {
+      ...mw('csrf.validateAjaxRequest', 'plugin_csrf', 5),
+      expression: 'csrfProtection.validateAjaxRequest',
+      relPath: 'cartridge/controllers/Cart.js',
+      via: 'prepend',
+      source: {cartridge: 'app_storefront_base', relPath: 'cartridge/scripts/middleware/csrf.js', line: 36},
+    },
+    {
+      ...mw('server.middleware.post', 'app_storefront_base', 60),
+      expression: 'server.middleware.post',
+      relPath: 'cartridge/controllers/Cart.js',
+    },
+    {...mw('function', 'app_storefront_base', 60), relPath: 'cartridge/controllers/Cart.js'},
+  ],
+  steps: [
+    {method: 'post', cartridge: 'app_storefront_base', relPath: 'cartridge/controllers/Cart.js', line: 60},
+    {method: 'prepend', cartridge: 'plugin_csrf', relPath: 'cartridge/controllers/Cart.js', line: 5},
+  ],
+};
+
+const index: ProjectIndex = {
+  version: 1,
+  cartridges: [
+    {name: 'app_custom', src: '/p/app_custom'},
+    {name: 'plugin_csrf', src: '/p/plugin_csrf'},
+    {name: 'app_storefront_base', src: '/p/app_storefront_base'},
+  ],
+  endpoints: [
+    addProduct,
+    saveProfile,
+    {
+      ...addProduct,
+      id: 'Wishlist-Show',
+      controller: 'Wishlist',
+      action: 'Show',
+      kind: 'pipeline',
+      chain: undefined,
+      steps: undefined,
+    },
+  ],
+  hooks: [
+    {
+      name: 'dw.ocapi.shop.basket.afterPOST',
+      kind: 'system',
+      function: 'afterPOST',
+      cartridge: 'app_storefront_base',
+      script: './b',
+      relPath: 'cartridge/scripts/b.js',
+      line: 1,
+      returnsValue: 'no',
+    },
+    {
+      name: 'dw.ocapi.shop.basket.afterPOST',
+      kind: 'system',
+      function: 'afterPOST',
+      cartridge: 'app_custom',
+      script: './a',
+      relPath: 'cartridge/scripts/a.js',
+      line: 3,
+      returnsValue: 'yes',
+    },
+    {
+      name: 'app.custom.notify',
+      kind: 'custom',
+      exports: ['notify', 'handle'],
+      cartridge: 'app_custom',
+      script: './n',
+      relPath: 'cartridge/scripts/n.js',
+      line: 1,
+      returnsValue: 'unknown',
+    },
+    {
+      name: 'dw.order.calculate',
+      kind: 'system',
+      function: 'calculate',
+      cartridge: 'app_custom',
+      script: './missing',
+      returnsValue: 'unknown',
+    },
+  ],
+  customApis: [
+    {
+      api: 'loyalty',
+      endpoint: 'getPoints',
+      cartridge: 'app_custom',
+      method: 'GET',
+      path: '/points',
+      security: ['ShopperToken'],
+      scopes: ['c_loyalty'],
+      apiType: 'shopper',
+      implementationFile: {relPath: 'cartridge/rest-apis/loyalty/script.js', line: 1},
+      public: true,
+      problems: [],
+    },
+    {
+      api: 'loyalty',
+      endpoint: 'setPoints',
+      cartridge: 'plugin_csrf',
+      apiType: 'unknown',
+      problems: ['No operation with operationId "setPoints" in schema.yaml.'],
+    },
+  ],
+  jobSteps: [],
+  errors: [],
+};
+
+suite('endpoints view model', () => {
+  test('controller groups leave out pipelines and sort endpoints', () => {
+    const groups = controllerGroups(index);
+    assert.deepStrictEqual(
+      groups.map((g) => g.controller),
+      ['Account', 'Cart'],
+    );
+    assert.deepStrictEqual(groups[1].cartridges, ['app_storefront_base', 'plugin_csrf']);
+  });
+
+  test('endpoint rows summarize methods and protections, and warn about missing CSRF and dropped middleware', () => {
+    assert.deepStrictEqual(
+      {
+        label: endpointRow(addProduct).label,
+        description: endpointRow(addProduct).description,
+        warning: endpointRow(addProduct).warning,
+      },
+      {label: 'Cart-AddProduct', description: 'POST · CSRF', warning: undefined},
+    );
+    const row = endpointRow(saveProfile);
+    assert.strictEqual(row.description, 'any method');
+    assert.deepStrictEqual(endpointWarnings(saveProfile), [
+      'Accepts POST without a CSRF token check.',
+      'server.replace() in app_custom dropped the POST-only restriction, CSRF check.',
+    ]);
+    assert.deepStrictEqual(row.location, {
+      cartridge: 'app_custom',
+      relPath: 'cartridge/controllers/Account.js',
+      line: 9,
+    });
+  });
+
+  test('chain rows show the code as written, the cartridge it comes from, and link to the function', () => {
+    const rows = chainRows(addProduct);
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['csrfProtection.validateAjaxRequest', 'prepend · app_storefront_base'],
+        ['server.middleware.post', 'app_storefront_base'],
+        ['Handler (Cart.js:60)', 'app_storefront_base'],
+      ],
+    );
+    assert.deepStrictEqual(rows[0].implementation, {
+      cartridge: 'app_storefront_base',
+      relPath: 'cartridge/scripts/middleware/csrf.js',
+      line: 36,
+    });
+    assert.match(rows[0].tooltip ?? '', /CSRF check \(AJAX\)/);
+    assert.match(rows[0].tooltip ?? '', /Used in plugin_csrf\/cartridge\/controllers\/Cart\.js:5/);
+  });
+
+  test('history rows flag what a replace dropped', () => {
+    const rows = historyRows(saveProfile);
+    assert.deepStrictEqual(
+      rows.map((r) => r.label),
+      ['server.post', 'server.replace'],
+    );
+    assert.strictEqual(rows[1].warning, 'Dropped the POST-only restriction, CSRF check that the replaced route had.');
+  });
+
+  test('event rows list route listeners in run order with where they were registered', () => {
+    const e = {
+      ...saveProfile,
+      events: [
+        {
+          event: 'route:BeforeComplete',
+          cartridge: 'app_storefront_base',
+          relPath: 'cartridge/controllers/Account.js',
+          line: 231,
+          step: 3,
+          conditional: true,
+        },
+        {
+          event: 'route:BeforeComplete',
+          cartridge: 'plugin_wishlists',
+          relPath: 'cartridge/controllers/Account.js',
+          line: 35,
+          step: 4,
+          via: 'append' as const,
+        },
+      ],
+    };
+    const rows = eventRows(e);
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['route:BeforeComplete', 'step 4 · app_storefront_base · conditional'],
+        ['route:BeforeComplete', 'step 5 · append · plugin_wishlists'],
+      ],
+    );
+    assert.deepStrictEqual(rows[1].location, {
+      cartridge: 'plugin_wishlists',
+      relPath: 'cartridge/controllers/Account.js',
+      line: 35,
+    });
+    assert.match(rows[0].tooltip!, /before the response is rendered/);
+    assert.deepStrictEqual(eventRows(saveProfile), []);
+  });
+
+  test('hook groups order registrations by cartridge path and explain system hook short-circuiting', () => {
+    const groups = hookGroups(index);
+    const afterPost = groups.find((g) => g.name === 'dw.ocapi.shop.basket.afterPOST')!;
+    assert.deepStrictEqual(
+      afterPost.registrations.map((r) => r.cartridge),
+      ['app_custom', 'app_storefront_base'],
+    );
+    assert.strictEqual(afterPost.row.description, 'system · 2 registrations');
+    assert.strictEqual(
+      afterPost.row.warning,
+      'app_custom can return a value, which skips 1 later registration and the system implementation.',
+    );
+    assert.match(afterPost.row.tooltip!, /first one that returns a value/);
+
+    const first = hookRegistrationRow(afterPost, afterPost.registrations[0], 0);
+    assert.strictEqual(first.label, '1. app_custom');
+    assert.strictEqual(first.description, 'a.js:3 · returns a value');
+    assert.ok(first.warning);
+    assert.strictEqual(hookRegistrationRow(afterPost, afterPost.registrations[1], 1).warning, undefined);
+
+    const custom = groups.find((g) => g.name === 'app.custom.notify')!;
+    assert.strictEqual(custom.row.warning, undefined, 'custom hooks always run every registration');
+    const customRow = hookRegistrationRow(custom, custom.registrations[0], 0);
+    assert.strictEqual(customRow.warning, undefined);
+    assert.strictEqual(customRow.description, 'n.js:1 · exports notify, handle');
+
+    const calculate = groups.find((g) => g.name === 'dw.order.calculate')!;
+    assert.strictEqual(
+      hookRegistrationRow(calculate, calculate.registrations[0], 0).warning,
+      'Script ./missing not found.',
+    );
+  });
+
+  test('custom API groups flag APIs defined in several cartridges and endpoint problems', () => {
+    const [loyalty] = customApiGroups(index);
+    assert.strictEqual(loyalty.row.description, 'shopper · app_custom, plugin_csrf');
+    assert.match(loyalty.row.warning!, /more than one cartridge/);
+    const ok = customApiEndpointRow(loyalty.endpoints[0]);
+    assert.strictEqual(ok.description, 'GET /points · ShopperToken c_loyalty');
+    assert.strictEqual(ok.warning, undefined);
+    assert.match(customApiEndpointRow(loyalty.endpoints[1]).warning!, /No operation/);
+  });
+
+  test('controller files per cartridge list statements with notes from other cartridges', () => {
+    const base = controllerFiles(index, 'app_storefront_base');
+    assert.deepStrictEqual(
+      base.map((f) => f.relPath),
+      ['cartridge/controllers/Account.js', 'cartridge/controllers/Cart.js'],
+    );
+    const account = base[0].rows[0];
+    assert.strictEqual(account.label, 'post SaveProfile');
+    assert.strictEqual(account.description, 'replaced by app_custom');
+    assert.strictEqual(account.warning, undefined, 'the base definition is no longer served, so it is not flagged');
+    assert.strictEqual(base[1].rows[0].description, 'prepended by plugin_csrf');
+
+    const custom = controllerFiles(index, 'app_custom');
+    assert.strictEqual(custom[0].extends, 'app_storefront_base');
+    assert.strictEqual(custom[0].rows[0].label, 'replace SaveProfile');
+    assert.match(custom[0].rows[0].warning!, /Dropped the POST-only restriction/);
+  });
+
+  test('absolute paths come from the index cartridge list', () => {
+    assert.strictEqual(
+      absolutePath(index, {cartridge: 'app_custom', relPath: 'cartridge/x.js'}),
+      '/p/app_custom/cartridge/x.js',
+    );
+    assert.strictEqual(absolutePath(index, {cartridge: 'nope', relPath: 'x'}), undefined);
+  });
+
+  test('cartridge hook rows list what one cartridge registers, with its place in each hook', () => {
+    const rows = cartridgeHookRows(index, 'app_custom');
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['app.custom.notify', 'n.js:1 · exports notify, handle'],
+        ['dw.ocapi.shop.basket.afterPOST', '1 of 2 · a.js:3 · returns a value'],
+        ['dw.order.calculate', './missing'],
+      ],
+    );
+    assert.ok(rows[2].warning, 'a missing script is flagged');
+    assert.deepStrictEqual(rows[1].location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/a.js', line: 3});
+    assert.deepStrictEqual(cartridgeHookRows(index, 'plugin_csrf'), []);
+  });
+
+  test('cartridge Custom APIs keep only the endpoints that cartridge defines', () => {
+    const [custom] = cartridgeCustomApis(index, 'app_custom');
+    assert.strictEqual(custom.api, 'loyalty');
+    assert.deepStrictEqual(
+      custom.endpoints.map((e) => e.endpoint),
+      ['getPoints'],
+    );
+    assert.deepStrictEqual(
+      cartridgeCustomApis(index, 'plugin_csrf')[0].endpoints.map((e) => e.endpoint),
+      ['setPoints'],
+    );
+    assert.deepStrictEqual(cartridgeCustomApis(index, 'app_storefront_base'), []);
+  });
+
+  test('custom hook registrations list each called function with its call sites', () => {
+    const notify = {
+      ...index.hooks[2],
+      calledFunctions: [
+        {
+          name: 'notify',
+          line: 7,
+          callers: [
+            {cartridge: 'app_custom', relPath: 'cartridge/controllers/Order.js', line: 12},
+            {cartridge: 'app_custom', relPath: 'cartridge/templates/default/a.isml', line: 3},
+          ],
+        },
+        {name: 'missing', callers: [{cartridge: 'plugin_csrf', relPath: 'cartridge/scripts/b.js', line: 9}]},
+      ],
+      registeredIn: {relPath: 'hooks.json', line: 4},
+    };
+    const [group] = hookGroups({...index, hooks: [notify]});
+    const row = hookRegistrationRow(group, notify, 0);
+    assert.strictEqual(row.description, 'n.js:1 · exports notify, handle');
+    assert.deepStrictEqual(row.location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/n.js', line: 1});
+    assert.deepStrictEqual(row.registration, {cartridge: 'app_custom', relPath: 'hooks.json', line: 4});
+
+    const [fnNotify, fnMissing] = hookFunctionRows(notify);
+    assert.strictEqual(fnNotify.label, 'notify()');
+    assert.strictEqual(fnNotify.description, 'n.js:7 · 2 callers');
+    assert.deepStrictEqual(fnNotify.location, {cartridge: 'app_custom', relPath: 'cartridge/scripts/n.js', line: 7});
+    assert.deepStrictEqual(
+      fnNotify.callers.map((c) => [c.label, c.description]),
+      [
+        ['Order.js:12', 'app_custom'],
+        ['a.isml:3', 'app_custom'],
+      ],
+    );
+    assert.match(fnMissing.warning ?? '', /does not export missing\(\)/);
+
+    const [cartRow] = cartridgeHookRows({...index, hooks: [notify]}, 'app_custom');
+    assert.deepStrictEqual(
+      cartRow.children?.map((c) => [c.label, c.children.length]),
+      [
+        ['notify()', 2],
+        ['missing()', 1],
+      ],
+    );
+  });
+
+  test('job step rows open the implementing function and link to steptypes.json', () => {
+    const withSteps: ProjectIndex = {
+      ...index,
+      jobSteps: [
+        {
+          typeId: 'custom.Export',
+          kind: 'script-module-step',
+          cartridge: 'app_custom',
+          module: 'plugin_csrf/cartridge/scripts/export',
+          function: 'run',
+          registeredIn: {relPath: 'steptypes.json', line: 5},
+          implementationFile: {cartridge: 'plugin_csrf', relPath: 'cartridge/scripts/export.js', line: 12},
+          parameters: [{name: 'Folder', type: 'string', required: true}],
+          problems: [],
+        },
+        {
+          typeId: 'custom.Broken',
+          kind: 'chunk-script-module-step',
+          cartridge: 'app_custom',
+          module: 'app_custom/cartridge/scripts/gone',
+          registeredIn: {relPath: 'steptypes.json', line: 20},
+          parameters: [],
+          problems: ['Module app_custom/cartridge/scripts/gone not found.'],
+        },
+      ],
+    };
+    const rows = cartridgeJobStepRows(withSteps, 'app_custom');
+    assert.deepStrictEqual(
+      rows.map((r) => [r.label, r.description]),
+      [
+        ['custom.Broken', 'chunk'],
+        ['custom.Export', 'task · run() · export.js:12'],
+      ],
+    );
+    assert.ok(rows[0].warning);
+    assert.deepStrictEqual(rows[0].location, {cartridge: 'app_custom', relPath: 'steptypes.json', line: 20});
+    assert.deepStrictEqual(rows[1].location, {
+      cartridge: 'plugin_csrf',
+      relPath: 'cartridge/scripts/export.js',
+      line: 12,
+    });
+    assert.deepStrictEqual(rows[1].registration, {cartridge: 'app_custom', relPath: 'steptypes.json', line: 5});
+    assert.match(rows[1].tooltip ?? '', /Parameters: Folder: string \(required\)/);
+    assert.deepStrictEqual(cartridgeJobStepRows(withSteps, 'plugin_csrf'), []);
+  });
+
+  test('controller lenses summarize each route statement in a file', () => {
+    assert.deepStrictEqual(
+      controllerLenses(index, '/p/app_storefront_base/cartridge/controllers/Cart.js').map((l) => [l.line, l.title]),
+      [[60, 'Cart-AddProduct · POST · 3 steps · prepended by plugin_csrf']],
+    );
+    assert.deepStrictEqual(
+      controllerLenses(index, '/p/plugin_csrf/cartridge/controllers/Cart.js').map((l) => [l.line, l.endpoint, l.title]),
+      [[5, 'Cart-AddProduct', 'Cart-AddProduct · POST · 3 steps']],
+    );
+    assert.deepStrictEqual(
+      controllerLenses(index, '/p/app_storefront_base/cartridge/controllers/Account.js').map((l) => l.title),
+      ['Account-SaveProfile · any method · 1 step · replaced by app_custom'],
+    );
+    assert.deepStrictEqual(controllerLenses(index, '/elsewhere/Cart.js'), []);
+  });
+});

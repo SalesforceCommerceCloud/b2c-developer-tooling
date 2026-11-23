@@ -1,5 +1,17 @@
 # @salesforce/b2c-dx-docs
 
+## 0.4.16
+
+### Patch Changes
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Clearer Code Security guide: a general overview of what the scan checks, MCP-first assistant guidance, and Security Rules nested under Code Security in the guides sidebar. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 0.4.15
+
+### Patch Changes
+
+- [`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c) - The `b2c-setup` skill and the Realm Setup guide now explain that a new sandbox's SCAPI can return 404 for 10 to 20 minutes after it starts, and how to wait for it without changing the API client. The skill's dataset imports use a `<datasets>` placeholder for a checkout at the release matching the storefront template. (Thanks [@clavery](https://github.com/clavery)!)
+
 ## 0.4.14
 
 ### Patch Changes

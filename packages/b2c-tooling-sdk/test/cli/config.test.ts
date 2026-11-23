@@ -40,6 +40,48 @@ class MockConfigSource implements ConfigSource {
 
 describe('cli/config', () => {
   describe('loadConfig', () => {
+    describe('variables without a CLI flag', () => {
+      let tempDir: string;
+
+      beforeEach(() => {
+        isolateConfig();
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'b2c-flagless-env-'));
+      });
+      afterEach(() => {
+        restoreConfig();
+        fs.rmSync(tempDir, {recursive: true, force: true});
+      });
+
+      it('reads SFCC_CARTRIDGES as a colon- or comma-separated cartridge path', async () => {
+        process.env.SFCC_CARTRIDGES = 'app_custom:int_payment,app_storefront_base';
+        const config = await loadConfig({}, {projectDirectory: tempDir, workingDirectory: tempDir});
+        expect(config.values.cartridges).to.deep.equal(['app_custom', 'int_payment', 'app_storefront_base']);
+      });
+
+      it('lets SFCC_CARTRIDGES override dw.json cartridges', async () => {
+        const configPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(configPath, JSON.stringify({hostname: 'example.com', cartridges: ['app_from_file']}));
+        process.env.SFCC_CARTRIDGES = 'app_from_env';
+        const config = await loadConfig({}, {configPath, projectDirectory: tempDir});
+        expect(config.values.cartridges).to.deep.equal(['app_from_env']);
+        expect(config.values.hostname).to.equal('example.com');
+      });
+
+      it('reads SFCC_CATALOGS', async () => {
+        process.env.SFCC_CATALOGS = 'storefront-catalog, apparel-catalog';
+        const config = await loadConfig({}, {projectDirectory: tempDir, workingDirectory: tempDir});
+        expect(config.values.catalogs).to.deep.equal(['storefront-catalog', 'apparel-catalog']);
+      });
+
+      it('lets SFCC_SITE_ID override dw.json siteId', async () => {
+        const configPath = path.join(tempDir, 'dw.json');
+        fs.writeFileSync(configPath, JSON.stringify({hostname: 'example.com', siteId: 'FromFile'}));
+        process.env.SFCC_SITE_ID = 'FromEnv';
+        const config = await loadConfig({}, {configPath, projectDirectory: tempDir});
+        expect(config.values.siteId).to.equal('FromEnv');
+      });
+    });
+
     it('loads config from flags only', async () => {
       const flags: Partial<NormalizedConfig> = {
         hostname: 'test.demandware.net',

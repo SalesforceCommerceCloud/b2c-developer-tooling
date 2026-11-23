@@ -194,7 +194,7 @@ try {
     arguments: {
       skillRead: true,
       api: 'product/products/v1',
-      code: 'async () => spec.paths["/product/products/v1/organizations/{organizationId}/products/{productId}"].put.operationId',
+      code: 'async () => (await spec.operation("/product/products/v1/organizations/{organizationId}/products/{productId}", "put")).operationId',
     },
   });
   assert.notEqual(schemaSearch.isError, true, JSON.stringify(schemaSearch));

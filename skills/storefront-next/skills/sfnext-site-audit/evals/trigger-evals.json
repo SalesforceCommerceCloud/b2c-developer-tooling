@@ -1,0 +1,5 @@
+[
+  {"query": "We go live next week. Can you audit my Storefront Next storefront and tell me if it's ready to launch?", "should_trigger": true},
+  {"query": "Run a pre-launch site audit on https://www.example.com for home, a category page and a product page", "should_trigger": true},
+  {"query": "pnpm lint fails with custom/color-linter errors, how do I fix them before my PR?", "should_trigger": false}
+]

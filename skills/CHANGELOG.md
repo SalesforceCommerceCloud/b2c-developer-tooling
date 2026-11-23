@@ -1,5 +1,29 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.16.2
+
+### Patch Changes
+
+- [#870](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/870) [`8299c02`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/8299c02b10ea5aa2a559902a3650a5969869f8ad) - The CIP skill now covers the Calcite SQL dialect (reserved words such as `date` and `month` as aliases, date literals, month grouping) and says to describe tables before writing custom SQL, so agents stop guessing column names like `orders` and `site_name`. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#874](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/874) [`7c62d2c`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/7c62d2c6bc28d9486460c074a329d42b783d68fe) - Routes, overlays, and hooks now follow the site's cartridge path only: cartridges in the project that aren't on the path are listed as not on the path and left out, and security findings in them are marked. `project_inspect` and `security_scan` also read the site's cartridge path live from the instance when SCAPI is configured, take a `siteId` input, and report where the order came from (`cartridgePathSource`). To see every cartridge as before, use `--all-cartridges` in the CLI, `allCartridges` in the MCP tools, or **Include Cartridges Not on the Path** in VS Code, where cartridges off the path are now dimmed. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.16.1
+
+### Patch Changes
+
+- [`2cfb145`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2cfb145ab4f77cbfaeab0c1a06346d7c5c839e1c) - The `b2c-setup` skill and the Realm Setup guide now explain that a new sandbox's SCAPI can return 404 for 10 to 20 minutes after it starts, and how to wait for it without changing the API client. The skill's dataset imports use a `<datasets>` placeholder for a checkout at the release matching the storefront template. (Thanks [@clavery](https://github.com/clavery)!)
+
+## 1.16.0
+
+### Minor Changes
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Added the `b2c-project` skill for answering questions about storefront code with `b2c project`: what runs for an endpoint and which cartridge it comes from, overlay composition, hook order and short-circuiting, Custom API wiring, and custom job steps. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#865](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/865) [`2149bff`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/2149bff4c2dff036afaebeaa960cf822388fc354) - Added the `b2c-security` skill for scanning cartridge code with `b2c security scan`, triaging findings, and applying fixes. (Thanks [@clavery](https://github.com/clavery)!)
+
+- [#823](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/823) [`3355af1`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/3355af1dee4b8ec4dc9ab68378d42eea5912d0ee) - Add the `sfnext-site-audit` skill to the `storefront-next` plugin. It runs a pre-launch audit of a deployed Storefront Next storefront with the `sfnext audit` commands (in `@salesforce/storefront-next-dev` 1.5.0 and later): it measures the home, category and product pages, checks performance, SEO, security and best-practice rules against the evidence and the project source, and shows a launch-readiness report in a local dashboard. The `sfnext-overview` router and the `sfnext-deployment` pre-launch checklist point to it. (Thanks [@kevinxh](https://github.com/kevinxh)!)
+
 ## 1.15.2
 
 ### Patch Changes

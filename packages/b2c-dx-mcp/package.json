@@ -1,7 +1,7 @@
 {
   "name": "@salesforce/b2c-dx-mcp",
   "description": "MCP server for B2C Commerce developer experience tools",
-  "version": "3.15.0",
+  "version": "3.17.0",
   "author": "Salesforce",
   "license": "Apache-2.0",
   "homepage": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/mcp/",
@@ -140,6 +140,6 @@
     "typescript-eslint": "catalog:"
   },
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.19.0"
   }
 }

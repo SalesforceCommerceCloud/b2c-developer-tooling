@@ -3,7 +3,7 @@ openapi: "3.0.3"
 # SCAPI MRT Storefronts API (v1) — self-contained bundle.
 #
 # Source of truth: git.soma.salesforce.com/cc-mercury-api/storefront-oas
-#   storefronts-oas/v1/api_spec/src/storefronts.yaml (version 1.0.4)
+#   storefronts-oas/v1/api_spec/src/storefronts.yaml (version 1.2.0)
 #
 # The upstream source is a multi-file spec whose $refs resolve component files
 # under src/components/ plus a build-time `dependencies/commerce-cloud-standards-oas`
@@ -22,7 +22,7 @@ info:
   x-api-type: Admin
   x-api-family: Storefront
   title: Storefronts
-  version: 1.0.4
+  version: 1.2.0
   description: >-
     SCAPI Managed Runtime Storefronts API. Manage the storefronts (MRT projects)
     provisioned for an organization: list, create, get, update (including a full
@@ -179,11 +179,18 @@ paths:
       description: >-
         Queues deletion of the storefront. Returns immediately with the
         storefront resource in the delete_in_progress setup status. Poll the
-        storefront by ID to track deletion progress.
+        storefront by ID to track deletion progress. By default, the storefront
+        and all its downstream resources — Managed Runtime (MRT) environments
+        and deployments, the Account Manager/SLAS client, and eCDN routing —
+        are deleted. Each downstream resource can be preserved by setting its
+        corresponding `delete*` query parameter to `false`.
       operationId: deleteStorefront
       parameters:
         - $ref: "#/components/parameters/organizationId"
         - $ref: "#/components/parameters/storefrontId"
+        - $ref: "#/components/parameters/deleteMrtEnv"
+        - $ref: "#/components/parameters/deleteAmSlasClients"
+        - $ref: "#/components/parameters/deleteEcdnRouting"
       responses:
         "202":
           description: Storefront deletion successfully queued.
@@ -245,6 +252,44 @@ components:
         minLength: 1
         maxLength: 20
         pattern: "^[a-z0-9]+(?:-+[a-z0-9]+)*$"
+    deleteMrtEnv:
+      name: deleteMrtEnv
+      in: query
+      required: false
+      description: >-
+        Whether to delete the storefront's Managed Runtime (MRT) environments
+        and deployments along with the storefront. Defaults to `true`, which
+        tears down MRT resources. Set to `false` to preserve MRT resources
+        after the storefront is removed.
+      schema:
+        type: boolean
+        default: true
+        example: false
+    deleteAmSlasClients:
+      name: deleteAmSlasClients
+      in: query
+      required: false
+      description: >-
+        Whether to delete the storefront's Account Manager / SLAS (Shopper
+        Login and API Access Service) client along with the storefront.
+        Defaults to `true`, which deletes the AM/SLAS client. Set to `false`
+        to preserve the AM/SLAS client after the storefront is removed.
+      schema:
+        type: boolean
+        default: true
+        example: false
+    deleteEcdnRouting:
+      name: deleteEcdnRouting
+      in: query
+      required: false
+      description: >-
+        Whether to delete the storefront's eCDN routing along with the
+        storefront. Defaults to `true`, which deletes eCDN routing. Set to
+        `false` to preserve eCDN routing after the storefront is removed.
+      schema:
+        type: boolean
+        default: true
+        example: false
   responses:
     401Unauthorized:
       description: Your access token is invalid or expired and can't be used to identify a user.

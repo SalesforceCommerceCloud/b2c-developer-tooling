@@ -177,12 +177,15 @@ export function detectAutoCloseTag(linePrefixIncludingBracket: string): AutoClos
   return {tagName};
 }
 
-function isInsideAutoCloseExcludedTag(text: string, offset: number): boolean {
+export function isInsideAutoCloseExcludedTag(text: string, offset: number): boolean {
   const stack: string[] = [];
   const EXCLUDED = new Set(['isscript', 'iscomment']);
 
   for (const token of scanIsmlTags(text)) {
-    if (token.startOffset >= offset) break;
+    // `offset` is just after the `>` the user typed, so the tag being typed ends
+    // at `offset`. Only tags *before* it decide whether we are inside an excluded
+    // block; otherwise typing `<iscomment>` would suppress its own auto-close.
+    if (token.endOffset >= offset) break;
 
     if (token.isClosing) {
       const current = stack[stack.length - 1];
