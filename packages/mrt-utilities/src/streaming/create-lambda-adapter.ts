@@ -886,6 +886,17 @@ export function createExpressResponse(
         }
         return this;
       }
+    } else {
+      // MRT requires at least one write to the body stream before it is ended,
+      // even for body-less responses (302 redirects, 204/304, HEAD, or a bare
+      // res.end()). The AWS runtime emits the status/headers metadata prelude
+      // lazily — only just before the first write to the stream — so a response
+      // that reaches end() without ever writing ships with no prelude, and the
+      // streaming edge cannot frame it: it returns its own 502
+      // InternalServerErrorException regardless of the intended status code. A
+      // zero-length write is a no-op for the body but guarantees the prelude is
+      // sent. Routed through writeChunk so it also flushes any active compressor.
+      writeChunk(Buffer.alloc(0));
     }
 
     // End the stream(s) and emit finish event
