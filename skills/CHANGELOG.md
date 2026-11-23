@@ -1,5 +1,11 @@
 # @salesforce/b2c-agent-plugins
 
+## 1.16.3
+
+### Patch Changes
+
+- [#862](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/pull/862) [`e607ad2`](https://github.com/SalesforceCommerceCloud/b2c-developer-tooling/commit/e607ad22e801e63e85ecb3d91e337f58c393a66c) - Add `b2c mrt project manage-access get` to show whether a storefront is managed in Runtime Admin or Business Manager, whether the SCAPI MRT Admin API is available, and whether direct (legacy) MRT API access is allowed, along with the environments/instances these settings apply to. The SDK adds `getStorefrontManageAccess()`. (Thanks [@kushagramishra-boop](https://github.com/kushagramishra-boop)!)
+
 ## 1.16.2
 
 ### Patch Changes
