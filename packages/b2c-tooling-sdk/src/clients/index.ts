@@ -172,6 +172,16 @@ export type {
 export {createSlasClient} from './slas-admin.js';
 export {createSlasShopperClient, type SlasShopperClient, type SlasShopperClientConfig} from './slas-shopper.js';
 export type {paths as SlasShopperPaths, components as SlasShopperComponents} from './slas-shopper.js';
+export {
+  createShopperSearchClient,
+  type ShopperSearchClient,
+  type ShopperSearchClientConfig,
+  type ProductSearchResult,
+  type ProductSearchHit,
+  type ProductSearchRefinement,
+  type SearchMode,
+} from './shopper-search.js';
+export type {paths as ShopperSearchPaths, components as ShopperSearchComponents} from './shopper-search.js';
 export type {
   SlasClient,
   SlasClientConfig,

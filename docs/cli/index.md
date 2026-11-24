@@ -114,6 +114,7 @@ Set `SFCC_AGENT` to override detection: `SFCC_AGENT=0` treats the session as hum
 - [Custom APIs](./custom-apis) - SCAPI Custom API endpoint status
 - [SCAPI Schemas](./scapi-schemas) - Browse and retrieve SCAPI OpenAPI schemas
 - [Granular Replications](./replications) - Trigger and monitor SCAPI granular replications
+- [Search Commands](./search) - Capture product search results from Shopper Search or the storefront search page and compare them
 - [CAP Commands](./cap) - Manage Commerce App Packages
 
 ### Development

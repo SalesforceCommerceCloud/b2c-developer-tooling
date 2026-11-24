@@ -17,6 +17,7 @@
     "../packages/b2c-tooling-sdk/src/operations/content/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/cip/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/metrics/index.ts",
+    "../packages/b2c-tooling-sdk/src/operations/search/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/mtls/index.ts",
     "../packages/b2c-tooling-sdk/src/operations/jobs/index.ts",
     "../packages/b2c-tooling-sdk/src/openshell/index.ts",
