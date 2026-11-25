@@ -223,6 +223,7 @@ const referenceSidebar = [
       {text: 'Scaffold', link: '/cli/scaffold'},
       {text: 'SCAPI Schemas', link: '/cli/scapi-schemas'},
       {text: 'Granular Replications', link: '/cli/replications'},
+      {text: 'Search', link: '/cli/search'},
       {text: 'Setup', link: '/cli/setup'},
       {text: 'Sites', link: '/cli/sites'},
       {text: 'Security', link: '/cli/security'},

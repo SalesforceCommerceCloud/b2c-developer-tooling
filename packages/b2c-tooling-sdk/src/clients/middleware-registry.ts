@@ -49,6 +49,7 @@ export type HttpClientType =
   | 'cip'
   | 'ocapi'
   | 'slas'
+  | 'shopper-search'
   | 'ods'
   | 'mrt'
   | 'mrt-b2c'

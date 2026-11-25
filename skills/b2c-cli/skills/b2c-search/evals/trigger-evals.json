@@ -1,0 +1,17 @@
+[
+  {"query": "Is Agentic Commerce Search actually turned on and serving results for our RefArch site, or are semantic requests still falling back to the native engine?", "should_trigger": true},
+  {"query": "I want to smoke test Agentic Commerce Search on our site. Here are 20 queries from our top search report. Run them in lexical and semantic mode through the Shopper Search API and tell me how the results differ.", "should_trigger": true},
+  {"query": "Compare native search against semantic search for 'red dress', 'running shoes', and 'gift for dad'. How much do the top 10 results overlap, and which products only show up in one engine?", "should_trigger": true},
+  {"query": "Do the price sorts work the same way in Agentic Commerce Search as in native search? I want to check that price low to high is really applied by each engine.", "should_trigger": true},
+  {"query": "Which facets does semantic search return that lexical search doesn't, and do the hit counts on the color facet look different between the two engines?", "should_trigger": true},
+  {"query": "Add the orderable_only refinement to the search capture so unavailable products don't skew the lexical versus semantic comparison.", "should_trigger": true},
+  {"query": "We changed the searchable attributes and rebuilt the index. Capture the search results for our query list before and after the change and show me what moved.", "should_trigger": true},
+  {"query": "Semantic search seems to return the exact same list of products no matter what we type. How can I confirm that from the command line?", "should_trigger": true},
+  {"query": "Which of our top queries return zero results with semantic search but do return products with the native engine?", "should_trigger": true},
+  {"query": "The semantic requests keep coming back with effectiveSearchMode lexical. Is that a fallback, and how do I tell whether the semantic index is ready?", "should_trigger": true},
+  {"query": "Capture what the storefront search page shows for our query list before we turn on Agentic Commerce Search, so we have a native baseline to compare against later.", "should_trigger": false},
+  {"query": "Compare the product tiles on our storefront search results page with what the Shopper Search API returns for the same queries. Our dev storefront is behind the storefront password.", "should_trigger": false},
+  {"query": "Rebuild the product search index for my RefArch site and wait for the job to finish.", "should_trigger": false},
+  {"query": "I need a SLAS client with the shopper product search scope so I can call the Shopper Search API from a script. How do I create it?", "should_trigger": false},
+  {"query": "How do I add search suggestions to the search box in my headless storefront using the Shopper Search API?", "should_trigger": false}
+]

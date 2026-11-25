@@ -296,6 +296,9 @@
           }
         }
       },
+      "search": {
+        "description": "Capture and compare storefront product search results\n\nDocs: https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/search.html"
+      },
       "security": {
         "description": "[PREVIEW] Scan cartridge code for security problems"
       },

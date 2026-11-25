@@ -20,6 +20,8 @@
   "b2c-cli/b2c-sandbox": "Create, list, start, stop, and manage on-demand sandboxes.",
   "b2c-cli/b2c-scapi-custom": "Check custom SCAPI endpoint registration; debug 404 or endpoint-not-found errors.",
   "b2c-cli/b2c-scapi-schemas": "Browse SCAPI OpenAPI specs: endpoints, request/response shapes, and versions.",
+  "b2c-cli/b2c-search": "Check Agentic Commerce Search is serving; capture Shopper Search and diff ranking, facets, sorting.",
+  "b2c-cli/b2c-search-storefront": "Capture storefront search pages before and after Agentic Commerce Search; compare with the API.",
   "b2c-cli/b2c-security": "Scan cartridge code and site data for B2C Commerce security problems, triage findings, and fix them.",
   "b2c-cli/b2c-site-import-export": "Author, validate, import, and verify site archives and metadata XML; export data.",
   "b2c-cli/b2c-setup": "Set up a sandbox or realm: sample datasets, indexes, code, Storefront Next, and replication.",
