@@ -1,0 +1,17 @@
+[
+  {"query": "We're about to turn on Agentic Commerce Search for our site. Before we do, capture what the storefront search page shows for our top 30 queries so we have a native baseline.", "should_trigger": true},
+  {"query": "Agentic Commerce Search was switched on yesterday. Capture the storefront search results again with the same settings and compare them with the baseline we took before.", "should_trigger": true},
+  {"query": "Does the search page on our dev storefront show the same products as the Shopper Search API for 'red dress' and 'running shoes'? I think a customization changes the order.", "should_trigger": true},
+  {"query": "I turned on Agentic Commerce Search but the storefront search results look the same as before. How can I tell whether the page is really being served by the new engine?", "should_trigger": true},
+  {"query": "Capture the storefront search pages with the price low to high sort and a color filter applied, using the same queries as last time.", "should_trigger": true},
+  {"query": "Our staging storefront is behind the storefront password. How do I capture its search results pages from the CLI without putting the password in my shell history?", "should_trigger": true},
+  {"query": "Run the full four-way comparison: storefront and API, before and after Agentic Commerce Search is on, and summarize the findings for me.", "should_trigger": true},
+  {"query": "The storefront capture warns that no product tiles were found. How do I save the HTML and fix the selectors for our customized search template?", "should_trigger": true},
+  {"query": "Agentic Commerce Search is already live on our site and I forgot to take a baseline. Is there any way to still get the storefront's native search results?", "should_trigger": true},
+  {"query": "Why don't the product IDs from the storefront search page match the master product IDs the Shopper Search API returns for the same query?", "should_trigger": true},
+  {"query": "Compare lexical and semantic search results from the Shopper Search API for our top queries and show me the overlap at the top 1, 5, and 10 results.", "should_trigger": false},
+  {"query": "Capture the Shopper Search API results for the queries in queries.txt in semantic mode, sorted by price, and check that the sort was applied.", "should_trigger": false},
+  {"query": "Create a SLAS client for guest shoppers with the shopper product search scope.", "should_trigger": false},
+  {"query": "Our storefront search page is slow at peak traffic. Which Metrics API signals should I look at to find where the time goes?", "should_trigger": false},
+  {"query": "Purge the CDN cache for the storefront search pages so shoppers see the new content.", "should_trigger": false}
+]

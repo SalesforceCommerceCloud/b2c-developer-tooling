@@ -5,16 +5,7 @@
  */
 import fs from 'node:fs';
 import {Flags, ux} from '@oclif/core';
-import {
-  ERROR_CODE,
-  OAuthCommand,
-  TableRenderer,
-  extractOAuthFlags,
-  loadConfig,
-  type ColumnDef,
-} from '@salesforce/b2c-tooling-sdk/cli';
-import type {ResolvedB2CConfig} from '@salesforce/b2c-tooling-sdk/config';
-import {createShopperSearchClient, toOrganizationId} from '@salesforce/b2c-tooling-sdk';
+import {ERROR_CODE, TableRenderer, type ColumnDef} from '@salesforce/b2c-tooling-sdk/cli';
 import {getGuestToken} from '@salesforce/b2c-tooling-sdk/slas';
 import {
   captureProductSearch,
@@ -28,10 +19,9 @@ import {
   type SearchCapture,
   type SearchCaptureEntry,
 } from '@salesforce/b2c-tooling-sdk/operations/search';
+import {ShopperSearchCommand} from '../../utils/search/shopper.js';
 import {readTextInput} from '../../utils/slas/client.js';
 import {t, withDocs} from '../../i18n/index.js';
-
-const DEFAULT_REDIRECT_URI = 'http://localhost:3000/callback';
 
 const COLUMNS: Record<string, ColumnDef<SearchCaptureEntry>> = {
   query: {header: 'Query', get: (e) => e.query},
@@ -47,7 +37,7 @@ const COLUMNS: Record<string, ColumnDef<SearchCaptureEntry>> = {
 
 const tableRenderer = new TableRenderer(COLUMNS);
 
-export default class SearchCaptureCommand extends OAuthCommand<typeof SearchCaptureCommand> {
+export default class SearchCaptureCommand extends ShopperSearchCommand<typeof SearchCaptureCommand> {
   static description = withDocs(
     t(
       'commands.search.capture.description',
@@ -68,26 +58,7 @@ export default class SearchCaptureCommand extends OAuthCommand<typeof SearchCapt
   ];
 
   static flags = {
-    ...OAuthCommand.baseFlags,
-    'slas-client-id': Flags.string({
-      description: 'SLAS client ID used to get a guest shopper token',
-      env: 'SFCC_SLAS_CLIENT_ID',
-      helpGroup: 'SHOPPER',
-    }),
-    'slas-client-secret': Flags.string({
-      description: 'SLAS client secret (omit for public clients)',
-      env: 'SFCC_SLAS_CLIENT_SECRET',
-      helpGroup: 'SHOPPER',
-    }),
-    'site-id': Flags.string({
-      description: 'Site ID to search',
-      env: 'SFCC_SITE_ID',
-      helpGroup: 'SHOPPER',
-    }),
-    'redirect-uri': Flags.string({
-      description: `Redirect URI registered on a public SLAS client (default: ${DEFAULT_REDIRECT_URI})`,
-      helpGroup: 'SHOPPER',
-    }),
+    ...ShopperSearchCommand.baseFlags,
     query: Flags.string({
       char: 'q',
       description: 'Search query to capture (repeatable)',
@@ -133,19 +104,6 @@ export default class SearchCaptureCommand extends OAuthCommand<typeof SearchCapt
 
   protected operations = {captureProductSearch, getGuestToken};
 
-  protected override async loadConfiguration(): Promise<ResolvedB2CConfig> {
-    const flags = this.flags as Record<string, unknown>;
-    return loadConfig(
-      {
-        ...extractOAuthFlags(flags),
-        slasClientId: flags['slas-client-id'] as string | undefined,
-        slasClientSecret: flags['slas-client-secret'] as string | undefined,
-        siteId: flags['site-id'] as string | undefined,
-      },
-      this.getBaseConfigOptions(),
-    );
-  }
-
   async run(): Promise<SearchCapture> {
     const queries = await this.collectQueries();
     if (queries.length === 0) {
@@ -162,60 +120,9 @@ export default class SearchCaptureCommand extends OAuthCommand<typeof SearchCapt
       this.error((error as Error).message, {code: ERROR_CODE.VALIDATION});
     }
 
-    const config = this.resolvedConfig.values;
-    const tenantId = this.requireTenantId();
-    const {shortCode, siteId, slasClientId, slasClientSecret} = config;
-
-    if (!shortCode) {
-      this.error(
-        t(
-          'error.shortCodeRequired',
-          'SCAPI short code required. Provide --short-code, set SFCC_SHORTCODE, or configure short-code in dw.json.',
-        ) + this.configDocsHint(),
-        {code: ERROR_CODE.VALIDATION},
-      );
-    }
-    if (!siteId) {
-      this.error(
-        t(
-          'commands.search.capture.siteIdRequired',
-          'site-id is required. Provide via --site-id flag, SFCC_SITE_ID env var, or site-id in dw.json.',
-        ) + this.configDocsHint(),
-        {code: ERROR_CODE.VALIDATION},
-      );
-    }
-    if (!slasClientId) {
-      this.error(
-        t(
-          'commands.search.capture.slasClientIdRequired',
-          'A SLAS client ID is required. Provide --slas-client-id, set SFCC_SLAS_CLIENT_ID, or configure slas-client-id in dw.json. List clients with `b2c slas client list`.',
-        ),
-        {code: ERROR_CODE.VALIDATION},
-      );
-    }
-
-    const organizationId = toOrganizationId(tenantId);
+    const {client, organizationId, shortCode, siteId} = await this.connectShopperSearch();
     const searchMode = this.flags['search-mode'] as 'lexical' | 'semantic' | undefined;
     const {limit} = this.flags;
-
-    if (!this.jsonEnabled()) {
-      this.log(t('commands.search.capture.fetchingToken', 'Fetching guest shopper token...'));
-    }
-    const token = await this.operations.getGuestToken({
-      shortCode,
-      organizationId,
-      slasClientId,
-      slasClientSecret,
-      siteId,
-      redirectUri: (this.flags['redirect-uri'] as string | undefined) ?? DEFAULT_REDIRECT_URI,
-      selfSignedApi: config.selfSignedApi,
-    });
-
-    const client = createShopperSearchClient({
-      shortCode,
-      getAccessToken: () => token.access_token,
-      selfSignedApi: config.selfSignedApi,
-    });
 
     if (!this.jsonEnabled()) {
       const settings = [

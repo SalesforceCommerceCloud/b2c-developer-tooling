@@ -122,6 +122,10 @@ describe('operations/search capture', () => {
       ],
     });
     expect(shirt.sortingOptions).to.deep.equal(['best-matches', 'price-low-to-high']);
+    expect(shirt.sortingOptionLabels).to.deep.equal({
+      'best-matches': 'Best Matches',
+      'price-low-to-high': 'Price Low To High',
+    });
     expect(shirt.suggestedPhrases).to.deep.equal(['shirts']);
     expect(dress.effectiveSearchMode).to.equal('lexical');
     // No undefined-valued keys, so the capture matches what is saved to disk.

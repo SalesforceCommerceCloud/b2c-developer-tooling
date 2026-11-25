@@ -23,6 +23,14 @@
  *   each depth, which products differ, rank changes, refinement and hit count
  *   changes, sorting options, the order of hit prices and search-mode fallbacks.
  *   It reports differences without a pass or fail verdict.
+ * - {@link analyzeSearchSources} analyzes up to four captures at once, the storefront
+ *   and the Shopper Search API each under lexical and semantic search. It compares them
+ *   in pairs, judges which engine each storefront capture looks like, and lists
+ *   findings: what differs, how many queries it affects and what is likely behind it.
+ * - {@link checkSearchModes} asks whether Agentic Commerce Search is serving a
+ *   site: it sends each of a few queries without a search mode, as `lexical` and
+ *   as `semantic`, and reports the engine that served each request, the site's
+ *   default engine and a verdict of `serving`, `not-serving` or `unknown`.
  *
  * ## Usage
  *
@@ -77,8 +85,40 @@ export {
   MAX_REFINEMENTS,
 } from './capture.js';
 export type {CaptureProductSearchOptions} from './capture.js';
+export {checkSearchModes, MAX_STATUS_QUERIES} from './status.js';
+export type {
+  AgenticCommerceSearchState,
+  CheckSearchModesOptions,
+  RequestedSearchMode,
+  SearchModeProbe,
+  SearchModeStatus,
+  SemanticRequestOutcome,
+  SiteDefaultSearchMode,
+} from './status.js';
 export {diffSearchCaptures, compareRankedLists, compareRefinements, priceOrderOf, DEFAULT_K_VALUES} from './diff.js';
 export type {DiffSearchCapturesOptions} from './diff.js';
+export {
+  analyzeSearchSources,
+  DEFAULT_ANALYSIS_MAX_EXAMPLES,
+  DEFAULT_ANALYSIS_MAX_QUERIES,
+  DEFAULT_SEARCH_ANALYSIS_THRESHOLDS,
+  SEARCH_FINDING_CODES,
+  SEARCH_SOURCE_PAIR_IDS,
+  SEARCH_SOURCE_ROLES,
+} from './analyze.js';
+export type {
+  AnalyzeSearchSourcesOptions,
+  SearchAnalysisThresholds,
+  SearchEngineAttribution,
+  SearchFinding,
+  SearchFindingSeverity,
+  SearchSourceAnalysis,
+  SearchSourcePair,
+  SearchSourcePairId,
+  SearchSourceRole,
+  SearchSources,
+  SearchSourceSummary,
+} from './analyze.js';
 export {
   buildStorefrontSearchUrl,
   captureStorefrontSearch,

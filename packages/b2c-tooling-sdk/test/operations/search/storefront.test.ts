@@ -247,6 +247,11 @@ describe('operations/search storefront', () => {
           },
         ],
         sortingOptions: ['best-matches', 'price-low-to-high', 'top-sellers'],
+        sortingOptionLabels: {
+          'best-matches': 'Best Matches',
+          'price-low-to-high': 'Price Low To High',
+          'top-sellers': 'Top Sellers',
+        },
         selectedSortingOption: 'best-matches',
         warnings: SEARCH_PAGE_WARNINGS,
       });
@@ -488,6 +493,7 @@ describe('operations/search storefront', () => {
           },
         ],
         sortingOptions: ['best-matches', 'newest'],
+        sortingOptionLabels: {'best-matches': 'Best Matches', newest: 'Newest'},
         selectedSortingOption: 'best-matches',
         warnings: [],
       });
@@ -662,6 +668,11 @@ describe('operations/search storefront', () => {
         'price',
       ]);
       expect(shirt.sortingOptions).to.deep.equal(['best-matches', 'price-low-to-high', 'top-sellers']);
+      expect(shirt.sortingOptionLabels).to.deep.equal({
+        'best-matches': 'Best Matches',
+        'price-low-to-high': 'Price Low To High',
+        'top-sellers': 'Top Sellers',
+      });
       expect(shirt.parseWarnings).to.deep.equal([
         ...SEARCH_PAGE_WARNINGS,
         'The page shows 3 of 1234 products although 10 were requested with sz',

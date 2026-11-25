@@ -303,16 +303,27 @@ function tallyRefinements(
   }
 }
 
-function isFailed(entry: SearchCaptureEntry): boolean {
+/**
+ * True when a query's request failed: it has an error or a status outside 2xx.
+ * @internal
+ */
+export function isFailed(entry: SearchCaptureEntry): boolean {
   return entry.error !== undefined || entry.status < 200 || entry.status >= 300;
 }
 
-function sourceOf(request: SearchCaptureRequest): SearchCaptureSource {
+/**
+ * Where a capture's results come from. Captures that predate storefront support are `scapi`.
+ * @internal
+ */
+export function sourceOf(request: SearchCaptureRequest): SearchCaptureSource {
   return request.source ?? 'scapi';
 }
 
-/** The search mode a capture asked for. A storefront page cannot ask for one. */
-function requestedSearchMode(request: SearchCaptureRequest): SearchMode | undefined {
+/**
+ * The search mode a capture asked for. A storefront page cannot ask for one.
+ * @internal
+ */
+export function requestedSearchMode(request: SearchCaptureRequest): SearchMode | undefined {
   return request.source === 'storefront' ? undefined : request.searchMode;
 }
 
@@ -362,7 +373,12 @@ function toSide(entry: SearchCaptureEntry, requestedMode: SearchMode | undefined
   };
 }
 
-function summarizeSide(capture: SearchCapture, entries: SearchCaptureEntry[]): SearchDiffSideSummary {
+/**
+ * Per-side counts for the given entries of a capture: failures, zero results, distinct result
+ * lists, the search modes that served the queries, sorting options and price orders.
+ * @internal
+ */
+export function summarizeSide(capture: SearchCapture, entries: SearchCaptureEntry[]): SearchDiffSideSummary {
   const succeeded = entries.filter((entry) => !isFailed(entry));
   const withHits = succeeded.filter((entry) => entry.hits.length > 0);
 

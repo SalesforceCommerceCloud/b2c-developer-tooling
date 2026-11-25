@@ -184,6 +184,8 @@ export interface StorefrontSearchPage {
   refinements: CapturedRefinement[];
   /** IDs of the sorting options offered. */
   sortingOptions?: string[];
+  /** Labels the page shows for the sorting options, by option ID. */
+  sortingOptionLabels?: Record<string, string>;
   /** ID of the sorting option marked as selected. */
   selectedSortingOption?: string;
   /** Parts of the page that could not be read, for tuning the page profile. */
@@ -511,8 +513,9 @@ function readSorting(
   root: HtmlElement,
   pageUrl: URL,
   profile: StorefrontPageProfile,
-): Pick<StorefrontSearchPage, 'selectedSortingOption' | 'sortingOptions'> {
+): Pick<StorefrontSearchPage, 'selectedSortingOption' | 'sortingOptionLabels' | 'sortingOptions'> {
   const ids: string[] = [];
+  const labels: Record<string, string> = {};
   let selected: string | undefined;
   for (const option of querySelectorAll(root, profile.sortingOption)) {
     const value = option.attributes.value?.trim();
@@ -522,9 +525,15 @@ function readSorting(
     const id = option.attributes['data-id']?.trim() || rule || (isUrl ? undefined : value) || textOf(option);
     if (!id) continue;
     if (!ids.includes(id)) ids.push(id);
+    const label = textOf(option);
+    if (label && labels[id] === undefined) labels[id] = label;
     if (selected === undefined && option.attributes.selected !== undefined) selected = id;
   }
-  return withoutUndefined({sortingOptions: ids.length > 0 ? ids : undefined, selectedSortingOption: selected});
+  return withoutUndefined({
+    sortingOptions: ids.length > 0 ? ids : undefined,
+    sortingOptionLabels: Object.keys(labels).length > 0 ? labels : undefined,
+    selectedSortingOption: selected,
+  });
 }
 
 /**
@@ -966,6 +975,7 @@ export async function captureStorefrontSearch(options: CaptureStorefrontSearchOp
           hits: parsed.hits,
           refinements: parsed.refinements,
           sortingOptions: parsed.sortingOptions,
+          sortingOptionLabels: parsed.sortingOptionLabels,
           selectedSortingOption: parsed.selectedSortingOption,
           url: url.href,
           redirectedTo,

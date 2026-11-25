@@ -107,6 +107,8 @@ export interface SearchCaptureEntry {
   selectedRefinements?: Record<string, string>;
   /** IDs of the sorting options offered. */
   sortingOptions?: string[];
+  /** Labels shoppers see for the sorting options, by option ID, for the options that have one. */
+  sortingOptionLabels?: Record<string, string>;
   /** ID of the sorting option applied. */
   selectedSortingOption?: string;
   /** Phrases suggested for the query (for example spelling corrections). */

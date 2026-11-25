@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-11-24T20:10:08.380Z",
+  "generatedAt": "2026-11-25T03:14:20.345Z",
   "entries": [
     {
       "id": "cli-account-manager",
@@ -242,8 +242,8 @@
       "category": "tooling",
       "url": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/search.html",
       "sourceUrl": "https://salesforcecommercecloud.github.io/b2c-developer-tooling/cli/search.md",
-      "headings": "Command Overview • Authentication • b2c search capture • Usage • Flags • Search Modes • Sorting and Refinements • Examples • Output • b2c search capture-storefront • Usage • Flags • Search Page Requests • Page Profile • How the Page Is Read • Limitations • Examples • Output • b2c search diff • Usage • Arguments • Flags • What the Diff Reports • Examples • Output • Workflows • Compare Lexical and Semantic Search on One Site • Compare Before and After a Change • Compare the Storefront with Shopper Search • Compare Sorting and Refinements",
-      "preview": "Commands for capturing product search results from the Shopper Search API or the storefront search page, and comparing two captures query by query."
+      "headings": "Command Overview • Authentication • b2c search status • Usage • Flags • Choosing Queries • The Result • Turn On Agentic Commerce Search • Examples • Output • b2c search capture • Usage • Flags • Search Modes • Sorting and Refinements • Examples • Output • b2c search capture-storefront • Usage • Flags • Search Page Requests • Page Profile • How the Page Is Read • Limitations • Examples • Output • b2c search diff • Usage • Arguments • Flags • What the Diff Reports • Examples • Output • b2c search analyze • Usage • Flags • Comparisons • Engine Attribution • Findings • Examples • Output • Workflows • Check That Agentic Commerce Search Is Serving a Site • Compare Lexical and Semantic Search on One Site • Compare Before and After a Change • Compare the Storefront with Shopper Search • Analyze Search Around Turning On Agentic Commerce Search • Compare Sorting and Refinements",
+      "preview": "Commands for checking whether Agentic Commerce Search is serving a site, capturing product search results from the Shopper Search API or the storefront search page, comparing two captures query by query, and analyzing captures of the storefront and the API under lexical and semantic search."
     },
     {
       "id": "cli-security",

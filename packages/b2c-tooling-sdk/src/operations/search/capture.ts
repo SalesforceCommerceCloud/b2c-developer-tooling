@@ -117,6 +117,15 @@ export function checkRefinements(refine: string[]): void {
   }
 }
 
+function toSortingOptionLabels(result: ProductSearchResult): Record<string, string> | undefined {
+  const labels = Object.fromEntries(
+    (result.sortingOptions ?? [])
+      .filter((option) => option.id && option.label)
+      .map((option) => [option.id, option.label]),
+  );
+  return Object.keys(labels).length > 0 ? labels : undefined;
+}
+
 function toEntry(query: string, status: number, latencyMs: number, result: ProductSearchResult): SearchCaptureEntry {
   const suggestedPhrases = (result.searchPhraseSuggestions?.suggestedPhrases ?? [])
     .map((suggestion) => suggestion.phrase)
@@ -142,6 +151,7 @@ function toEntry(query: string, status: number, latencyMs: number, result: Produ
     refinements: toRefinements(result),
     ...(selectedRefinements && Object.keys(selectedRefinements).length > 0 && {selectedRefinements}),
     sortingOptions: result.sortingOptions?.map((option) => option.id),
+    sortingOptionLabels: toSortingOptionLabels(result),
     selectedSortingOption: result.selectedSortingOption,
     ...(suggestedPhrases.length > 0 && {suggestedPhrases}),
   });
